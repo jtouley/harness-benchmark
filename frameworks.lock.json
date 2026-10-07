@@ -54,6 +54,38 @@
       "drive_prompt": "Use the cadence skill to ship this change end to end through R7.\n\nIssue (ticket gh-1):\n{issue}",
       "install_note": "~/.cursor/skills is created first. Without it, install.sh's link_skill skips the cadence symlink (publish_peers creates the directory afterwards) while merge_hooks still registers hooks under ~/.cursor/skills/cadence; see bench/README.md, finding F1."
     },
+    "cadence-fix": {
+      "title": "Cadence (hook fixes)",
+      "repo": "https://github.com/jtouley/cadence",
+      "sha": "90f820cdc8d222a9243e4f188a1b7164ab3e9530",
+      "build": [],
+      "install": [
+        {
+          "op": "mkdir",
+          "path": "{home}/.claude"
+        },
+        {
+          "op": "mkdir",
+          "path": "{home}/.cursor"
+        },
+        {
+          "op": "run",
+          "cwd": "{src}",
+          "argv": [
+            "bash",
+            "./install.sh"
+          ]
+        }
+      ],
+      "plugin_dirs": [],
+      "workflow": {
+        "source": "derived: skill `cadence`, then every slash-command stage in stages.json order, resolved through references/bundled-peers.json",
+        "derive": "cadence-stages",
+        "steps": []
+      },
+      "drive_prompt": "Use the cadence skill to ship this change end to end through R7.\n\nIssue (ticket gh-1):\n{issue}",
+      "install_note": "Only the host directories exist before install (no skills dirs), which is the first-install case that broke the published commit."
+    },
     "superpowers": {
       "title": "Superpowers",
       "repo": "https://github.com/obra/superpowers",

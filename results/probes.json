@@ -450,6 +450,468 @@
         "cursor": 4
       }
     },
+    "cadence-fix": {
+      "hosts": {
+        "claude-code": {
+          "scenarios": {
+            "S01": {
+              "hooks": [
+                {
+                  "event": "PreToolUse",
+                  "exit": 0,
+                  "hook": "guard_skill_gate.py",
+                  "origin": "home/.claude/settings.json",
+                  "stderr": "",
+                  "stdout": "{\"hookSpecificOutput\": {\"hookEventName\": \"PreToolUse\", \"permissionDecision\": \"deny\", \"permissionDecisionReason\": \"BLOCKED: gated path `<ROOT>/proj/src/app.py` requires entry invariant (prefixes=['src/', 'lib/', 'app/', 'packages/'])\\nACTION: python3 \\\"<CACHE>/src/cadence-fix@90f820cdc8d222a9243e4f18",
+                  "verdict": "block",
+                  "via": "permission-deny"
+                },
+                {
+                  "event": "PreToolUse",
+                  "exit": 0,
+                  "hook": "guard_primary_context_artifacts.py",
+                  "origin": "home/.claude/settings.json",
+                  "stderr": "",
+                  "stdout": "",
+                  "verdict": "allow",
+                  "via": "default"
+                }
+              ],
+              "intent": "block",
+              "meets_intent": true,
+              "verdict": "block"
+            },
+            "S02": {
+              "hooks": [
+                {
+                  "event": "PreToolUse",
+                  "exit": 0,
+                  "hook": "guard_skill_gate.py",
+                  "origin": "home/.claude/settings.json",
+                  "stderr": "",
+                  "stdout": "",
+                  "verdict": "allow",
+                  "via": "default"
+                },
+                {
+                  "event": "PreToolUse",
+                  "exit": 0,
+                  "hook": "guard_primary_context_artifacts.py",
+                  "origin": "home/.claude/settings.json",
+                  "stderr": "",
+                  "stdout": "",
+                  "verdict": "allow",
+                  "via": "default"
+                }
+              ],
+              "intent": "allow",
+              "meets_intent": true,
+              "verdict": "allow"
+            },
+            "S03": {
+              "hooks": [
+                {
+                  "event": "PreToolUse",
+                  "exit": 0,
+                  "hook": "guard_skill_gate.py",
+                  "origin": "home/.claude/settings.json",
+                  "stderr": "",
+                  "stdout": "{\"hookSpecificOutput\": {\"hookEventName\": \"PreToolUse\", \"permissionDecision\": \"deny\", \"permissionDecisionReason\": \"BLOCKED: gated path `src/app.py` requires entry invariant (prefixes=['src/', 'lib/', 'app/', 'packages/'])\\nACTION: python3 \\\"<CACHE>/src/cadence-fix@90f820cdc8d222a9243e4f188a1b7164ab3e",
+                  "verdict": "block",
+                  "via": "permission-deny"
+                }
+              ],
+              "intent": "block",
+              "meets_intent": true,
+              "verdict": "block"
+            },
+            "S04": {
+              "hooks": [
+                {
+                  "event": "PreToolUse",
+                  "exit": 0,
+                  "hook": "guard_skill_gate.py",
+                  "origin": "home/.claude/settings.json",
+                  "stderr": "",
+                  "stdout": "{\"hookSpecificOutput\": {\"hookEventName\": \"PreToolUse\", \"permissionDecision\": \"deny\", \"permissionDecisionReason\": \"BLOCKED: `<ROOT>/proj/.context/gates/entry-invariant.ok` is pipeline state written only by the stage gate scripts (for example scripts/entry_invariant.py)\\nACTION: run the stage gate scr",
+                  "verdict": "block",
+                  "via": "permission-deny"
+                },
+                {
+                  "event": "PreToolUse",
+                  "exit": 0,
+                  "hook": "guard_primary_context_artifacts.py",
+                  "origin": "home/.claude/settings.json",
+                  "stderr": "",
+                  "stdout": "",
+                  "verdict": "allow",
+                  "via": "default"
+                }
+              ],
+              "intent": "block",
+              "meets_intent": true,
+              "verdict": "block"
+            },
+            "S05": {
+              "hooks": [
+                {
+                  "event": "PreToolUse",
+                  "exit": 0,
+                  "hook": "guard_skill_gate.py",
+                  "origin": "home/.claude/settings.json",
+                  "stderr": "",
+                  "stdout": "{\"hookSpecificOutput\": {\"hookEventName\": \"PreToolUse\", \"permissionDecision\": \"deny\", \"permissionDecisionReason\": \"BLOCKED: `<ROOT>/proj/.context/findings.jsonl` is pipeline state written only by scripts/findings_io.py (append, set-status) and scripts/ledger_verify.py\\nACTION: run scripts/findings_io",
+                  "verdict": "block",
+                  "via": "permission-deny"
+                },
+                {
+                  "event": "PreToolUse",
+                  "exit": 0,
+                  "hook": "guard_primary_context_artifacts.py",
+                  "origin": "home/.claude/settings.json",
+                  "stderr": "",
+                  "stdout": "",
+                  "verdict": "allow",
+                  "via": "default"
+                }
+              ],
+              "intent": "block",
+              "meets_intent": true,
+              "verdict": "block"
+            },
+            "S06": {
+              "hooks": [
+                {
+                  "event": "Stop",
+                  "exit": 0,
+                  "hook": "pipeline_stop_guard.py",
+                  "origin": "home/.claude/settings.json",
+                  "stderr": "",
+                  "stdout": "{\"decision\": \"block\", \"reason\": \"BLOCKED early stop in execution. Continue paceline: next E2 (impl-artifact) via `python3 scripts/impl_artifact.py`\"}",
+                  "verdict": "block",
+                  "via": "decision-block"
+                }
+              ],
+              "intent": "block",
+              "meets_intent": true,
+              "verdict": "block"
+            },
+            "S07": {
+              "hooks": [
+                {
+                  "event": "Stop",
+                  "exit": 0,
+                  "hook": "pipeline_stop_guard.py",
+                  "origin": "home/.claude/settings.json",
+                  "stderr": "",
+                  "stdout": "",
+                  "verdict": "allow",
+                  "via": "default"
+                }
+              ],
+              "intent": "allow",
+              "meets_intent": true,
+              "verdict": "allow"
+            },
+            "S08": {
+              "hooks": [
+                {
+                  "event": "PreToolUse",
+                  "exit": 0,
+                  "hook": "guard_skill_gate.py",
+                  "origin": "home/.claude/settings.json",
+                  "stderr": "",
+                  "stdout": "",
+                  "verdict": "allow",
+                  "via": "default"
+                },
+                {
+                  "event": "PreToolUse",
+                  "exit": 0,
+                  "hook": "guard_primary_context_artifacts.py",
+                  "origin": "home/.claude/settings.json",
+                  "stderr": "",
+                  "stdout": "",
+                  "verdict": "allow",
+                  "via": "default"
+                }
+              ],
+              "intent": "informational",
+              "meets_intent": null,
+              "verdict": "allow"
+            },
+            "S09": {
+              "hooks": [],
+              "intent": "block",
+              "meets_intent": false,
+              "verdict": "no_hook"
+            },
+            "S10": {
+              "hooks": [
+                {
+                  "event": "PreToolUse",
+                  "exit": 0,
+                  "hook": "guard_skill_gate.py",
+                  "origin": "home/.claude/settings.json",
+                  "stderr": "",
+                  "stdout": "",
+                  "verdict": "allow",
+                  "via": "default"
+                },
+                {
+                  "event": "PreToolUse",
+                  "exit": 0,
+                  "hook": "guard_primary_context_artifacts.py",
+                  "origin": "home/.claude/settings.json",
+                  "stderr": "",
+                  "stdout": "",
+                  "verdict": "allow",
+                  "via": "default"
+                }
+              ],
+              "intent": "block",
+              "meets_intent": false,
+              "verdict": "allow"
+            }
+          },
+          "score": {
+            "met": 7,
+            "scored": 9
+          }
+        },
+        "cursor": {
+          "scenarios": {
+            "S01": {
+              "hooks": [
+                {
+                  "event": "preToolUse",
+                  "exit": 0,
+                  "hook": "guard_skill_gate.py",
+                  "origin": "home/.cursor/hooks.json",
+                  "stderr": "",
+                  "stdout": "{\"permission\": \"deny\", \"user_message\": \"BLOCKED: gated path `<ROOT>/proj/src/app.py` requires entry invariant (prefixes=['src/', 'lib/', 'app/', 'packages/'])\\nACTION: python3 \\\"<CACHE>/src/cadence-fix@90f820cdc8d222a9243e4f188a1b7164ab3e9530/scripts/entry_invariant.py\\\" --phase execution\", \"agent_m",
+                  "verdict": "block",
+                  "via": "permission-deny"
+                },
+                {
+                  "event": "preToolUse",
+                  "exit": 0,
+                  "hook": "guard_primary_context_artifacts.py",
+                  "origin": "home/.cursor/hooks.json",
+                  "stderr": "",
+                  "stdout": "{\"permission\": \"allow\"}",
+                  "verdict": "allow",
+                  "via": "default"
+                }
+              ],
+              "intent": "block",
+              "meets_intent": true,
+              "verdict": "block"
+            },
+            "S02": {
+              "hooks": [
+                {
+                  "event": "preToolUse",
+                  "exit": 0,
+                  "hook": "guard_skill_gate.py",
+                  "origin": "home/.cursor/hooks.json",
+                  "stderr": "",
+                  "stdout": "{\"permission\": \"allow\"}",
+                  "verdict": "allow",
+                  "via": "default"
+                },
+                {
+                  "event": "preToolUse",
+                  "exit": 0,
+                  "hook": "guard_primary_context_artifacts.py",
+                  "origin": "home/.cursor/hooks.json",
+                  "stderr": "",
+                  "stdout": "{\"permission\": \"allow\"}",
+                  "verdict": "allow",
+                  "via": "default"
+                }
+              ],
+              "intent": "allow",
+              "meets_intent": true,
+              "verdict": "allow"
+            },
+            "S03": {
+              "hooks": [
+                {
+                  "event": "beforeShellExecution",
+                  "exit": 0,
+                  "hook": "guard_skill_gate.py",
+                  "origin": "home/.cursor/hooks.json",
+                  "stderr": "",
+                  "stdout": "{\"permission\": \"deny\", \"user_message\": \"BLOCKED: gated path `src/app.py` requires entry invariant (prefixes=['src/', 'lib/', 'app/', 'packages/'])\\nACTION: python3 \\\"<CACHE>/src/cadence-fix@90f820cdc8d222a9243e4f188a1b7164ab3e9530/scripts/entry_invariant.py\\\" --phase execution\", \"agent_message\": \"BL",
+                  "verdict": "block",
+                  "via": "permission-deny"
+                }
+              ],
+              "intent": "block",
+              "meets_intent": true,
+              "verdict": "block"
+            },
+            "S04": {
+              "hooks": [
+                {
+                  "event": "preToolUse",
+                  "exit": 0,
+                  "hook": "guard_skill_gate.py",
+                  "origin": "home/.cursor/hooks.json",
+                  "stderr": "",
+                  "stdout": "{\"permission\": \"deny\", \"user_message\": \"BLOCKED: `<ROOT>/proj/.context/gates/entry-invariant.ok` is pipeline state written only by the stage gate scripts (for example scripts/entry_invariant.py)\\nACTION: run the stage gate scripts (for example scripts/entry_invariant.py) instead of editing the file\"",
+                  "verdict": "block",
+                  "via": "permission-deny"
+                },
+                {
+                  "event": "preToolUse",
+                  "exit": 0,
+                  "hook": "guard_primary_context_artifacts.py",
+                  "origin": "home/.cursor/hooks.json",
+                  "stderr": "",
+                  "stdout": "{\"permission\": \"allow\"}",
+                  "verdict": "allow",
+                  "via": "default"
+                }
+              ],
+              "intent": "block",
+              "meets_intent": true,
+              "verdict": "block"
+            },
+            "S05": {
+              "hooks": [
+                {
+                  "event": "preToolUse",
+                  "exit": 0,
+                  "hook": "guard_skill_gate.py",
+                  "origin": "home/.cursor/hooks.json",
+                  "stderr": "",
+                  "stdout": "{\"permission\": \"deny\", \"user_message\": \"BLOCKED: `<ROOT>/proj/.context/findings.jsonl` is pipeline state written only by scripts/findings_io.py (append, set-status) and scripts/ledger_verify.py\\nACTION: run scripts/findings_io.py (append, set-status) and scripts/ledger_verify.py instead of editing t",
+                  "verdict": "block",
+                  "via": "permission-deny"
+                },
+                {
+                  "event": "preToolUse",
+                  "exit": 0,
+                  "hook": "guard_primary_context_artifacts.py",
+                  "origin": "home/.cursor/hooks.json",
+                  "stderr": "",
+                  "stdout": "{\"permission\": \"allow\"}",
+                  "verdict": "allow",
+                  "via": "default"
+                }
+              ],
+              "intent": "block",
+              "meets_intent": true,
+              "verdict": "block"
+            },
+            "S06": {
+              "hooks": [
+                {
+                  "event": "stop",
+                  "exit": 0,
+                  "hook": "pipeline_stop_guard.py",
+                  "origin": "home/.cursor/hooks.json",
+                  "stderr": "",
+                  "stdout": "{\"followup_message\": \"BLOCKED early stop in execution. Continue paceline: next E2 (impl-artifact) via `python3 scripts/impl_artifact.py`\"}",
+                  "verdict": "block",
+                  "via": "followup-message"
+                }
+              ],
+              "intent": "block",
+              "meets_intent": true,
+              "verdict": "block"
+            },
+            "S07": {
+              "hooks": [
+                {
+                  "event": "stop",
+                  "exit": 0,
+                  "hook": "pipeline_stop_guard.py",
+                  "origin": "home/.cursor/hooks.json",
+                  "stderr": "",
+                  "stdout": "{}",
+                  "verdict": "allow",
+                  "via": "default"
+                }
+              ],
+              "intent": "allow",
+              "meets_intent": true,
+              "verdict": "allow"
+            },
+            "S08": {
+              "hooks": [
+                {
+                  "event": "preToolUse",
+                  "exit": 0,
+                  "hook": "guard_skill_gate.py",
+                  "origin": "home/.cursor/hooks.json",
+                  "stderr": "",
+                  "stdout": "{\"permission\": \"allow\"}",
+                  "verdict": "allow",
+                  "via": "default"
+                },
+                {
+                  "event": "preToolUse",
+                  "exit": 0,
+                  "hook": "guard_primary_context_artifacts.py",
+                  "origin": "home/.cursor/hooks.json",
+                  "stderr": "",
+                  "stdout": "{\"permission\": \"allow\"}",
+                  "verdict": "allow",
+                  "via": "default"
+                }
+              ],
+              "intent": "informational",
+              "meets_intent": null,
+              "verdict": "allow"
+            },
+            "S09": {
+              "hooks": [],
+              "intent": "block",
+              "meets_intent": false,
+              "verdict": "no_hook"
+            },
+            "S10": {
+              "hooks": [
+                {
+                  "event": "preToolUse",
+                  "exit": 0,
+                  "hook": "guard_skill_gate.py",
+                  "origin": "home/.cursor/hooks.json",
+                  "stderr": "",
+                  "stdout": "{\"permission\": \"allow\"}",
+                  "verdict": "allow",
+                  "via": "default"
+                },
+                {
+                  "event": "preToolUse",
+                  "exit": 0,
+                  "hook": "guard_primary_context_artifacts.py",
+                  "origin": "home/.cursor/hooks.json",
+                  "stderr": "",
+                  "stdout": "{\"permission\": \"allow\"}",
+                  "verdict": "allow",
+                  "via": "default"
+                }
+              ],
+              "intent": "block",
+              "meets_intent": false,
+              "verdict": "allow"
+            }
+          },
+          "score": {
+            "met": 7,
+            "scored": 9
+          }
+        }
+      },
+      "registered_hooks": {
+        "claude-code": 4,
+        "cursor": 5
+      }
+    },
     "gsd-core": {
       "hosts": {
         "claude-code": {
@@ -1130,11 +1592,11 @@
   },
   "golden": {
     "scenarios_sha256": "192b302a6345496406e50a8ec463e6671a3b63d64c24dbe611830b69ba0e2995",
-    "states_sha256": "2a19efd2cbd0fdd9c8e9fe9a9ea367f80aa5bc15d9db22aa2bb9fd9ad20ca069"
+    "states_sha256": "77753632488c87c263a3bed8700b0960ea355a8a5d1c8d5662e5cb03fc229c4a"
   },
   "provenance": {
     "canonical_root": "/tmp/cbench",
-    "lockfile_sha256": "d16229df14c4c4640242dc98860c7d35570f84e8d73a9e1f1de5d0a5d77fabba",
+    "lockfile_sha256": "cafba683c79cc742068d1fc90a00d985ef79892bf7b5816478454885cce42d85",
     "pricing_sha256": "282d60371470aa2e52e16ea74d024ca6842367e8cc48f2d04bc978cadc18150e",
     "tokenizer": {
       "id": "anthropic==0.37.1:anthropic/tokenizer.json",
