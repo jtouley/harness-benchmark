@@ -1,0 +1,1 @@
+{"id": "T03-token-bucket", "kind": "greenfield", "title": "Implement a token-bucket rate limiter from a spec", "issue": "issue.md", "hidden": "hidden", "timeout_seconds": 120}

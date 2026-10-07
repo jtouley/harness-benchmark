@@ -1,0 +1,1 @@
+{"id": "T02-invstat-json", "kind": "feature", "title": "Add --format json and low-stock reporting to a CLI", "issue": "issue.md", "hidden": "hidden", "timeout_seconds": 120}

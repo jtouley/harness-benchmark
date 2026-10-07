@@ -1,0 +1,1 @@
+{"id": "T01-slugify-bugfix", "kind": "bugfix", "title": "Fix slug joining and word-boundary truncation", "issue": "issue.md", "hidden": "hidden", "timeout_seconds": 120}

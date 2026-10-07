@@ -1,0 +1,702 @@
+{
+  "frameworks": {
+    "baseline": {
+      "always_on": {
+        "listing_tokens": 0,
+        "memory_tokens": 0,
+        "session_start": [],
+        "session_start_tokens": 0,
+        "total_tokens": 0
+      },
+      "claude_code_hooks": {},
+      "corpus_tokens": 0,
+      "cost_usd": {
+        "claude-fable-5-1": {
+          "always_on_100_requests_cached": "0.000000",
+          "always_on_per_request_cache_read": "0.000000",
+          "always_on_per_request_uncached": "0.000000",
+          "workflow_load_lower": "0.000000",
+          "workflow_load_upper": "0.000000"
+        },
+        "claude-haiku-4-5": {
+          "always_on_100_requests_cached": "0.000000",
+          "always_on_per_request_cache_read": "0.000000",
+          "always_on_per_request_uncached": "0.000000",
+          "workflow_load_lower": "0.000000",
+          "workflow_load_upper": "0.000000"
+        },
+        "claude-opus-5-5": {
+          "always_on_100_requests_cached": "0.000000",
+          "always_on_per_request_cache_read": "0.000000",
+          "always_on_per_request_uncached": "0.000000",
+          "workflow_load_lower": "0.000000",
+          "workflow_load_upper": "0.000000"
+        },
+        "claude-sonnet-5-5": {
+          "always_on_100_requests_cached": "0.000000",
+          "always_on_per_request_cache_read": "0.000000",
+          "always_on_per_request_uncached": "0.000000",
+          "workflow_load_lower": "0.000000",
+          "workflow_load_upper": "0.000000"
+        }
+      },
+      "framework": "baseline",
+      "install": {
+        "files": 1,
+        "tree_sha256": "3f167d8204e448af10db2f3e3ee7db6051d18f3feb9f51016df7d0cd3da08476"
+      },
+      "items": {},
+      "sha": null,
+      "title": "Claude Code, no framework",
+      "workflow": {
+        "lower_tokens": 0,
+        "source": "control arm: no framework installed",
+        "steps": [],
+        "upper_tokens": 0
+      }
+    },
+    "bmad": {
+      "always_on": {
+        "listing_tokens": 2004,
+        "memory_tokens": 0,
+        "session_start": [],
+        "session_start_tokens": 0,
+        "total_tokens": 2004
+      },
+      "claude_code_hooks": {},
+      "corpus_tokens": 58498,
+      "cost_usd": {
+        "claude-fable-5-1": {
+          "always_on_100_requests_cached": "0.074649",
+          "always_on_per_request_cache_read": "0.000501",
+          "always_on_per_request_uncached": "0.020040",
+          "workflow_load_lower": "0.004110",
+          "workflow_load_upper": "0.200440"
+        },
+        "claude-haiku-4-5": {
+          "always_on_100_requests_cached": "0.022345",
+          "always_on_per_request_cache_read": "0.000200",
+          "always_on_per_request_uncached": "0.002004",
+          "workflow_load_lower": "0.000411",
+          "workflow_load_upper": "0.020044"
+        },
+        "claude-opus-5-5": {
+          "always_on_100_requests_cached": "0.049699",
+          "always_on_per_request_cache_read": "0.000401",
+          "always_on_per_request_uncached": "0.008016",
+          "workflow_load_lower": "0.001644",
+          "workflow_load_upper": "0.080176"
+        },
+        "claude-sonnet-5-5": {
+          "always_on_100_requests_cached": "0.044689",
+          "always_on_per_request_cache_read": "0.000401",
+          "always_on_per_request_uncached": "0.004008",
+          "workflow_load_lower": "0.000822",
+          "workflow_load_upper": "0.040088"
+        }
+      },
+      "framework": "bmad",
+      "install": {
+        "files": 399,
+        "tree_sha256": "3dd72e01c59d1354b4ca16c000a95ca1410673456ca09ac13416aa3d4e7b957e"
+      },
+      "items": {
+        "skill": 33
+      },
+      "sha": "bda3c5929f672019b90f39a3ea27259d35d00974",
+      "title": "BMAD Method",
+      "workflow": {
+        "lower_tokens": 411,
+        "source": "README.md 'Start Building': invoke bmad-build with what you want to change",
+        "steps": [
+          {
+            "at_includes": 0,
+            "lower_tokens": 411,
+            "origin": "project",
+            "ref": "skill:bmad-build",
+            "resolved_name": "bmad-build",
+            "upper_tokens": 20044
+          }
+        ],
+        "upper_tokens": 20044
+      }
+    },
+    "cadence": {
+      "always_on": {
+        "listing_tokens": 455,
+        "memory_tokens": 0,
+        "session_start": [],
+        "session_start_tokens": 0,
+        "total_tokens": 455
+      },
+      "claude_code_hooks": {},
+      "corpus_tokens": 10545,
+      "cost_usd": {
+        "claude-fable-5-1": {
+          "always_on_100_requests_cached": "0.016949",
+          "always_on_per_request_cache_read": "0.000114",
+          "always_on_per_request_uncached": "0.004550",
+          "workflow_load_lower": "0.062480",
+          "workflow_load_upper": "0.402360"
+        },
+        "claude-haiku-4-5": {
+          "always_on_100_requests_cached": "0.005073",
+          "always_on_per_request_cache_read": "0.000046",
+          "always_on_per_request_uncached": "0.000455",
+          "workflow_load_lower": "0.006248",
+          "workflow_load_upper": "0.040236"
+        },
+        "claude-opus-5-5": {
+          "always_on_100_requests_cached": "0.011284",
+          "always_on_per_request_cache_read": "0.000091",
+          "always_on_per_request_uncached": "0.001820",
+          "workflow_load_lower": "0.024992",
+          "workflow_load_upper": "0.160944"
+        },
+        "claude-sonnet-5-5": {
+          "always_on_100_requests_cached": "0.010147",
+          "always_on_per_request_cache_read": "0.000091",
+          "always_on_per_request_uncached": "0.000910",
+          "workflow_load_lower": "0.012496",
+          "workflow_load_upper": "0.080472"
+        }
+      },
+      "framework": "cadence",
+      "install": {
+        "files": 466,
+        "tree_sha256": "15b5405d40e6abe9959d1cb989fc49ddd4f27a0ab96f02ee5354f1474bfd989d"
+      },
+      "items": {
+        "command": 7,
+        "skill": 5
+      },
+      "sha": "175a8400a028243c0ed6e9920242b00df68720f4",
+      "title": "Cadence",
+      "workflow": {
+        "lower_tokens": 6248,
+        "source": "derived: skill `cadence`, then every slash-command stage in stages.json order, resolved through references/bundled-peers.json",
+        "steps": [
+          {
+            "at_includes": 0,
+            "lower_tokens": 3267,
+            "origin": "user",
+            "ref": "skill:cadence",
+            "resolved_name": "cadence",
+            "upper_tokens": 37255
+          },
+          {
+            "at_includes": 0,
+            "lower_tokens": 292,
+            "origin": "user",
+            "ref": "skill:vibe-test",
+            "resolved_name": "vibe-test",
+            "upper_tokens": 292
+          },
+          {
+            "at_includes": 0,
+            "lower_tokens": 240,
+            "origin": "user",
+            "ref": "command:plan-create",
+            "resolved_name": "plan-create",
+            "upper_tokens": 240
+          },
+          {
+            "at_includes": 0,
+            "lower_tokens": 279,
+            "origin": "user",
+            "ref": "command:plan-review",
+            "resolved_name": "plan-review",
+            "upper_tokens": 279
+          },
+          {
+            "at_includes": 0,
+            "lower_tokens": 300,
+            "origin": "user",
+            "ref": "skill:de-adversarial-reviewer",
+            "resolved_name": "de-adversarial-reviewer",
+            "upper_tokens": 300
+          },
+          {
+            "at_includes": 0,
+            "lower_tokens": 456,
+            "origin": "user",
+            "ref": "skill:test-benchmark",
+            "resolved_name": "test-benchmark",
+            "upper_tokens": 456
+          },
+          {
+            "at_includes": 0,
+            "lower_tokens": 261,
+            "origin": "user",
+            "ref": "command:spec-driven",
+            "resolved_name": "spec-driven",
+            "upper_tokens": 261
+          },
+          {
+            "at_includes": 0,
+            "lower_tokens": 342,
+            "origin": "user",
+            "ref": "command:commit-push-pr",
+            "resolved_name": "commit-push-pr",
+            "upper_tokens": 342
+          },
+          {
+            "at_includes": 0,
+            "lower_tokens": 355,
+            "origin": "user",
+            "ref": "command:pr-review-local",
+            "resolved_name": "pr-review-local",
+            "upper_tokens": 355
+          },
+          {
+            "at_includes": 0,
+            "lower_tokens": 456,
+            "origin": "user",
+            "ref": "skill:test-benchmark",
+            "resolved_name": "test-benchmark",
+            "upper_tokens": 456
+          }
+        ],
+        "upper_tokens": 40236
+      }
+    },
+    "gsd-core": {
+      "always_on": {
+        "listing_tokens": 3457,
+        "memory_tokens": 0,
+        "session_start": [
+          {
+            "command": "\"$(for n in \"/opt/node22/bin/node\" \"$(command -v node)\" /usr/local/bin/node /usr/bin/node; do [ -x \"$n\" ] && { [ \"${n#/}\" != \"$n\" ] || [ \"${n#?:}\" != \"$n\" ]; } && printf '%s' \"$n\" && break; done)\" \"$CLAUDE_PROJECT_DIR\"/.claude/hooks/gsd-check-update.js",
+            "context_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+            "exit": 0,
+            "origin": "proj/.claude/settings.local.json",
+            "tokens": 0
+          },
+          {
+            "command": "bash \"$CLAUDE_PROJECT_DIR\"/.claude/hooks/gsd-session-state.sh",
+            "context_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+            "exit": 0,
+            "origin": "proj/.claude/settings.local.json",
+            "tokens": 0
+          }
+        ],
+        "session_start_tokens": 0,
+        "total_tokens": 3457
+      },
+      "claude_code_hooks": {
+        "FileChanged": 1,
+        "PostToolUse": 4,
+        "PreCompact": 1,
+        "PreToolUse": 8,
+        "SessionStart": 2,
+        "Stop": 1,
+        "SubagentStop": 1
+      },
+      "corpus_tokens": 250601,
+      "cost_usd": {
+        "claude-fable-5-1": {
+          "always_on_100_requests_cached": "0.128773",
+          "always_on_per_request_cache_read": "0.000864",
+          "always_on_per_request_uncached": "0.034570",
+          "workflow_load_lower": "0.047010",
+          "workflow_load_upper": "1.247020"
+        },
+        "claude-haiku-4-5": {
+          "always_on_100_requests_cached": "0.038545",
+          "always_on_per_request_cache_read": "0.000346",
+          "always_on_per_request_uncached": "0.003457",
+          "workflow_load_lower": "0.004701",
+          "workflow_load_upper": "0.124702"
+        },
+        "claude-opus-5-5": {
+          "always_on_100_requests_cached": "0.085734",
+          "always_on_per_request_cache_read": "0.000691",
+          "always_on_per_request_uncached": "0.013828",
+          "workflow_load_lower": "0.018804",
+          "workflow_load_upper": "0.498808"
+        },
+        "claude-sonnet-5-5": {
+          "always_on_100_requests_cached": "0.077091",
+          "always_on_per_request_cache_read": "0.000691",
+          "always_on_per_request_uncached": "0.006914",
+          "workflow_load_lower": "0.009402",
+          "workflow_load_upper": "0.249404"
+        }
+      },
+      "framework": "gsd-core",
+      "install": {
+        "files": 831,
+        "tree_sha256": "2ab1cf98a9ade5773307b2453b8e85848d6a5a990999c049b3a53217b73d91a1"
+      },
+      "items": {
+        "agent": 35,
+        "command": 72
+      },
+      "sha": "83aba44627ba43aff77588894f7b81a9a7437e75",
+      "title": "GSD Core",
+      "workflow": {
+        "lower_tokens": 4701,
+        "source": "README.md 'How it works': discuss → plan → execute → verify → ship",
+        "steps": [
+          {
+            "at_includes": 0,
+            "lower_tokens": 1919,
+            "origin": "project",
+            "ref": "command:gsd-discuss-phase",
+            "resolved_name": "gsd-discuss-phase",
+            "upper_tokens": 1919
+          },
+          {
+            "at_includes": 6,
+            "lower_tokens": 1309,
+            "origin": "project",
+            "ref": "command:gsd-plan-phase",
+            "resolved_name": "gsd-plan-phase",
+            "upper_tokens": 39833
+          },
+          {
+            "at_includes": 18,
+            "lower_tokens": 775,
+            "origin": "project",
+            "ref": "command:gsd-execute-phase",
+            "resolved_name": "gsd-execute-phase",
+            "upper_tokens": 55820
+          },
+          {
+            "at_includes": 2,
+            "lower_tokens": 417,
+            "origin": "project",
+            "ref": "command:gsd-verify-work",
+            "resolved_name": "gsd-verify-work",
+            "upper_tokens": 16619
+          },
+          {
+            "at_includes": 1,
+            "lower_tokens": 281,
+            "origin": "project",
+            "ref": "command:gsd-ship",
+            "resolved_name": "gsd-ship",
+            "upper_tokens": 10511
+          }
+        ],
+        "upper_tokens": 124702
+      }
+    },
+    "openspec": {
+      "always_on": {
+        "listing_tokens": 520,
+        "memory_tokens": 0,
+        "session_start": [],
+        "session_start_tokens": 0,
+        "total_tokens": 520
+      },
+      "claude_code_hooks": {},
+      "corpus_tokens": 41904,
+      "cost_usd": {
+        "claude-fable-5-1": {
+          "always_on_100_requests_cached": "0.019370",
+          "always_on_per_request_cache_read": "0.000130",
+          "always_on_per_request_uncached": "0.005200",
+          "workflow_load_lower": "0.100740",
+          "workflow_load_upper": "0.100740"
+        },
+        "claude-haiku-4-5": {
+          "always_on_100_requests_cached": "0.005798",
+          "always_on_per_request_cache_read": "0.000052",
+          "always_on_per_request_uncached": "0.000520",
+          "workflow_load_lower": "0.010074",
+          "workflow_load_upper": "0.010074"
+        },
+        "claude-opus-5-5": {
+          "always_on_100_requests_cached": "0.012896",
+          "always_on_per_request_cache_read": "0.000104",
+          "always_on_per_request_uncached": "0.002080",
+          "workflow_load_lower": "0.040296",
+          "workflow_load_upper": "0.040296"
+        },
+        "claude-sonnet-5-5": {
+          "always_on_100_requests_cached": "0.011596",
+          "always_on_per_request_cache_read": "0.000104",
+          "always_on_per_request_uncached": "0.001040",
+          "workflow_load_lower": "0.020148",
+          "workflow_load_upper": "0.020148"
+        }
+      },
+      "framework": "openspec",
+      "install": {
+        "files": 16,
+        "tree_sha256": "d8d87ebd7a38400da36ac164ddf025d81ca45e1860c3f75ada77b06a96e2e942"
+      },
+      "items": {
+        "command": 6,
+        "skill": 6
+      },
+      "sha": "9111a7654d7800391459431fff4eaf66e33a3d2e",
+      "title": "OpenSpec",
+      "workflow": {
+        "lower_tokens": 10074,
+        "source": "README.md 'See it in action': /opsx:propose → /opsx:apply → /opsx:archive",
+        "steps": [
+          {
+            "at_includes": 0,
+            "lower_tokens": 3557,
+            "origin": "project",
+            "ref": "command:opsx:propose",
+            "resolved_name": "opsx:propose",
+            "upper_tokens": 3557
+          },
+          {
+            "at_includes": 0,
+            "lower_tokens": 2569,
+            "origin": "project",
+            "ref": "command:opsx:apply",
+            "resolved_name": "opsx:apply",
+            "upper_tokens": 2569
+          },
+          {
+            "at_includes": 0,
+            "lower_tokens": 3948,
+            "origin": "project",
+            "ref": "command:opsx:archive",
+            "resolved_name": "opsx:archive",
+            "upper_tokens": 3948
+          }
+        ],
+        "upper_tokens": 10074
+      }
+    },
+    "spec-kit": {
+      "always_on": {
+        "listing_tokens": 291,
+        "memory_tokens": 0,
+        "session_start": [],
+        "session_start_tokens": 0,
+        "total_tokens": 291
+      },
+      "claude_code_hooks": {},
+      "corpus_tokens": 33055,
+      "cost_usd": {
+        "claude-fable-5-1": {
+          "always_on_100_requests_cached": "0.010840",
+          "always_on_per_request_cache_read": "0.000073",
+          "always_on_per_request_uncached": "0.002910",
+          "workflow_load_lower": "0.158890",
+          "workflow_load_upper": "0.158890"
+        },
+        "claude-haiku-4-5": {
+          "always_on_100_requests_cached": "0.003245",
+          "always_on_per_request_cache_read": "0.000029",
+          "always_on_per_request_uncached": "0.000291",
+          "workflow_load_lower": "0.015889",
+          "workflow_load_upper": "0.015889"
+        },
+        "claude-opus-5-5": {
+          "always_on_100_requests_cached": "0.007217",
+          "always_on_per_request_cache_read": "0.000058",
+          "always_on_per_request_uncached": "0.001164",
+          "workflow_load_lower": "0.063556",
+          "workflow_load_upper": "0.063556"
+        },
+        "claude-sonnet-5-5": {
+          "always_on_100_requests_cached": "0.006490",
+          "always_on_per_request_cache_read": "0.000058",
+          "always_on_per_request_uncached": "0.000582",
+          "workflow_load_lower": "0.031778",
+          "workflow_load_upper": "0.031778"
+        }
+      },
+      "framework": "spec-kit",
+      "install": {
+        "files": 31,
+        "tree_sha256": "bb94808e23f80b1368fec4ef8f2a7a39241e27762e359ce271b62d9146d2b52d"
+      },
+      "items": {
+        "skill": 10
+      },
+      "sha": "b9e08bf3e1a9d82b2a7358e278a6224d54d8783b",
+      "title": "Spec Kit",
+      "workflow": {
+        "lower_tokens": 15889,
+        "source": "README.md: 'specify → plan → tasks → implement → converge per feature'",
+        "steps": [
+          {
+            "at_includes": 0,
+            "lower_tokens": 4269,
+            "origin": "project",
+            "ref": "skill:speckit-specify",
+            "resolved_name": "speckit-specify",
+            "upper_tokens": 4269
+          },
+          {
+            "at_includes": 0,
+            "lower_tokens": 2005,
+            "origin": "project",
+            "ref": "skill:speckit-plan",
+            "resolved_name": "speckit-plan",
+            "upper_tokens": 2005
+          },
+          {
+            "at_includes": 0,
+            "lower_tokens": 2847,
+            "origin": "project",
+            "ref": "skill:speckit-tasks",
+            "resolved_name": "speckit-tasks",
+            "upper_tokens": 2847
+          },
+          {
+            "at_includes": 0,
+            "lower_tokens": 3379,
+            "origin": "project",
+            "ref": "skill:speckit-implement",
+            "resolved_name": "speckit-implement",
+            "upper_tokens": 3379
+          },
+          {
+            "at_includes": 0,
+            "lower_tokens": 3389,
+            "origin": "project",
+            "ref": "skill:speckit-converge",
+            "resolved_name": "speckit-converge",
+            "upper_tokens": 3389
+          }
+        ],
+        "upper_tokens": 15889
+      }
+    },
+    "superpowers": {
+      "always_on": {
+        "listing_tokens": 574,
+        "memory_tokens": 0,
+        "session_start": [
+          {
+            "command": "\"${CLAUDE_PLUGIN_ROOT}/hooks/run-hook.cmd\" session-start",
+            "context_sha256": "48ebb41e10d7bb85c74ac04fd685a32c3b32ce789766e4a3ab3ba8a5546fe688",
+            "exit": 0,
+            "origin": "plugin:superpowers/hooks/hooks.json",
+            "tokens": 909
+          }
+        ],
+        "session_start_tokens": 909,
+        "total_tokens": 1483
+      },
+      "claude_code_hooks": {
+        "SessionStart": 1
+      },
+      "corpus_tokens": 42294,
+      "cost_usd": {
+        "claude-fable-5-1": {
+          "always_on_100_requests_cached": "0.055242",
+          "always_on_per_request_cache_read": "0.000371",
+          "always_on_per_request_uncached": "0.014830",
+          "workflow_load_lower": "0.216960",
+          "workflow_load_upper": "0.335180"
+        },
+        "claude-haiku-4-5": {
+          "always_on_100_requests_cached": "0.016536",
+          "always_on_per_request_cache_read": "0.000148",
+          "always_on_per_request_uncached": "0.001483",
+          "workflow_load_lower": "0.021696",
+          "workflow_load_upper": "0.033518"
+        },
+        "claude-opus-5-5": {
+          "always_on_100_requests_cached": "0.036778",
+          "always_on_per_request_cache_read": "0.000297",
+          "always_on_per_request_uncached": "0.005932",
+          "workflow_load_lower": "0.086784",
+          "workflow_load_upper": "0.134072"
+        },
+        "claude-sonnet-5-5": {
+          "always_on_100_requests_cached": "0.033071",
+          "always_on_per_request_cache_read": "0.000297",
+          "always_on_per_request_uncached": "0.002966",
+          "workflow_load_lower": "0.043392",
+          "workflow_load_upper": "0.067036"
+        }
+      },
+      "framework": "superpowers",
+      "install": {
+        "files": 117,
+        "tree_sha256": "d3b33fbcb0cbb4225ad8eabe243f5ebdccd74b4dcdc5500ea9eff92d52f3f3be"
+      },
+      "items": {
+        "skill": 15
+      },
+      "sha": "8ca22dba9a94f28898bbce59f2537ff4d87c747d",
+      "title": "Superpowers",
+      "workflow": {
+        "lower_tokens": 21696,
+        "source": "README.md 'The Basic Workflow' (steps 1-7)",
+        "steps": [
+          {
+            "at_includes": 0,
+            "lower_tokens": 4035,
+            "origin": "plugin:superpowers",
+            "ref": "skill:brainstorming",
+            "resolved_name": "superpowers:brainstorming",
+            "upper_tokens": 7968
+          },
+          {
+            "at_includes": 0,
+            "lower_tokens": 1772,
+            "origin": "plugin:superpowers",
+            "ref": "skill:using-git-worktrees",
+            "resolved_name": "superpowers:using-git-worktrees",
+            "upper_tokens": 1772
+          },
+          {
+            "at_includes": 0,
+            "lower_tokens": 2479,
+            "origin": "plugin:superpowers",
+            "ref": "skill:writing-plans",
+            "resolved_name": "superpowers:writing-plans",
+            "upper_tokens": 2479
+          },
+          {
+            "at_includes": 0,
+            "lower_tokens": 7943,
+            "origin": "plugin:superpowers",
+            "ref": "skill:subagent-driven-development",
+            "resolved_name": "superpowers:subagent-driven-development",
+            "upper_tokens": 12468
+          },
+          {
+            "at_includes": 0,
+            "lower_tokens": 2616,
+            "origin": "plugin:superpowers",
+            "ref": "skill:test-driven-development",
+            "resolved_name": "superpowers:test-driven-development",
+            "upper_tokens": 4517
+          },
+          {
+            "at_includes": 0,
+            "lower_tokens": 755,
+            "origin": "plugin:superpowers",
+            "ref": "skill:requesting-code-review",
+            "resolved_name": "superpowers:requesting-code-review",
+            "upper_tokens": 2218
+          },
+          {
+            "at_includes": 0,
+            "lower_tokens": 2096,
+            "origin": "plugin:superpowers",
+            "ref": "skill:finishing-a-development-branch",
+            "resolved_name": "superpowers:finishing-a-development-branch",
+            "upper_tokens": 2096
+          }
+        ],
+        "upper_tokens": 33518
+      }
+    }
+  },
+  "pricing_as_of": "2026-09-25",
+  "provenance": {
+    "canonical_root": "/tmp/cbench",
+    "lockfile_sha256": "d16229df14c4c4640242dc98860c7d35570f84e8d73a9e1f1de5d0a5d77fabba",
+    "pricing_sha256": "282d60371470aa2e52e16ea74d024ca6842367e8cc48f2d04bc978cadc18150e",
+    "tokenizer": {
+      "id": "anthropic==0.37.1:anthropic/tokenizer.json",
+      "kind": "deterministic-proxy",
+      "sha256": "c241737df24b4e7f7c9af4fdcee29a0ca903dcb288a8b753bc346a3092911767"
+    }
+  }
+}

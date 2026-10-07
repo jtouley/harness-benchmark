@@ -1,0 +1,91 @@
+{
+  "frameworks": {
+    "baseline": {
+      "deterministic": true,
+      "first": {
+        "files": 1,
+        "tree_sha256": "3f167d8204e448af10db2f3e3ee7db6051d18f3feb9f51016df7d0cd3da08476"
+      },
+      "second": {
+        "files": 1,
+        "tree_sha256": "3f167d8204e448af10db2f3e3ee7db6051d18f3feb9f51016df7d0cd3da08476"
+      }
+    },
+    "bmad": {
+      "deterministic": true,
+      "first": {
+        "files": 399,
+        "tree_sha256": "3dd72e01c59d1354b4ca16c000a95ca1410673456ca09ac13416aa3d4e7b957e"
+      },
+      "second": {
+        "files": 399,
+        "tree_sha256": "3dd72e01c59d1354b4ca16c000a95ca1410673456ca09ac13416aa3d4e7b957e"
+      }
+    },
+    "cadence": {
+      "deterministic": true,
+      "first": {
+        "files": 466,
+        "tree_sha256": "15b5405d40e6abe9959d1cb989fc49ddd4f27a0ab96f02ee5354f1474bfd989d"
+      },
+      "second": {
+        "files": 466,
+        "tree_sha256": "15b5405d40e6abe9959d1cb989fc49ddd4f27a0ab96f02ee5354f1474bfd989d"
+      }
+    },
+    "gsd-core": {
+      "deterministic": true,
+      "first": {
+        "files": 831,
+        "tree_sha256": "2ab1cf98a9ade5773307b2453b8e85848d6a5a990999c049b3a53217b73d91a1"
+      },
+      "second": {
+        "files": 831,
+        "tree_sha256": "2ab1cf98a9ade5773307b2453b8e85848d6a5a990999c049b3a53217b73d91a1"
+      }
+    },
+    "openspec": {
+      "deterministic": true,
+      "first": {
+        "files": 16,
+        "tree_sha256": "d8d87ebd7a38400da36ac164ddf025d81ca45e1860c3f75ada77b06a96e2e942"
+      },
+      "second": {
+        "files": 16,
+        "tree_sha256": "d8d87ebd7a38400da36ac164ddf025d81ca45e1860c3f75ada77b06a96e2e942"
+      }
+    },
+    "spec-kit": {
+      "deterministic": true,
+      "first": {
+        "files": 31,
+        "tree_sha256": "bb94808e23f80b1368fec4ef8f2a7a39241e27762e359ce271b62d9146d2b52d"
+      },
+      "second": {
+        "files": 31,
+        "tree_sha256": "bb94808e23f80b1368fec4ef8f2a7a39241e27762e359ce271b62d9146d2b52d"
+      }
+    },
+    "superpowers": {
+      "deterministic": true,
+      "first": {
+        "files": 117,
+        "tree_sha256": "d3b33fbcb0cbb4225ad8eabe243f5ebdccd74b4dcdc5500ea9eff92d52f3f3be"
+      },
+      "second": {
+        "files": 117,
+        "tree_sha256": "d3b33fbcb0cbb4225ad8eabe243f5ebdccd74b4dcdc5500ea9eff92d52f3f3be"
+      }
+    }
+  },
+  "provenance": {
+    "canonical_root": "/tmp/cbench",
+    "lockfile_sha256": "d16229df14c4c4640242dc98860c7d35570f84e8d73a9e1f1de5d0a5d77fabba",
+    "pricing_sha256": "282d60371470aa2e52e16ea74d024ca6842367e8cc48f2d04bc978cadc18150e",
+    "tokenizer": {
+      "id": "anthropic==0.37.1:anthropic/tokenizer.json",
+      "kind": "deterministic-proxy",
+      "sha256": "c241737df24b4e7f7c9af4fdcee29a0ca903dcb288a8b753bc346a3092911767"
+    }
+  }
+}

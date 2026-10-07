@@ -1,0 +1,40 @@
+{
+  "tasks": {
+    "T01-slugify-bugfix": {
+      "after": {
+        "passed": 13,
+        "total": 13
+      },
+      "before": {
+        "passed": 8,
+        "total": 13
+      },
+      "task_sha256": "ed3e4801b9008ee841ce4708a3db8c35fb44ac0ac6691e651b48fd98a98b8685",
+      "valid": true
+    },
+    "T02-invstat-json": {
+      "after": {
+        "passed": 6,
+        "total": 6
+      },
+      "before": {
+        "passed": 2,
+        "total": 6
+      },
+      "task_sha256": "61b4fc44ef9faa7dbc9b54070f745a1462a75b55a7658897833620f333fa6412",
+      "valid": true
+    },
+    "T03-token-bucket": {
+      "after": {
+        "passed": 11,
+        "total": 11
+      },
+      "before": {
+        "passed": 0,
+        "total": 11
+      },
+      "task_sha256": "5d915c2b16d739a7a4f998584c00b821de580ea627f4add1dca45d5f2ff43d27",
+      "valid": true
+    }
+  }
+}

@@ -1,0 +1,18 @@
+[project]
+name = "cadence-bench"
+version = "0.1.0"
+description = "Deterministic, replayable benchmark of Cadence against other open-source agent harnesses."
+requires-python = ">=3.11"
+# Exact pins: the tokenizer asset is hash-checked at load time, and uv.lock pins the rest.
+dependencies = [
+  "anthropic==0.37.1",
+  "tokenizers==0.20.3",
+  "pytest==8.3.4",
+]
+
+[tool.uv]
+package = false
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-q -p no:cacheprovider"

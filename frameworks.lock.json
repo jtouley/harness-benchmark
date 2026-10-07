@@ -1,0 +1,293 @@
+{
+  "schema": 1,
+  "canonical_root": "/tmp/cbench",
+  "normalize": [
+    {
+      "why": "Spec Kit writes install timestamps into .specify/*.json bookkeeping files",
+      "pattern": "\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(\\.\\d+)?(\\+00:00|Z)",
+      "replace": "<TIMESTAMP>"
+    }
+  ],
+  "frameworks": {
+    "baseline": {
+      "title": "Claude Code, no framework",
+      "repo": null,
+      "sha": null,
+      "build": [],
+      "install": [],
+      "plugin_dirs": [],
+      "workflow": {
+        "source": "control arm: no framework installed",
+        "steps": []
+      },
+      "drive_prompt": "{issue}\n\nImplement this change in the repository, run the tests, and commit your work locally on the current branch."
+    },
+    "cadence": {
+      "title": "Cadence",
+      "repo": "https://github.com/jtouley/cadence",
+      "sha": "175a8400a028243c0ed6e9920242b00df68720f4",
+      "build": [],
+      "install": [
+        {
+          "op": "mkdir",
+          "path": "{home}/.claude/skills"
+        },
+        {
+          "op": "mkdir",
+          "path": "{home}/.cursor/skills"
+        },
+        {
+          "op": "run",
+          "cwd": "{src}",
+          "argv": [
+            "bash",
+            "./install.sh"
+          ]
+        }
+      ],
+      "plugin_dirs": [],
+      "workflow": {
+        "source": "derived: skill `cadence`, then every slash-command stage in stages.json order, resolved through references/bundled-peers.json",
+        "derive": "cadence-stages",
+        "steps": []
+      },
+      "drive_prompt": "Use the cadence skill to ship this change end to end through R7.\n\nIssue (ticket gh-1):\n{issue}",
+      "install_note": "~/.cursor/skills is created first. Without it, install.sh's link_skill skips the cadence symlink (publish_peers creates the directory afterwards) while merge_hooks still registers hooks under ~/.cursor/skills/cadence; see bench/README.md, finding F1."
+    },
+    "superpowers": {
+      "title": "Superpowers",
+      "repo": "https://github.com/obra/superpowers",
+      "sha": "8ca22dba9a94f28898bbce59f2537ff4d87c747d",
+      "build": [],
+      "install": [
+        {
+          "op": "copytree",
+          "from": "{src}",
+          "to": "{home}/plugins/superpowers",
+          "exclude": [
+            ".git",
+            "tests",
+            "docs",
+            "assets"
+          ]
+        }
+      ],
+      "plugin_dirs": [
+        "{home}/plugins/superpowers"
+      ],
+      "workflow": {
+        "source": "README.md 'The Basic Workflow' (steps 1-7)",
+        "steps": [
+          "skill:brainstorming",
+          "skill:using-git-worktrees",
+          "skill:writing-plans",
+          "skill:subagent-driven-development",
+          "skill:test-driven-development",
+          "skill:requesting-code-review",
+          "skill:finishing-a-development-branch"
+        ]
+      },
+      "drive_prompt": "{issue}"
+    },
+    "spec-kit": {
+      "title": "Spec Kit",
+      "repo": "https://github.com/github/spec-kit",
+      "sha": "b9e08bf3e1a9d82b2a7358e278a6224d54d8783b",
+      "build": [
+        {
+          "op": "run",
+          "cwd": "{src}",
+          "argv": [
+            "uv",
+            "lock",
+            "--quiet",
+            "--exclude-newer",
+            "2026-10-08T00:00:00Z"
+          ]
+        },
+        {
+          "op": "run",
+          "cwd": "{src}",
+          "argv": [
+            "uv",
+            "sync",
+            "--frozen",
+            "--quiet"
+          ]
+        }
+      ],
+      "install": [
+        {
+          "op": "run",
+          "cwd": "{proj}",
+          "argv": [
+            "uv",
+            "run",
+            "--frozen",
+            "--quiet",
+            "--project",
+            "{src}",
+            "specify",
+            "init",
+            "--here",
+            "--force",
+            "--non-interactive",
+            "--integration",
+            "claude",
+            "--script",
+            "sh",
+            "--ignore-agent-tools"
+          ]
+        }
+      ],
+      "plugin_dirs": [],
+      "workflow": {
+        "source": "README.md: 'specify → plan → tasks → implement → converge per feature'",
+        "steps": [
+          "skill:speckit-specify",
+          "skill:speckit-plan",
+          "skill:speckit-tasks",
+          "skill:speckit-implement",
+          "skill:speckit-converge"
+        ]
+      },
+      "drive_prompt": "Use Spec Kit for this change. Run /speckit-specify with the issue below, then /speckit-plan, /speckit-tasks, /speckit-implement and /speckit-converge, in that order.\n\nIssue:\n{issue}",
+      "build_note": "Spec Kit commits no uv.lock; dependencies are resolved as of the pinned commit's date with --exclude-newer, so every machine resolves the same versions."
+    },
+    "openspec": {
+      "title": "OpenSpec",
+      "repo": "https://github.com/Fission-AI/OpenSpec",
+      "sha": "9111a7654d7800391459431fff4eaf66e33a3d2e",
+      "build": [
+        {
+          "op": "run",
+          "cwd": "{src}",
+          "argv": [
+            "npx",
+            "-y",
+            "pnpm@10.34.5",
+            "install",
+            "--frozen-lockfile",
+            "--ignore-scripts"
+          ]
+        },
+        {
+          "op": "run",
+          "cwd": "{src}",
+          "argv": [
+            "npx",
+            "-y",
+            "pnpm@10.34.5",
+            "run",
+            "build"
+          ]
+        }
+      ],
+      "install": [
+        {
+          "op": "run",
+          "cwd": "{proj}",
+          "argv": [
+            "node",
+            "{src}/bin/openspec.js",
+            "init",
+            "--tools",
+            "claude",
+            "--no-animation",
+            "--no-copilot-cloud",
+            "."
+          ]
+        }
+      ],
+      "plugin_dirs": [],
+      "workflow": {
+        "source": "README.md 'See it in action': /opsx:propose → /opsx:apply → /opsx:archive",
+        "steps": [
+          "command:opsx:propose",
+          "command:opsx:apply",
+          "command:opsx:archive"
+        ]
+      },
+      "drive_prompt": "Use OpenSpec for this change: run /opsx:propose for the issue below, then /opsx:apply, then /opsx:archive.\n\nIssue:\n{issue}"
+    },
+    "gsd-core": {
+      "title": "GSD Core",
+      "repo": "https://github.com/open-gsd/gsd-core",
+      "sha": "83aba44627ba43aff77588894f7b81a9a7437e75",
+      "build": [
+        {
+          "op": "run",
+          "cwd": "{src}",
+          "argv": [
+            "npm",
+            "ci",
+            "--ignore-scripts",
+            "--no-audit",
+            "--no-fund"
+          ]
+        },
+        {
+          "op": "run",
+          "cwd": "{src}",
+          "argv": [
+            "npm",
+            "run",
+            "build"
+          ]
+        }
+      ],
+      "install": [
+        {
+          "op": "run",
+          "cwd": "{proj}",
+          "argv": [
+            "node",
+            "{src}/bin/install.js",
+            "--claude",
+            "--local",
+            "--no-legacy-cleanup"
+          ]
+        }
+      ],
+      "plugin_dirs": [],
+      "workflow": {
+        "source": "README.md 'How it works': discuss → plan → execute → verify → ship",
+        "steps": [
+          "command:gsd-discuss-phase",
+          "command:gsd-plan-phase",
+          "command:gsd-execute-phase",
+          "command:gsd-verify-work",
+          "command:gsd-ship"
+        ]
+      },
+      "drive_prompt": "Use GSD for this change: onboard the codebase, then run discuss, plan, execute and verify for one phase that resolves the issue below. Stop before /gsd-ship (there is no remote).\n\nIssue:\n{issue}"
+    },
+    "bmad": {
+      "title": "BMAD Method",
+      "repo": "https://github.com/bmad-code-org/BMAD-METHOD",
+      "sha": "bda3c5929f672019b90f39a3ea27259d35d00974",
+      "build": [],
+      "install": [
+        {
+          "op": "copytree",
+          "from": "{src}/skills",
+          "to": "{proj}/.claude/skills",
+          "exclude": [
+            "tests",
+            "__pycache__"
+          ]
+        }
+      ],
+      "install_note": "Emulates `npx skills add bmad-code-org/BMAD-METHOD` selecting every skill; the third-party `skills` CLI is not pinned here.",
+      "plugin_dirs": [],
+      "workflow": {
+        "source": "README.md 'Start Building': invoke bmad-build with what you want to change",
+        "steps": [
+          "skill:bmad-build"
+        ]
+      },
+      "drive_prompt": "Use bmad-build for this change.\n\nIssue:\n{issue}"
+    }
+  },
+  "drive_suffix": "\n\nYou are running non-interactively: nobody will answer questions, so make reasonable assumptions and keep going. There is no git remote; finish with a local commit and do not push or open a pull request."
+}
