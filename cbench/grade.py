@@ -137,7 +137,9 @@ def regrade(record_path: Path, lock: Lock, pricing: dict) -> dict:
         "trial": rec["trial"],
         "model": rec["model"],
         "integrity": {**integrity, "task": task_ok, "patch_applies": applied},
-        "resolved": applied and grade["total"] > 0 and grade["passed"] == grade["total"],
+        # A record whose files no longer match their hashes never counts as resolved.
+        "resolved": all(integrity.values()) and task_ok and applied
+        and grade["total"] > 0 and grade["passed"] == grade["total"],
         "hidden": {"passed": grade["passed"], "total": grade["total"]},
         "usage": usage,
         "cost_usd": cost_usd(usage.get("by_model", {}), pricing),

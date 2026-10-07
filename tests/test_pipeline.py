@@ -86,3 +86,19 @@ def test_report_is_a_pure_function_of_results(tmp_path):
             shutil.copy(src / name, tmp_path / name)
     assert render(tmp_path) == render(tmp_path)
     assert render(tmp_path) == (src / "REPORT.md").read_text()
+
+
+def test_tampered_patch_that_still_passes_is_not_resolved(scratch_results):
+    # cd-10-F9: grades must not count a record whose files no longer match their hashes.
+    from cbench import __main__ as cli
+    from cbench.grade import regrade_all
+
+    fake = str(BENCH / "tests" / "fake_agent.py")
+    cli.main(["live", "--frameworks", "baseline", "--tasks", "T01-slugify-bugfix", "--trials", "1",
+              "--agent-cmd", fake, "--model", "claude-sonnet-5-5", "--yes"])
+    patch = scratch_results / "runs/baseline/T01-slugify-bugfix/trial-01/patch.diff"
+    patch.write_text(patch.read_text() + "\n")
+    run = regrade_all()["runs"][0]
+    assert run["integrity"]["patch"] is False
+    assert run["hidden"]["passed"] == run["hidden"]["total"]
+    assert run["resolved"] is False
