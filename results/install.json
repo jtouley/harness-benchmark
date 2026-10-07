@@ -36,12 +36,12 @@
     "cadence-fix": {
       "deterministic": true,
       "first": {
-        "files": 599,
-        "tree_sha256": "eb086c49c1253089a2508490b90c1d5c24abe53ba1b1e2757f0fcf95cd03edfb"
+        "files": 601,
+        "tree_sha256": "9666ca622471521da592293c85e45362d89fd28b873c4407a6d5a8f80dda5ceb"
       },
       "second": {
-        "files": 599,
-        "tree_sha256": "eb086c49c1253089a2508490b90c1d5c24abe53ba1b1e2757f0fcf95cd03edfb"
+        "files": 601,
+        "tree_sha256": "9666ca622471521da592293c85e45362d89fd28b873c4407a6d5a8f80dda5ceb"
       }
     },
     "gsd-core": {
@@ -91,7 +91,7 @@
   },
   "provenance": {
     "canonical_root": "/tmp/cbench",
-    "lockfile_sha256": "ac3bb6e1c2e078aad3ea29df3d49ca747616336e2ce4aaf4584586d5881f412f",
+    "lockfile_sha256": "544f6c6cf800c7c96f60afdfbe705a0b70df3a2b2e6877a682dd5dcc441ba899",
     "pricing_sha256": "282d60371470aa2e52e16ea74d024ca6842367e8cc48f2d04bc978cadc18150e",
     "tokenizer": {
       "id": "anthropic==0.37.1:anthropic/tokenizer.json",

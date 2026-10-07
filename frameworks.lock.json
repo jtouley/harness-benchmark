@@ -57,7 +57,7 @@
     "cadence-fix": {
       "title": "Cadence (hook fixes + R1 fixes)",
       "repo": "https://github.com/jtouley/cadence",
-      "sha": "69819dc9845c3f758f3124f17a69a97391f01510",
+      "sha": "0d4db70b51f6eef7abc1f9a32d14c97a4cf50cae",
       "build": [],
       "install": [
         {

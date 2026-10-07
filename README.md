@@ -20,7 +20,7 @@ reproduced. The generated tables are in [`results/REPORT.md`](results/REPORT.md)
 |---|---|---|
 | `baseline` | — | nothing (Claude Code alone; the control) |
 | `cadence` | `jtouley/cadence@175a840` (published) | its `install.sh` |
-| `cadence-fix` | `jtouley/cadence@69819dc` (hook and install fixes, plus the R1 review fixes) | its `install.sh`, starting with no skills dirs |
+| `cadence-fix` | `jtouley/cadence@0d4db70` (hook and install fixes, plus the R1 review fixes) | its `install.sh`, starting with no skills dirs |
 | `superpowers` | `obra/superpowers@8ca22db` | copied as a Claude Code plugin dir (`--plugin-dir`) |
 | `spec-kit` | `github/spec-kit@b9e08bf` | `specify init --integration claude` |
 | `openspec` | `Fission-AI/OpenSpec@9111a76` | `openspec init --tools claude` |
@@ -101,7 +101,7 @@ matrix resumes where it stopped. Commit `results/runs/` so others can regrade.
 ## Findings so far (tiers 1 and 2)
 
 These come from `results/` at the commits above. The bullets describe the
-published `cadence` arm. `cadence-fix` (commit `69819dc`) addresses the install
+published `cadence` arm. `cadence-fix` (commit `0d4db70`) addresses the install
 and hook bugs found here and scores 7/9 on both hosts, every block coming from
 an explicit decision. S09 and S10 remain out of scope for that commit. Its
 workflow upper bound is larger only because the skill root, which is the whole
