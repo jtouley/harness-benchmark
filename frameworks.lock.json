@@ -55,9 +55,9 @@
       "install_note": "~/.cursor/skills is created first. Without it, install.sh's link_skill skips the cadence symlink (publish_peers creates the directory afterwards) while merge_hooks still registers hooks under ~/.cursor/skills/cadence; see bench/README.md, finding F1."
     },
     "cadence-fix": {
-      "title": "Cadence (hook fixes)",
+      "title": "Cadence (hook fixes + R1 fixes)",
       "repo": "https://github.com/jtouley/cadence",
-      "sha": "90f820cdc8d222a9243e4f188a1b7164ab3e9530",
+      "sha": "69819dc9845c3f758f3124f17a69a97391f01510",
       "build": [],
       "install": [
         {
