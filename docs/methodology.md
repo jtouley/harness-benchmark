@@ -15,15 +15,15 @@ run). It reports:
   step's own file. Upper adds the step's `@file` references and its whole skill
   package.
 
-Costs come from [`pricing.json`](pricing.json).
+Costs come from [`pricing.json`](../pricing.json).
 
-**Tier 2, golden hook probes (deterministic).** [`golden/probes/`](golden/probes/)
+**Tier 2, golden hook probes (deterministic).** [`golden/probes/`](../golden/probes/)
 defines 10 scenarios. Examples: "edit `src/` before the plan is approved",
 "forge the approval marker", "stop mid-execution", "read `.env`". Each framework
 gets fixture files for each workflow state, in its own artifact layout. The
 probe builds the exact JSON payload the host would send, runs every registered
 hook, and classifies the result with an explicit rule table
-([`cbench/hookrun.py`](cbench/hookrun.py)). Each verdict records the rule that
+([`cbench/hookrun.py`](../cbench/hookrun.py)). Each verdict records the rule that
 produced it (`via`), so a deliberate deny can be told apart from a hook that
 crashed while registered fail-closed.
 
