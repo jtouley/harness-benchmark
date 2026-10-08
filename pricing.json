@@ -2,12 +2,38 @@
   "schema": 1,
   "currency": "USD",
   "unit": "per_million_tokens",
-  "as_of": "2026-09-25",
-  "source": "Anthropic first-party API list prices, as cached in the Claude API reference (claude-api skill, models table and prompt-caching economics). Cache writes are the 5-minute TTL (1.25x input).",
+  "as_of": "2026-10-08",
+  "source": "Anthropic first-party API list prices (claude-api skill, model table cached 2026-10-06). Haiku 5.5 prices apply to prompts up to 100K tokens ($0.50 / $2.50 beyond). Cache writes are the 5-minute TTL at 1.25x input; Haiku 5.5 cache prices are not listed in the source and are derived (write 1.25x, read 0.1x).",
   "models": {
-    "claude-opus-5-5": {"input": "4.00", "output": "20.00", "cache_write_5m": "5.00", "cache_read": "0.20"},
-    "claude-sonnet-5-5": {"input": "2.00", "output": "10.00", "cache_write_5m": "2.50", "cache_read": "0.20"},
-    "claude-haiku-4-5": {"input": "1.00", "output": "5.00", "cache_write_5m": "1.25", "cache_read": "0.10"},
-    "claude-fable-5-1": {"input": "10.00", "output": "50.00", "cache_write_5m": "12.50", "cache_read": "0.25"}
+    "claude-opus-5-5": {
+      "input": "4.00",
+      "output": "20.00",
+      "cache_write_5m": "5.00",
+      "cache_read": "0.20"
+    },
+    "claude-sonnet-5-5": {
+      "input": "2.00",
+      "output": "10.00",
+      "cache_write_5m": "2.50",
+      "cache_read": "0.20"
+    },
+    "claude-haiku-4-5": {
+      "input": "1.00",
+      "output": "5.00",
+      "cache_write_5m": "1.25",
+      "cache_read": "0.10"
+    },
+    "claude-fable-5-1": {
+      "input": "10.00",
+      "output": "50.00",
+      "cache_write_5m": "12.50",
+      "cache_read": "0.25"
+    },
+    "claude-haiku-5-5": {
+      "input": "0.10",
+      "output": "0.50",
+      "cache_write_5m": "0.125",
+      "cache_read": "0.01"
+    }
   }
 }

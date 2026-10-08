@@ -5,8 +5,8 @@
   python -m cbench footprint [FW...]      tier 1: context tokens and cost  -> results/footprint.json
   python -m cbench probes [FW...]         tier 2: golden hook probes        -> results/probes.json
   python -m cbench golden-check           golden tasks: hidden tests fail before, pass with reference
-  python -m cbench live ...               tier 3: run agents on golden tasks (needs ANTHROPIC_API_KEY)
-  python -m cbench grade                  regrade every recorded run from its stored patch
+  python -m cbench harbor-build [--check] tier 3: generate Harbor tasks from the lockfile and golden tasks
+  python -m cbench harbor-collect DIR     tier 3: Harbor job results -> results/live.json
   python -m cbench report                 results/*.json -> results/REPORT.md
   python -m cbench verify                 recompute everything and byte-compare with results/
 """
@@ -15,6 +15,7 @@ from __future__ import annotations
 
 import argparse
 import sys
+from pathlib import Path
 
 from . import tokens
 from .lock import ensure_fetched, fetch, load_lock, select
@@ -108,18 +109,22 @@ def cmd_golden_check(args) -> int:
     return 1 if bad else 0
 
 
-def cmd_live(args) -> int:
-    from .live import run_matrix
+def cmd_harbor_build(args) -> int:
+    from . import harbor
 
-    return run_matrix(args)
+    if args.check:
+        return harbor.check()
+    paths = harbor.generate(args.arms or None, args.tasks or None, proxy_ca=Path(args.proxy_ca) if args.proxy_ca else None)
+    print(f"wrote {len(paths)} Harbor task(s) under {harbor.TASKS_DIR}")
+    return 0
 
 
-def cmd_grade(args) -> int:
-    from .grade import regrade_all
+def cmd_harbor_collect(args) -> int:
+    from . import harbor
 
-    data = regrade_all()
-    write_json(RESULTS_DIR / "runs.json", data)
-    print(f"graded {len(data['runs'])} recorded run(s)")
+    data = harbor.collect(Path(args.jobs_dir))
+    write_json(RESULTS_DIR / "live.json", data)
+    print(f"collected {len(data['trials'])} trial(s) into {RESULTS_DIR / 'live.json'}")
     return 0
 
 
@@ -158,18 +163,17 @@ def main(argv: list[str] | None = None) -> int:
 
     sub.add_parser("golden-check").set_defaults(func=cmd_golden_check)
 
-    p = sub.add_parser("live")
-    p.add_argument("--frameworks", nargs="*", default=None)
+    p = sub.add_parser("harbor-build")
+    p.add_argument("--arms", nargs="*", default=None)
     p.add_argument("--tasks", nargs="*", default=None)
-    p.add_argument("--trials", type=int, default=3)
-    p.add_argument("--model", default="claude-sonnet-5-5")
-    p.add_argument("--max-budget-usd", type=float, default=5.0)
-    p.add_argument("--timeout", type=int, default=3600, help="seconds per run")
-    p.add_argument("--agent-cmd", default="claude", help="agent CLI (a scripted stand-in is used by tests)")
-    p.add_argument("--yes", action="store_true", help="skip the cost confirmation")
-    p.set_defaults(func=cmd_live)
+    p.add_argument("--proxy-ca", default=None, help="CA bundle to trust inside the image (sandboxes that re-terminate TLS)")
+    p.add_argument("--check", action="store_true", help="fail if harbor/tasks differs from what would be generated")
+    p.set_defaults(func=cmd_harbor_build)
 
-    sub.add_parser("grade").set_defaults(func=cmd_grade)
+    p = sub.add_parser("harbor-collect")
+    p.add_argument("jobs_dir")
+    p.set_defaults(func=cmd_harbor_collect)
+
     sub.add_parser("report").set_defaults(func=cmd_report)
 
     p = sub.add_parser("verify")

@@ -1,7 +1,5 @@
-"""Integration tests: golden tasks, the live pipeline with a scripted agent, report determinism.
+"""Integration tests: golden tasks and report determinism.
 
-These use the canonical sandbox root, so they need `python -m cbench fetch baseline`
-(no network for baseline) and must not run concurrently with other cbench commands.
 """
 
 from __future__ import annotations
@@ -22,12 +20,12 @@ def scratch_results(tmp_path, monkeypatch):
     import cbench.util
 
     importlib.reload(cbench.util)
-    for mod in ("cbench.grade", "cbench.live", "cbench.report"):
+    for mod in ("cbench.grade", "cbench.report"):
         importlib.reload(importlib.import_module(mod))
     yield tmp_path / "results"
     monkeypatch.delenv("CBENCH_RESULTS")
     importlib.reload(cbench.util)
-    for mod in ("cbench.grade", "cbench.live", "cbench.report"):
+    for mod in ("cbench.grade", "cbench.report"):
         importlib.reload(importlib.import_module(mod))
 
 
@@ -38,41 +36,6 @@ def test_golden_tasks_are_valid():
     assert data["tasks"], "no golden tasks found"
     for name, row in data["tasks"].items():
         assert row["valid"], name
-
-
-def test_live_pipeline_with_scripted_agent_regrades_identically(scratch_results):
-    from cbench import __main__ as cli
-    from cbench.grade import regrade_all
-    from cbench.util import canonical_json
-
-    fake = str(BENCH / "tests" / "fake_agent.py")
-    code = cli.main(["live", "--frameworks", "baseline", "--tasks", "T01-slugify-bugfix", "--trials", "1",
-                     "--agent-cmd", fake, "--model", "claude-sonnet-5-5", "--yes"])
-    assert code == 0
-    record = json.loads((scratch_results / "runs/baseline/T01-slugify-bugfix/trial-01/record.json").read_text())
-    assert record["files_changed"] == ["textkit/slug.py"]
-
-    first = regrade_all()
-    second = regrade_all()
-    assert canonical_json(first) == canonical_json(second)
-    run = first["runs"][0]
-    assert run["resolved"] is True
-    assert all(run["integrity"].values())
-    assert run["cost_usd"] == "0.030700"
-
-
-def test_tampered_patch_is_detected(scratch_results):
-    from cbench import __main__ as cli
-    from cbench.grade import regrade_all
-
-    fake = str(BENCH / "tests" / "fake_agent.py")
-    cli.main(["live", "--frameworks", "baseline", "--tasks", "T03-token-bucket", "--trials", "1",
-              "--agent-cmd", fake, "--model", "claude-sonnet-5-5", "--yes"])
-    patch = scratch_results / "runs/baseline/T03-token-bucket/trial-01/patch.diff"
-    patch.write_text(patch.read_text().replace("self._tokens -= n", "self._tokens -= 0"))
-    run = regrade_all()["runs"][0]
-    assert run["integrity"]["patch"] is False
-    assert run["resolved"] is False
 
 
 def test_report_is_a_pure_function_of_results(tmp_path):
@@ -86,19 +49,3 @@ def test_report_is_a_pure_function_of_results(tmp_path):
             shutil.copy(src / name, tmp_path / name)
     assert render(tmp_path) == render(tmp_path)
     assert render(tmp_path) == (src / "REPORT.md").read_text()
-
-
-def test_tampered_patch_that_still_passes_is_not_resolved(scratch_results):
-    # cd-10-F9: grades must not count a record whose files no longer match their hashes.
-    from cbench import __main__ as cli
-    from cbench.grade import regrade_all
-
-    fake = str(BENCH / "tests" / "fake_agent.py")
-    cli.main(["live", "--frameworks", "baseline", "--tasks", "T01-slugify-bugfix", "--trials", "1",
-              "--agent-cmd", fake, "--model", "claude-sonnet-5-5", "--yes"])
-    patch = scratch_results / "runs/baseline/T01-slugify-bugfix/trial-01/patch.diff"
-    patch.write_text(patch.read_text() + "\n")
-    run = regrade_all()["runs"][0]
-    assert run["integrity"]["patch"] is False
-    assert run["hidden"]["passed"] == run["hidden"]["total"]
-    assert run["resolved"] is False

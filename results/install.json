@@ -14,56 +14,23 @@
     "bmad": {
       "deterministic": true,
       "first": {
-        "files": 399,
-        "tree_sha256": "3dd72e01c59d1354b4ca16c000a95ca1410673456ca09ac13416aa3d4e7b957e"
+        "files": 437,
+        "tree_sha256": "700d1954b83c34c65d6581adcf9cc7a3bfc3b3705d876df6d80bc92cadeb2812"
       },
       "second": {
-        "files": 399,
-        "tree_sha256": "3dd72e01c59d1354b4ca16c000a95ca1410673456ca09ac13416aa3d4e7b957e"
+        "files": 437,
+        "tree_sha256": "700d1954b83c34c65d6581adcf9cc7a3bfc3b3705d876df6d80bc92cadeb2812"
       }
     },
     "cadence": {
       "deterministic": true,
       "first": {
-        "files": 466,
-        "tree_sha256": "15b5405d40e6abe9959d1cb989fc49ddd4f27a0ab96f02ee5354f1474bfd989d"
+        "files": 651,
+        "tree_sha256": "eb8c3021e8a0c54a025e3e1c6c3474586e48ba80766597e6dff5a8db3db7392d"
       },
       "second": {
-        "files": 466,
-        "tree_sha256": "15b5405d40e6abe9959d1cb989fc49ddd4f27a0ab96f02ee5354f1474bfd989d"
-      }
-    },
-    "cadence-base": {
-      "deterministic": true,
-      "first": {
-        "files": 609,
-        "tree_sha256": "27b40d9c49e60b134bb62a44758da923c32ada31f4895438edaa8a3959db03f9"
-      },
-      "second": {
-        "files": 609,
-        "tree_sha256": "27b40d9c49e60b134bb62a44758da923c32ada31f4895438edaa8a3959db03f9"
-      }
-    },
-    "cadence-fix": {
-      "deterministic": true,
-      "first": {
-        "files": 601,
-        "tree_sha256": "9666ca622471521da592293c85e45362d89fd28b873c4407a6d5a8f80dda5ceb"
-      },
-      "second": {
-        "files": 601,
-        "tree_sha256": "9666ca622471521da592293c85e45362d89fd28b873c4407a6d5a8f80dda5ceb"
-      }
-    },
-    "cadence-head": {
-      "deterministic": true,
-      "first": {
-        "files": 619,
-        "tree_sha256": "bc1f4f1a2d40684dfb01ec6a8e748d85ee3c567dfd52a7877e2d00e2fe3ba812"
-      },
-      "second": {
-        "files": 619,
-        "tree_sha256": "bc1f4f1a2d40684dfb01ec6a8e748d85ee3c567dfd52a7877e2d00e2fe3ba812"
+        "files": 651,
+        "tree_sha256": "eb8c3021e8a0c54a025e3e1c6c3474586e48ba80766597e6dff5a8db3db7392d"
       }
     },
     "gsd-core": {
@@ -102,19 +69,19 @@
     "superpowers": {
       "deterministic": true,
       "first": {
-        "files": 117,
-        "tree_sha256": "d3b33fbcb0cbb4225ad8eabe243f5ebdccd74b4dcdc5500ea9eff92d52f3f3be"
+        "files": 235,
+        "tree_sha256": "f1d78c3b561b2265a273b41ce049a0b5a3504a5a9312d850accb6b6155fbb4c6"
       },
       "second": {
-        "files": 117,
-        "tree_sha256": "d3b33fbcb0cbb4225ad8eabe243f5ebdccd74b4dcdc5500ea9eff92d52f3f3be"
+        "files": 235,
+        "tree_sha256": "f1d78c3b561b2265a273b41ce049a0b5a3504a5a9312d850accb6b6155fbb4c6"
       }
     }
   },
   "provenance": {
     "canonical_root": "/tmp/cbench",
-    "lockfile_sha256": "bfe70a9dac6269ecfe82228e522456340a11867feaf854be778e44489051ba44",
-    "pricing_sha256": "282d60371470aa2e52e16ea74d024ca6842367e8cc48f2d04bc978cadc18150e",
+    "lockfile_sha256": "72f9833aba2d85acd69d9451257c75fe3d4f01cb0ce45f6728a8b2c06c6178b2",
+    "pricing_sha256": "7af66e689754689850c47229da79af75d229e3882a798826de3f50317f292139",
     "tokenizer": {
       "id": "anthropic==0.37.1:anthropic/tokenizer.json",
       "kind": "deterministic-proxy",

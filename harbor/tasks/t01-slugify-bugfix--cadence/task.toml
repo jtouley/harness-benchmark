@@ -1,0 +1,24 @@
+schema_version = "1.1"
+
+[task]
+name = "harness-benchmark/t01-slugify-bugfix--cadence"
+description = "Fix slug joining and word-boundary truncation. Arm: cadence."
+keywords = ["harness-benchmark", "cadence", "T01-slugify-bugfix"]
+
+[metadata]
+task = "T01-slugify-bugfix"
+arm = "cadence"
+framework_sha = "3ce6280ba05f3b22c02b61e7b143769ffca47a67"
+lock_sha256 = "72f9833aba2d85acd69d9451257c75fe3d4f01cb0ce45f6728a8b2c06c6178b2"
+
+[verifier]
+timeout_sec = 300.0
+
+[agent]
+timeout_sec = 1800.0
+
+[environment]
+build_timeout_sec = 1800.0
+cpus = 2
+memory_mb = 4096
+storage_mb = 8192

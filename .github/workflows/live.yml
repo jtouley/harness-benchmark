@@ -1,0 +1,40 @@
+name: live tier (spends money)
+
+# Manual only. Runs the Harbor tasks and uploads the raw jobs. Needs the repository secret
+# ANTHROPIC_API_KEY. The run refuses to start unless `budget_usd` covers the worst case.
+on:
+  workflow_dispatch:
+    inputs:
+      mode:
+        description: smoke (1 Haiku trial) or full (72 trials)
+        type: choice
+        options: [smoke, full]
+        default: smoke
+      budget_usd:
+        description: Budget you accept, in USD (smoke needs 1, full needs 90)
+        required: true
+        default: "1"
+
+jobs:
+  live:
+    runs-on: ubuntu-latest
+    timeout-minutes: 360
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v5
+      - run: uv tool install harbor==0.24.0
+      - run: uv run --frozen --with tokenizers python -m cbench harbor-build --check
+      - name: Run
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          CBENCH_BUDGET_USD: ${{ inputs.budget_usd }}
+        run: scripts/live.sh ${{ inputs.mode }}
+      - run: uv run --frozen --with tokenizers python -m cbench harbor-collect jobs
+        if: always()
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: live-jobs
+          path: |
+            jobs/
+            results/live.json

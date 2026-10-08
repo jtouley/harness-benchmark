@@ -1,0 +1,30 @@
+name: verify
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - uses: astral-sh/setup-uv@v5
+      - run: npm install -g @anthropic-ai/claude-code@2.1.294
+      - name: Fetch pinned frameworks
+        run: uv run --frozen --with tokenizers python -m cbench fetch
+      - name: Verify every committed result byte for byte
+        run: uv run --frozen --with tokenizers python -m cbench verify
+      - name: Unit and pipeline tests
+        run: uv run --frozen --with tokenizers python -m pytest -q
+      - name: Regenerate the report
+        run: uv run --frozen --with tokenizers python -m cbench report
+      - uses: actions/upload-artifact@v4
+        with:
+          name: report
+          path: results/

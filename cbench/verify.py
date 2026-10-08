@@ -4,7 +4,8 @@ from __future__ import annotations
 
 import difflib
 
-from .grade import golden_check, records, regrade_all
+from . import harbor
+from .grade import golden_check
 from .install import install_twice_check
 from .lock import ensure_fetched, load_lock, select
 from .report import render
@@ -46,8 +47,7 @@ def verify(args) -> int:
     ok &= _compare("footprint.json", canonical_json(compute_footprint(lock, fws)))
     ok &= _compare("probes.json", canonical_json({"provenance": provenance(lock), **run_all(lock, fws)}))
     ok &= _compare("golden.json", canonical_json(golden_check()))
-    if records():
-        ok &= _compare("runs.json", canonical_json(regrade_all()))
+    ok &= harbor.check() == 0
     ok &= _compare("REPORT.md", render(RESULTS_DIR))
     print("VERIFIED: every committed result was reproduced byte-for-byte" if ok else "NOT VERIFIED")
     return 0 if ok else 1

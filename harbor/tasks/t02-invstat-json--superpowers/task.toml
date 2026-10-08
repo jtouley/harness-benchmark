@@ -1,0 +1,24 @@
+schema_version = "1.1"
+
+[task]
+name = "harness-benchmark/t02-invstat-json--superpowers"
+description = "Add --format json and low-stock reporting to a CLI. Arm: superpowers."
+keywords = ["harness-benchmark", "superpowers", "T02-invstat-json"]
+
+[metadata]
+task = "T02-invstat-json"
+arm = "superpowers"
+framework_sha = "8ca22dba9a94f28898bbce59f2537ff4d87c747d"
+lock_sha256 = "72f9833aba2d85acd69d9451257c75fe3d4f01cb0ce45f6728a8b2c06c6178b2"
+
+[verifier]
+timeout_sec = 300.0
+
+[agent]
+timeout_sec = 1800.0
+
+[environment]
+build_timeout_sec = 1800.0
+cpus = 2
+memory_mb = 4096
+storage_mb = 8192

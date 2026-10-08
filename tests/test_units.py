@@ -10,7 +10,6 @@ import pytest
 from cbench import tokens
 from cbench.context import Hook, frontmatter, matches
 from cbench.hookrun import aggregate, classify
-from cbench.usage import cost_usd, parse_transcript, price_key
 from cbench.util import PRICING_PATH, canonical_json, load_json
 
 PRICING = load_json(PRICING_PATH)
@@ -80,36 +79,3 @@ def test_matcher_is_full_regex():
     assert matches(_hook(matcher="Write|Edit"), "Write")
     assert not matches(_hook(matcher="Write|Edit"), "MultiEdit")
     assert matches(_hook(matcher=None), "Bash")
-
-
-TRANSCRIPT = "\n".join(json.dumps(e) for e in [
-    {"type": "system", "subtype": "init"},
-    {"type": "assistant", "message": {"id": "m1", "model": "claude-sonnet-5-5",
-                                      "usage": {"input_tokens": 10, "cache_creation_input_tokens": 1000,
-                                                "cache_read_input_tokens": 0, "output_tokens": 5},
-                                      "content": [{"type": "tool_use", "name": "Skill"}]}},
-    {"type": "assistant", "message": {"id": "m1", "model": "claude-sonnet-5-5",
-                                      "usage": {"input_tokens": 10, "cache_creation_input_tokens": 1000,
-                                                "cache_read_input_tokens": 0, "output_tokens": 5},
-                                      "content": [{"type": "tool_use", "name": "Edit"}]}},
-    {"type": "result", "subtype": "success", "num_turns": 1, "total_cost_usd": 0.01, "is_error": False,
-     "modelUsage": {"claude-sonnet-5-5[1m]": {"inputTokens": 10, "outputTokens": 5,
-                                              "cacheCreationInputTokens": 1000, "cacheReadInputTokens": 0}}},
-])
-
-
-def test_parse_transcript_prefers_model_usage():
-    usage = parse_transcript(TRANSCRIPT)
-    assert usage["totals"] == {"input_tokens": 10, "output_tokens": 5,
-                               "cache_creation_input_tokens": 1000, "cache_read_input_tokens": 0}
-    assert usage["first_request_input_tokens"] == 1010
-    assert usage["tool_uses"] == {"Edit": 1, "Skill": 1}
-    assert usage["reported_cost_usd"] == 0.01
-
-
-def test_cost_matches_hand_calculation():
-    usage = parse_transcript(TRANSCRIPT)
-    # 10*2 + 5*10 + 1000*2.5 + 0*0.2 = 2570 per million
-    assert cost_usd(usage["by_model"], PRICING) == "0.002570"
-    assert price_key("claude-sonnet-5-5[1m]", PRICING) == "claude-sonnet-5-5"
-    assert cost_usd({"some-other-model": usage["totals"]}, PRICING) is None
