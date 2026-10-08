@@ -20,7 +20,14 @@ from decimal import ROUND_HALF_EVEN, Decimal
 from . import tokens
 from .context import Item, claude_hooks, discover, expand_at_refs, find, package_text
 from .hookrun import run_hook, session_context
-from .install import Sandbox, fingerprint, normalizer, read_text, restore
+from .install import (
+    Sandbox,
+    canonicalize_host_text,
+    fingerprint,
+    normalizer,
+    read_text,
+    restore,
+)
 from .lock import Framework, Lock
 from .util import load_json, sha256_text
 
@@ -71,7 +78,7 @@ def run_session_start(sb: Sandbox) -> list[dict]:
         text = session_context(hook, result)
         rows.append({
             "origin": hook.origin,
-            "command": hook.command.replace(str(sb.root), "<ROOT>"),
+            "command": canonicalize_host_text(hook.command).replace(str(sb.root), "<ROOT>"),
             "exit": result["exit"],
             "context_sha256": sha256_text(text),
             "tokens": tokens.count(text),
@@ -101,10 +108,14 @@ def measure(fw: Framework, lock: Lock, pricing: dict) -> dict:
     steps_out = []
     for ref in workflow_steps(fw):
         item = find(items, ref)
-        body = norm(read_text(item.path) or "")
+        raw = read_text(item.path) or ""
+        body = norm(raw)
         lower = tokens.count(body)
+        # Includes are counted raw, matching the published results, except
+        # host paths (/private/tmp, the baked node binary) which must collapse
+        # to the canonical form before the token count.
         expanded, included = expand_at_refs(body, sb, item.path.parent)
-        extra = tokens.count(expanded) - lower
+        extra = tokens.count(canonicalize_host_text(expanded)) - lower
         if item.root is not None:
             extra += sum(tokens.count(norm(t)) for p, t in package_text(item, sb)
                          if p != f"{item.root.name}/SKILL.md")

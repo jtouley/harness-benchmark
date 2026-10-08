@@ -554,7 +554,7 @@
       "framework": "spec-kit",
       "install": {
         "files": 31,
-        "tree_sha256": "bb94808e23f80b1368fec4ef8f2a7a39241e27762e359ce271b62d9146d2b52d"
+        "tree_sha256": "8651091eec107732cf57a6ac3651614685d9eb33188bda432c05687e352187c4"
       },
       "items": {
         "skill": 10
@@ -668,8 +668,8 @@
       },
       "framework": "superpowers",
       "install": {
-        "files": 235,
-        "tree_sha256": "f1d78c3b561b2265a273b41ce049a0b5a3504a5a9312d850accb6b6155fbb4c6"
+        "files": 233,
+        "tree_sha256": "5492fc2a20d95a5668f2c99a40f909b6c909ebaddf6cee51bb479e04f8f96c32"
       },
       "items": {
         "skill": 15
