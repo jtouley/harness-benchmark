@@ -13,12 +13,16 @@ import re
 
 from .context import Hook, claude_hooks, cursor_hooks, matches
 from .hookrun import aggregate, classify, run_hook
-from .install import Sandbox, restore
+from .install import Sandbox, canonicalize_host_text, restore
 from .lock import Framework, Lock
 from .util import GOLDEN_DIR, cache_dir, load_json, sha256_file
 
 LONG_PLAN = "# Plan\n\n" + "".join(f"- Step {n}: implement part {n} of the feature and test it.\n" for n in range(1, 301))
 _ANSI = re.compile(r"\x1b\[[0-9;]*[A-Za-z]")
+# Homebrew bash warns when C.UTF-8 is missing. Linux bash does not. Verdicts ignore stderr.
+_LOCALE_WARN = re.compile(
+    r"bash: warning: setlocale: LC_ALL: cannot change locale \([^)]*\): No such file or directory\n?"
+)
 
 
 def _fixture_text(text: str) -> str:
@@ -88,7 +92,9 @@ def payloads(host: str, action: dict, sb: Sandbox) -> list[tuple[str, str | None
 
 def _clean(text: str, sb: Sandbox, limit: int) -> str:
     """Strip colors and machine-specific paths so evidence is identical on every machine."""
-    text = _ANSI.sub("", text).replace(str(sb.root), "<ROOT>").replace(str(cache_dir()), "<CACHE>").strip()
+    text = canonicalize_host_text(_ANSI.sub("", text))
+    text = text.replace(str(sb.root), "<ROOT>").replace(str(cache_dir()), "<CACHE>")
+    text = _LOCALE_WARN.sub("", text).strip()
     return text[:limit]
 
 

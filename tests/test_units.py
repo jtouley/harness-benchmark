@@ -7,9 +7,14 @@ from decimal import Decimal
 
 import pytest
 
+from pathlib import Path
+
 from cbench import tokens
 from cbench.context import Hook, frontmatter, matches
 from cbench.hookrun import aggregate, classify
+from cbench.install import Sandbox, _sort_manifest_files, canonicalize_host_text, normalizer
+from cbench.lock import load_lock
+from cbench.probes import _clean
 from cbench.util import PRICING_PATH, canonical_json, load_json
 
 PRICING = load_json(PRICING_PATH)
@@ -79,3 +84,55 @@ def test_matcher_is_full_regex():
     assert matches(_hook(matcher="Write|Edit"), "Write")
     assert not matches(_hook(matcher="Write|Edit"), "MultiEdit")
     assert matches(_hook(matcher=None), "Bash")
+
+
+def test_normalize_hides_macos_tmp_realpath_and_baked_node_path():
+    """Installed bytes must not depend on where /tmp resolves or where node lives.
+
+    macOS realpath(/tmp) is /private/tmp. GSD also bakes process.execPath into
+    hook commands. Both move footprint.json off the committed Linux result.
+    """
+    text = (
+        "@/private/tmp/cbench/gsd-core/proj/.claude/gsd-core/references/x.md\n"
+        '"$(for n in "/Users/a/.cache/cadence-bench/node-v22/bin/node" '
+        '"$(command -v node)" /usr/local/bin/node /usr/bin/node; do true; done)"'
+    )
+    out = normalizer(load_lock())(text)
+    assert "/private/tmp" not in out
+    assert "/tmp/cbench/gsd-core/" in out
+    assert "/Users/" not in out
+    assert "/opt/node22/bin/node" in out
+
+
+def test_probe_stderr_drops_bash_setlocale_warning():
+    """Homebrew bash warns when LC_ALL=C.UTF-8 is unset on macOS. Verdicts ignore stderr."""
+    sb = Sandbox(
+        root=Path("/tmp/cbench/cadence"),
+        home=Path("/tmp/cbench/cadence/home"),
+        proj=Path("/tmp/cbench/cadence/proj"),
+        src=None,
+        plugin_dirs=(),
+    )
+    raw = "bash: warning: setlocale: LC_ALL: cannot change locale (C.UTF-8): No such file or directory\n"
+    assert _clean(raw, sb, 200) == ""
+
+
+def test_canonicalize_rewrites_this_machines_cache_dir():
+    """Plugin metadata stores the checkout under the bench cache. Home differs per host."""
+    from cbench.util import cache_dir
+
+    baked = f'{{"path": "{cache_dir()}/src/superpowers@abc"}}'
+    out = canonicalize_host_text(baked)
+    assert str(cache_dir()) not in out
+    assert "<CACHE>/src/superpowers@abc" in out
+
+
+def test_sort_manifest_files_is_independent_of_directory_order():
+    raw = json.dumps(
+        {"integration": "claude", "files": {"b.md": "2", "a.md": "1"}},
+        indent=2,
+    ) + "\n"
+    once = _sort_manifest_files(raw)
+    twice = _sort_manifest_files(once)
+    assert once == twice
+    assert list(json.loads(once)["files"]) == ["a.md", "b.md"]
