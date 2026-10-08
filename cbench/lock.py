@@ -34,6 +34,7 @@ class Framework:
 class Lock:
     canonical_root: Path
     normalize: list[dict[str, str]]
+    ignore: list[str]
     frameworks: dict[str, Framework]
     drive_suffix: str
     sha256: str
@@ -59,6 +60,7 @@ def load_lock(path: Path = LOCK_PATH) -> Lock:
     return Lock(
         canonical_root=Path(raw["canonical_root"]),
         normalize=raw.get("normalize", []),
+        ignore=raw.get("ignore", []),
         frameworks=fws,
         drive_suffix=raw.get("drive_suffix", ""),
         sha256=sha256_file(path),

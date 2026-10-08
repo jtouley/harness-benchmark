@@ -6,7 +6,17 @@
       "why": "Spec Kit writes install timestamps into .specify/*.json bookkeeping files",
       "pattern": "\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(\\.\\d+)?(\\+00:00|Z)",
       "replace": "<TIMESTAMP>"
+    },
+    {
+      "why": "skills add records the checkout path relative to the project",
+      "pattern": "\"source\": \"[^\"]*bmad@[0-9a-f]+\"",
+      "replace": "\"source\": \"<BMAD_SRC>\""
     }
+  ],
+  "ignore": [
+    "^home/\\.claude\\.json$",
+    "^home/\\.claude/backups/",
+    "^home/\\.claude/policy-limits\\.json\\.stamp\\.json$"
   ],
   "frameworks": {
     "baseline": {
@@ -25,39 +35,7 @@
     "cadence": {
       "title": "Cadence",
       "repo": "https://github.com/jtouley/cadence",
-      "sha": "175a8400a028243c0ed6e9920242b00df68720f4",
-      "build": [],
-      "install": [
-        {
-          "op": "mkdir",
-          "path": "{home}/.claude/skills"
-        },
-        {
-          "op": "mkdir",
-          "path": "{home}/.cursor/skills"
-        },
-        {
-          "op": "run",
-          "cwd": "{src}",
-          "argv": [
-            "bash",
-            "./install.sh"
-          ]
-        }
-      ],
-      "plugin_dirs": [],
-      "workflow": {
-        "source": "derived: skill `cadence`, then every slash-command stage in stages.json order, resolved through references/bundled-peers.json",
-        "derive": "cadence-stages",
-        "steps": []
-      },
-      "drive_prompt": "Use the cadence skill to ship this change end to end through R7.\n\nIssue (ticket gh-1):\n{issue}",
-      "install_note": "~/.cursor/skills is created first. Without it, install.sh's link_skill skips the cadence symlink (publish_peers creates the directory afterwards) while merge_hooks still registers hooks under ~/.cursor/skills/cadence; see bench/README.md, finding F1."
-    },
-    "cadence-fix": {
-      "title": "Cadence (hook fixes + R1 fixes)",
-      "repo": "https://github.com/jtouley/cadence",
-      "sha": "0d4db70b51f6eef7abc1f9a32d14c97a4cf50cae",
+      "sha": "3ce6280ba05f3b22c02b61e7b143769ffca47a67",
       "build": [],
       "install": [
         {
@@ -84,7 +62,7 @@
         "steps": []
       },
       "drive_prompt": "Use the cadence skill to ship this change end to end through R7.\n\nIssue (ticket gh-1):\n{issue}",
-      "install_note": "Only the host directories exist before install (no skills dirs), which is the first-install case that broke the published commit."
+      "install_note": "Only the host directories exist before install (no skills dirs): the first-install case. Pinned to the current jtouley/cadence main; the whole repo is the installed skill root, so anything in that repo ships in the skill."
     },
     "superpowers": {
       "title": "Superpowers",
@@ -93,19 +71,29 @@
       "build": [],
       "install": [
         {
-          "op": "copytree",
-          "from": "{src}",
-          "to": "{home}/plugins/superpowers",
-          "exclude": [
-            ".git",
-            "tests",
-            "docs",
-            "assets"
+          "op": "run",
+          "cwd": "{proj}",
+          "argv": [
+            "claude",
+            "plugin",
+            "marketplace",
+            "add",
+            "{src}"
+          ]
+        },
+        {
+          "op": "run",
+          "cwd": "{proj}",
+          "argv": [
+            "claude",
+            "plugin",
+            "install",
+            "superpowers@superpowers-dev"
           ]
         }
       ],
       "plugin_dirs": [
-        "{home}/plugins/superpowers"
+        "{src}"
       ],
       "workflow": {
         "source": "README.md 'The Basic Workflow' (steps 1-7)",
@@ -119,7 +107,8 @@
           "skill:finishing-a-development-branch"
         ]
       },
-      "drive_prompt": "{issue}"
+      "drive_prompt": "{issue}",
+      "install_note": "Documented Claude Code route (README 'Installation > Claude Code': /plugin install superpowers@...). The marketplace is the pinned checkout (its own .claude-plugin/marketplace.json, name superpowers-dev) added by local path, so the sha stays pinned; the published marketplaces track upstream HEAD and cannot be pinned."
     },
     "spec-kit": {
       "title": "Spec Kit",
@@ -174,7 +163,7 @@
       ],
       "plugin_dirs": [],
       "workflow": {
-        "source": "README.md: 'specify → plan → tasks → implement → converge per feature'",
+        "source": "README.md: 'specify \u2192 plan \u2192 tasks \u2192 implement \u2192 converge per feature'",
         "steps": [
           "skill:speckit-specify",
           "skill:speckit-plan",
@@ -233,7 +222,7 @@
       ],
       "plugin_dirs": [],
       "workflow": {
-        "source": "README.md 'See it in action': /opsx:propose → /opsx:apply → /opsx:archive",
+        "source": "README.md 'See it in action': /opsx:propose \u2192 /opsx:apply \u2192 /opsx:archive",
         "steps": [
           "command:opsx:propose",
           "command:opsx:apply",
@@ -283,7 +272,7 @@
       ],
       "plugin_dirs": [],
       "workflow": {
-        "source": "README.md 'How it works': discuss → plan → execute → verify → ship",
+        "source": "README.md 'How it works': discuss \u2192 plan \u2192 execute \u2192 verify \u2192 ship",
         "steps": [
           "command:gsd-discuss-phase",
           "command:gsd-plan-phase",
@@ -298,19 +287,41 @@
       "title": "BMAD Method",
       "repo": "https://github.com/bmad-code-org/BMAD-METHOD",
       "sha": "bda3c5929f672019b90f39a3ea27259d35d00974",
-      "build": [],
-      "install": [
+      "build": [
         {
-          "op": "copytree",
-          "from": "{src}/skills",
-          "to": "{proj}/.claude/skills",
-          "exclude": [
-            "tests",
-            "__pycache__"
+          "op": "run",
+          "cwd": "{src}",
+          "argv": [
+            "npm",
+            "install",
+            "--prefix",
+            ".cbench-tools",
+            "--ignore-scripts",
+            "--no-audit",
+            "--no-fund",
+            "skills@1.7.1"
           ]
         }
       ],
-      "install_note": "Emulates `npx skills add bmad-code-org/BMAD-METHOD` selecting every skill; the third-party `skills` CLI is not pinned here.",
+      "install": [
+        {
+          "op": "run",
+          "cwd": "{proj}",
+          "argv": [
+            "node",
+            "{src}/.cbench-tools/node_modules/skills/bin/cli.mjs",
+            "add",
+            "{src}",
+            "-a",
+            "claude-code",
+            "-s",
+            "*",
+            "-y",
+            "--copy"
+          ]
+        }
+      ],
+      "install_note": "Documented route (README 'Skills CLI': npx skills add bmad-code-org/BMAD-METHOD), run against the pinned local checkout instead of the repo URL so the sha stays pinned. skills is pinned to 1.7.1 and fetched in the build step (installs run offline); -s '*' installs every skill, -a claude-code targets Claude Code.",
       "plugin_dirs": [],
       "workflow": {
         "source": "README.md 'Start Building': invoke bmad-build with what you want to change",
@@ -320,6 +331,5 @@
       },
       "drive_prompt": "Use bmad-build for this change.\n\nIssue:\n{issue}"
     }
-  },
-  "drive_suffix": "\n\nYou are running non-interactively: nobody will answer questions, so make reasonable assumptions and keep going. There is no git remote; finish with a local commit and do not push or open a pull request."
+  }
 }

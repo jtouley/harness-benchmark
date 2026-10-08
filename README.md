@@ -21,6 +21,8 @@ reproduced. The generated tables are in [`results/REPORT.md`](results/REPORT.md)
 | `baseline` | — | nothing (Claude Code alone; the control) |
 | `cadence` | `jtouley/cadence@175a840` (published) | its `install.sh` |
 | `cadence-fix` | `jtouley/cadence@0d4db70` (hook and install fixes, plus the R1 review fixes) | its `install.sh`, starting with no skills dirs |
+| `cadence-base` | `jtouley/cadence@b29e6f5` (the parent of the stop guard fix: `main` plus the headless runner) | the same install as `cadence-fix` |
+| `cadence-head` | `jtouley/cadence@bf40533` (the stop guard finds the open block from evidence, issue #12) | the same install as `cadence-fix` |
 | `superpowers` | `obra/superpowers@8ca22db` | copied as a Claude Code plugin dir (`--plugin-dir`) |
 | `spec-kit` | `github/spec-kit@b9e08bf` | `specify init --integration claude` |
 | `openspec` | `Fission-AI/OpenSpec@9111a76` | `openspec init --tools claude` |
@@ -102,10 +104,25 @@ matrix resumes where it stopped. Commit `results/runs/` so others can regrade.
 
 These come from `results/` at the commits above. The bullets describe the
 published `cadence` arm. `cadence-fix` (commit `0d4db70`) addresses the install
-and hook bugs found here and scores 7/9 on both hosts, every block coming from
-an explicit decision. S09 and S10 remain out of scope for that commit. Its
-workflow upper bound is larger only because the skill root, which is the whole
-repository, now also contains `bench/`.
+and hook bugs found here. Every block comes from an explicit decision. S09 and
+S10 remain out of scope for that commit. Its workflow upper bound is larger only
+because the skill root, which is the whole repository, now also contains `bench/`.
+
+- **`cadence-fix` scores 6/9 on both hosts, not 7/9 (finding F2).** The first
+  version of the S06 fixture ("stop mid-execution") wrote `resume_slug:
+  implement` into the session. A real activation writes `activate-session`
+  and never changes it, and the stop guard of `cadence-fix` reads that field. So
+  in a real run it allows the stop. The fixtures for all four Cadence arms now
+  use the field as a real run leaves it, and the marker in the shape that P9 writes.
+- **`cadence-head` blocks S06 and scores 7/9 on both hosts.** The guard reads the
+  P9 marker, walks the registered gates from E1 in read-only mode, and blocks
+  while a gate fails.
+- **`cadence-base` and `cadence-head` are an exact A/B pair.** `cadence-base` is the
+  parent of the fix, so it is an ancestor of `cadence-head`. A test checks that the
+  runtime files that differ are the fix and nothing else
+  (`tests/test_cadence_stop_probe.py`). `cadence-base` scores 6/9 like `cadence-fix`,
+  which is 22 files and not an ancestor away. Same fixture, two commits: S06 is the
+  only scenario that changes.
 
 - **Only two arms enforce anything in code: Cadence (Cursor only) and GSD Core
   (Claude Code).** Superpowers, Spec Kit, OpenSpec and BMAD register no hook

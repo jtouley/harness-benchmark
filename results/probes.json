@@ -163,298 +163,6 @@
         "claude-code": {
           "scenarios": {
             "S01": {
-              "hooks": [],
-              "intent": "block",
-              "meets_intent": false,
-              "verdict": "no_hook"
-            },
-            "S02": {
-              "hooks": [],
-              "intent": "allow",
-              "meets_intent": true,
-              "verdict": "no_hook"
-            },
-            "S03": {
-              "hooks": [],
-              "intent": "block",
-              "meets_intent": false,
-              "verdict": "no_hook"
-            },
-            "S04": {
-              "hooks": [],
-              "intent": "block",
-              "meets_intent": false,
-              "verdict": "no_hook"
-            },
-            "S05": {
-              "hooks": [],
-              "intent": "block",
-              "meets_intent": false,
-              "verdict": "no_hook"
-            },
-            "S06": {
-              "hooks": [],
-              "intent": "block",
-              "meets_intent": false,
-              "verdict": "no_hook"
-            },
-            "S07": {
-              "hooks": [],
-              "intent": "allow",
-              "meets_intent": true,
-              "verdict": "no_hook"
-            },
-            "S08": {
-              "hooks": [],
-              "intent": "informational",
-              "meets_intent": null,
-              "verdict": "no_hook"
-            },
-            "S09": {
-              "hooks": [],
-              "intent": "block",
-              "meets_intent": false,
-              "verdict": "no_hook"
-            },
-            "S10": {
-              "hooks": [],
-              "intent": "block",
-              "meets_intent": false,
-              "verdict": "no_hook"
-            }
-          },
-          "score": {
-            "met": 2,
-            "scored": 9
-          }
-        },
-        "cursor": {
-          "scenarios": {
-            "S01": {
-              "hooks": [
-                {
-                  "event": "preToolUse",
-                  "exit": 0,
-                  "hook": "guard_skill_gate.py",
-                  "origin": "home/.cursor/hooks.json",
-                  "stderr": "",
-                  "stdout": "{\"permission\": \"deny\", \"user_message\": \"BLOCKED: gated path `<ROOT>/proj/src/app.py` requires entry invariant (prefixes=['src/', 'lib/', 'app/', 'packages/'])\\nACTION: python3 \\\"<CACHE>/src/cadence@175a8400a028243c0ed6e9920242b00df68720f4/scripts/entry_invariant.py\\\" --phase execution\", \"agent_messa",
-                  "verdict": "block",
-                  "via": "permission-deny"
-                },
-                {
-                  "event": "preToolUse",
-                  "exit": 0,
-                  "hook": "guard_primary_context_artifacts.py",
-                  "origin": "home/.cursor/hooks.json",
-                  "stderr": "",
-                  "stdout": "{\"permission\": \"allow\"}",
-                  "verdict": "allow",
-                  "via": "default"
-                }
-              ],
-              "intent": "block",
-              "meets_intent": true,
-              "verdict": "block"
-            },
-            "S02": {
-              "hooks": [
-                {
-                  "event": "preToolUse",
-                  "exit": 0,
-                  "hook": "guard_skill_gate.py",
-                  "origin": "home/.cursor/hooks.json",
-                  "stderr": "",
-                  "stdout": "{\"permission\": \"allow\"}",
-                  "verdict": "allow",
-                  "via": "default"
-                },
-                {
-                  "event": "preToolUse",
-                  "exit": 0,
-                  "hook": "guard_primary_context_artifacts.py",
-                  "origin": "home/.cursor/hooks.json",
-                  "stderr": "",
-                  "stdout": "{\"permission\": \"allow\"}",
-                  "verdict": "allow",
-                  "via": "default"
-                }
-              ],
-              "intent": "allow",
-              "meets_intent": true,
-              "verdict": "allow"
-            },
-            "S03": {
-              "hooks": [],
-              "intent": "block",
-              "meets_intent": false,
-              "verdict": "no_hook"
-            },
-            "S04": {
-              "hooks": [
-                {
-                  "event": "preToolUse",
-                  "exit": 0,
-                  "hook": "guard_skill_gate.py",
-                  "origin": "home/.cursor/hooks.json",
-                  "stderr": "",
-                  "stdout": "{\"permission\": \"allow\"}",
-                  "verdict": "allow",
-                  "via": "default"
-                },
-                {
-                  "event": "preToolUse",
-                  "exit": 0,
-                  "hook": "guard_primary_context_artifacts.py",
-                  "origin": "home/.cursor/hooks.json",
-                  "stderr": "",
-                  "stdout": "{\"permission\": \"allow\"}",
-                  "verdict": "allow",
-                  "via": "default"
-                }
-              ],
-              "intent": "block",
-              "meets_intent": false,
-              "verdict": "allow"
-            },
-            "S05": {
-              "hooks": [
-                {
-                  "event": "preToolUse",
-                  "exit": 0,
-                  "hook": "guard_skill_gate.py",
-                  "origin": "home/.cursor/hooks.json",
-                  "stderr": "",
-                  "stdout": "{\"permission\": \"allow\"}",
-                  "verdict": "allow",
-                  "via": "default"
-                },
-                {
-                  "event": "preToolUse",
-                  "exit": 0,
-                  "hook": "guard_primary_context_artifacts.py",
-                  "origin": "home/.cursor/hooks.json",
-                  "stderr": "",
-                  "stdout": "{\"permission\": \"allow\"}",
-                  "verdict": "allow",
-                  "via": "default"
-                }
-              ],
-              "intent": "block",
-              "meets_intent": false,
-              "verdict": "allow"
-            },
-            "S06": {
-              "hooks": [
-                {
-                  "event": "stop",
-                  "exit": 1,
-                  "hook": "pipeline_stop_guard.py",
-                  "origin": "home/.cursor/hooks.json",
-                  "stderr": "",
-                  "stdout": "BLOCKED early stop in execution. Continue paceline: next E2 (impl-artifact) via `python3 scripts/impl_artifact.py`",
-                  "verdict": "block",
-                  "via": "fail-closed:exit"
-                }
-              ],
-              "intent": "block",
-              "meets_intent": true,
-              "verdict": "block"
-            },
-            "S07": {
-              "hooks": [
-                {
-                  "event": "stop",
-                  "exit": 0,
-                  "hook": "pipeline_stop_guard.py",
-                  "origin": "home/.cursor/hooks.json",
-                  "stderr": "",
-                  "stdout": "no active cadence run",
-                  "verdict": "block",
-                  "via": "fail-closed:invalid-json"
-                }
-              ],
-              "intent": "allow",
-              "meets_intent": false,
-              "verdict": "block"
-            },
-            "S08": {
-              "hooks": [
-                {
-                  "event": "preToolUse",
-                  "exit": 0,
-                  "hook": "guard_skill_gate.py",
-                  "origin": "home/.cursor/hooks.json",
-                  "stderr": "",
-                  "stdout": "{\"permission\": \"allow\"}",
-                  "verdict": "allow",
-                  "via": "default"
-                },
-                {
-                  "event": "preToolUse",
-                  "exit": 0,
-                  "hook": "guard_primary_context_artifacts.py",
-                  "origin": "home/.cursor/hooks.json",
-                  "stderr": "",
-                  "stdout": "{\"permission\": \"allow\"}",
-                  "verdict": "allow",
-                  "via": "default"
-                }
-              ],
-              "intent": "informational",
-              "meets_intent": null,
-              "verdict": "allow"
-            },
-            "S09": {
-              "hooks": [],
-              "intent": "block",
-              "meets_intent": false,
-              "verdict": "no_hook"
-            },
-            "S10": {
-              "hooks": [
-                {
-                  "event": "preToolUse",
-                  "exit": 0,
-                  "hook": "guard_skill_gate.py",
-                  "origin": "home/.cursor/hooks.json",
-                  "stderr": "",
-                  "stdout": "{\"permission\": \"allow\"}",
-                  "verdict": "allow",
-                  "via": "default"
-                },
-                {
-                  "event": "preToolUse",
-                  "exit": 0,
-                  "hook": "guard_primary_context_artifacts.py",
-                  "origin": "home/.cursor/hooks.json",
-                  "stderr": "",
-                  "stdout": "{\"permission\": \"allow\"}",
-                  "verdict": "allow",
-                  "via": "default"
-                }
-              ],
-              "intent": "block",
-              "meets_intent": false,
-              "verdict": "allow"
-            }
-          },
-          "score": {
-            "met": 3,
-            "scored": 9
-          }
-        }
-      },
-      "registered_hooks": {
-        "claude-code": 0,
-        "cursor": 4
-      }
-    },
-    "cadence-fix": {
-      "hosts": {
-        "claude-code": {
-          "scenarios": {
-            "S01": {
               "hooks": [
                 {
                   "event": "PreToolUse",
@@ -462,7 +170,7 @@
                   "hook": "guard_skill_gate.py",
                   "origin": "home/.claude/settings.json",
                   "stderr": "",
-                  "stdout": "{\"hookSpecificOutput\": {\"hookEventName\": \"PreToolUse\", \"permissionDecision\": \"deny\", \"permissionDecisionReason\": \"BLOCKED: gated path `<ROOT>/proj/src/app.py` requires entry invariant (prefixes=['src/', 'lib/', 'app/', 'packages/'])\\nACTION: python3 \\\"<CACHE>/src/cadence-fix@0d4db70b51f6eef7abc1f9a3",
+                  "stdout": "{\"hookSpecificOutput\": {\"hookEventName\": \"PreToolUse\", \"permissionDecision\": \"deny\", \"permissionDecisionReason\": \"BLOCKED: gated path `<ROOT>/proj/src/app.py` requires entry invariant (prefixes=['src/', 'lib/', 'app/', 'packages/'])\\nACTION: python3 \\\"<CACHE>/src/cadence@3ce6280ba05f3b22c02b61e7b143",
                   "verdict": "block",
                   "via": "permission-deny"
                 },
@@ -516,7 +224,7 @@
                   "hook": "guard_skill_gate.py",
                   "origin": "home/.claude/settings.json",
                   "stderr": "",
-                  "stdout": "{\"hookSpecificOutput\": {\"hookEventName\": \"PreToolUse\", \"permissionDecision\": \"deny\", \"permissionDecisionReason\": \"BLOCKED: gated path `src/app.py` requires entry invariant (prefixes=['src/', 'lib/', 'app/', 'packages/'])\\nACTION: python3 \\\"<CACHE>/src/cadence-fix@0d4db70b51f6eef7abc1f9a32d14c97a4cf5",
+                  "stdout": "{\"hookSpecificOutput\": {\"hookEventName\": \"PreToolUse\", \"permissionDecision\": \"deny\", \"permissionDecisionReason\": \"BLOCKED: gated path `src/app.py` requires entry invariant (prefixes=['src/', 'lib/', 'app/', 'packages/'])\\nACTION: python3 \\\"<CACHE>/src/cadence@3ce6280ba05f3b22c02b61e7b143769ffca47a67",
                   "verdict": "block",
                   "via": "permission-deny"
                 }
@@ -689,7 +397,7 @@
                   "hook": "guard_skill_gate.py",
                   "origin": "home/.cursor/hooks.json",
                   "stderr": "",
-                  "stdout": "{\"permission\": \"deny\", \"user_message\": \"BLOCKED: gated path `<ROOT>/proj/src/app.py` requires entry invariant (prefixes=['src/', 'lib/', 'app/', 'packages/'])\\nACTION: python3 \\\"<CACHE>/src/cadence-fix@0d4db70b51f6eef7abc1f9a32d14c97a4cf50cae/scripts/entry_invariant.py\\\" --phase execution\", \"agent_m",
+                  "stdout": "{\"permission\": \"deny\", \"user_message\": \"BLOCKED: gated path `<ROOT>/proj/src/app.py` requires entry invariant (prefixes=['src/', 'lib/', 'app/', 'packages/'])\\nACTION: python3 \\\"<CACHE>/src/cadence@3ce6280ba05f3b22c02b61e7b143769ffca47a67/scripts/entry_invariant.py\\\" --phase execution\", \"agent_messa",
                   "verdict": "block",
                   "via": "permission-deny"
                 },
@@ -743,7 +451,7 @@
                   "hook": "guard_skill_gate.py",
                   "origin": "home/.cursor/hooks.json",
                   "stderr": "",
-                  "stdout": "{\"permission\": \"deny\", \"user_message\": \"BLOCKED: gated path `src/app.py` requires entry invariant (prefixes=['src/', 'lib/', 'app/', 'packages/'])\\nACTION: python3 \\\"<CACHE>/src/cadence-fix@0d4db70b51f6eef7abc1f9a32d14c97a4cf50cae/scripts/entry_invariant.py\\\" --phase execution\", \"agent_message\": \"BL",
+                  "stdout": "{\"permission\": \"deny\", \"user_message\": \"BLOCKED: gated path `src/app.py` requires entry invariant (prefixes=['src/', 'lib/', 'app/', 'packages/'])\\nACTION: python3 \\\"<CACHE>/src/cadence@3ce6280ba05f3b22c02b61e7b143769ffca47a67/scripts/entry_invariant.py\\\" --phase execution\", \"agent_message\": \"BLOCKE",
                   "verdict": "block",
                   "via": "permission-deny"
                 }
@@ -1592,11 +1300,11 @@
   },
   "golden": {
     "scenarios_sha256": "192b302a6345496406e50a8ec463e6671a3b63d64c24dbe611830b69ba0e2995",
-    "states_sha256": "77753632488c87c263a3bed8700b0960ea355a8a5d1c8d5662e5cb03fc229c4a"
+    "states_sha256": "b31548c1b950edd8d890a0062933abaa0868c969e26d84065212e1b18aa7887c"
   },
   "provenance": {
     "canonical_root": "/tmp/cbench",
-    "lockfile_sha256": "544f6c6cf800c7c96f60afdfbe705a0b70df3a2b2e6877a682dd5dcc441ba899",
+    "lockfile_sha256": "72f9833aba2d85acd69d9451257c75fe3d4f01cb0ce45f6728a8b2c06c6178b2",
     "pricing_sha256": "282d60371470aa2e52e16ea74d024ca6842367e8cc48f2d04bc978cadc18150e",
     "tokenizer": {
       "id": "anthropic==0.37.1:anthropic/tokenizer.json",

@@ -144,9 +144,12 @@ def read_text(path: Path) -> str | None:
 def fingerprint(sb: Sandbox, lock: Lock) -> dict:
     """Tree hash of the installed sandbox after declared normalization."""
     norm = normalizer(lock)
+    ignored = [re.compile(r) for r in lock.ignore]
     rows = []
     for top in ("home", "proj"):
         for logical, real in iter_files(sb.root / top, top):
+            if any(r.search(logical) for r in ignored):
+                continue
             text = read_text(real)
             digest = sha256_bytes(norm(text).encode("utf-8")) if text is not None else sha256_bytes(real.read_bytes())
             rows.append((logical, digest))

@@ -97,8 +97,8 @@
       },
       "framework": "bmad",
       "install": {
-        "files": 399,
-        "tree_sha256": "3dd72e01c59d1354b4ca16c000a95ca1410673456ca09ac13416aa3d4e7b957e"
+        "files": 437,
+        "tree_sha256": "700d1954b83c34c65d6581adcf9cc7a3bfc3b3705d876df6d80bc92cadeb2812"
       },
       "items": {
         "skill": 33
@@ -123,209 +123,70 @@
     },
     "cadence": {
       "always_on": {
-        "listing_tokens": 455,
+        "listing_tokens": 562,
         "memory_tokens": 0,
         "session_start": [],
         "session_start_tokens": 0,
-        "total_tokens": 455
-      },
-      "claude_code_hooks": {},
-      "corpus_tokens": 10545,
-      "cost_usd": {
-        "claude-fable-5-1": {
-          "always_on_100_requests_cached": "0.016949",
-          "always_on_per_request_cache_read": "0.000114",
-          "always_on_per_request_uncached": "0.004550",
-          "workflow_load_lower": "0.062480",
-          "workflow_load_upper": "0.402360"
-        },
-        "claude-haiku-4-5": {
-          "always_on_100_requests_cached": "0.005073",
-          "always_on_per_request_cache_read": "0.000046",
-          "always_on_per_request_uncached": "0.000455",
-          "workflow_load_lower": "0.006248",
-          "workflow_load_upper": "0.040236"
-        },
-        "claude-opus-5-5": {
-          "always_on_100_requests_cached": "0.011284",
-          "always_on_per_request_cache_read": "0.000091",
-          "always_on_per_request_uncached": "0.001820",
-          "workflow_load_lower": "0.024992",
-          "workflow_load_upper": "0.160944"
-        },
-        "claude-sonnet-5-5": {
-          "always_on_100_requests_cached": "0.010147",
-          "always_on_per_request_cache_read": "0.000091",
-          "always_on_per_request_uncached": "0.000910",
-          "workflow_load_lower": "0.012496",
-          "workflow_load_upper": "0.080472"
-        }
-      },
-      "framework": "cadence",
-      "install": {
-        "files": 466,
-        "tree_sha256": "15b5405d40e6abe9959d1cb989fc49ddd4f27a0ab96f02ee5354f1474bfd989d"
-      },
-      "items": {
-        "command": 7,
-        "skill": 5
-      },
-      "sha": "175a8400a028243c0ed6e9920242b00df68720f4",
-      "title": "Cadence",
-      "workflow": {
-        "lower_tokens": 6248,
-        "source": "derived: skill `cadence`, then every slash-command stage in stages.json order, resolved through references/bundled-peers.json",
-        "steps": [
-          {
-            "at_includes": 0,
-            "lower_tokens": 3267,
-            "origin": "user",
-            "ref": "skill:cadence",
-            "resolved_name": "cadence",
-            "upper_tokens": 37255
-          },
-          {
-            "at_includes": 0,
-            "lower_tokens": 292,
-            "origin": "user",
-            "ref": "skill:vibe-test",
-            "resolved_name": "vibe-test",
-            "upper_tokens": 292
-          },
-          {
-            "at_includes": 0,
-            "lower_tokens": 240,
-            "origin": "user",
-            "ref": "command:plan-create",
-            "resolved_name": "plan-create",
-            "upper_tokens": 240
-          },
-          {
-            "at_includes": 0,
-            "lower_tokens": 279,
-            "origin": "user",
-            "ref": "command:plan-review",
-            "resolved_name": "plan-review",
-            "upper_tokens": 279
-          },
-          {
-            "at_includes": 0,
-            "lower_tokens": 300,
-            "origin": "user",
-            "ref": "skill:de-adversarial-reviewer",
-            "resolved_name": "de-adversarial-reviewer",
-            "upper_tokens": 300
-          },
-          {
-            "at_includes": 0,
-            "lower_tokens": 456,
-            "origin": "user",
-            "ref": "skill:test-benchmark",
-            "resolved_name": "test-benchmark",
-            "upper_tokens": 456
-          },
-          {
-            "at_includes": 0,
-            "lower_tokens": 261,
-            "origin": "user",
-            "ref": "command:spec-driven",
-            "resolved_name": "spec-driven",
-            "upper_tokens": 261
-          },
-          {
-            "at_includes": 0,
-            "lower_tokens": 342,
-            "origin": "user",
-            "ref": "command:commit-push-pr",
-            "resolved_name": "commit-push-pr",
-            "upper_tokens": 342
-          },
-          {
-            "at_includes": 0,
-            "lower_tokens": 355,
-            "origin": "user",
-            "ref": "command:pr-review-local",
-            "resolved_name": "pr-review-local",
-            "upper_tokens": 355
-          },
-          {
-            "at_includes": 0,
-            "lower_tokens": 456,
-            "origin": "user",
-            "ref": "skill:test-benchmark",
-            "resolved_name": "test-benchmark",
-            "upper_tokens": 456
-          }
-        ],
-        "upper_tokens": 40236
-      }
-    },
-    "cadence-fix": {
-      "always_on": {
-        "listing_tokens": 455,
-        "memory_tokens": 0,
-        "session_start": [],
-        "session_start_tokens": 0,
-        "total_tokens": 455
+        "total_tokens": 562
       },
       "claude_code_hooks": {
         "PreToolUse": 2,
         "Stop": 1,
         "SubagentStop": 1
       },
-      "corpus_tokens": 10545,
+      "corpus_tokens": 14889,
       "cost_usd": {
         "claude-fable-5-1": {
-          "always_on_100_requests_cached": "0.016949",
-          "always_on_per_request_cache_read": "0.000114",
-          "always_on_per_request_uncached": "0.004550",
-          "workflow_load_lower": "0.062480",
-          "workflow_load_upper": "0.783910"
+          "always_on_100_requests_cached": "0.020935",
+          "always_on_per_request_cache_read": "0.000140",
+          "always_on_per_request_uncached": "0.005620",
+          "workflow_load_lower": "0.067520",
+          "workflow_load_upper": "1.091350"
         },
         "claude-haiku-4-5": {
-          "always_on_100_requests_cached": "0.005073",
-          "always_on_per_request_cache_read": "0.000046",
-          "always_on_per_request_uncached": "0.000455",
-          "workflow_load_lower": "0.006248",
-          "workflow_load_upper": "0.078391"
+          "always_on_100_requests_cached": "0.006266",
+          "always_on_per_request_cache_read": "0.000056",
+          "always_on_per_request_uncached": "0.000562",
+          "workflow_load_lower": "0.006752",
+          "workflow_load_upper": "0.109135"
         },
         "claude-opus-5-5": {
-          "always_on_100_requests_cached": "0.011284",
-          "always_on_per_request_cache_read": "0.000091",
-          "always_on_per_request_uncached": "0.001820",
-          "workflow_load_lower": "0.024992",
-          "workflow_load_upper": "0.313564"
+          "always_on_100_requests_cached": "0.013938",
+          "always_on_per_request_cache_read": "0.000112",
+          "always_on_per_request_uncached": "0.002248",
+          "workflow_load_lower": "0.027008",
+          "workflow_load_upper": "0.436540"
         },
         "claude-sonnet-5-5": {
-          "always_on_100_requests_cached": "0.010147",
-          "always_on_per_request_cache_read": "0.000091",
-          "always_on_per_request_uncached": "0.000910",
-          "workflow_load_lower": "0.012496",
-          "workflow_load_upper": "0.156782"
+          "always_on_100_requests_cached": "0.012533",
+          "always_on_per_request_cache_read": "0.000112",
+          "always_on_per_request_uncached": "0.001124",
+          "workflow_load_lower": "0.013504",
+          "workflow_load_upper": "0.218270"
         }
       },
-      "framework": "cadence-fix",
+      "framework": "cadence",
       "install": {
-        "files": 601,
-        "tree_sha256": "9666ca622471521da592293c85e45362d89fd28b873c4407a6d5a8f80dda5ceb"
+        "files": 651,
+        "tree_sha256": "eb8c3021e8a0c54a025e3e1c6c3474586e48ba80766597e6dff5a8db3db7392d"
       },
       "items": {
         "command": 7,
-        "skill": 5
+        "skill": 6
       },
-      "sha": "0d4db70b51f6eef7abc1f9a32d14c97a4cf50cae",
-      "title": "Cadence (hook fixes + R1 fixes)",
+      "sha": "3ce6280ba05f3b22c02b61e7b143769ffca47a67",
+      "title": "Cadence",
       "workflow": {
-        "lower_tokens": 6248,
+        "lower_tokens": 6752,
         "source": "derived: skill `cadence`, then every slash-command stage in stages.json order, resolved through references/bundled-peers.json",
         "steps": [
           {
             "at_includes": 0,
-            "lower_tokens": 3267,
+            "lower_tokens": 3682,
             "origin": "user",
             "ref": "skill:cadence",
             "resolved_name": "cadence",
-            "upper_tokens": 75410
+            "upper_tokens": 106065
           },
           {
             "at_includes": 0,
@@ -369,27 +230,27 @@
           },
           {
             "at_includes": 0,
-            "lower_tokens": 261,
+            "lower_tokens": 263,
             "origin": "user",
             "ref": "command:spec-driven",
             "resolved_name": "spec-driven",
-            "upper_tokens": 261
+            "upper_tokens": 263
           },
           {
             "at_includes": 0,
-            "lower_tokens": 342,
+            "lower_tokens": 425,
             "origin": "user",
             "ref": "command:commit-push-pr",
             "resolved_name": "commit-push-pr",
-            "upper_tokens": 342
+            "upper_tokens": 425
           },
           {
             "at_includes": 0,
-            "lower_tokens": 355,
+            "lower_tokens": 359,
             "origin": "user",
             "ref": "command:pr-review-local",
             "resolved_name": "pr-review-local",
-            "upper_tokens": 355
+            "upper_tokens": 359
           },
           {
             "at_includes": 0,
@@ -400,7 +261,7 @@
             "upper_tokens": 456
           }
         ],
-        "upper_tokens": 78391
+        "upper_tokens": 109135
       }
     },
     "gsd-core": {
@@ -715,7 +576,7 @@
             "command": "\"${CLAUDE_PLUGIN_ROOT}/hooks/run-hook.cmd\" session-start",
             "context_sha256": "48ebb41e10d7bb85c74ac04fd685a32c3b32ce789766e4a3ab3ba8a5546fe688",
             "exit": 0,
-            "origin": "plugin:superpowers/hooks/hooks.json",
+            "origin": "plugin:superpowers@8ca22dba9a94f28898bbce59f2537ff4d87c747d/hooks/hooks.json",
             "tokens": 909
           }
         ],
@@ -758,8 +619,8 @@
       },
       "framework": "superpowers",
       "install": {
-        "files": 117,
-        "tree_sha256": "d3b33fbcb0cbb4225ad8eabe243f5ebdccd74b4dcdc5500ea9eff92d52f3f3be"
+        "files": 235,
+        "tree_sha256": "f1d78c3b561b2265a273b41ce049a0b5a3504a5a9312d850accb6b6155fbb4c6"
       },
       "items": {
         "skill": 15
@@ -834,7 +695,7 @@
   "pricing_as_of": "2026-09-25",
   "provenance": {
     "canonical_root": "/tmp/cbench",
-    "lockfile_sha256": "544f6c6cf800c7c96f60afdfbe705a0b70df3a2b2e6877a682dd5dcc441ba899",
+    "lockfile_sha256": "72f9833aba2d85acd69d9451257c75fe3d4f01cb0ce45f6728a8b2c06c6178b2",
     "pricing_sha256": "282d60371470aa2e52e16ea74d024ca6842367e8cc48f2d04bc978cadc18150e",
     "tokenizer": {
       "id": "anthropic==0.37.1:anthropic/tokenizer.json",

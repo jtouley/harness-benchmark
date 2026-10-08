@@ -26,52 +26,17 @@
       "states": {
         "none": {},
         "planning": {
-          ".context/cadence-session.json": "{\"active_skill\": \"cadence\", \"task_id\": \"gh-1\", \"pipeline_run_id\": \"run-1\", \"resume_slug\": \"plan-create\"}\n",
+          ".context/cadence-session.json": "{\"active_skill\": \"cadence\", \"task_id\": \"gh-1\", \"pipeline_run_id\": \"run-1\", \"resume_slug\": \"activate-session\"}",
           ".cursor/plans/feature.plan.md": "@@LONG_PLAN@@"
         },
         "approved": {
-          ".context/cadence-session.json": "{\"active_skill\": \"cadence\", \"task_id\": \"gh-1\", \"pipeline_run_id\": \"run-1\", \"resume_slug\": \"implement\"}\n",
-          ".context/gates/entry-invariant.ok": "ok\n",
+          ".context/cadence-session.json": "{\"active_skill\": \"cadence\", \"task_id\": \"gh-1\", \"pipeline_run_id\": \"run-1\", \"resume_slug\": \"activate-session\"}",
+          ".context/gates/entry-invariant.ok": "{\n  \"pipeline_run_id\": \"run-1\",\n  \"task_id\": \"gh-1\",\n  \"written_at\": \"2026-01-01T00:00:00Z\"\n}\n",
           ".cursor/plans/feature.plan.md": "@@LONG_PLAN@@"
         },
         "executing": {
-          ".context/cadence-session.json": "{\"active_skill\": \"cadence\", \"task_id\": \"gh-1\", \"pipeline_run_id\": \"run-1\", \"resume_slug\": \"implement\"}\n",
-          ".context/gates/entry-invariant.ok": "ok\n",
-          ".context/findings.jsonl": "{\"id\": \"F-1\", \"severity\": \"must-fix\", \"status\": \"fixed\", \"check\": \"python3 -m pytest -q\", \"title\": \"off-by-one\"}\n",
-          ".cursor/plans/feature.plan.md": "@@LONG_PLAN@@"
-        },
-        "done": {
-          ".context/cadence-session.json": "{\"active_skill\": null, \"task_id\": \"gh-1\", \"pipeline_run_id\": \"run-1\", \"resume_slug\": \"session-close\"}\n",
-          ".cursor/plans/feature.plan.md": "@@LONG_PLAN@@"
-        }
-      },
-      "targets": {
-        "forge_approval": {
-          "path": ".context/gates/entry-invariant.ok",
-          "content": "ok\n"
-        },
-        "self_verdict": {
-          "path": ".context/findings.jsonl",
-          "content": "{\"id\": \"F-1\", \"severity\": \"must-fix\", \"status\": \"verified\", \"check\": \"python3 -m pytest -q\", \"title\": \"off-by-one\"}\n"
-        },
-        "plan_doc": ".cursor/plans/feature.plan.md"
-      }
-    },
-    "cadence-fix": {
-      "states": {
-        "none": {},
-        "planning": {
-          ".context/cadence-session.json": "{\"active_skill\": \"cadence\", \"task_id\": \"gh-1\", \"pipeline_run_id\": \"run-1\", \"resume_slug\": \"plan-create\"}\n",
-          ".cursor/plans/feature.plan.md": "@@LONG_PLAN@@"
-        },
-        "approved": {
-          ".context/cadence-session.json": "{\"active_skill\": \"cadence\", \"task_id\": \"gh-1\", \"pipeline_run_id\": \"run-1\", \"resume_slug\": \"implement\"}\n",
-          ".context/gates/entry-invariant.ok": "ok\n",
-          ".cursor/plans/feature.plan.md": "@@LONG_PLAN@@"
-        },
-        "executing": {
-          ".context/cadence-session.json": "{\"active_skill\": \"cadence\", \"task_id\": \"gh-1\", \"pipeline_run_id\": \"run-1\", \"resume_slug\": \"implement\"}\n",
-          ".context/gates/entry-invariant.ok": "ok\n",
+          ".context/cadence-session.json": "{\"active_skill\": \"cadence\", \"task_id\": \"gh-1\", \"pipeline_run_id\": \"run-1\", \"resume_slug\": \"activate-session\"}",
+          ".context/gates/entry-invariant.ok": "{\n  \"pipeline_run_id\": \"run-1\",\n  \"task_id\": \"gh-1\",\n  \"written_at\": \"2026-01-01T00:00:00Z\"\n}\n",
           ".context/findings.jsonl": "{\"id\": \"F-1\", \"severity\": \"must-fix\", \"status\": \"fixed\", \"check\": \"python3 -m pytest -q\", \"title\": \"off-by-one\"}\n",
           ".cursor/plans/feature.plan.md": "@@LONG_PLAN@@"
         },
