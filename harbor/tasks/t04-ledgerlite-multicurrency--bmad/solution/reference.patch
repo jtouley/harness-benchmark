@@ -1,0 +1,633 @@
+diff --git a/README.md b/README.md
+index b08c312..8392887 100644
+--- a/README.md
++++ b/README.md
+@@ -3,12 +3,22 @@
+ A small personal ledger. Accounts hold transactions; a JSON file stores everything;
+ CSV files import transactions; reports print balances and monthly category totals.
+ 
++Each account has a currency (default USD). Exchange rates live in the store:
++`rate set EUR USD 1.10` means 1 EUR = 1.10 USD. Reports convert totals to a base
++currency (`--base`, default USD). If only the reverse rate is stored, its inverse
++is used. A missing rate is an error (exit 2). CSV files can have an optional
++`currency` column; it must match the account currency. Ledger files from before
++currencies load as USD.
++
+ ```
+ python -m ledgerlite.cli --store ledger.json account add checking
+ python -m ledgerlite.cli --store ledger.json tx add checking 2026-01-05 -42.50 groceries "corner shop"
+ python -m ledgerlite.cli --store ledger.json import checking statement.csv
+ python -m ledgerlite.cli --store ledger.json report balances
+ python -m ledgerlite.cli --store ledger.json report monthly 2026-01
++python -m ledgerlite.cli --store ledger.json account add savings --currency EUR
++python -m ledgerlite.cli --store ledger.json rate set EUR USD 1.10
++python -m ledgerlite.cli --store ledger.json report balances --base EUR
+ ```
+ 
+ Run tests: `python -m pytest`.
+diff --git a/ledgerlite/cli.py b/ledgerlite/cli.py
+index 5e631a2..053b55e 100644
+--- a/ledgerlite/cli.py
++++ b/ledgerlite/cli.py
+@@ -9,7 +9,14 @@ from pathlib import Path
+ 
+ from ledgerlite import reports, storage
+ from ledgerlite.importers import import_csv
+-from ledgerlite.models import LedgerError, Transaction
++from ledgerlite.models import DEFAULT_CURRENCY, LedgerError, Transaction
++
++
++def parse_decimal(text: str, what: str) -> Decimal:
++    try:
++        return Decimal(text)
++    except InvalidOperation as exc:
++        raise LedgerError(f"bad {what} {text!r}") from exc
+ 
+ 
+ def build_parser() -> argparse.ArgumentParser:
+@@ -20,6 +27,13 @@ def build_parser() -> argparse.ArgumentParser:
+     account = sub.add_parser("account").add_subparsers(dest="action", required=True)
+     add = account.add_parser("add")
+     add.add_argument("name")
++    add.add_argument("--currency", default=DEFAULT_CURRENCY)
++
++    rate = sub.add_parser("rate").add_subparsers(dest="action", required=True)
++    rate_set = rate.add_parser("set", help="1 FROM = RATE TO")
++    rate_set.add_argument("source", metavar="FROM")
++    rate_set.add_argument("target", metavar="TO")
++    rate_set.add_argument("rate", metavar="RATE")
+ 
+     tx = sub.add_parser("tx").add_subparsers(dest="action", required=True)
+     tx_add = tx.add_parser("add")
+@@ -34,9 +48,11 @@ def build_parser() -> argparse.ArgumentParser:
+     imp.add_argument("csv")
+ 
+     report = sub.add_parser("report").add_subparsers(dest="kind", required=True)
+-    report.add_parser("balances")
++    balances = report.add_parser("balances")
+     monthly = report.add_parser("monthly")
+     monthly.add_argument("month")
++    for parser_with_base in (balances, monthly):
++        parser_with_base.add_argument("--base", default=DEFAULT_CURRENCY, help="currency for totals")
+     return parser
+ 
+ 
+@@ -46,20 +62,24 @@ def run(argv: list[str]) -> list[str]:
+     ledger = storage.load(path)
+     out: list[str] = []
+     if args.command == "account":
+-        ledger.add_account(args.name)
+-        out.append(f"added account {args.name}")
++        account = ledger.add_account(args.name, args.currency)
++        out.append(f"added account {account.name} ({account.currency})")
++    elif args.command == "rate":
++        rate = parse_decimal(args.rate, "rate")
++        source, target = ledger.set_rate(args.source, args.target, rate)
++        out.append(f"rate {source} {target} {rate}")
+     elif args.command == "tx":
+-        try:
+-            amount = Decimal(args.amount)
+-        except InvalidOperation as exc:
+-            raise LedgerError(f"bad amount {args.amount!r}") from exc
++        amount = parse_decimal(args.amount, "amount")
+         tx = ledger.add_transaction(Transaction(args.account, args.on, amount, args.category, args.memo))
+         out.append(f"added {tx.id}")
+     elif args.command == "import":
+         added = import_csv(ledger, args.account, Path(args.csv))
+         out.append(f"imported {len(added)} transactions")
+     elif args.command == "report":
+-        out.extend(reports.balances(ledger) if args.kind == "balances" else reports.monthly(ledger, args.month))
++        if args.kind == "balances":
++            out.extend(reports.balances(ledger, args.base))
++        else:
++            out.extend(reports.monthly(ledger, args.month, args.base))
+     storage.save(ledger, path)
+     return out
+ 
+diff --git a/ledgerlite/importers.py b/ledgerlite/importers.py
+index da96921..3060b43 100644
+--- a/ledgerlite/importers.py
++++ b/ledgerlite/importers.py
+@@ -1,4 +1,7 @@
+-"""CSV import. Columns: date, amount, category, memo (memo optional)."""
++"""CSV import. Columns: date, amount, category, memo (optional), currency (optional).
++
++An empty or absent currency means the account currency. Any other currency is an error.
++"""
+ 
+ from __future__ import annotations
+ 
+@@ -6,11 +9,11 @@ import csv
+ from decimal import Decimal, InvalidOperation
+ from pathlib import Path
+ 
+-from ledgerlite.models import Ledger, LedgerError, Transaction
++from ledgerlite.models import Ledger, LedgerError, Transaction, normalize_currency
+ 
+ 
+ def import_csv(ledger: Ledger, account: str, path: Path) -> list[Transaction]:
+-    ledger.account(account)
++    expected = ledger.account(account).currency
+     added: list[Transaction] = []
+     with Path(path).open(newline="", encoding="utf-8") as handle:
+         for lineno, row in enumerate(csv.DictReader(handle), start=2):
+@@ -18,6 +21,16 @@ def import_csv(ledger: Ledger, account: str, path: Path) -> list[Transaction]:
+                 amount = Decimal(row["amount"])
+             except (InvalidOperation, KeyError) as exc:
+                 raise LedgerError(f"line {lineno}: bad amount") from exc
++            cell = (row.get("currency") or "").strip()
++            if cell:
++                try:
++                    currency = normalize_currency(cell)
++                except LedgerError as exc:
++                    raise LedgerError(f"line {lineno}: {exc}") from exc
++                if currency != expected:
++                    raise LedgerError(
++                        f"line {lineno}: currency {currency} does not match account {account!r} currency {expected}"
++                    )
+             tx = Transaction(
+                 account=account,
+                 on=row["date"],
+diff --git a/ledgerlite/models.py b/ledgerlite/models.py
+index a5d3016..7a6da15 100644
+--- a/ledgerlite/models.py
++++ b/ledgerlite/models.py
+@@ -1,17 +1,29 @@
+-"""Domain objects. Amounts are Decimal; dates are ISO strings (YYYY-MM-DD)."""
++"""Domain objects. Amounts and rates are Decimal; dates are ISO strings (YYYY-MM-DD)."""
+ 
+ from __future__ import annotations
+ 
++import re
+ from dataclasses import dataclass, field
+ from datetime import date
+ from decimal import Decimal
+ from uuid import uuid4
+ 
++DEFAULT_CURRENCY = "USD"
++_CURRENCY_CODE = re.compile(r"[A-Z]{3}")
++
+ 
+ class LedgerError(ValueError):
+     """A user-facing error: bad input or an impossible operation."""
+ 
+ 
++def normalize_currency(code: str) -> str:
++    """Return the upper-case three-letter code, or raise LedgerError."""
++    normalized = str(code).strip().upper()
++    if not _CURRENCY_CODE.fullmatch(normalized):
++        raise LedgerError(f"bad currency {code!r}: use a three-letter code such as USD")
++    return normalized
++
++
+ @dataclass(frozen=True)
+ class Transaction:
+     account: str
+@@ -37,6 +49,7 @@ class Transaction:
+ @dataclass
+ class Account:
+     name: str
++    currency: str = DEFAULT_CURRENCY
+     transactions: list[Transaction] = field(default_factory=list)
+ 
+     def balance(self) -> Decimal:
+@@ -46,11 +59,13 @@ class Account:
+ @dataclass
+ class Ledger:
+     accounts: dict[str, Account] = field(default_factory=dict)
++    # (FROM, TO) -> rate, meaning 1 FROM = rate TO.
++    rates: dict[tuple[str, str], Decimal] = field(default_factory=dict)
+ 
+-    def add_account(self, name: str) -> Account:
++    def add_account(self, name: str, currency: str = DEFAULT_CURRENCY) -> Account:
+         if not name or name in self.accounts:
+             raise LedgerError(f"account {name!r} exists or is empty")
+-        self.accounts[name] = Account(name)
++        self.accounts[name] = Account(name, normalize_currency(currency))
+         return self.accounts[name]
+ 
+     def account(self, name: str) -> Account:
+@@ -65,3 +80,26 @@ class Ledger:
+ 
+     def all_transactions(self) -> list[Transaction]:
+         return [t for a in self.accounts.values() for t in a.transactions]
++
++    def set_rate(self, source: str, target: str, rate: Decimal) -> tuple[str, str]:
++        """Store 1 source = rate target. Return the normalized (source, target) pair."""
++        source, target = normalize_currency(source), normalize_currency(target)
++        if source == target:
++            raise LedgerError(f"a rate from {source} to {target} is not allowed")
++        if not rate.is_finite() or rate <= 0:
++            raise LedgerError(f"bad rate {rate}: use a number greater than 0")
++        self.rates[(source, target)] = rate
++        return source, target
++
++    def rate(self, source: str, target: str) -> Decimal:
++        """1 source = rate target. Direct pair first, then the inverse of the reverse pair."""
++        if source == target:
++            return Decimal("1")
++        if (source, target) in self.rates:
++            return self.rates[(source, target)]
++        if (target, source) in self.rates:
++            return Decimal("1") / self.rates[(target, source)]
++        raise LedgerError(f"no exchange rate from {source} to {target}: run 'rate set {source} {target} RATE'")
++
++    def convert(self, amount: Decimal, source: str, target: str) -> Decimal:
++        return amount * self.rate(source, target)
+diff --git a/ledgerlite/reports.py b/ledgerlite/reports.py
+index 50f7cb9..8f80955 100644
+--- a/ledgerlite/reports.py
++++ b/ledgerlite/reports.py
+@@ -1,25 +1,28 @@
+-"""Plain-text reports."""
++"""Plain-text reports. Totals convert to a base currency with the stored rates."""
+ 
+ from __future__ import annotations
+ 
+ from collections import defaultdict
+ from decimal import Decimal
+ 
+-from ledgerlite.models import Ledger
++from ledgerlite.models import DEFAULT_CURRENCY, Ledger, normalize_currency
+ 
+ 
+-def balances(ledger: Ledger) -> list[str]:
+-    lines = [f"{name}: {account.balance():.2f}" for name, account in sorted(ledger.accounts.items())]
+-    total = sum((a.balance() for a in ledger.accounts.values()), Decimal("0"))
+-    lines.append(f"TOTAL: {total:.2f}")
++def balances(ledger: Ledger, base: str = DEFAULT_CURRENCY) -> list[str]:
++    base = normalize_currency(base)
++    accounts = sorted(ledger.accounts.items())
++    lines = [f"{name}: {account.balance():.2f} {account.currency}" for name, account in accounts]
++    total = sum((ledger.convert(a.balance(), a.currency, base) for _, a in accounts), Decimal("0"))
++    lines.append(f"TOTAL: {total:.2f} {base}")
+     return lines
+ 
+ 
+-def monthly(ledger: Ledger, month: str) -> list[str]:
++def monthly(ledger: Ledger, month: str, base: str = DEFAULT_CURRENCY) -> list[str]:
++    base = normalize_currency(base)
+     totals: dict[str, Decimal] = defaultdict(lambda: Decimal("0"))
+     for tx in ledger.all_transactions():
+         if tx.month == month:
+-            totals[tx.category] += tx.amount
++            totals[tx.category] += ledger.convert(tx.amount, ledger.account(tx.account).currency, base)
+     lines = [f"{category}: {amount:.2f}" for category, amount in sorted(totals.items())]
+     lines.append(f"NET: {sum(totals.values(), Decimal('0')):.2f}")
+     return lines
+diff --git a/ledgerlite/storage.py b/ledgerlite/storage.py
+index 5b02008..22473fe 100644
+--- a/ledgerlite/storage.py
++++ b/ledgerlite/storage.py
+@@ -1,15 +1,19 @@
+-"""JSON file storage. The whole ledger is read and written at once."""
++"""JSON file storage. The whole ledger is read and written at once.
++
++Version 2 adds an account `currency` and a top-level `rates` map ("FROM/TO": "rate").
++Version 1 files have neither: their accounts load as USD with no rates.
++"""
+ 
+ from __future__ import annotations
+ 
+ import json
+ import os
+-from decimal import Decimal
++from decimal import Decimal, InvalidOperation
+ from pathlib import Path
+ 
+-from ledgerlite.models import Account, Ledger, Transaction
++from ledgerlite.models import DEFAULT_CURRENCY, Account, Ledger, LedgerError, Transaction, normalize_currency
+ 
+-FORMAT_VERSION = 1
++FORMAT_VERSION = 2
+ 
+ 
+ def load(path: Path) -> Ledger:
+@@ -19,7 +23,7 @@ def load(path: Path) -> Ledger:
+     data = json.loads(path.read_text(encoding="utf-8"))
+     ledger = Ledger()
+     for name, raw in data.get("accounts", {}).items():
+-        account = Account(name)
++        account = Account(name, normalize_currency(raw.get("currency", DEFAULT_CURRENCY)))
+         for t in raw.get("transactions", []):
+             account.transactions.append(
+                 Transaction(
+@@ -32,6 +36,20 @@ def load(path: Path) -> Ledger:
+                 )
+             )
+         ledger.accounts[name] = account
++    rates = data.get("rates", {})
++    if not isinstance(rates, dict):
++        raise LedgerError("bad stored rates: expected an object of FROM/TO keys")
++    for pair, value in rates.items():
++        source, sep, target = pair.partition("/")
++        if not sep:
++            raise LedgerError(f"bad stored rate key {pair!r}: expected FROM/TO")
++        try:
++            # str() first: a hand-edited JSON number 1.1 reads as Decimal("1.1"), not the float.
++            # None, true, and lists become text that Decimal rejects.
++            rate = Decimal(str(value))
++        except InvalidOperation as exc:
++            raise LedgerError(f"bad stored rate {value!r} for {pair}") from exc
++        ledger.set_rate(source, target, rate)
+     return ledger
+ 
+ 
+@@ -41,13 +59,15 @@ def save(ledger: Ledger, path: Path) -> None:
+         "version": FORMAT_VERSION,
+         "accounts": {
+             name: {
++                "currency": account.currency,
+                 "transactions": [
+                     {"id": t.id, "on": t.on, "amount": str(t.amount), "category": t.category, "memo": t.memo}
+                     for t in account.transactions
+-                ]
++                ],
+             }
+             for name, account in ledger.accounts.items()
+         },
++        "rates": {f"{source}/{target}": str(rate) for (source, target), rate in ledger.rates.items()},
+     }
+     tmp = path.with_suffix(path.suffix + ".tmp")
+     tmp.write_text(json.dumps(data, indent=2) + "\n", encoding="utf-8")
+diff --git a/tests/test_currency.py b/tests/test_currency.py
+new file mode 100644
+index 0000000..c8e4d2b
+--- /dev/null
++++ b/tests/test_currency.py
+@@ -0,0 +1,253 @@
++"""Multi-currency: model rules, storage, CLI, reports, and CSV import."""
++
++import json
++from decimal import Decimal
++
++import pytest
++
++from ledgerlite import storage
++from ledgerlite.cli import main
++from ledgerlite.models import Ledger, LedgerError, normalize_currency
++
++
++# --- model: codes and rates (D1, D2, D3) -------------------------------------
++
++
++def test_normalize_currency_uppercases_valid_code():
++    assert normalize_currency(" eur ") == "EUR"
++
++
++@pytest.mark.parametrize("code", ["EURO", "EU", "E1R", "", "€UR"])
++def test_normalize_currency_rejects_non_three_letter_code(code):
++    with pytest.raises(LedgerError, match="bad currency"):
++        normalize_currency(code)
++
++
++def test_add_account_defaults_to_usd_and_accepts_currency():
++    ledger = Ledger()
++    assert ledger.add_account("checking").currency == "USD"
++    assert ledger.add_account("savings", "eur").currency == "EUR"
++
++
++def test_rate_same_currency_is_one_without_stored_rate():
++    assert Ledger().rate("EUR", "EUR") == Decimal("1")
++
++
++def test_rate_uses_direct_then_inverse_of_reverse():
++    ledger = Ledger()
++    ledger.set_rate("EUR", "USD", Decimal("1.25"))
++    assert ledger.rate("EUR", "USD") == Decimal("1.25")
++    assert ledger.rate("USD", "EUR") == Decimal("0.8")
++
++
++def test_rate_direct_wins_over_reverse_when_both_stored():
++    ledger = Ledger()
++    ledger.set_rate("EUR", "USD", Decimal("1.10"))
++    ledger.set_rate("USD", "EUR", Decimal("0.5"))
++    assert ledger.rate("USD", "EUR") == Decimal("0.5")
++    assert ledger.rate("EUR", "USD") == Decimal("1.10")
++
++
++def test_rate_missing_pair_names_both_currencies():
++    with pytest.raises(LedgerError, match="no exchange rate from GBP to USD"):
++        Ledger().rate("GBP", "USD")
++
++
++def test_set_rate_rejects_same_currency_pair():
++    with pytest.raises(LedgerError, match="USD"):
++        Ledger().set_rate("USD", "usd", Decimal("2"))
++
++
++@pytest.mark.parametrize("value", ["0", "-1", "NaN", "sNaN", "Infinity"])
++def test_set_rate_rejects_non_positive_or_non_finite(value):
++    with pytest.raises(LedgerError, match="bad rate"):
++        Ledger().set_rate("EUR", "USD", Decimal(value))
++
++
++# --- storage (D8) ---------------------------------------------------------------
++
++
++def test_storage_round_trips_currency_and_rates(tmp_path):
++    path = tmp_path / "l.json"
++    ledger = Ledger()
++    ledger.add_account("savings", "EUR")
++    ledger.set_rate("EUR", "USD", Decimal("1.10"))
++    storage.save(ledger, path)
++
++    loaded = storage.load(path)
++
++    assert loaded.account("savings").currency == "EUR"
++    assert loaded.rates == {("EUR", "USD"): Decimal("1.10")}
++    assert json.loads(path.read_text())["version"] == 2
++
++
++def test_storage_loads_v1_file_as_usd(ledger):
++    ledger.store.write_text(
++        json.dumps(
++            {
++                "version": 1,
++                "accounts": {
++                    "checking": {
++                        "transactions": [
++                            {"id": "a1", "on": "2026-01-05", "amount": "-42.50", "category": "food", "memo": ""}
++                        ]
++                    }
++                },
++            }
++        )
++    )
++    checking = storage.load(ledger.store).account("checking")
++    assert (checking.currency, checking.balance()) == ("USD", Decimal("-42.50"))
++    assert ledger("report", "balances") == ["checking: -42.50 USD", "TOTAL: -42.50 USD"]
++
++
++def test_storage_load_reads_hand_edited_json_number_rate_exactly(tmp_path):
++    path = tmp_path / "l.json"
++    path.write_text('{"version": 2, "accounts": {}, "rates": {"EUR/USD": 1.1}}')
++    assert storage.load(path).rates == {("EUR", "USD"): Decimal("1.1")}
++
++
++@pytest.mark.parametrize(
++    ("rates", "accounts", "message"),
++    [
++        ({"EURUSD": "1.10"}, {}, "expected FROM/TO"),
++        ({"EUR/USD": "0"}, {}, "bad rate"),
++        ({"EUR/USD": "abc"}, {}, "bad stored rate"),
++        ({}, {"s": {"currency": "EURO", "transactions": []}}, "bad currency"),
++        ({"EUR/USD": None}, {}, "bad stored rate"),
++        ({"EUR/USD": True}, {}, "bad stored rate"),
++        (["EUR/USD", "1.10"], {}, "expected an object"),
++    ],
++    ids=[
++        "rate-key-without-slash",
++        "zero-rate",
++        "non-numeric-rate",
++        "bad-account-currency",
++        "null-rate",
++        "boolean-rate",
++        "rates-not-object",
++    ],
++)
++def test_storage_load_rejects_bad_stored_values(tmp_path, rates, accounts, message):
++    path = tmp_path / "l.json"
++    path.write_text(json.dumps({"version": 2, "accounts": accounts, "rates": rates}))
++    with pytest.raises(LedgerError, match=message):
++        storage.load(path)
++
++
++# --- CLI: accounts and rates (A1-A4) ---------------------------------------------
++
++
++def test_cli_account_add_stores_default_and_given_currency(ledger):
++    ledger("account", "add", "checking")
++    assert ledger("account", "add", "savings", "--currency", "eur") == ["added account savings (EUR)"]
++    loaded = storage.load(ledger.store)
++    assert (loaded.account("checking").currency, loaded.account("savings").currency) == ("USD", "EUR")
++
++
++def test_cli_account_add_rejects_bad_currency_with_exit_2(ledger, capsys):
++    assert main(["--store", str(ledger.store), "account", "add", "x", "--currency", "EURO"]) == 2
++    assert "bad currency" in capsys.readouterr().err
++    assert not ledger.store.exists()
++
++
++def test_cli_rate_set_prints_and_persists_rate(ledger):
++    assert ledger("rate", "set", "eur", "usd", "1.10") == ["rate EUR USD 1.10"]
++    assert storage.load(ledger.store).rates == {("EUR", "USD"): Decimal("1.10")}
++
++
++@pytest.mark.parametrize("value", ["0", "-1", "abc", "NaN", "Infinity"])
++def test_cli_rate_set_rejects_bad_rate_with_exit_2(ledger, capsys, value):
++    assert main(["--store", str(ledger.store), "rate", "set", "EUR", "USD", value]) == 2
++    assert "bad rate" in capsys.readouterr().err
++
++
++# --- reports with a base currency (A7-A12, A17, A18) -------------------------------
++
++
++def two_currency_ledger(ledger, *, rate: str | None = "1.10"):
++    """checking: -42.50 USD (Jan). savings: 100 EUR (Jan). Optional EUR->USD rate."""
++    ledger("account", "add", "checking")
++    ledger("account", "add", "savings", "--currency", "EUR")
++    ledger("tx", "add", "checking", "2026-01-05", "-42.50", "groceries")
++    ledger("tx", "add", "savings", "2026-01-06", "100", "interest")
++    if rate is not None:
++        ledger("rate", "set", "EUR", "USD", rate)
++    return ledger
++
++
++def test_balances_show_account_currency_and_total_in_usd(ledger):
++    two_currency_ledger(ledger)
++    assert ledger("report", "balances") == ["checking: -42.50 USD", "savings: 100.00 EUR", "TOTAL: 67.50 USD"]
++
++
++def test_balances_missing_rate_exits_2_and_names_both_currencies(ledger, capsys):
++    two_currency_ledger(ledger, rate=None)
++    assert main(["--store", str(ledger.store), "report", "balances"]) == 2
++    assert "no exchange rate from EUR to USD" in capsys.readouterr().err
++
++
++def test_balances_missing_rate_needed_for_zero_balance_account(ledger):
++    ledger("account", "add", "checking")
++    ledger("account", "add", "travel", "--currency", "GBP")
++    with pytest.raises(LedgerError, match="no exchange rate from GBP to USD"):
++        ledger("report", "balances")
++
++
++def test_balances_base_uses_inverse_of_stored_rate(ledger):
++    two_currency_ledger(ledger, rate="1.25")
++    # -42.50 USD * (1 / 1.25) = -34.00 EUR, plus 100.00 EUR.
++    assert ledger("report", "balances", "--base", "eur")[-1] == "TOTAL: 66.00 EUR"
++
++
++@pytest.mark.parametrize("report", [["balances"], ["monthly", "2026-01"]])
++def test_reports_reject_bad_base_with_exit_2(ledger, capsys, report):
++    two_currency_ledger(ledger)
++    assert main(["--store", str(ledger.store), "report", *report, "--base", "EURO"]) == 2
++    assert "bad currency" in capsys.readouterr().err
++
++
++def test_monthly_converts_to_base_and_keeps_line_format(ledger):
++    two_currency_ledger(ledger)
++    ledger("tx", "add", "savings", "2026-01-20", "-10", "groceries")
++    # groceries: -42.50 USD + (-10 EUR * 1.10) = -53.50. interest: 100 EUR * 1.10 = 110.00.
++    assert ledger("report", "monthly", "2026-01") == ["groceries: -53.50", "interest: 110.00", "NET: 56.50"]
++    assert ledger("report", "monthly", "2026-01", "--base", "EUR") == [
++        "groceries: -48.64",
++        "interest: 100.00",
++        "NET: 51.36",
++    ]
++
++
++def test_monthly_needs_no_rate_for_currency_absent_from_month(ledger):
++    two_currency_ledger(ledger, rate=None)
++    ledger("tx", "add", "checking", "2026-02-01", "-5", "groceries")
++    assert ledger("report", "monthly", "2026-02") == ["groceries: -5.00", "NET: -5.00"]
++
++
++# --- CSV currency column (A13-A16) -------------------------------------------------
++
++
++def import_rows(ledger, rows: str) -> list[str]:
++    ledger("account", "add", "savings", "--currency", "EUR")
++    csv = ledger.tmp / "s.csv"
++    csv.write_text("date,amount,category,currency\n" + rows)
++    return ledger("import", "savings", str(csv))
++
++
++def test_import_accepts_matching_or_empty_currency_any_case(ledger):
++    assert import_rows(ledger, "2026-01-01,10,a,EUR\n2026-01-02,5,b,eur\n2026-01-03,1,c,\n") == [
++        "imported 3 transactions"
++    ]
++    assert ledger("report", "balances", "--base", "EUR") == ["savings: 16.00 EUR", "TOTAL: 16.00 EUR"]
++
++
++def test_import_rejects_other_currency_and_keeps_store_unchanged(ledger):
++    with pytest.raises(LedgerError, match=r"line 3: .*USD.*EUR"):
++        import_rows(ledger, "2026-01-01,10,a,EUR\n2026-01-02,5,b,USD\n")
++    assert storage.load(ledger.store).account("savings").transactions == []
++
++
++def test_import_rejects_bad_currency_code_with_line_number(ledger):
++    with pytest.raises(LedgerError, match="line 2: bad currency"):
++        import_rows(ledger, "2026-01-01,10,a,EURO\n")
+diff --git a/tests/test_ledger.py b/tests/test_ledger.py
+index 08f1e05..4cf744a 100644
+--- a/tests/test_ledger.py
++++ b/tests/test_ledger.py
+@@ -11,7 +11,7 @@ def test_balances_and_total(ledger):
+     ledger("account", "add", "savings")
+     ledger("tx", "add", "checking", "2026-01-05", "-42.50", "groceries")
+     ledger("tx", "add", "savings", "2026-01-06", "100", "transfer")
+-    assert ledger("report", "balances") == ["checking: -42.50", "savings: 100.00", "TOTAL: 57.50"]
++    assert ledger("report", "balances") == ["checking: -42.50 USD", "savings: 100.00 USD", "TOTAL: 57.50 USD"]
+ 
+ 
+ def test_monthly_groups_by_category(ledger):
+@@ -27,7 +27,7 @@ def test_import_csv(ledger):
+     csv = ledger.tmp / "s.csv"
+     csv.write_text("date,amount,category,memo\n2026-01-01,-3.10,coffee,cafe\n2026-01-02,1200,salary,\n")
+     assert ledger("import", "checking", str(csv)) == ["imported 2 transactions"]
+-    assert ledger("report", "balances")[0] == "checking: 1196.90"
++    assert ledger("report", "balances")[0] == "checking: 1196.90 USD"
+ 
+ 
+ def test_import_rejects_bad_amount(ledger):

@@ -1,0 +1,24 @@
+schema_version = "1.1"
+
+[task]
+name = "harness-benchmark/t04-ledgerlite-multicurrency--bmad"
+description = "Add multi-currency accounts, stored exchange rates and base-currency reports. Arm: bmad."
+keywords = ["harness-benchmark", "bmad", "T04-ledgerlite-multicurrency"]
+
+[metadata]
+task = "T04-ledgerlite-multicurrency"
+arm = "bmad"
+framework_sha = "bda3c5929f672019b90f39a3ea27259d35d00974"
+lock_sha256 = "72f9833aba2d85acd69d9451257c75fe3d4f01cb0ce45f6728a8b2c06c6178b2"
+
+[verifier]
+timeout_sec = 300.0
+
+[agent]
+timeout_sec = 1800.0
+
+[environment]
+build_timeout_sec = 1800.0
+cpus = 2
+memory_mb = 4096
+storage_mb = 8192

@@ -35,6 +35,42 @@
       },
       "task_sha256": "5d915c2b16d739a7a4f998584c00b821de580ea627f4add1dca45d5f2ff43d27",
       "valid": true
+    },
+    "T04-ledgerlite-multicurrency": {
+      "after": {
+        "passed": 6,
+        "total": 6
+      },
+      "before": {
+        "passed": 0,
+        "total": 6
+      },
+      "task_sha256": "7c00cc540f80c906735c0d799a71087f1e433be6ed0b7dd07f10740a852d4956",
+      "valid": true
+    },
+    "T05-ledgerlite-budgets": {
+      "after": {
+        "passed": 7,
+        "total": 7
+      },
+      "before": {
+        "passed": 0,
+        "total": 7
+      },
+      "task_sha256": "bb2d83ea221a7b374527a1ad12d1374503c4166c5a4464219b6051a857459755",
+      "valid": true
+    },
+    "T06-ledgerlite-audit-undo": {
+      "after": {
+        "passed": 6,
+        "total": 6
+      },
+      "before": {
+        "passed": 0,
+        "total": 6
+      },
+      "task_sha256": "2b556c387ea6aa3cb08d94198934b3113579cf95ada805796c400faf4ebcabd2",
+      "valid": true
     }
   }
 }

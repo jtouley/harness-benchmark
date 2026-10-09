@@ -1,0 +1,828 @@
+diff --git a/README.md b/README.md
+index b08c312..94a340b 100644
+--- a/README.md
++++ b/README.md
+@@ -9,6 +9,15 @@ python -m ledgerlite.cli --store ledger.json tx add checking 2026-01-05 -42.50 g
+ python -m ledgerlite.cli --store ledger.json import checking statement.csv
+ python -m ledgerlite.cli --store ledger.json report balances
+ python -m ledgerlite.cli --store ledger.json report monthly 2026-01
++python -m ledgerlite.cli --store ledger.json budget set groceries 200
++python -m ledgerlite.cli --store ledger.json budget list
++python -m ledgerlite.cli --store ledger.json report budget 2026-01
+ ```
+ 
+-Run tests: `python -m pytest`.
++Budgets are monthly spending limits per category, across all accounts. `report budget`
++prints `CATEGORY: spent SPENT of LIMIT (PCT%)` and adds ` OVER` when spending is over the
++limit. Spending is the sum of the negative amounts in the month (refunds do not reduce
++it). When `tx add` or `import` takes a category over its limit for a month, the command
++also prints `alert: CATEGORY over budget for YYYY-MM (SPENT/LIMIT)`.
++
++Run tests: `uv run --extra dev python -m pytest`.
+diff --git a/docs/adr/0001-category-budgets.md b/docs/adr/0001-category-budgets.md
+new file mode 100644
+index 0000000..4d60dde
+--- /dev/null
++++ b/docs/adr/0001-category-budgets.md
+@@ -0,0 +1,56 @@
++---
++decision_id: cd-1-category-budgets
++status: proposed
++question: How does ledgerlite store monthly category budgets and when does it print an over-budget alert?
++choice: Store budgets as an additive top-level budgets key in the existing JSON store (format version stays 1). Alert only when a tx add or import command takes a category from at or under its limit to over it, once per category and month in each command.
++rationale: An additive key keeps old stores readable with no migration. A crossing rule gives one alert at the moment the limit breaks and no repeated noise after that.
++---
++
++# ADR 0001: Monthly category budgets
++
++Ticket: #1 (cd-1)
++
++## Context
++
++Ticket #1 adds monthly spending limits per category, a `report budget` command, and
++an alert when `tx add` or `import` pushes a category over its limit. The vibe test
++(`.context/vibetest/gh-1_2026-10-09.md`) found four open points in the request text.
++This record settles them.
++
++## Decisions
++
++1. Storage: a top-level `budgets` object `{category: "limit"}` in the store. A store
++   with no `budgets` key loads as "no budgets". `FORMAT_VERSION` stays 1.
++2. SPENT: the sum of the negative amounts in the category and month, as a positive
++   number. Refunds (positive amounts) do not reduce it. SPENT rounding: see decision 10.
++3. PCT: `spent / limit * 100`, rounded half up to an integer (12.5 gives 13).
++4. Alert trigger: the command prints an alert when spending was at or under the limit
++   before the command and is over the limit after it. A category that is already over
++   gets no new alert.
++5. Alert count: one alert for each (category, month) pair that the command pushes
++   over. For one month, this is "once per category per command".
++6. Alert output: stdout, after the normal command line, sorted by month and then by
++   category. SPENT is the month total after the full command.
++7. LIMIT input: a finite number greater than 0, else exit 2. The tool keeps 2 decimals.
++   A LIMIT that rounds to 0.00, or that is too large to round, also exits 2.
++
++8. Amount input: `tx add` and `import` reject an amount that is not a number, not
++   finite (`NaN`, `Infinity`), or 1e26 or larger, with exit 2. A short CSV row also
++   exits 2. Budget math skips a non-finite amount that a store holds now.
++9. Precision: SPENT and PCT math runs at 100 digits of precision.
++10. SPENT rounding: SPENT is rounded half up to 2 decimals once. The OVER compare,
++    the alert compare and the output all use the rounded value.
++11. Month key: the month comes from the parsed date, so basic (`20260110`) and week
++    (`2026-W03-1`) ISO dates count in their real month. `report monthly` gets the
++    same correction.
++
++Status is `proposed`: nobody can answer questions in this run, so the defaults stand
++until a reviewer of the PR accepts or changes them. The answer goes in the plan
++section `### Decision record (D1 to D4)` and in the PR thread.
++
++## Consequences
++
++- An older ledgerlite binary drops the `budgets` key when it saves the store.
++- `report monthly` changes only for basic and week ISO dates (decision 11). Its line
++  format and signed sums do not change.
++- A store with a bad `budgets` value makes each command exit 2 with an error.
+diff --git a/ledgerlite/cli.py b/ledgerlite/cli.py
+index 5e631a2..a14de9b 100644
+--- a/ledgerlite/cli.py
++++ b/ledgerlite/cli.py
+@@ -3,13 +3,14 @@
+ from __future__ import annotations
+ 
+ import argparse
++import re
+ import sys
+-from decimal import Decimal, InvalidOperation
++from decimal import ROUND_HALF_UP, Decimal, InvalidOperation
+ from pathlib import Path
+ 
+ from ledgerlite import reports, storage
+ from ledgerlite.importers import import_csv
+-from ledgerlite.models import LedgerError, Transaction
++from ledgerlite.models import CENT, LedgerError, Transaction, parse_amount
+ 
+ 
+ def build_parser() -> argparse.ArgumentParser:
+@@ -29,6 +30,12 @@ def build_parser() -> argparse.ArgumentParser:
+     tx_add.add_argument("category")
+     tx_add.add_argument("memo", nargs="?", default="")
+ 
++    budget = sub.add_parser("budget").add_subparsers(dest="action", required=True)
++    budget_set = budget.add_parser("set")
++    budget_set.add_argument("category")
++    budget_set.add_argument("limit")
++    budget.add_parser("list")
++
+     imp = sub.add_parser("import")
+     imp.add_argument("account")
+     imp.add_argument("csv")
+@@ -37,9 +44,35 @@ def build_parser() -> argparse.ArgumentParser:
+     report.add_parser("balances")
+     monthly = report.add_parser("monthly")
+     monthly.add_argument("month")
++    report_budget = report.add_parser("budget")
++    report_budget.add_argument("month")
+     return parser
+ 
+ 
++def _parse_limit(text: str) -> Decimal:
++    """A positive, finite LIMIT rounded half up to cents, else LedgerError (exit 2)."""
++    bad = LedgerError(f"limit must be a positive number, got {text!r}")
++    try:
++        value = Decimal(text)
++    except InvalidOperation as exc:
++        raise bad from exc
++    if not value.is_finite() or value <= 0:
++        raise bad
++    try:
++        limit = value.quantize(CENT, rounding=ROUND_HALF_UP)
++    except InvalidOperation as exc:
++        raise LedgerError(f"limit {text!r} is too large") from exc
++    if limit <= 0:
++        raise bad
++    return limit
++
++
++def _check_month(month: str) -> str:
++    if not re.fullmatch(r"\d{4}-(0[1-9]|1[0-2])", month):
++        raise LedgerError(f"bad month {month!r}, expected YYYY-MM")
++    return month
++
++
+ def run(argv: list[str]) -> list[str]:
+     args = build_parser().parse_args(argv)
+     path = Path(args.store)
+@@ -49,17 +82,30 @@ def run(argv: list[str]) -> list[str]:
+         ledger.add_account(args.name)
+         out.append(f"added account {args.name}")
+     elif args.command == "tx":
+-        try:
+-            amount = Decimal(args.amount)
+-        except InvalidOperation as exc:
+-            raise LedgerError(f"bad amount {args.amount!r}") from exc
++        amount = parse_amount(args.amount)
++        before = reports.spending(ledger)
+         tx = ledger.add_transaction(Transaction(args.account, args.on, amount, args.category, args.memo))
+         out.append(f"added {tx.id}")
++        out.extend(reports.budget_alerts(ledger, before))
++    elif args.command == "budget":
++        if args.action == "set":
++            limit = _parse_limit(args.limit)
++            ledger.set_budget(args.category, limit)
++            out.append(f"set budget {args.category} {limit:.2f}")
++        else:
++            out.extend(f"{category}: {limit:.2f}" for category, limit in sorted(ledger.budgets.items()))
+     elif args.command == "import":
++        before = reports.spending(ledger)
+         added = import_csv(ledger, args.account, Path(args.csv))
+         out.append(f"imported {len(added)} transactions")
++        out.extend(reports.budget_alerts(ledger, before))
+     elif args.command == "report":
+-        out.extend(reports.balances(ledger) if args.kind == "balances" else reports.monthly(ledger, args.month))
++        if args.kind == "balances":
++            out.extend(reports.balances(ledger))
++        elif args.kind == "monthly":
++            out.extend(reports.monthly(ledger, args.month))
++        elif args.kind == "budget":
++            out.extend(reports.budget(ledger, _check_month(args.month)))
+     storage.save(ledger, path)
+     return out
+ 
+diff --git a/ledgerlite/importers.py b/ledgerlite/importers.py
+index da96921..b22297d 100644
+--- a/ledgerlite/importers.py
++++ b/ledgerlite/importers.py
+@@ -3,10 +3,9 @@
+ from __future__ import annotations
+ 
+ import csv
+-from decimal import Decimal, InvalidOperation
+ from pathlib import Path
+ 
+-from ledgerlite.models import Ledger, LedgerError, Transaction
++from ledgerlite.models import Ledger, LedgerError, Transaction, parse_amount
+ 
+ 
+ def import_csv(ledger: Ledger, account: str, path: Path) -> list[Transaction]:
+@@ -15,8 +14,8 @@ def import_csv(ledger: Ledger, account: str, path: Path) -> list[Transaction]:
+     with Path(path).open(newline="", encoding="utf-8") as handle:
+         for lineno, row in enumerate(csv.DictReader(handle), start=2):
+             try:
+-                amount = Decimal(row["amount"])
+-            except (InvalidOperation, KeyError) as exc:
++                amount = parse_amount(row["amount"])
++            except (LedgerError, KeyError) as exc:
+                 raise LedgerError(f"line {lineno}: bad amount") from exc
+             tx = Transaction(
+                 account=account,
+diff --git a/ledgerlite/models.py b/ledgerlite/models.py
+index a5d3016..97cdeb8 100644
+--- a/ledgerlite/models.py
++++ b/ledgerlite/models.py
+@@ -4,7 +4,7 @@ from __future__ import annotations
+ 
+ from dataclasses import dataclass, field
+ from datetime import date
+-from decimal import Decimal
++from decimal import ROUND_HALF_UP, Decimal, InvalidOperation
+ from uuid import uuid4
+ 
+ 
+@@ -12,6 +12,26 @@ class LedgerError(ValueError):
+     """A user-facing error: bad input or an impossible operation."""
+ 
+ 
++CENT = Decimal("0.01")
++
++
++def parse_amount(text: object) -> Decimal:
++    """A finite amount that rounds to cents in the default context, else LedgerError."""
++    if not isinstance(text, str):
++        raise LedgerError(f"bad amount {text!r}")
++    try:
++        value = Decimal(text)
++    except InvalidOperation as exc:
++        raise LedgerError(f"bad amount {text!r}") from exc
++    if not value.is_finite():
++        raise LedgerError(f"bad amount {text!r}")
++    try:
++        value.quantize(CENT, rounding=ROUND_HALF_UP)
++    except InvalidOperation as exc:
++        raise LedgerError(f"bad amount {text!r}") from exc
++    return value
++
++
+ @dataclass(frozen=True)
+ class Transaction:
+     account: str
+@@ -24,14 +44,15 @@ class Transaction:
+     def __post_init__(self) -> None:
+         try:
+             date.fromisoformat(self.on)
+-        except ValueError as exc:
++        except (ValueError, TypeError) as exc:
+             raise LedgerError(f"bad date {self.on!r}") from exc
+         if not self.category:
+             raise LedgerError("category is required")
+ 
+     @property
+     def month(self) -> str:
+-        return self.on[:7]
++        # Read the parsed date: fromisoformat also accepts 20260110 and 2026-W03-1.
++        return date.fromisoformat(self.on).isoformat()[:7]
+ 
+ 
+ @dataclass
+@@ -46,6 +67,7 @@ class Account:
+ @dataclass
+ class Ledger:
+     accounts: dict[str, Account] = field(default_factory=dict)
++    budgets: dict[str, Decimal] = field(default_factory=dict)
+ 
+     def add_account(self, name: str) -> Account:
+         if not name or name in self.accounts:
+@@ -63,5 +85,10 @@ class Ledger:
+         self.account(tx.account).transactions.append(tx)
+         return tx
+ 
++    def set_budget(self, category: str, limit: Decimal) -> None:
++        if not category:
++            raise LedgerError("category is required")
++        self.budgets[category] = limit
++
+     def all_transactions(self) -> list[Transaction]:
+         return [t for a in self.accounts.values() for t in a.transactions]
+diff --git a/ledgerlite/reports.py b/ledgerlite/reports.py
+index 50f7cb9..79ac4f1 100644
+--- a/ledgerlite/reports.py
++++ b/ledgerlite/reports.py
+@@ -3,9 +3,12 @@
+ from __future__ import annotations
+ 
+ from collections import defaultdict
+-from decimal import Decimal
++from decimal import ROUND_HALF_UP, Decimal, localcontext
+ 
+-from ledgerlite.models import Ledger
++from ledgerlite.models import CENT, Ledger
++
++# Budget math precision: two amounts just under 1e26 overflow the default 28 digits.
++BUDGET_PRECISION = 100
+ 
+ 
+ def balances(ledger: Ledger) -> list[str]:
+@@ -23,3 +26,48 @@ def monthly(ledger: Ledger, month: str) -> list[str]:
+     lines = [f"{category}: {amount:.2f}" for category, amount in sorted(totals.items())]
+     lines.append(f"NET: {sum(totals.values(), Decimal('0')):.2f}")
+     return lines
++
++
++def spending(ledger: Ledger) -> dict[tuple[str, str], Decimal]:
++    """SPENT per (category, month) for budgeted categories, rounded half up to cents.
++
++    SPENT is the sum of the negative amounts as a positive number. Refunds do not
++    reduce it. A non-finite amount that a store holds is skipped.
++    """
++    totals: dict[tuple[str, str], Decimal] = defaultdict(lambda: Decimal("0"))
++    with localcontext() as ctx:
++        ctx.prec = BUDGET_PRECISION
++        for tx in ledger.all_transactions():
++            if tx.category in ledger.budgets and tx.amount.is_finite() and tx.amount < 0:
++                totals[(tx.category, tx.month)] -= tx.amount
++        return {key: total.quantize(CENT, rounding=ROUND_HALF_UP) for key, total in totals.items()}
++
++
++def budget(ledger: Ledger, month: str) -> list[str]:
++    spent = spending(ledger)
++    lines = []
++    for category, limit in sorted(ledger.budgets.items()):
++        amount = spent.get((category, month), Decimal("0.00"))
++        with localcontext() as ctx:
++            ctx.prec = BUDGET_PRECISION
++            pct = (amount / limit * 100).quantize(Decimal("1"), rounding=ROUND_HALF_UP)
++        line = f"{category}: spent {amount:.2f} of {limit:.2f} ({pct}%)"
++        lines.append(line + " OVER" if amount > limit else line)
++    return lines
++
++
++def budget_alerts(ledger: Ledger, before: dict[tuple[str, str], Decimal]) -> list[str]:
++    """One alert per (category, month) that went from at or under its limit to over it.
++
++    `before` is `spending(ledger)` from before the command. Sorted by month, then category.
++    """
++    after = spending(ledger)
++    crossed = [
++        (category, month)
++        for (category, month), spent in after.items()
++        if before.get((category, month), Decimal("0")) <= ledger.budgets[category] < spent
++    ]
++    return [
++        f"alert: {category} over budget for {month} ({after[(category, month)]:.2f}/{ledger.budgets[category]:.2f})"
++        for category, month in sorted(crossed, key=lambda key: (key[1], key[0]))
++    ]
+diff --git a/ledgerlite/storage.py b/ledgerlite/storage.py
+index 5b02008..47b5a00 100644
+--- a/ledgerlite/storage.py
++++ b/ledgerlite/storage.py
+@@ -4,10 +4,10 @@ from __future__ import annotations
+ 
+ import json
+ import os
+-from decimal import Decimal
++from decimal import Decimal, InvalidOperation
+ from pathlib import Path
+ 
+-from ledgerlite.models import Account, Ledger, Transaction
++from ledgerlite.models import Account, Ledger, LedgerError, Transaction
+ 
+ FORMAT_VERSION = 1
+ 
+@@ -32,9 +32,26 @@ def load(path: Path) -> Ledger:
+                 )
+             )
+         ledger.accounts[name] = account
++    ledger.budgets.update(_load_budgets(data.get("budgets", {})))
+     return ledger
+ 
+ 
++def _load_budgets(raw: object) -> dict[str, Decimal]:
++    """Budgets from the store. A hand-edited bad value is a LedgerError (exit 2), not a traceback."""
++    if not isinstance(raw, dict):
++        raise LedgerError(f"bad budgets in store: {raw!r}")
++    budgets: dict[str, Decimal] = {}
++    for category, limit in raw.items():
++        try:
++            value = Decimal(limit)
++        except (InvalidOperation, TypeError, ValueError) as exc:
++            raise LedgerError(f"bad budgets in store: {category!r}: {limit!r}") from exc
++        if not value.is_finite() or value <= 0:
++            raise LedgerError(f"bad budgets in store: {category!r}: {limit!r}")
++        budgets[category] = value
++    return budgets
++
++
+ def save(ledger: Ledger, path: Path) -> None:
+     path = Path(path)
+     data = {
+@@ -48,6 +65,7 @@ def save(ledger: Ledger, path: Path) -> None:
+             }
+             for name, account in ledger.accounts.items()
+         },
++        "budgets": {category: str(limit) for category, limit in ledger.budgets.items()},
+     }
+     tmp = path.with_suffix(path.suffix + ".tmp")
+     tmp.write_text(json.dumps(data, indent=2) + "\n", encoding="utf-8")
+diff --git a/tests/test_budgets.py b/tests/test_budgets.py
+new file mode 100644
+index 0000000..bd2f735
+--- /dev/null
++++ b/tests/test_budgets.py
+@@ -0,0 +1,409 @@
++"""Monthly category budgets (ticket #1)."""
++
++import json
++import re
++from decimal import Decimal
++
++import pytest
++
++from ledgerlite import storage
++from ledgerlite.cli import main
++
++
++@pytest.fixture
++def cli(ledger, capsys):
++    """Call `main` on the fixture store. Return (exit code, stdout lines, stderr)."""
++
++    def call(*args: str):
++        capsys.readouterr()
++        code = main(["--store", str(ledger.store), *args])
++        captured = capsys.readouterr()
++        return code, captured.out.splitlines(), captured.err
++
++    return call
++
++
++@pytest.fixture
++def checking(ledger):
++    ledger("account", "add", "c")
++    return ledger
++
++
++def write_csv(ledger, text: str, name: str = "s.csv") -> str:
++    path = ledger.tmp / name
++    path.write_text(text)
++    return str(path)
++
++
++# --- Phase 1: budget set / budget list / storage -------------------------------
++
++
++def test_budget_set_stores_limit(ledger):
++    assert ledger("budget", "set", "groceries", "200") == ["set budget groceries 200.00"]
++    assert ledger("budget", "list") == ["groceries: 200.00"]
++
++
++def test_budget_list_sorted_two_decimals(ledger):
++    ledger("budget", "set", "rent", "1e3")
++    ledger("budget", "set", "groceries", "200.5")
++    ledger("budget", "set", "dining", "10.005")
++    assert ledger("budget", "list") == ["dining: 10.01", "groceries: 200.50", "rent: 1000.00"]
++
++
++def test_budget_list_empty(ledger):
++    assert ledger("budget", "list") == []
++
++
++def test_budget_set_overwrites(ledger):
++    ledger("budget", "set", "groceries", "200")
++    ledger("budget", "set", "groceries", "150")
++    assert ledger("budget", "list") == ["groceries: 150.00"]
++
++
++@pytest.mark.parametrize(
++    "category, limit",
++    [
++        ("groceries", "0"),
++        ("groceries", "-5"),
++        ("groceries", "abc"),
++        ("groceries", "NaN"),
++        ("groceries", "Infinity"),
++        ("groceries", "0.001"),
++        ("groceries", "1e30"),
++        ("", "10"),
++    ],
++)
++def test_budget_set_rejects_bad_limit(ledger, cli, category, limit):
++    code, out, err = cli("budget", "set", "--", category, limit)
++    assert code == 2
++    assert out == []
++    assert err.startswith("error: ")
++    assert ledger("budget", "list") == []
++
++
++def test_budget_set_too_large_limit_message(cli):
++    code, _, err = cli("budget", "set", "groceries", "1e30")
++    assert code == 2
++    assert "too large" in err
++
++
++@pytest.mark.parametrize("budgets", [None, ["x"], {"groceries": "abc"}, {"groceries": "NaN"}, {"groceries": "0"}])
++def test_store_with_bad_budgets_exits_2(ledger, cli, budgets):
++    ledger.store.write_text(json.dumps({"version": 1, "accounts": {}, "budgets": budgets}))
++    code, out, err = cli("budget", "list")
++    assert code == 2
++    assert out == []
++    assert "bad budgets" in err
++
++
++def test_budgets_persist(ledger):
++    ledger("budget", "set", "groceries", "200")
++    raw = json.loads(ledger.store.read_text())
++    assert raw["budgets"] == {"groceries": "200.00"}
++    assert storage.load(ledger.store).budgets == {"groceries": Decimal("200.00")}
++
++
++def test_store_without_budgets_key_loads(ledger):
++    ledger.store.write_text(
++        json.dumps(
++            {
++                "version": 1,
++                "accounts": {
++                    "c": {
++                        "transactions": [
++                            {"id": "a1", "on": "2026-01-05", "amount": "-5.00", "category": "coffee", "memo": ""}
++                        ]
++                    }
++                },
++            }
++        )
++    )
++    assert ledger("budget", "list") == []
++    assert ledger("report", "balances") == ["c: -5.00", "TOTAL: -5.00"]
++
++
++@pytest.mark.parametrize("amount", ["NaN", "sNaN", "Infinity", "-Infinity", "1e26", "-1e26"])
++def test_tx_add_rejects_bad_amount(checking, cli, amount):
++    code, out, err = cli("tx", "add", "--", "c", "2026-01-01", amount, "groceries")
++    assert code == 2
++    assert out == []
++    assert "bad amount" in err
++    assert checking("report", "balances") == ["c: 0.00", "TOTAL: 0.00"]
++
++
++@pytest.mark.parametrize("amount", ["NaN", "-1e26"])
++def test_import_rejects_non_finite_amount(checking, cli, amount):
++    path = write_csv(checking, f"date,amount,category\n2026-01-01,-5.00,coffee\n2026-01-02,{amount},coffee\n")
++    code, out, err = cli("import", "c", path)
++    assert code == 2
++    assert out == []
++    assert "line 3: bad amount" in err
++    assert checking("report", "balances") == ["c: 0.00", "TOTAL: 0.00"]
++
++
++@pytest.mark.parametrize(
++    "text, message",
++    [
++        ("date,amount,category\n2026-01-01\n", "line 2: bad amount"),
++        ("amount,date,category\n-5.00\n", "bad date None"),
++    ],
++)
++def test_import_short_row_exits_2(checking, cli, text, message):
++    code, out, err = cli("import", "c", write_csv(checking, text))
++    assert code == 2
++    assert out == []
++    assert message in err
++    assert "Traceback" not in err
++    assert checking("report", "balances") == ["c: 0.00", "TOTAL: 0.00"]
++
++
++# --- Phase 2: SPENT and report budget ------------------------------------------
++
++
++@pytest.fixture
++def budgeted(checking):
++    checking("budget", "set", "groceries", "200")
++    return checking
++
++
++@pytest.fixture
++def stored_bad_rows(ledger):
++    """A version 1 store that holds non-finite amounts and a week-form date."""
++    rows = [
++        {"id": "n1", "on": "2026-01-01", "amount": "NaN", "category": "groceries", "memo": ""},
++        {"id": "n2", "on": "2026-01-01", "amount": "-Infinity", "category": "groceries", "memo": ""},
++        {"id": "g1", "on": "2026-01-02", "amount": "-50.00", "category": "groceries", "memo": ""},
++        {"id": "w1", "on": "2026-W03-1", "amount": "-20.00", "category": "groceries", "memo": ""},
++    ]
++    ledger.store.write_text(json.dumps({"version": 1, "accounts": {"c": {"transactions": rows}}}))
++    ledger("budget", "set", "groceries", "200")
++    return ledger
++
++
++@pytest.mark.parametrize(
++    "amounts, expected",
++    [
++        (["-150", "30", "-40"], "groceries: spent 190.00 of 200.00 (95%)"),
++        (["-210"], "groceries: spent 210.00 of 200.00 (105%) OVER"),
++        (["-200"], "groceries: spent 200.00 of 200.00 (100%)"),
++        (["-25"], "groceries: spent 25.00 of 200.00 (13%)"),
++        (["-24.8"], "groceries: spent 24.80 of 200.00 (12%)"),
++        (["-200.004"], "groceries: spent 200.00 of 200.00 (100%)"),
++        ([], "groceries: spent 0.00 of 200.00 (0%)"),
++        (["50"], "groceries: spent 0.00 of 200.00 (0%)"),
++    ],
++)
++def test_report_budget_line(budgeted, amounts, expected):
++    for amount in amounts:
++        budgeted("tx", "add", "c", "2026-01-05", amount, "groceries")
++    assert budgeted("report", "budget", "2026-01") == [expected]
++
++
++def test_spent_ignores_other_months_categories_and_case(budgeted):
++    budgeted("tx", "add", "c", "2025-12-31", "-100", "groceries")
++    budgeted("tx", "add", "c", "2026-02-01", "-5", "groceries")
++    budgeted("tx", "add", "c", "2026-01-05", "-7", "Groceries")
++    budgeted("tx", "add", "c", "2026-01-05", "-9", "dining")
++    budgeted("tx", "add", "c", "2026-01-05", "-1", "groceries")
++    assert budgeted("report", "budget", "2026-01") == ["groceries: spent 1.00 of 200.00 (1%)"]
++
++
++def test_spent_across_accounts(budgeted):
++    budgeted("account", "add", "savings")
++    budgeted("tx", "add", "c", "2026-01-05", "-60", "groceries")
++    budgeted("tx", "add", "savings", "2026-01-06", "-40", "groceries")
++    assert budgeted("report", "budget", "2026-01") == ["groceries: spent 100.00 of 200.00 (50%)"]
++
++
++def test_report_budget_sorted_by_category(budgeted):
++    budgeted("budget", "set", "dining", "50")
++    budgeted("tx", "add", "c", "2026-01-05", "-10", "dining")
++    assert budgeted("report", "budget", "2026-01") == [
++        "dining: spent 10.00 of 50.00 (20%)",
++        "groceries: spent 0.00 of 200.00 (0%)",
++    ]
++
++
++def test_report_budget_no_budgets_prints_nothing(checking):
++    checking("tx", "add", "c", "2026-01-05", "-150.00", "groceries")
++    checking("tx", "add", "c", "2026-01-06", "-20.00", "dining")
++    assert checking("report", "budget", "2026-01") == []
++
++
++@pytest.mark.parametrize("month", ["2026-13", "2026-00", "jan", "2026-1", "2026-01\n"])
++def test_report_budget_rejects_bad_month(budgeted, cli, month):
++    code, out, err = cli("report", "budget", month)
++    assert code == 2
++    assert out == []
++    assert "month" in err
++
++
++def test_report_budget_skips_stored_non_finite(stored_bad_rows, cli):
++    code, out, _ = cli("report", "budget", "2026-01")
++    assert code == 0
++    assert out == ["groceries: spent 70.00 of 200.00 (35%)"]
++
++
++def test_report_budget_large_spend_no_traceback(checking, cli):
++    checking("budget", "set", "groceries", "0.01")
++    for _ in range(2):
++        assert cli("tx", "add", "--", "c", "2026-01-01", "-9e25", "groceries")[0] == 0
++    code, out, _ = cli("report", "budget", "2026-01")
++    assert code == 0
++    assert out == ["groceries: spent 180000000000000000000000000.00 of 0.01 (1800000000000000000000000000000%) OVER"]
++
++
++@pytest.mark.parametrize("on", ["20260110", "2026-W03-1"])
++def test_spent_month_from_basic_iso_date(budgeted, on):
++    budgeted("tx", "add", "c", "2026-01-05", "-150.00", "groceries")
++    budgeted("tx", "add", "c", on, "-100.00", "groceries")
++    assert budgeted("report", "budget", "2026-01") == ["groceries: spent 250.00 of 200.00 (125%) OVER"]
++
++
++def test_report_monthly_month_from_basic_iso_date(checking):
++    checking("tx", "add", "c", "2026-01-05", "-150.00", "groceries")
++    checking("tx", "add", "c", "20260110", "-100.00", "groceries")
++    assert checking("report", "monthly", "2026-01") == ["groceries: -250.00", "NET: -250.00"]
++
++
++# --- Phase 3: over-budget alerts ----------------------------------------------
++
++ADDED = re.compile(r"added [0-9a-f]{12}")
++
++
++def assert_added(lines: list[str], *alerts: str) -> None:
++    assert ADDED.fullmatch(lines[0])
++    assert lines[1:] == list(alerts)
++
++
++def test_tx_add_alert_on_crossing(budgeted):
++    assert_added(budgeted("tx", "add", "c", "2026-01-05", "-150", "groceries"))
++    assert_added(
++        budgeted("tx", "add", "c", "2026-01-06", "-60", "groceries"),
++        "alert: groceries over budget for 2026-01 (210.00/200.00)",
++    )
++
++
++def test_tx_add_no_alert_when_already_over(budgeted):
++    budgeted("tx", "add", "c", "2026-01-05", "-250", "groceries")
++    assert_added(budgeted("tx", "add", "c", "2026-01-06", "-10", "groceries"))
++
++
++def test_alert_when_before_equals_limit(budgeted):
++    assert_added(budgeted("tx", "add", "c", "2026-01-05", "-200.00", "groceries"))
++    assert_added(
++        budgeted("tx", "add", "c", "2026-01-06", "-10.00", "groceries"),
++        "alert: groceries over budget for 2026-01 (210.00/200.00)",
++    )
++
++
++def test_no_alert_when_after_equals_limit(budgeted):
++    budgeted("tx", "add", "c", "2026-01-05", "-150.00", "groceries")
++    assert_added(budgeted("tx", "add", "c", "2026-01-06", "-50.00", "groceries"))
++
++
++def test_no_alert_for_refund_or_unbudgeted_category(budgeted):
++    budgeted("tx", "add", "c", "2026-01-05", "-250", "dining")
++    assert_added(budgeted("tx", "add", "c", "2026-01-06", "-250", "dining"))
++    assert_added(budgeted("tx", "add", "c", "2026-01-06", "500", "groceries"))
++
++
++@pytest.mark.parametrize("on", ["20260110", "2026-W03-1"])
++def test_alert_month_from_basic_iso_date(budgeted, on):
++    budgeted("tx", "add", "c", "2026-01-05", "-150.00", "groceries")
++    assert_added(
++        budgeted("tx", "add", "c", on, "-100.00", "groceries"),
++        "alert: groceries over budget for 2026-01 (250.00/200.00)",
++    )
++
++
++def test_alert_uses_transaction_month(budgeted):
++    budgeted("tx", "add", "c", "2026-01-05", "-190", "groceries")
++    assert_added(
++        budgeted("tx", "add", "c", "2026-02-05", "-201", "groceries"),
++        "alert: groceries over budget for 2026-02 (201.00/200.00)",
++    )
++
++
++def test_spent_three_decimals_rounds_up_over(budgeted):
++    assert_added(
++        budgeted("tx", "add", "c", "2026-01-01", "-200.005", "groceries"),
++        "alert: groceries over budget for 2026-01 (200.01/200.00)",
++    )
++    assert budgeted("report", "budget", "2026-01") == ["groceries: spent 200.01 of 200.00 (100%) OVER"]
++
++
++def test_spent_three_decimals_rounds_down_no_alert(budgeted):
++    assert_added(budgeted("tx", "add", "c", "2026-01-01", "-200.004", "groceries"))
++
++
++def test_import_one_alert_per_category_month(budgeted):
++    path = write_csv(
++        budgeted,
++        "date,amount,category\n2026-01-01,-150,groceries\n2026-01-02,-60,groceries\n2026-01-03,-5,groceries\n",
++    )
++    assert budgeted("import", "c", path) == [
++        "imported 3 transactions",
++        "alert: groceries over budget for 2026-01 (215.00/200.00)",
++    ]
++
++
++def test_import_two_months_two_alerts(checking):
++    checking("budget", "set", "groceries", "100")
++    # CSV order puts February first. Only the month sort puts January first.
++    path = write_csv(checking, "date,amount,category\n2026-02-10,-150.00,groceries\n2026-01-10,-150.00,groceries\n")
++    assert checking("import", "c", path) == [
++        "imported 2 transactions",
++        "alert: groceries over budget for 2026-01 (150.00/100.00)",
++        "alert: groceries over budget for 2026-02 (150.00/100.00)",
++    ]
++
++
++def test_import_alerts_sorted_by_category_in_month(checking):
++    checking("budget", "set", "groceries", "100")
++    checking("budget", "set", "dining", "100")
++    # Budget order and CSV order both put groceries first. Only the category sort puts dining first.
++    path = write_csv(checking, "date,amount,category\n2026-01-10,-150.00,groceries\n2026-01-11,-150.00,dining\n")
++    assert checking("import", "c", path) == [
++        "imported 2 transactions",
++        "alert: dining over budget for 2026-01 (150.00/100.00)",
++        "alert: groceries over budget for 2026-01 (150.00/100.00)",
++    ]
++
++
++def test_import_alerts_sort_month_before_category(checking):
++    checking("budget", "set", "groceries", "100")
++    checking("budget", "set", "dining", "100")
++    # Category order puts dining first. Only the month-first sort puts groceries (January) first.
++    path = write_csv(checking, "date,amount,category\n2026-01-10,-150,groceries\n2026-02-10,-150,dining\n")
++    assert checking("import", "c", path) == [
++        "imported 2 transactions",
++        "alert: groceries over budget for 2026-01 (150.00/100.00)",
++        "alert: dining over budget for 2026-02 (150.00/100.00)",
++    ]
++
++
++def test_failed_import_no_alert_no_save(budgeted, cli):
++    cli("tx", "add", "c", "2026-01-05", "-150.00", "groceries")
++    before = cli("report", "budget", "2026-01")
++    path = write_csv(budgeted, "date,amount,category\n2026-01-06,-100.00,groceries\n2026-01-07,abc,groceries\n")
++    code, out, err = cli("import", "c", path)
++    assert code == 2
++    assert out == []
++    assert "line 3: bad amount" in err
++    assert cli("report", "budget", "2026-01") == before
++
++
++def test_write_commands_work_with_stored_non_finite(stored_bad_rows, cli):
++    code, out, _ = cli("tx", "add", "c", "2026-01-02", "-10.00", "dining")
++    assert code == 0
++    assert_added(out)
++    code, out, _ = cli("tx", "add", "--", "c", "2026-01-03", "-160.00", "groceries")
++    assert code == 0
++    assert_added(out, "alert: groceries over budget for 2026-01 (230.00/200.00)")
++
++
++def test_other_commands_print_no_alert(budgeted):
++    budgeted("tx", "add", "c", "2026-01-05", "-250", "groceries")
++    assert budgeted("budget", "set", "groceries", "100") == ["set budget groceries 100.00"]
++    assert budgeted("account", "add", "x") == ["added account x"]

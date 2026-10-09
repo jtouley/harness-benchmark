@@ -27,8 +27,11 @@ hook, and classifies the result with an explicit rule table
 produced it (`via`), so a deliberate deny can be told apart from a hook that
 crashed while registered fail-closed.
 
-**Tier 3, live golden tasks (observed).** Three golden tasks live in
-[`golden/tasks/`](../golden/tasks/): a bugfix, a CLI feature and a spec-to-code module. Each has
+**Tier 3, live golden tasks (observed).** Six golden tasks live in
+[`golden/tasks/`](../golden/tasks/): a bugfix, a CLI feature, a spec-to-code module (T01–T03), and three
+multi-module features on one small ledger CLI (T04–T06: multi-currency, budgets, audit and undo).
+T01–T03 are small enough to one-shot. T04–T06 each change the data model, the store format, the
+CLI and the reports, which is the size of change a plan-to-PR harness is for. Each has
 hidden tests and a reference patch, and `golden-check` proves the hidden tests fail before the patch
 and pass after it. [`python -m cbench harbor-build`](../cbench/harbor.py) turns each (task, arm) into a
 [Harbor](https://github.com/harbor-framework/harbor) task whose image installs the arm from the
@@ -57,7 +60,7 @@ Claude Code itself records for each trial.
   binary was available, so they are not validated against one.
 - The drive prompt that starts each framework (`drive_prompt` in the lockfile)
   is a choice. It is versioned, and its hash is stored in every run record.
-- Three golden tasks are a small sample, and adding tasks is cheap. A task is a
+- Six golden tasks are a small sample, and adding tasks is cheap. A task is a
   directory with `repo/`, `issue.md`, `hidden/` and `reference.patch`, plus a
   `task.json`. `golden-check` rejects any task whose hidden tests don't
   separate the untouched repo from the reference.

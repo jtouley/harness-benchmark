@@ -1,7 +1,7 @@
 # Live tier (Harbor)
 
 Tier 3 asks the question the first two tiers cannot: **does the harness change
-outcomes?** It runs Claude Code on the three golden tasks with each framework
+outcomes?** It runs Claude Code on the six golden tasks with each framework
 installed, then grades the result with hidden tests. [Harbor](https://github.com/harbor-framework/harbor)
 (pinned to 0.24.0) runs the trials, grades them and records tokens and cost.
 Nothing here is run by CI by default. A run spends money.
