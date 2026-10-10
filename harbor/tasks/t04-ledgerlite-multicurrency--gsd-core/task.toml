@@ -9,7 +9,7 @@ keywords = ["harness-benchmark", "gsd-core", "T04-ledgerlite-multicurrency"]
 task = "T04-ledgerlite-multicurrency"
 arm = "gsd-core"
 framework_sha = "83aba44627ba43aff77588894f7b81a9a7437e75"
-lock_sha256 = "72f9833aba2d85acd69d9451257c75fe3d4f01cb0ce45f6728a8b2c06c6178b2"
+lock_sha256 = "319ae097eab57711a9833af2a726f6e9106bcbfa1b18ff19fa775a3cbaf93637"
 
 [verifier]
 timeout_sec = 300.0

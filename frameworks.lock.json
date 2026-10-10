@@ -35,7 +35,7 @@
     "cadence": {
       "title": "Cadence",
       "repo": "https://github.com/jtouley/cadence",
-      "sha": "3ce6280ba05f3b22c02b61e7b143769ffca47a67",
+      "sha": "812998f7a8f670f28cfd6dd358de8c655656fb23",
       "build": [],
       "install": [
         {

@@ -9,7 +9,7 @@ keywords = ["harness-benchmark", "bmad", "T05-ledgerlite-budgets"]
 task = "T05-ledgerlite-budgets"
 arm = "bmad"
 framework_sha = "bda3c5929f672019b90f39a3ea27259d35d00974"
-lock_sha256 = "72f9833aba2d85acd69d9451257c75fe3d4f01cb0ce45f6728a8b2c06c6178b2"
+lock_sha256 = "319ae097eab57711a9833af2a726f6e9106bcbfa1b18ff19fa775a3cbaf93637"
 
 [verifier]
 timeout_sec = 300.0
