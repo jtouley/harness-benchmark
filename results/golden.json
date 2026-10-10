@@ -57,7 +57,7 @@
         "passed": 0,
         "total": 7
       },
-      "task_sha256": "e9dccc7a063cf2bfa3b11fbb67609b6d5ea9f7e75201f916256e75eb5abd7683",
+      "task_sha256": "827fc879c1b7dc3bbcba79adbcfd2b6a4db063dfb4e391fe1cf60ecd717e5b3c",
       "valid": true
     },
     "T06-ledgerlite-audit-undo": {
@@ -69,7 +69,7 @@
         "passed": 0,
         "total": 6
       },
-      "task_sha256": "a98115484000fca6a4f1909e5593eddd2aa0705d924bcb80c4bc5594b0904666",
+      "task_sha256": "3e83d8286933de1e0b8e4e852827d2baeec09b6d855d80a122248d8c931e6f57",
       "valid": true
     }
   }
