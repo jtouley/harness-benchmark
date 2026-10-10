@@ -44,6 +44,8 @@ def test_undo_is_audited_and_not_undoable(cli):
 def test_undo_more_than_exists_changes_nothing(cli):
     cli("account", "add", "checking")
     cli("tx", "add", "checking", "2026-01-05", "1", "x")
+    # The command must exist first: an unknown subcommand also exits 2.
+    assert cli("audit")[0] == 0
     assert cli("undo", "5")[0] == 2
     assert cli("report", "balances")[1][0] == "checking: 1.00"
 
@@ -51,4 +53,5 @@ def test_undo_more_than_exists_changes_nothing(cli):
 def test_store_without_audit_still_works(cli):
     cli.store.write_text(json.dumps({"version": 1, "accounts": {"checking": {"transactions": []}}}))
     assert cli("report", "balances")[0] == 0
+    assert cli("audit")[0] == 0
     assert cli("undo")[0] == 2  # nothing to undo

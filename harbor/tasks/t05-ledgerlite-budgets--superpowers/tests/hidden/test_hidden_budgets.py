@@ -17,6 +17,8 @@ def test_budget_set_and_list(cli):
 
 
 def test_non_positive_limit_is_an_error(cli):
+    # The command must exist first: an unknown subcommand also exits 2.
+    assert cli("budget", "set", "groceries", "5")[0] == 0
     assert cli("budget", "set", "groceries", "0")[0] == 2
     assert cli("budget", "set", "groceries", "-5")[0] == 2
 
