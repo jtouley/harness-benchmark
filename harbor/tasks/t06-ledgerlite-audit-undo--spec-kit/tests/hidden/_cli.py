@@ -1,6 +1,13 @@
 import pytest
 
 
+def _shell_code(value):
+    """The exit code a shell sees: None is 0, an int is itself, anything else is 1."""
+    if value is None:
+        return 0
+    return value if isinstance(value, int) else 1
+
+
 @pytest.fixture
 def cli(tmp_path, capsys):
     from ledgerlite.cli import main
@@ -8,12 +15,11 @@ def cli(tmp_path, capsys):
     store = tmp_path / "ledger.json"
 
     def call(*args):
-        # argparse exits through SystemExit; the code it carries is the CLI exit code.
+        # A return value and a SystemExit both become the code the CLI exits with.
         try:
-            code = main(["--store", str(store), *args])
+            code = _shell_code(main(["--store", str(store), *args]))
         except SystemExit as exc:
-            # sys.exit(None) exits 0; sys.exit("message") prints it and exits 1.
-            code = exc.code if isinstance(exc.code, int) else (0 if exc.code is None else 1)
+            code = _shell_code(exc.code)
         out = capsys.readouterr()
         return code, out.out.strip().splitlines(), out.err
 

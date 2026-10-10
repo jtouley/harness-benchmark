@@ -19,68 +19,6 @@ index b08c312..94a340b 100644
 +also prints `alert: CATEGORY over budget for YYYY-MM (SPENT/LIMIT)`.
 +
 +Run tests: `uv run --extra dev python -m pytest`.
-diff --git a/docs/adr/0001-category-budgets.md b/docs/adr/0001-category-budgets.md
-new file mode 100644
-index 0000000..4d60dde
---- /dev/null
-+++ b/docs/adr/0001-category-budgets.md
-@@ -0,0 +1,56 @@
-+---
-+decision_id: cd-1-category-budgets
-+status: proposed
-+question: How does ledgerlite store monthly category budgets and when does it print an over-budget alert?
-+choice: Store budgets as an additive top-level budgets key in the existing JSON store (format version stays 1). Alert only when a tx add or import command takes a category from at or under its limit to over it, once per category and month in each command.
-+rationale: An additive key keeps old stores readable with no migration. A crossing rule gives one alert at the moment the limit breaks and no repeated noise after that.
-+---
-+
-+# ADR 0001: Monthly category budgets
-+
-+Ticket: #1 (cd-1)
-+
-+## Context
-+
-+Ticket #1 adds monthly spending limits per category, a `report budget` command, and
-+an alert when `tx add` or `import` pushes a category over its limit. The vibe test
-+(`.context/vibetest/gh-1_2026-10-09.md`) found four open points in the request text.
-+This record settles them.
-+
-+## Decisions
-+
-+1. Storage: a top-level `budgets` object `{category: "limit"}` in the store. A store
-+   with no `budgets` key loads as "no budgets". `FORMAT_VERSION` stays 1.
-+2. SPENT: the sum of the negative amounts in the category and month, as a positive
-+   number. Refunds (positive amounts) do not reduce it. SPENT rounding: see decision 10.
-+3. PCT: `spent / limit * 100`, rounded half up to an integer (12.5 gives 13).
-+4. Alert trigger: the command prints an alert when spending was at or under the limit
-+   before the command and is over the limit after it. A category that is already over
-+   gets no new alert.
-+5. Alert count: one alert for each (category, month) pair that the command pushes
-+   over. For one month, this is "once per category per command".
-+6. Alert output: stdout, after the normal command line, sorted by month and then by
-+   category. SPENT is the month total after the full command.
-+7. LIMIT input: a finite number greater than 0, else exit 2. The tool keeps 2 decimals.
-+   A LIMIT that rounds to 0.00, or that is too large to round, also exits 2.
-+
-+8. Amount input: `tx add` and `import` reject an amount that is not a number, not
-+   finite (`NaN`, `Infinity`), or 1e26 or larger, with exit 2. A short CSV row also
-+   exits 2. Budget math skips a non-finite amount that a store holds now.
-+9. Precision: SPENT and PCT math runs at 100 digits of precision.
-+10. SPENT rounding: SPENT is rounded half up to 2 decimals once. The OVER compare,
-+    the alert compare and the output all use the rounded value.
-+11. Month key: the month comes from the parsed date, so basic (`20260110`) and week
-+    (`2026-W03-1`) ISO dates count in their real month. `report monthly` gets the
-+    same correction.
-+
-+Status is `proposed`: nobody can answer questions in this run, so the defaults stand
-+until a reviewer of the PR accepts or changes them. The answer goes in the plan
-+section `### Decision record (D1 to D4)` and in the PR thread.
-+
-+## Consequences
-+
-+- An older ledgerlite binary drops the `budgets` key when it saves the store.
-+- `report monthly` changes only for basic and week ISO dates (decision 11). Its line
-+  format and signed sums do not change.
-+- A store with a bad `budgets` value makes each command exit 2 with an error.
 diff --git a/ledgerlite/cli.py b/ledgerlite/cli.py
 index 5e631a2..a14de9b 100644
 --- a/ledgerlite/cli.py
@@ -417,7 +355,7 @@ index 0000000..bd2f735
 --- /dev/null
 +++ b/tests/test_budgets.py
 @@ -0,0 +1,409 @@
-+"""Monthly category budgets (ticket #1)."""
++"""Monthly category budgets."""
 +
 +import json
 +import re

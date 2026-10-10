@@ -45,8 +45,8 @@ def test_undo_more_than_exists_changes_nothing(cli):
     cli("account", "add", "checking")
     cli("tx", "add", "checking", "2026-01-05", "1", "x")
     cli("tx", "add", "checking", "2026-01-06", "2", "y")
-    # undo must work first: an unknown subcommand also exits 2.
-    assert cli("undo")[0] == 0
+    # `undo N` must work first: an unknown subcommand or argument also exits 2.
+    assert cli("undo", "1")[0] == 0
     assert cli("undo", "5")[0] == 2
     assert cli("report", "balances")[1][0] == "checking: 1.00"
 
