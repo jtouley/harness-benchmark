@@ -67,7 +67,7 @@ Claude Code itself records for each trial.
 
 ### Rules for a hidden test
 
-Two review rounds on T04–T06 found the same two defects, so each new task follows these rules:
+Three review rounds on T04–T06 found the same kinds of defect, so each new task follows these rules:
 
 1. **Every assertion traces to a sentence in `issue.md`.** If a test pins a choice the issue
    leaves open, add the sentence to the issue or loosen the test. Otherwise the arm that
@@ -75,7 +75,7 @@ Two review rounds on T04–T06 found the same two defects, so each new task foll
 2. **Every "exits N" test first shows that the exact command form exists.** argparse also
    exits 2 on an unknown subcommand or argument, so `assert cli("undo", "5")[0] == 2` passes
    on a repo with no `undo N`. Run the same form successfully first.
-3. **Count exit codes the way a shell does.** The shared fixture maps `SystemExit` to its
-   code: `None` is 0, an int is itself, and a message is 1.
+3. **Count exit codes the way a shell does.** The shared fixture maps both the value that
+   `main()` returns and a `SystemExit` code: `None` is 0, an int is itself, and anything else is 1.
 4. **Ship only the solution in `reference.patch`.** Leave out notes from the run that wrote
    it, such as ADRs or ticket names.

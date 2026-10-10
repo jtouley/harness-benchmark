@@ -355,7 +355,7 @@ index 0000000..bd2f735
 --- /dev/null
 +++ b/tests/test_budgets.py
 @@ -0,0 +1,409 @@
-+"""Monthly category budgets (ticket #1)."""
++"""Monthly category budgets."""
 +
 +import json
 +import re
