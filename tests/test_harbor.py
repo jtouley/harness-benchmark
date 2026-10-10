@@ -6,13 +6,14 @@ import re
 from pathlib import Path
 
 from cbench import harbor
+from cbench.grade import task_dirs
 from cbench.lock import load_lock
 
 
 def test_every_arm_and_task_is_generated(tmp_path):
     lock = load_lock()
     paths = harbor.generate(out=tmp_path)
-    assert len(paths) == len(lock.frameworks) * 3
+    assert len(paths) == len(lock.frameworks) * len(task_dirs())
     assert {p.name for p in paths} >= {"t01-slugify-bugfix--baseline", "t03-token-bucket--cadence"}
 
 

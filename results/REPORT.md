@@ -93,6 +93,9 @@ Each cell is the combined decision of the framework's installed hooks for one re
 | T01-slugify-bugfix | True | 8/13 | 13/13 | `ed3e4801b900` |
 | T02-invstat-json | True | 2/6 | 6/6 | `61b4fc44ef9f` |
 | T03-token-bucket | True | 0/11 | 11/11 | `5d915c2b16d7` |
+| T04-ledgerlite-multicurrency | True | 0/6 | 6/6 | `13ef949d926d` |
+| T05-ledgerlite-budgets | True | 0/7 | 7/7 | `e9dccc7a063c` |
+| T06-ledgerlite-audit-undo | True | 0/6 | 6/6 | `a98115484000` |
 
 ## Tier 3: live runs (Harbor)
 

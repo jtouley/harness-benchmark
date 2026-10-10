@@ -8,7 +8,7 @@ Each harness is installed the way its own README says, at a pinned commit, then 
 
 - **Footprint** (deterministic): tokens always loaded, tokens to load the whole workflow, and the dollar cost of both.
 - **Enforcement** (deterministic): ten replayed agent actions (forge an approval, self-certify a verdict, edit before the plan is approved, stop mid-run, read `.env`, overwrite the plan, plus controls) run through each harness's real installed hooks.
-- **Outcomes** (live, runs on [Harbor](https://github.com/harbor-framework/harbor)): three golden coding tasks with hidden tests. The question of note is whether a cheaper model *with* a harness meets or beats a stronger model one-shotting in Claude Code, measured as **cost per resolved task**.
+- **Outcomes** (live, runs on [Harbor](https://github.com/harbor-framework/harbor)): six golden coding tasks with hidden tests (three small, three multi-module features). The question of note is whether a cheaper model *with* a harness meets or beats a stronger model one-shotting in Claude Code, measured as **cost per resolved task**.
 
 ## Harnesses evaluated
 
@@ -117,7 +117,7 @@ to start without a budget that covers the worst case.
 ## Limitations
 
 - **No outcome evidence yet.** Tiers 1 and 2 measure cost and enforcement. They do not show that any harness makes the code better.
-- **Three golden tasks is a small sample.** Report rates, not rankings, until more tasks exist. Adding a task is a directory: `repo/`, `issue.md`, `hidden/`, `reference.patch`, `task.json`.
+- **Six golden tasks is a small sample.** Report rates, not rankings, until more tasks exist. Adding a task is a directory: `repo/`, `issue.md`, `hidden/`, `reference.patch`, `task.json`.
 - **Token counts use a proxy tokenizer** (`anthropic==0.37.1`, pinned by sha256), good for comparing arms with each other and not exact billing.
 - **The Cursor verdicts follow Cursor's documented hook semantics.** No Cursor binary was available to validate them.
 - **The drive prompt for each harness is a choice.** It is versioned in the lockfile.
