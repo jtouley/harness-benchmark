@@ -45,7 +45,7 @@
         "passed": 0,
         "total": 6
       },
-      "task_sha256": "9028c3c86a3cd3b6a4607b96d7ae5f61e7cec0f15074446e950db260c4a7fe15",
+      "task_sha256": "13ef949d926d0f6fd5058f23b6edd3a2ce090152ff4e60246a6555ef26e083bf",
       "valid": true
     },
     "T05-ledgerlite-budgets": {
@@ -57,7 +57,7 @@
         "passed": 0,
         "total": 7
       },
-      "task_sha256": "bfbd2e9f42ba1bcdb2d09fd1bfac83abb8dcd49663790cf6767eece8408dfd94",
+      "task_sha256": "e9dccc7a063cf2bfa3b11fbb67609b6d5ea9f7e75201f916256e75eb5abd7683",
       "valid": true
     },
     "T06-ledgerlite-audit-undo": {
@@ -69,7 +69,7 @@
         "passed": 0,
         "total": 6
       },
-      "task_sha256": "164be6a0b7d7690ffad01a22859a4379ba3bd089073989c5805fa12c21a0ea6d",
+      "task_sha256": "a98115484000fca6a4f1909e5593eddd2aa0705d924bcb80c4bc5594b0904666",
       "valid": true
     }
   }

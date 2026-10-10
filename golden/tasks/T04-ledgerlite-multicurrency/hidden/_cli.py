@@ -12,7 +12,8 @@ def cli(tmp_path, capsys):
         try:
             code = main(["--store", str(store), *args])
         except SystemExit as exc:
-            code = exc.code if isinstance(exc.code, int) else (0 if exc.code is None else 2)
+            # sys.exit(None) exits 0; sys.exit("message") prints it and exits 1.
+            code = exc.code if isinstance(exc.code, int) else (0 if exc.code is None else 1)
         out = capsys.readouterr()
         return code, out.out.strip().splitlines(), out.err
 
