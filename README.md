@@ -15,7 +15,7 @@ Each harness is installed the way its own README says, at a pinned commit, then 
 | Arm | Pinned commit | Installed with |
 |---|---|---|
 | `baseline` | none | nothing (control) |
-| `cadence` | `jtouley/cadence@3ce6280` (main) | `install.sh` |
+| `cadence` | `jtouley/cadence@812998f` (main) | `install.sh` |
 | `superpowers` | `obra/superpowers@8ca22db` | `claude plugin marketplace add` + `claude plugin install` |
 | `spec-kit` | `github/spec-kit@b9e08bf` | `specify init --integration claude` |
 | `openspec` | `Fission-AI/OpenSpec@9111a76` | `openspec init --tools claude` |
@@ -33,15 +33,13 @@ Tiers 1 and 2, measured on Linux with Claude Code 2.1.294. Source: [`results/REP
 
 | Harness | Always-on tokens | Workflow tokens (lower–upper) | Hook probes meeting intent |
 |---|---|---|---|
-| `cadence` | 562 | 6,752 – 109,135 † | **7/9** |
+| `cadence` | 671 | 8,965 – 59,055 | **7/9** |
 | `gsd-core` | 3,457 | 4,701 – 124,702 | 4/9 |
 | `superpowers` | 1,483 | 21,696 – 33,518 | 2/7 |
 | `spec-kit` | 291 | 15,889 | 2/9 |
 | `openspec` | 520 | 10,074 | 2/8 |
 | `bmad` | 2,004 | 411 – 20,044 | 2/6 |
 | `baseline` | 0 | 0 | 2/6 |
-
-† Cadence's upper bound includes the `bench/` directory that its repository still ships inside the installed skill; it falls once that directory is removed.
 
 **Conclusion (tiers 1–2):** only Cadence's installed hooks block a forged approval, a self-certified verdict, a shell edit before plan approval and a stop mid-run; GSD Core blocks reading `.env` and overwriting the plan, which Cadence does not. That is the axis Cadence is designed for. The other harnesses never claimed to enforce, so this shows a different category, not a better one. Loading any harness's whole workflow costs cents. **Whether a harness improves outcomes is not yet measured: the live tier has not run.** See [`docs/live-tier.md`](docs/live-tier.md).
 

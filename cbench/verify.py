@@ -40,10 +40,14 @@ def verify(args) -> int:
     ensure_fetched(fws)
     ok = True
     if not args.skip_install_check:
+        installs = {}
         for fw in fws:
             res = install_twice_check(fw, lock)
+            installs[fw.name] = res
             print(f"{'ok  ' if res['deterministic'] else 'FAIL'} install {fw.name} installs identically twice")
             ok &= res["deterministic"]
+        # REPORT.md reads install.json; a stale file would print the old trees' result.
+        ok &= _compare("install.json", canonical_json({"provenance": provenance(lock), "frameworks": installs}))
     ok &= _compare("footprint.json", canonical_json(compute_footprint(lock, fws)))
     ok &= _compare("probes.json", canonical_json({"provenance": provenance(lock), **run_all(lock, fws)}))
     ok &= _compare("golden.json", canonical_json(golden_check()))

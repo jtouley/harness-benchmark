@@ -79,3 +79,14 @@ def test_matcher_is_full_regex():
     assert matches(_hook(matcher="Write|Edit"), "Write")
     assert not matches(_hook(matcher="Write|Edit"), "MultiEdit")
     assert matches(_hook(matcher=None), "Bash")
+
+
+def test_normalizer_hides_where_node_is_installed():
+    """PR #6 review: GSD's hook command embeds the node path, which varies by machine."""
+    from cbench.install import normalizer
+    from cbench.lock import load_lock
+
+    norm = normalizer(load_lock())
+    assert norm('"/usr/local/bin/node" hooks/x.js') == '"<NODE>" hooks/x.js'
+    assert norm("/opt/node22/bin/node hooks/x.js") == "<NODE> hooks/x.js"
+    assert norm("npx node-gyp; /usr/bin/nodejs") == "npx node-gyp; /usr/bin/nodejs"

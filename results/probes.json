@@ -170,7 +170,7 @@
                   "hook": "guard_skill_gate.py",
                   "origin": "home/.claude/settings.json",
                   "stderr": "",
-                  "stdout": "{\"hookSpecificOutput\": {\"hookEventName\": \"PreToolUse\", \"permissionDecision\": \"deny\", \"permissionDecisionReason\": \"BLOCKED: gated path `<ROOT>/proj/src/app.py` requires entry invariant (prefixes=['src/', 'lib/', 'app/', 'packages/'])\\nACTION: python3 \\\"<CACHE>/src/cadence@3ce6280ba05f3b22c02b61e7b143",
+                  "stdout": "{\"hookSpecificOutput\": {\"hookEventName\": \"PreToolUse\", \"permissionDecision\": \"deny\", \"permissionDecisionReason\": \"BLOCKED: gated path `<ROOT>/proj/src/app.py` requires entry invariant (prefixes=['src/', 'lib/', 'app/', 'packages/'])\\nACTION: python3 \\\"<CACHE>/src/cadence@812998f7a8f670f28cfd6dd358de",
                   "verdict": "block",
                   "via": "permission-deny"
                 },
@@ -224,7 +224,7 @@
                   "hook": "guard_skill_gate.py",
                   "origin": "home/.claude/settings.json",
                   "stderr": "",
-                  "stdout": "{\"hookSpecificOutput\": {\"hookEventName\": \"PreToolUse\", \"permissionDecision\": \"deny\", \"permissionDecisionReason\": \"BLOCKED: gated path `src/app.py` requires entry invariant (prefixes=['src/', 'lib/', 'app/', 'packages/'])\\nACTION: python3 \\\"<CACHE>/src/cadence@3ce6280ba05f3b22c02b61e7b143769ffca47a67",
+                  "stdout": "{\"hookSpecificOutput\": {\"hookEventName\": \"PreToolUse\", \"permissionDecision\": \"deny\", \"permissionDecisionReason\": \"BLOCKED: gated path `src/app.py` requires entry invariant (prefixes=['src/', 'lib/', 'app/', 'packages/'])\\nACTION: python3 \\\"<CACHE>/src/cadence@812998f7a8f670f28cfd6dd358de8c655656fb23",
                   "verdict": "block",
                   "via": "permission-deny"
                 }
@@ -295,7 +295,7 @@
                   "hook": "pipeline_stop_guard.py",
                   "origin": "home/.claude/settings.json",
                   "stderr": "",
-                  "stdout": "{\"decision\": \"block\", \"reason\": \"BLOCKED early stop in execution. Continue paceline: next E2 (impl-artifact) via `python3 scripts/impl_artifact.py`\"}",
+                  "stdout": "{\"decision\": \"block\", \"reason\": \"BLOCKED early stop in execution. Continue paceline: next E1 (implement) via `/spec-driven`: no commits since c1e00b01381866789b79ea2b36250e8da0873ce1. Implement the plan and commit.\"}",
                   "verdict": "block",
                   "via": "decision-block"
                 }
@@ -397,7 +397,7 @@
                   "hook": "guard_skill_gate.py",
                   "origin": "home/.cursor/hooks.json",
                   "stderr": "",
-                  "stdout": "{\"permission\": \"deny\", \"user_message\": \"BLOCKED: gated path `<ROOT>/proj/src/app.py` requires entry invariant (prefixes=['src/', 'lib/', 'app/', 'packages/'])\\nACTION: python3 \\\"<CACHE>/src/cadence@3ce6280ba05f3b22c02b61e7b143769ffca47a67/scripts/entry_invariant.py\\\" --phase execution\", \"agent_messa",
+                  "stdout": "{\"permission\": \"deny\", \"user_message\": \"BLOCKED: gated path `<ROOT>/proj/src/app.py` requires entry invariant (prefixes=['src/', 'lib/', 'app/', 'packages/'])\\nACTION: python3 \\\"<CACHE>/src/cadence@812998f7a8f670f28cfd6dd358de8c655656fb23/scripts/entry_invariant.py\\\" --phase execution\", \"agent_messa",
                   "verdict": "block",
                   "via": "permission-deny"
                 },
@@ -451,7 +451,7 @@
                   "hook": "guard_skill_gate.py",
                   "origin": "home/.cursor/hooks.json",
                   "stderr": "",
-                  "stdout": "{\"permission\": \"deny\", \"user_message\": \"BLOCKED: gated path `src/app.py` requires entry invariant (prefixes=['src/', 'lib/', 'app/', 'packages/'])\\nACTION: python3 \\\"<CACHE>/src/cadence@3ce6280ba05f3b22c02b61e7b143769ffca47a67/scripts/entry_invariant.py\\\" --phase execution\", \"agent_message\": \"BLOCKE",
+                  "stdout": "{\"permission\": \"deny\", \"user_message\": \"BLOCKED: gated path `src/app.py` requires entry invariant (prefixes=['src/', 'lib/', 'app/', 'packages/'])\\nACTION: python3 \\\"<CACHE>/src/cadence@812998f7a8f670f28cfd6dd358de8c655656fb23/scripts/entry_invariant.py\\\" --phase execution\", \"agent_message\": \"BLOCKE",
                   "verdict": "block",
                   "via": "permission-deny"
                 }
@@ -522,7 +522,7 @@
                   "hook": "pipeline_stop_guard.py",
                   "origin": "home/.cursor/hooks.json",
                   "stderr": "",
-                  "stdout": "{\"followup_message\": \"BLOCKED early stop in execution. Continue paceline: next E2 (impl-artifact) via `python3 scripts/impl_artifact.py`\"}",
+                  "stdout": "{\"followup_message\": \"BLOCKED early stop in execution. Continue paceline: next E1 (implement) via `/spec-driven`: no commits since c1e00b01381866789b79ea2b36250e8da0873ce1. Implement the plan and commit.\"}",
                   "verdict": "block",
                   "via": "followup-message"
                 }
@@ -616,8 +616,8 @@
         }
       },
       "registered_hooks": {
-        "claude-code": 4,
-        "cursor": 5
+        "claude-code": 7,
+        "cursor": 6
       }
     },
     "gsd-core": {
@@ -1304,7 +1304,7 @@
   },
   "provenance": {
     "canonical_root": "/tmp/cbench",
-    "lockfile_sha256": "72f9833aba2d85acd69d9451257c75fe3d4f01cb0ce45f6728a8b2c06c6178b2",
+    "lockfile_sha256": "6bc4481efbc12e7fb45ed76ea63637a2ddc5e35b7c01f449f2cbf1c8f9b039ab",
     "pricing_sha256": "7af66e689754689850c47229da79af75d229e3882a798826de3f50317f292139",
     "tokenizer": {
       "id": "anthropic==0.37.1:anthropic/tokenizer.json",
