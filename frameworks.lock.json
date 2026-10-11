@@ -35,7 +35,7 @@
         "source": "control arm: no framework installed",
         "steps": []
       },
-      "drive_prompt": "{issue}\n\nImplement this change in the repository, run the tests, and commit your work locally on the current branch."
+      "drive_prompt": "{issue}"
     },
     "cadence": {
       "title": "Cadence",

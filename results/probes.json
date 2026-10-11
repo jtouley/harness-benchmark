@@ -1304,7 +1304,7 @@
   },
   "provenance": {
     "canonical_root": "/tmp/cbench",
-    "lockfile_sha256": "6bc4481efbc12e7fb45ed76ea63637a2ddc5e35b7c01f449f2cbf1c8f9b039ab",
+    "lockfile_sha256": "9515e62a3f5d325135ca89728b45fb958245c6536fabf9ab3f178150c0b29e68",
     "pricing_sha256": "7af66e689754689850c47229da79af75d229e3882a798826de3f50317f292139",
     "tokenizer": {
       "id": "anthropic==0.37.1:anthropic/tokenizer.json",

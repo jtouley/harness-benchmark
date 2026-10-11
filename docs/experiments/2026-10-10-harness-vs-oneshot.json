@@ -1,0 +1,164 @@
+{
+  "multicurrency/with_skill": {
+    "hidden": "6/6",
+    "quality": 6.75,
+    "scores": {
+      "design": 6,
+      "correctness": 7,
+      "readability": 7,
+      "tests": 7,
+      "mean": 6.75
+    },
+    "defects": 1,
+    "seconds": 3554.3,
+    "tokens": 299660
+  },
+  "multicurrency/old_skill": {
+    "hidden": "0/6",
+    "quality": null,
+    "scores": null,
+    "defects": null,
+    "seconds": 714.6,
+    "tokens": 143214
+  },
+  "multicurrency/sonnet_oneshot": {
+    "hidden": "6/6",
+    "quality": 8.0,
+    "scores": {
+      "design": 9,
+      "correctness": 8,
+      "readability": 8,
+      "tests": 7,
+      "mean": 8.0
+    },
+    "defects": 2,
+    "seconds": 60.2,
+    "tokens": 60397
+  },
+  "multicurrency/haiku_oneshot": {
+    "hidden": "6/6",
+    "quality": 5.25,
+    "scores": {
+      "design": 6,
+      "correctness": 4,
+      "readability": 6,
+      "tests": 5,
+      "mean": 5.25
+    },
+    "defects": 5,
+    "seconds": 250.3,
+    "tokens": 67191
+  },
+  "budgets/with_skill": {
+    "hidden": "7/7",
+    "quality": 7.0,
+    "scores": {
+      "design": 6,
+      "correctness": 8,
+      "readability": 7,
+      "tests": 7,
+      "mean": 7.0
+    },
+    "defects": 4,
+    "seconds": 4964.1,
+    "tokens": 340287
+  },
+  "budgets/old_skill": {
+    "hidden": "7/7",
+    "quality": 7.25,
+    "scores": {
+      "design": 6,
+      "correctness": 8,
+      "readability": 7,
+      "tests": 8,
+      "mean": 7.25
+    },
+    "defects": 4,
+    "seconds": 3365.5,
+    "tokens": 288021
+  },
+  "budgets/sonnet_oneshot": {
+    "hidden": "7/7",
+    "quality": 7.0,
+    "scores": {
+      "design": 8,
+      "correctness": 6,
+      "readability": 8,
+      "tests": 6,
+      "mean": 7.0
+    },
+    "defects": 4,
+    "seconds": 59.5,
+    "tokens": 61313
+  },
+  "budgets/haiku_oneshot": {
+    "hidden": "7/7",
+    "quality": 4.75,
+    "scores": {
+      "design": 5,
+      "correctness": 4,
+      "readability": 6,
+      "tests": 4,
+      "mean": 4.75
+    },
+    "defects": 5,
+    "seconds": 223.9,
+    "tokens": 63548
+  },
+  "audit-undo/with_skill": {
+    "hidden": "6/6",
+    "quality": 8.5,
+    "scores": {
+      "design": 8,
+      "correctness": 9,
+      "readability": 8,
+      "tests": 9,
+      "mean": 8.5
+    },
+    "defects": 0,
+    "seconds": 751.3,
+    "tokens": 209060
+  },
+  "audit-undo/old_skill": {
+    "hidden": "6/6",
+    "quality": 8.25,
+    "scores": {
+      "design": 7,
+      "correctness": 9,
+      "readability": 8,
+      "tests": 9,
+      "mean": 8.25
+    },
+    "defects": 1,
+    "seconds": 2309.6,
+    "tokens": 266247
+  },
+  "audit-undo/sonnet_oneshot": {
+    "hidden": "6/6",
+    "quality": 6.25,
+    "scores": {
+      "design": 6,
+      "correctness": 7,
+      "readability": 7,
+      "tests": 5,
+      "mean": 6.25
+    },
+    "defects": 2,
+    "seconds": 54.6,
+    "tokens": 59108
+  },
+  "audit-undo/haiku_oneshot": {
+    "hidden": "6/6",
+    "quality": 2.25,
+    "scores": {
+      "design": 2,
+      "correctness": 2,
+      "readability": 4,
+      "tests": 1,
+      "mean": 2.25
+    },
+    "defects": 7,
+    "seconds": 310.4,
+    "tokens": 84910
+  }
+}

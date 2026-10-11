@@ -43,6 +43,8 @@ Tiers 1 and 2, measured on Linux with Claude Code 2.1.294. Source: [`results/REP
 
 **Conclusion (tiers 1–2):** only Cadence's installed hooks block a forged approval, a self-certified verdict, a shell edit before plan approval and a stop mid-run; GSD Core blocks reading `.env` and overwriting the plan, which Cadence does not. That is the axis Cadence is designed for. The other harnesses never claimed to enforce, so this shows a different category, not a better one. Loading any harness's whole workflow costs cents. **Whether a harness improves outcomes is not yet measured: the live tier has not run.** See [`docs/live-tier.md`](docs/live-tier.md).
 
+**Criteria:** what counts as a harness being worth its cost, the neutral one-shot baseline, the measures and the pre-registered decision rule are in [`docs/criteria.md`](docs/criteria.md) (v1).
+
 ## Setup Requirements
 
 - Linux or macOS, Python 3.11+, [uv](https://docs.astral.sh/uv/), Node.js 22+, git
@@ -89,9 +91,10 @@ CBENCH_BUDGET_USD=1 ANTHROPIC_API_KEY=... scripts/live.sh smoke   # one Haiku tr
 ```
 
 > [!WARNING]
-> The full matrix is 72 trials (6 harnesses and a bare control on Haiku 5.5, plus a Sonnet 5.5 baseline,
-> 3 tasks, 3 trials each). `scripts/live.sh` refuses to start unless `CBENCH_BUDGET_USD` covers the worst case
-> (trials × the per-trial cap, $90 for the full matrix). Typical spend is a fraction of that.
+> The full matrix is 240 trials (6 harnesses and a bare control on Haiku 5.5, plus a Sonnet 5.5 baseline,
+> 6 tasks, 5 trials each as [criteria](docs/criteria.md) §6 fixes). `scripts/live.sh` refuses to start unless
+> `CBENCH_BUDGET_USD` covers the worst case (trials × the per-trial cap, $300 for the full matrix). Typical
+> spend is a fraction of that.
 
 Design, what Harbor does and does not support, and how to read the results: [`docs/live-tier.md`](docs/live-tier.md).
 
