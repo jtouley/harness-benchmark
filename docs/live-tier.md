@@ -14,10 +14,11 @@ Nothing here is run by CI by default. A run spends money.
 | `cadence`, `superpowers`, `spec-kit`, `openspec`, `gsd-core`, `bmad` | Haiku 5.5 | The cheap model with each harness. |
 | `baseline` | Sonnet 5.5 | One-shotting in Claude Code with a stronger model. |
 
-The comparison of note is **cost per resolved task**, and whether *Haiku + harness*
-meets or beats *Sonnet one-shot*. A trial is *resolved* only when every hidden test
-passes. Three trials per cell; a task has three tests of code, so report rates, not
-rankings, until more tasks exist.
+The decision rule, the measures and the sample size are in
+[`criteria.md`](criteria.md) (§4–§6); this page only describes how the live tier runs. The
+`baseline` arm on Haiku is the same-model one-shot that criteria §2 requires for the Haiku
+framework arms; the Sonnet baseline is reported for context. Its drive prompt is `{issue}`
+only (criteria §2).
 
 ## What Harbor does and does not do
 
