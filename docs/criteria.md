@@ -29,9 +29,9 @@ model alone delivers) and is not part of the decision rule.
 
 ### Neutral baseline prompt (rule)
 
-The baseline gets the task text, the repository location, where to put outputs, and the facts
-of the environment (no remote, nobody answers questions). It gets **nothing** that tells it how
-to work: no TDD, no tests, no plan, no review, no quality words. Anything a framework arm's
+The baseline prompt is the task text and nothing else. The environment (the repository, no
+remote, nobody to answer questions) is the same for every arm and comes from the task image, not
+from the prompt. The baseline gets **nothing** that tells it how to work: no TDD, no tests, no plan, no review, no quality words. Anything a framework arm's
 prompt says beyond the task text is the framework's contribution and must not leak into the
 baseline. In `frameworks.lock.json` the baseline `drive_prompt` is exactly `{issue}` (the same as
 the superpowers arm). Committing is not asked for: grading reads the working tree.
@@ -51,7 +51,9 @@ Class L and O tasks come from real requests in the owner's repositories (October
 task is admitted only with a reference solution, an oracle the agent cannot see, and the
 property that the untouched repository fails the oracle. The task list of a run set is frozen
 before the first run: its sha256 (over `golden/tasks/`) is recorded in the run set's results,
-and a task added later starts a new run set.
+and a task added later starts a new run set. A class L or O task enters a run set only once it is
+committed under `golden/tasks/` (repository snapshot, hidden oracle, reference solution), so the
+hash covers it. A script that records this hash is required before the first v1 run set.
 
 - **L1 (headless runtime):** make an app with a UI run fully through a CLI and an API for
   testing, while open pull requests already cover part of the work. Tests overlap detection,
@@ -76,12 +78,12 @@ never evidence for a measure.
 | M1 | **Acceptance** | Hidden tests (or the class O oracle) on the delivered working tree | Gate: a run that fails M1 is not delivered |
 | M2 | **Reproduced defects** | A blind reviewer (§5) lists defects; each needs a command and its output that show it. Severity: critical (data loss, wrong result reported as success), major (crash, spec violation), minor | **Primary** |
 | M3 | **False success** | Count of places where the run reports success but M1 or M2 shows failure (for example "all tests pass", "production-ready", or a wrong answer marked successful) | **Primary** for class O; reported for all |
-| M4 | **Mutation kill rate** | Mutants on the changed lines only, run against the run's own tests; equivalent mutants removed by a second reviewer | Secondary |
+| M4 | **Mutation kill rate** | Mutants on the changed lines only, run against the run's own tests; equivalent mutants removed by a second reviewer. A run that adds no tests scores 0 | Secondary |
 | M5 | **Test-first evidence** | Replay the branch: a commit that adds tests counts as test-first when those tests fail on its parent commit and pass after the commit that adds the code. Uncommitted or single-commit work scores 0. A run that keeps red-run logs gets credit only when the log matches a replay | Secondary; reported, not assumed |
 | M6 | **Changed-line coverage** | Line and branch coverage of the changed lines by the run's own tests | Reported only: in v1 data every arm scored 87–98%, so it does not separate arms |
 | M7 | **Code quality rubric** | Blind rubric (§5): design, correctness, readability, tests; 1–10 each with anchored levels | Secondary |
 | M8 | **Completion** | Finished without a human answer; a hard stop or a question to the user counts as not complete | Reported |
-| M9 | **Cost** | Wall time; input, cache and output tokens **including nested subagents**, taken from the host's own accounting of the whole session (Harbor `result.json` for the live tier), not from one agent's summary; dollars from `pricing.json` | Denominator |
+| M9 | **Cost** | Wall time; input, cache and output tokens **including nested subagents**, taken from the host's own accounting of the whole session, not from one agent's summary. Whether Harbor's `result.json` counts nested subagents is not yet checked; until it is, harness token counts are reported as lower bounds; dollars from `pricing.json` | Denominator |
 | M10 | **Auditability** | Plan, independent reviews (a reviewer that is not the implementer, checked by attestation where the framework has it), and a closure record exist and match the delivered head | Reported per framework; not scored against one-shot arms |
 
 ## 5. Blind review protocol
@@ -114,23 +116,30 @@ counts as one critical defect for M2 and as one false success for M3 if it repor
 M3 is a per-run rate (false-success events / attempted runs).
 
 **Interval.** For a difference between two arms on a class, resample runs with replacement
-within each (task, arm) cell, 10,000 times, with seed 20261010; compute the difference of means
-over the class each time; report the 5th and 95th percentiles (a 90% percentile interval).
+within each (task, arm) cell, 10,000 times, with seed 20261010; compute `mean(oneshot-M) −
+mean(F)` over the class each time, so a positive value favors F; report the 5th and 95th
+percentiles (a 90% percentile interval). Tasks are not resampled, so a claim covers the tasks run.
 
 For each framework F on model M, compare with `oneshot-M` on the same tasks. F is **worth its
 cost on a task class** when all of these hold:
 
 1. **Fewer defects:** mean critical + major M2 per attempted run is lower than `oneshot-M` by
    at least 0.5, and the 90% interval of the difference is entirely above 0.
-2. **No more false success:** F's M3 rate is not higher than `oneshot-M`'s by more than 0.05.
+2. **No more false success:** F's M3 rate is not higher than `oneshot-M`'s (a tolerance of 0.05 absorbs one event in a 20-run class).
 3. **Delivery is not worse:** F's M1 pass rate per attempted run is at least `oneshot-M`'s
    minus 10 points.
 4. **Cost:** cost per defect-free delivered run (M9 / attempted runs that pass M1 with zero
    critical or major defects) is reported. It is not a pass/fail line; a framework that meets
-   1–3 at more than 10× the cost per defect-free run is reported as "better, at a cost".
+   1–3 at more than 10× the cost per defect-free run is reported as "better, at a cost". An arm
+   with no defect-free run has no finite cost per defect-free run; that is reported as such.
 
 If 1–3 do not all hold, the class result is "not shown". Class S results are reported but are
 not expected to show a difference.
+
+**What v1 can decide today.** Only class S has 3 or more tasks (T01–T06). Classes L (2 named) and
+O (1 named) need at least 3 committed tasks each before a class claim is possible. Until then, v1
+can show whether a harness reduces defects on exactly specified tasks, and not yet on the open
+tasks where a harness should matter most.
 
 ## Disclosure
 

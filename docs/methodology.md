@@ -31,7 +31,9 @@ crashed while registered fail-closed.
 [`golden/tasks/`](../golden/tasks/): a bugfix, a CLI feature, a spec-to-code module (T01–T03), and three
 multi-module features on one small ledger CLI (T04–T06: multi-currency, budgets, audit and undo).
 T01–T03 are small enough to one-shot. T04–T06 each change the data model, the store format, the
-CLI and the reports, which is the size of change a plan-to-PR harness is for. Each has
+CLI and the reports, which is the size of change a plan-to-PR harness is for. In
+[criteria](criteria.md) v1 all six are class S (exact spec): the spec fixes every output, so a
+model alone may still do well on them; classes L and O cover open design and hard oracles. Each has
 hidden tests and a reference patch, and `golden-check` proves the hidden tests fail before the patch
 and pass after it. [`python -m cbench harbor-build`](../cbench/harbor.py) turns each (task, arm) into a
 [Harbor](https://github.com/harbor-framework/harbor) task whose image installs the arm from the

@@ -60,8 +60,8 @@ uv run python -m cbench harbor-collect jobs && uv run python -m cbench report
 
 > [!WARNING]
 > `scripts/live.sh` refuses to start until `CBENCH_BUDGET_USD` is at least the worst case
-> (trials × the per-trial `--max-budget-usd` cap). The full matrix is 63 Haiku trials at a
-> $1 cap plus 9 Sonnet trials at a $3 cap, so the worst case is $90. Typical spend is a
+> (trials × the per-trial `--max-budget-usd` cap). The full matrix is 210 Haiku trials at a
+> $1 cap plus 30 Sonnet trials at a $3 cap (6 tasks, 5 trials each), so the worst case is $300. Typical spend is a
 > fraction of that, and the cap is enforced per trial by Claude Code.
 
 ## Notes for restricted networks

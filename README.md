@@ -91,9 +91,10 @@ CBENCH_BUDGET_USD=1 ANTHROPIC_API_KEY=... scripts/live.sh smoke   # one Haiku tr
 ```
 
 > [!WARNING]
-> The full matrix is 72 trials (6 harnesses and a bare control on Haiku 5.5, plus a Sonnet 5.5 baseline,
-> 3 tasks, 3 trials each). `scripts/live.sh` refuses to start unless `CBENCH_BUDGET_USD` covers the worst case
-> (trials × the per-trial cap, $90 for the full matrix). Typical spend is a fraction of that.
+> The full matrix is 240 trials (6 harnesses and a bare control on Haiku 5.5, plus a Sonnet 5.5 baseline,
+> 6 tasks, 5 trials each as [criteria](docs/criteria.md) §6 fixes). `scripts/live.sh` refuses to start unless
+> `CBENCH_BUDGET_USD` covers the worst case (trials × the per-trial cap, $300 for the full matrix). Typical
+> spend is a fraction of that.
 
 Design, what Harbor does and does not support, and how to read the results: [`docs/live-tier.md`](docs/live-tier.md).
 

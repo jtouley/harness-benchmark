@@ -136,10 +136,12 @@ Execute this task:
 Committed here: this summary and `2026-10-10-harness-vs-oneshot.json` (the results table as
 data). The full run data (prompts per run, `grade.py`, hidden tests, per-run grading and
 timing, blind rubric files with reproduced defects, label map) is kept in the owner's
-workspace (`.context/evals/harness-vs-oneshot-2026-10-10/`). The hidden tests are the same as
+workspace (`.context/evals/harness-vs-oneshot-2026-10-10/` in the cadence workspace; a copy is under `.context/experiments/` of this repository's owner checkout). The hidden tests are the same as
 `golden/tasks/T0[456]*/hidden/` after PR #4.
 
 ## What this round changed in the benchmark
+
+Historical: these were the recommendations at the time. [Criteria v1](../criteria.md) supersedes them where they differ (for example, n = 5 per cell).
 
 - Tasks T04–T06 already exist there with the same hidden tests.
 - Add arms `sonnet_oneshot`, `haiku_oneshot`, `opus_oneshot` with Template B as the drive
