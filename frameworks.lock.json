@@ -11,6 +11,11 @@
       "why": "skills add records the checkout path relative to the project",
       "pattern": "\"source\": \"[^\"]*bmad@[0-9a-f]+\"",
       "replace": "\"source\": \"<BMAD_SRC>\""
+    },
+    {
+      "why": "GSD writes the absolute path of the node binary into its hook command; it depends on where node is installed, not on the framework",
+      "pattern": "(?<![\\w.-])(?:/[\\w.+-]+)+/bin/node\\b",
+      "replace": "<NODE>"
     }
   ],
   "ignore": [

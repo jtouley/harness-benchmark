@@ -9,7 +9,7 @@ keywords = ["harness-benchmark", "spec-kit", "T04-ledgerlite-multicurrency"]
 task = "T04-ledgerlite-multicurrency"
 arm = "spec-kit"
 framework_sha = "b9e08bf3e1a9d82b2a7358e278a6224d54d8783b"
-lock_sha256 = "319ae097eab57711a9833af2a726f6e9106bcbfa1b18ff19fa775a3cbaf93637"
+lock_sha256 = "6bc4481efbc12e7fb45ed76ea63637a2ddc5e35b7c01f449f2cbf1c8f9b039ab"
 
 [verifier]
 timeout_sec = 300.0

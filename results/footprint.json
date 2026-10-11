@@ -301,7 +301,7 @@
         "memory_tokens": 0,
         "session_start": [
           {
-            "command": "\"$(for n in \"/usr/local/bin/node\" \"$(command -v node)\" /usr/local/bin/node /usr/bin/node; do [ -x \"$n\" ] && { [ \"${n#/}\" != \"$n\" ] || [ \"${n#?:}\" != \"$n\" ]; } && printf '%s' \"$n\" && break; done)\" \"$CLAUDE_PROJECT_DIR\"/.claude/hooks/gsd-check-update.js",
+            "command": "\"$(for n in \"<NODE>\" \"$(command -v node)\" <NODE> <NODE>; do [ -x \"$n\" ] && { [ \"${n#/}\" != \"$n\" ] || [ \"${n#?:}\" != \"$n\" ]; } && printf '%s' \"$n\" && break; done)\" \"$CLAUDE_PROJECT_DIR\"/.claude/hooks/gsd-check-update.js",
             "context_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
             "exit": 0,
             "origin": "proj/.claude/settings.local.json",
@@ -368,7 +368,7 @@
       "framework": "gsd-core",
       "install": {
         "files": 831,
-        "tree_sha256": "7d0776261056f00043f06848a49b4dbc3ae5d027d60ad8a4c8907fcd4fd4dbd8"
+        "tree_sha256": "7f84a2aeb2b8a4000ae252ff0d447121a4bdaaa1897b0bb610baaee51a56793b"
       },
       "items": {
         "agent": 35,
@@ -754,7 +754,7 @@
   "pricing_as_of": "2026-10-08",
   "provenance": {
     "canonical_root": "/tmp/cbench",
-    "lockfile_sha256": "319ae097eab57711a9833af2a726f6e9106bcbfa1b18ff19fa775a3cbaf93637",
+    "lockfile_sha256": "6bc4481efbc12e7fb45ed76ea63637a2ddc5e35b7c01f449f2cbf1c8f9b039ab",
     "pricing_sha256": "7af66e689754689850c47229da79af75d229e3882a798826de3f50317f292139",
     "tokenizer": {
       "id": "anthropic==0.37.1:anthropic/tokenizer.json",

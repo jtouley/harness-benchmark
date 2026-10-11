@@ -60,7 +60,7 @@ def workflow_steps(fw: Framework) -> list[str]:
     return list(fw.workflow.get("steps", []))
 
 
-def run_session_start(sb: Sandbox) -> list[dict]:
+def run_session_start(sb: Sandbox, norm=lambda text: text) -> list[dict]:
     rows = []
     payload = {"session_id": "cbench", "transcript_path": "/dev/null", "cwd": str(sb.proj),
                "hook_event_name": "SessionStart", "source": "startup"}
@@ -71,7 +71,7 @@ def run_session_start(sb: Sandbox) -> list[dict]:
         text = session_context(hook, result)
         rows.append({
             "origin": hook.origin,
-            "command": hook.command.replace(str(sb.root), "<ROOT>"),
+            "command": norm(hook.command.replace(str(sb.root), "<ROOT>")),
             "exit": result["exit"],
             "context_sha256": sha256_text(text),
             "tokens": tokens.count(text),
@@ -92,7 +92,7 @@ def measure(fw: Framework, lock: Lock, pricing: dict) -> dict:
     for item in memory:
         text, _ = expand_at_refs(norm(read_text(item.path) or ""), sb, item.path.parent)
         memory_tokens += tokens.count(text)
-    session = run_session_start(sb)
+    session = run_session_start(sb, norm)
     session_tokens = sum(r["tokens"] for r in session)
     always_on = listing_tokens + memory_tokens + session_tokens
 
