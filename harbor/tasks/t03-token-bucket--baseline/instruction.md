@@ -15,5 +15,3 @@ Implement `ratelimit.TokenBucket`; the class is currently a stub.
 - `available() -> float`: the current number of tokens after refilling.
 
 Standard library only.
-
-Implement this change in the repository, run the tests, and commit your work locally on the current branch.
