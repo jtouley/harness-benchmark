@@ -111,6 +111,15 @@ never evidence for a measure.
 set and is not raised after results are seen. A class claim needs at least **3 tasks** of that
 class; with fewer, the class result is "not enough tasks".
 
+**Caps.** Each trial runs under fixed caps, recorded here and pinned by `tests/test_criteria.py`:
+an agent timeout of **1800 s** (`cbench/harbor.py`, `timeout_sec`), and a dollar cap of **$1.00**
+for Haiku arms and **$3.00** for the Sonnet baseline (`scripts/live.sh` defaults). A trial that hits
+a cap is not delivered. The caps are part of the run set and do not change after results are seen.
+*Open owner decision before the first run set:* in the exploratory round harness runs took
+3,366–4,964 s (Opus, another host), so a 1800 s timeout may stop harness arms early and count them
+as not delivered. Raising the caps raises the worst-case spend; the chosen values are recorded here
+before the run set starts.
+
 **Units.** Every measure is per **attempted** run. A run that does not deliver (fails M1 or M8)
 counts as one critical defect for M2 and as one false success for M3 if it reports success.
 M3 is a per-run rate (false-success events / attempted runs).
@@ -125,7 +134,7 @@ cost on a task class** when all of these hold:
 
 1. **Fewer defects:** mean critical + major M2 per attempted run is lower than `oneshot-M` by
    at least 0.5, and the 90% interval of the difference is entirely above 0.
-2. **No more false success:** F's M3 rate is not higher than `oneshot-M`'s (a tolerance of 0.05 absorbs one event in a 20-run class).
+2. **No more false success:** F's M3 rate is not higher than `oneshot-M`'s (a tolerance of 0.05 absorbs about one event per 20 attempted runs; with 15 runs per arm it absorbs none).
 3. **Delivery is not worse:** F's M1 pass rate per attempted run is at least `oneshot-M`'s
    minus 10 points.
 4. **Cost:** cost per defect-free delivered run (M9 / attempted runs that pass M1 with zero

@@ -6,12 +6,12 @@ on:
   workflow_dispatch:
     inputs:
       mode:
-        description: smoke (1 Haiku trial) or full (72 trials)
+        description: smoke (1 Haiku trial) or full (240 trials; see docs/live-tier.md, it may not fit one job)
         type: choice
         options: [smoke, full]
         default: smoke
       budget_usd:
-        description: Budget you accept, in USD (smoke needs 1, full needs 90)
+        description: Budget you accept, in USD (smoke needs 1, full needs 300)
         required: true
         default: "1"
 

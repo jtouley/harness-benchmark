@@ -54,7 +54,10 @@ harbor run -p harbor/tasks -i 't01-slugify-bugfix--baseline' -a nop -y     # unt
 
 export ANTHROPIC_API_KEY=...
 CBENCH_BUDGET_USD=1 scripts/live.sh smoke           # one Haiku trial, capped at $1
-CBENCH_BUDGET_USD=90 scripts/live.sh                # the full matrix
+CBENCH_BUDGET_USD=300 scripts/live.sh               # the full matrix (240 trials)
+# 240 trials at up to 1800 s each, 2 at a time, can take far longer than one 6-hour CI job.
+# Run the full matrix on a host without that limit; a cut-off job leaves cells short of n = 5,
+# and criteria §6 does not allow a short run set.
 uv run python -m cbench harbor-collect jobs && uv run python -m cbench report
 ```
 

@@ -31,3 +31,15 @@ def test_live_tier_runs_every_golden_task():
     listed = set(re.search(r"^tasks=\(([^)]*)\)", live, re.M).group(1).split())
     golden = {p.parent.name.lower() for p in (ROOT / "golden" / "tasks").glob("*/task.json")}
     assert listed == golden
+
+
+def test_trial_caps_are_the_criteria_caps():
+    """criteria §6 Caps: the timeout and dollar caps are fixed and match the code."""
+    m = re.search(r"agent timeout of \*\*(\d+) s\*\*", CRITERIA)
+    haiku = re.search(r"\*\*\$(\d+\.\d\d)\*\*\s+for Haiku arms", CRITERIA)
+    base = re.search(r"\*\*\$(\d+\.\d\d)\*\* for the Sonnet baseline", CRITERIA)
+    harbor = (ROOT / "cbench" / "harbor.py").read_text(encoding="utf-8")
+    live = (ROOT / "scripts" / "live.sh").read_text(encoding="utf-8")
+    assert f'agent_timeout="{float(m.group(1))}"' in harbor
+    assert f'haiku_cap="${{HAIKU_CAP_USD:-{haiku.group(1)}}}"' in live
+    assert f'base_cap="${{BASELINE_CAP_USD:-{base.group(1)}}}"' in live
