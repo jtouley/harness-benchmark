@@ -1,10 +1,11 @@
 #!/usr/bin/env bash
-# Usage: setup_iteration.sh N  -> iteration-N/eval-<name>/{with_skill,old_skill}/{origin.git,repo,outputs}
+# Usage: setup_iteration.sh N  -> iteration-N/eval-<name>/<arm>/{origin.git,repo,outputs}
+# ARMS overrides the arms (iteration 4 ran all five below; the two Cadence reruns used ARMS=with_skill_fixed).
 set -euo pipefail
 W="$(cd "$(dirname "$0")" && pwd)"
 N="$1"
 for name in multicurrency budgets audit-undo; do
-  for cfg in with_skill old_skill; do
+  for cfg in ${ARMS:-with_skill old_skill opus_oneshot sonnet_oneshot haiku_oneshot}; do
     d="$W/iteration-$N/eval-$name/$cfg"
     [ -e "$d/repo" ] && { echo "exists: $d" >&2; exit 1; }
     mkdir -p "$d/outputs"

@@ -2,7 +2,8 @@
 import json, random, re, shutil, subprocess, sys, tarfile, io
 from pathlib import Path
 
-HERE = Path(__file__).resolve().parent
+# Usage: python build_blind.py [iteration-dir]   (default: the folder this script is in)
+HERE = Path(sys.argv[1]).resolve() if len(sys.argv) > 1 else Path(__file__).resolve().parent
 PATHS = ["ledgerlite", "tests", "README.md", "pyproject.toml"]
 ARMS = {
     "multicurrency": ["with_skill", "old_skill", "sonnet_oneshot", "haiku_oneshot", "opus_oneshot"],
@@ -87,3 +88,17 @@ for task, arms in ARMS.items():
         last = (_re.findall(r"\d+ passed[^\n]*|\d+ failed[^\n]*", proc.stdout) or [proc.stdout.strip()[-80:]])[-1]
         print(f"{task}/{letter} <- {arm} ({ref}): {last}")
 (HERE / "blind5_mapping.json").write_text(json.dumps(mapping, indent=2) + "\n")
+
+# Fail before any grader starts if a harness clue survived the scrub.
+CLUES = re.compile(r"(?i)cadence|ship-feature|pipeline|stages\.json|vibe-test|adversarial|plan-review|"
+                   r"phase ?\d|\.context|RUN_BY|mutmut|mutant|\bR[1-7]\b|\bE[1-4]\b|ticket|\bD\d+\b|\bMF-|\bF0\d")
+left = []
+for f in out.rglob("*"):
+    if f.is_file() and f.suffix in (".py", ".md", ".diff", ".toml") and ".venv" not in f.parts:
+        for n, line in enumerate(f.read_text(encoding="utf-8", errors="replace").splitlines(), 1):
+            if CLUES.search(line):
+                left.append(f"{f.relative_to(out)}:{n}: {line.strip()[:120]}")
+if left:
+    print("harness clues left after the scrub:", *left, sep="\n")
+    raise SystemExit(1)
+print("scrub check: no harness clues")

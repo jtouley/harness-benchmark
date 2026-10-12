@@ -1,0 +1,197 @@
+{
+  "rule": "Severity assigned by the authors from the blind grader's reproduced defects. major = a traceback or a breach of a sentence in the task spec; minor = everything else. An undelivered run counts as one critical defect (criteria v1 section 6, Units). Haiku's undelivered runs count only the one critical defect, not their listed defects.",
+  "per_task": {
+    "multicurrency": {
+      "cadence": {
+        "major": [],
+        "minor": [
+          "no inverse rates (documented)",
+          "currency codes not stripped of spaces",
+          "scope beyond spec: -0.00 format, overflow wrapping, CSV header normalization"
+        ],
+        "crashes": 0
+      },
+      "ship_feature": {
+        "major": [],
+        "minor": [
+          "hand-edited legacy store with a JSON-number amount no longer loads",
+          "strict v2 schema",
+          "scope beyond spec: header normalization, store validation"
+        ],
+        "crashes": 0
+      },
+      "opus_oneshot": {
+        "major": [],
+        "minor": [
+          "currency codes normalized twice; stored rows not validated"
+        ],
+        "crashes": 0
+      },
+      "sonnet_oneshot": {
+        "major": [],
+        "minor": [
+          "no inverse rates (documented)",
+          "stray README line",
+          "malformed rate key raises ValueError"
+        ],
+        "crashes": 0
+      },
+      "haiku_oneshot": {
+        "undelivered": true,
+        "major": [
+          "report monthly never converts to the base currency",
+          "blank CSV currency cell rejected"
+        ],
+        "minor": [
+          "case-sensitive, unvalidated codes",
+          "rates 0, -1, NaN accepted",
+          "no inverse rates, undocumented",
+          "dead code, hard-coded USD"
+        ],
+        "crashes": 0
+      }
+    },
+    "budgets": {
+      "cadence": {
+        "major": [
+          "two alerts for one category on a multi-month import (spec: once per category per command)"
+        ],
+        "minor": [
+          "malformed month accepted by report budget"
+        ],
+        "crashes": 0
+      },
+      "ship_feature": {
+        "major": [
+          "rejects a valid positive limit that is not whole cents (10.005)"
+        ],
+        "minor": [
+          "scope beyond spec: month rewrite, overflow probe, format bump"
+        ],
+        "crashes": 0
+      },
+      "opus_oneshot": {
+        "major": [
+          "traceback on a NaN amount",
+          "traceback in report for a tiny limit",
+          "two alerts for one category on a multi-month import"
+        ],
+        "minor": [],
+        "crashes": 2
+      },
+      "sonnet_oneshot": {
+        "major": [
+          "alerts again on each expense once over",
+          "traceback on a NaN amount",
+          "traceback in report for a tiny limit",
+          "two alerts for one category on a multi-month import"
+        ],
+        "minor": [
+          "no month validation"
+        ],
+        "crashes": 2
+      },
+      "haiku_oneshot": {
+        "major": [
+          "omits budgeted categories with no spending",
+          "banker's rounding for PCT",
+          "traceback on budget set x NaN",
+          "alerts on refunds and when already over",
+          "traceback on a NaN amount",
+          "two alerts for one category on a multi-month import"
+        ],
+        "minor": [
+          "Infinity limit accepted",
+          "no month validation",
+          "alert logic in the CLI, duplicated"
+        ],
+        "crashes": 2
+      }
+    },
+    "audit-undo": {
+      "cadence": {
+        "major": [
+          "an import of 0 rows writes no audit entry (grader: spec deviation, judgment call)"
+        ],
+        "minor": [
+          "undo N reverts in place, atomic only because the CLI does not save on error",
+          "scope beyond spec: duplicate-seq guard, format bump, clock seam"
+        ],
+        "crashes": 0
+      },
+      "ship_feature": {
+        "undelivered": true,
+        "major": [],
+        "minor": [],
+        "crashes": 0
+      },
+      "opus_oneshot": {
+        "major": [],
+        "minor": [
+          "undone state stored twice",
+          "undo N atomic only because the CLI does not save on error"
+        ],
+        "crashes": 0
+      },
+      "sonnet_oneshot": {
+        "major": [],
+        "minor": [
+          "skips a revert for a missing account (hand-edited store)",
+          "untyped audit list"
+        ],
+        "crashes": 0
+      },
+      "haiku_oneshot": {
+        "undelivered": true,
+        "major": [
+          "audit summary repeats the command",
+          "one undo blocks every earlier change"
+        ],
+        "minor": [
+          "undo 0 and undo -1 accepted",
+          "undo entry does not record reverted seqs",
+          "dead state, duplicate branches",
+          "tests lock in wrong behavior"
+        ],
+        "crashes": 0
+      }
+    }
+  },
+  "summary": {
+    "cadence": {
+      "attempted_runs": 3,
+      "delivered_runs": 3,
+      "major_in_delivered_code": 2,
+      "crashes_in_delivered_code": 0,
+      "critical_plus_major_per_attempted_run": 0.67
+    },
+    "ship_feature": {
+      "attempted_runs": 3,
+      "delivered_runs": 2,
+      "major_in_delivered_code": 1,
+      "crashes_in_delivered_code": 0,
+      "critical_plus_major_per_attempted_run": 0.67
+    },
+    "opus_oneshot": {
+      "attempted_runs": 3,
+      "delivered_runs": 3,
+      "major_in_delivered_code": 3,
+      "crashes_in_delivered_code": 2,
+      "critical_plus_major_per_attempted_run": 1.0
+    },
+    "sonnet_oneshot": {
+      "attempted_runs": 3,
+      "delivered_runs": 3,
+      "major_in_delivered_code": 4,
+      "crashes_in_delivered_code": 2,
+      "critical_plus_major_per_attempted_run": 1.33
+    },
+    "haiku_oneshot": {
+      "attempted_runs": 3,
+      "delivered_runs": 1,
+      "major_in_delivered_code": 6,
+      "crashes_in_delivered_code": 2,
+      "critical_plus_major_per_attempted_run": 2.67
+    }
+  }
+}

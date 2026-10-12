@@ -4,21 +4,21 @@ A reproducible benchmark of AI coding-workflow harnesses for Claude Code: [Caden
 
 ## Findings so far
 
-> **Does a harness beat a strong model working alone?** In two exploratory rounds on three feature
-> tasks (T04–T06, one run per cell, blind graders), **not on code quality**: Opus 5.5 alone scored
-> 8.00 out of 10, Cadence on Opus 7.33, at about 1/30 of the time. **What the harness did buy:** an
-> audit trail a reviewer can check (plans, independent reviews, a verified findings ledger, peer
-> attestations), completion on every task, better results on the spec with the most edge cases, and
-> loud failures instead of false success. **Next:** find the cheapest model that matches Opus inside
-> the harness.
+> **Does a harness beat a strong model working alone?** Two exploratory rounds on three feature tasks
+> (T04–T06, one run per cell, one blind grader) found **no quality gain**: Opus 5.5 alone scored 8.00
+> out of 10 and Cadence on Opus 7.33, at about 1/30 of the time. Most of that gap is single-run noise.
+> **What the harness did show:** no crash reached its delivered code (each one-shot shipped two), an
+> audit trail a reviewer can check, completion on every task or a recorded stop, and rules the model
+> cannot skip. **Next:** find the cheapest model that matches Opus inside the harness.
+> *Disclosure: the owner of this benchmark wrote Cadence.*
 
-| Arm (iteration 4) | Delivered | Hidden tests | Blind quality | Time per task | Audit trail |
-|---|---|---|---|---|---|
-| Opus 5.5 one-shot | 3 of 3 | 19/19 | **8.00** | 2 min | 1 commit |
-| ship-feature (Opus) | 2 of 3 | 13/19 | 7.88 (2 tasks) | 42 min | plan and reviews |
-| Cadence (Opus) | **3 of 3** | **19/19** | 7.33 | 63 min | **plan, 6 reviews, verified ledger, attestations** |
-| Sonnet 5.5 one-shot | 3 of 3 | 19/19 | 7.08 | 2 min | 1 commit |
-| Haiku 4.5 one-shot | 3 of 3 | 17/19 | 3.25 | 4 min | none |
+| Arm (iteration 4) | Delivered | Blind quality | Major or critical defects per run | Crashes shipped | Time per task | Audit trail |
+|---|---|---|---|---|---|---|
+| Opus 5.5 one-shot | 3 of 3 | 8.00 | 1.00 | 2 | 2 min | 1 commit |
+| ship-feature (Opus) | 2 of 3 | 7.88 | 0.67 | 0 | 42 min | plan and reviews |
+| Cadence (Opus) | 3 of 3 | 7.33 | 0.67 | 0 | 63 min | plan, 6 reviews by separate agents, verified ledger |
+| Sonnet 5.5 one-shot | 3 of 3 | 7.08 | 1.33 | 2 | 2 min | 1 commit |
+| Haiku 4.5 one-shot | 1 of 3 | 3.50 | 2.67 | 2 | 4 min | none |
 
 | Read | For |
 |---|---|

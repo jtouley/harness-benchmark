@@ -20,6 +20,8 @@ flowchart LR
 
 ## 2. Steps
 
+0. **Build the workspace.** [`make_workspace.sh`](experiments/2026-10-12-iteration-4/make_workspace.sh)
+   copies the fixture and the hidden tests from `golden/tasks/T0[456]*` and the scripts into one folder.
 1. **Fix the tasks.** Three feature requests for `ledgerlite` (a ~300-line Python CLI: models, JSON
    storage, CSV importer, reports, argparse CLI). They are T04–T06 in `golden/tasks/`. Each has a
    hidden test suite that fails on the untouched repository and passes with the reference patch
@@ -47,7 +49,8 @@ flowchart LR
    then runs each folder's own tests to prove the scrub broke nothing.
 8. **Grade blind.** One Opus grader per task sees all folders side by side. It scores design,
    correctness, readability and tests (1–10), and must reproduce each defect with a command and its
-   output. The letter map stays outside the folders.
+   output. The letter map stays outside the folders. We then classify each reproduced defect by a
+   written rule ([`defects.json`](experiments/2026-10-12-iteration-4/defects.json)).
 9. **Unmask and aggregate.** A script joins the blind scores, hidden tests, process checks, time,
    tokens and the audit-trail counts into [`results.json`](experiments/2026-10-12-iteration-4/results.json)
    and [`auditability.json`](experiments/2026-10-12-iteration-4/auditability.json).
@@ -61,7 +64,7 @@ flowchart LR
 | User-level skills with the same names as Cadence's peers ran instead of the peers (cadence#53) | Peers wrote reports in the wrong shape. Orchestrators had to send each peer the bundled path | Next design: a clean `HOME` per run |
 | The host sandbox denied reads of `~/.cursor/skills/_shared` | ship-feature ran some of its gate scripts by hand | Next design: a clean environment per run |
 | Two Haiku runs never committed their work | A branch archive would have graded the untouched baseline | Blind folders now use the delivered working tree, as criteria v1 already requires for grading |
-| The first scrub left phase labels and finding ids in comments | Those labels would have shown which folders came from a harness | Extra scrub rules. A search for harness words now runs before any grader starts |
+| The first scrub left phase labels and finding ids in comments | Those labels would have shown which folders came from a harness | Extra scrub rules. `build_blind.py` now ends with a search for harness words and fails if one is left |
 | A review agent ran `install.sh --help`, and the script has no help flag | It changed the live install of the skill. The host blocked its attempt to undo this | The owner restored the links. Lesson: an installer must reject unknown flags |
 | The completion notice reports total tokens only | No dollar figures | Next design: record input, output and cache tokens per session |
 | GitHub Actions did not start (an account billing block) | The two Cadence fixes merged on local test evidence, by owner decision | Recorded on each PR |
@@ -71,8 +74,8 @@ flowchart LR
 - **The baseline prompt adds nothing.** No "use TDD", no "write tests", no quality words.
 - **A claim in an agent's own summary is not evidence.** Hidden tests, the blind grader's reproduced
   defects, and files on disk are.
-- **Results against the harness are reported the same way as results for it.** Iteration 4's main
-  finding is against the harness on quality.
+- **Results against the harness are reported the same way as results for it.** Iteration 4 shows no
+  quality gain from a harness, and the docs say so first.
 - **Confounds go next to the claims they limit,** not at the end.
 
 ## 5. From here to criteria v1
