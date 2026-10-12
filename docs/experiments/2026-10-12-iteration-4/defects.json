@@ -193,5 +193,8 @@
       "crashes_in_delivered_code": 2,
       "critical_plus_major_per_attempted_run": 2.67
     }
-  }
+  },
+  "borderline": [
+    "ship_feature multicurrency: a hand-edited legacy store with a JSON-number amount no longer loads. Labeled minor (ledgerlite never writes that shape). As major, ship_feature's rate becomes 1.00; Cadence is unchanged."
+  ]
 }

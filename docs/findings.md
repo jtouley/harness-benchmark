@@ -28,7 +28,10 @@ the run passed every hidden test (M1), as [criteria v1](criteria.md#4-measures) 
 
 Iteration 4. Quality is the blind mean (1–10) over delivered runs only. Defects are reproduced by
 the grader. Their severity is assigned from the grader's text by a written rule
-([`defects.json`](experiments/2026-10-12-iteration-4/defects.json)).
+([`defects.json`](experiments/2026-10-12-iteration-4/defects.json)). One call is borderline: ship-feature's
+multicurrency change no longer loads a hand-edited old ledger file with a JSON-number amount. We
+labeled it minor, because ledgerlite never writes that shape. As major, it raises ship-feature to
+1.00 and leaves Cadence unchanged.
 
 | Arm | Delivered (M1) | Blind quality | Major or critical defects per attempted run | Crashes in delivered code | Time per task | Audit trail |
 |---|---|---|---|---|---|---|
@@ -99,8 +102,8 @@ and Haiku on that task. It is not evidence for a harness.
 
 ## What would change these conclusions
 
-- **More runs and a second grader.** Each cell ran once. Every gap here except Haiku's is within
-  single-run noise.
+- **More runs and a second grader.** Each cell ran once. Apart from Haiku's results and the 2.0-point
+  quality gap on multicurrency, every gap here is within single-run noise.
 - **Class L and O tasks.** If a harness does not reduce defects there, the case for it rests on
   auditability and enforcement only.
 - **A cheap-model harness arm.** If Cadence on Haiku 5.5 or Sonnet matches Opus alone, the cost

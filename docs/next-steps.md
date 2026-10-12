@@ -25,7 +25,7 @@ the defects that reach the delivered code, and the evidence that the run leaves 
   under 100K tokens, it costs between 1/10 and 1/5 of the Opus one-shot. A weaker model may need more
   tokens, and prompts over 100K tokens cost 5 times more on Haiku 5.5. It also holds only if a cheap
   model can follow the Cadence procedure at all. The pilot below finds out.
-- Haiku 4.5 alone scored 3.25. A cheap model alone does not reach Opus. The open question is how
+- Haiku 4.5 alone delivered 1 of 3 tasks, with quality 3.50 on that one. A cheap model alone does not reach Opus. The open question is how
   much of that gap a plan, independent review and verified fixes can close.
 
 ## Hypotheses

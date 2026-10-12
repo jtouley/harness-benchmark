@@ -154,7 +154,8 @@ successes, and delivery that is not worse than the Opus one-shot, with cost per 
 
 1. On small, precise tasks, if all you need is code, the strongest model alone is fast and good.
 2. If you must show how the code was checked, by whom, and that the checks passed, a one-shot cannot
-   give you that. The harness does it on every run, and it stopped two crashes that every one-shot shipped.
+   give you that. The harness does it on every run. And on this data, every one-shot shipped two crashes,
+   while no crash reached the harness's delivered code.
 3. The next result tells us whether the harness also lets a model at 1/40 of the price do the job.
 
 ---

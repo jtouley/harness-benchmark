@@ -15,10 +15,10 @@ A reproducible benchmark of AI coding-workflow harnesses for Claude Code: [Caden
 | Arm (iteration 4) | Delivered | Blind quality | Major or critical defects per run | Crashes shipped | Time per task | Audit trail |
 |---|---|---|---|---|---|---|
 | Opus 5.5 one-shot | 3 of 3 | 8.00 | 1.00 | 2 | 2 min | 1 commit |
-| ship-feature (Opus) | 2 of 3 | 7.88 | 0.67 | 0 | 42 min | plan and reviews |
+| ship-feature (Opus) | 2 of 3 | 7.88 (2 tasks) | 0.67 | 0 | 42 min | plan and reviews |
 | Cadence (Opus) | 3 of 3 | 7.33 | 0.67 | 0 | 63 min | plan, 6 reviews by separate agents, verified ledger |
 | Sonnet 5.5 one-shot | 3 of 3 | 7.08 | 1.33 | 2 | 2 min | 1 commit |
-| Haiku 4.5 one-shot | 1 of 3 | 3.50 | 2.67 | 2 | 4 min | none |
+| Haiku 4.5 one-shot | 1 of 3 | 3.50 (1 task) | 2.67 | 2 | 4 min | none |
 
 | Read | For |
 |---|---|
