@@ -1,0 +1,23 @@
+{
+  "multicurrency": {
+    "P": "old_skill",
+    "Q": "sonnet_oneshot",
+    "R": "opus_oneshot",
+    "S": "with_skill",
+    "T": "haiku_oneshot"
+  },
+  "budgets": {
+    "P": "old_skill",
+    "Q": "with_skill_fixed",
+    "R": "sonnet_oneshot",
+    "S": "opus_oneshot",
+    "T": "haiku_oneshot",
+    "U": "with_skill"
+  },
+  "audit-undo": {
+    "P": "sonnet_oneshot",
+    "Q": "haiku_oneshot",
+    "R": "opus_oneshot",
+    "S": "with_skill_fixed"
+  }
+}
