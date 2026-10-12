@@ -2,6 +2,34 @@
 
 A reproducible benchmark of AI coding-workflow harnesses for Claude Code: [Cadence](https://github.com/jtouley/cadence), [Superpowers](https://github.com/obra/superpowers), [Spec Kit](https://github.com/github/spec-kit), [OpenSpec](https://github.com/Fission-AI/OpenSpec), [GSD Core](https://github.com/open-gsd/gsd-core) and [BMAD-METHOD](https://github.com/bmad-code-org/BMAD-METHOD), against a no-harness baseline. Every number is recomputed from pinned commits by one command.
 
+## Findings so far
+
+> **Does a harness beat a strong model working alone?** Two exploratory rounds on three feature tasks
+> (T04–T06, one run per cell, one blind grader) found **no quality gain**: Opus 5.5 alone scored 8.00
+> out of 10 and Cadence on Opus 7.33, at about 1/30 of the time. Most of that gap is single-run noise.
+> **What the harness did show:** no crash reached its delivered code (each one-shot shipped two), an
+> audit trail a reviewer can check, completion on every task or a recorded stop, and rules the model
+> cannot skip. **Next:** find the cheapest model that matches Opus inside the harness.
+> *Disclosure: the owner of this benchmark wrote Cadence.*
+
+| Arm (iteration 4) | Delivered | Blind quality | Major or critical defects per run | Crashes shipped | Time per task | Audit trail |
+|---|---|---|---|---|---|---|
+| Opus 5.5 one-shot | 3 of 3 | 8.00 | 1.00 | 2 | 2 min | 1 commit |
+| ship-feature (Opus) | 2 of 3 | 7.88 (2 tasks) | 0.67 | 0 | 42 min | plan and reviews |
+| Cadence (Opus) | 3 of 3 | 7.33 | 0.67 | 0 | 63 min | plan, 6 reviews by separate agents, verified ledger |
+| Sonnet 5.5 one-shot | 3 of 3 | 7.08 | 1.33 | 2 | 2 min | 1 commit |
+| Haiku 4.5 one-shot | 1 of 3 | 3.50 (1 task) | 2.67 | 2 | 4 min | none |
+
+| Read | For |
+|---|---|
+| [**What a harness buys you**](docs/findings.md) | The conclusions: what we got from Cadence, what we did not, and what one-shotting gives |
+| [**20-minute talk track**](docs/talk.md) | Slides, numbers and speaker notes, with the questions to expect |
+| [**Next steps**](docs/next-steps.md) | The cheapest model that matches Opus with an audit trail: Claude Code, Cursor CLI and OpenAI arms |
+| [Iteration 4](docs/experiments/2026-10-12-iteration-4.md) · [Iteration 3](docs/experiments/2026-10-10-harness-vs-oneshot.md) | Full write-ups, data, confounds |
+| [How the rounds were run](docs/process.md) | The process end to end, and what went wrong |
+
+These rounds ran outside the Harbor live tier, so they are not [criteria v1](docs/criteria.md) results.
+
 ## Overview
 
 Each harness is installed the way its own README says, at a pinned commit, then measured in three tiers:
@@ -41,7 +69,7 @@ Tiers 1 and 2, measured on Linux with Claude Code 2.1.294. Source: [`results/REP
 | `bmad` | 2,004 | 411 – 20,044 | 2/6 |
 | `baseline` | 0 | 0 | 2/6 |
 
-**Conclusion (tiers 1–2):** only Cadence's installed hooks block a forged approval, a self-certified verdict, a shell edit before plan approval and a stop mid-run; GSD Core blocks reading `.env` and overwriting the plan, which Cadence does not. That is the axis Cadence is designed for. The other harnesses never claimed to enforce, so this shows a different category, not a better one. Loading any harness's whole workflow costs cents. **Whether a harness improves outcomes is not yet measured: the live tier has not run.** See [`docs/live-tier.md`](docs/live-tier.md).
+**Conclusion (tiers 1–2):** only Cadence's installed hooks block a forged approval, a self-certified verdict, a shell edit before plan approval and a stop mid-run; GSD Core blocks reading `.env` and overwriting the plan, which Cadence does not. That is the axis Cadence is designed for. The other harnesses never claimed to enforce, so this shows a different category, not a better one. Loading any harness's whole workflow costs cents. **The live tier has not run, so no criteria v1 outcome result exists yet.** Two exploratory outcome rounds ran outside it: see [Findings so far](#findings-so-far) and [`docs/live-tier.md`](docs/live-tier.md).
 
 **Criteria:** what counts as a harness being worth its cost, the neutral one-shot baseline, the measures and the pre-registered decision rule are in [`docs/criteria.md`](docs/criteria.md) (v1).
 
@@ -117,7 +145,7 @@ to start without a budget that covers the worst case.
 
 ## Limitations
 
-- **No outcome evidence yet.** Tiers 1 and 2 measure cost and enforcement. They do not show that any harness makes the code better.
+- **No criteria v1 outcome evidence yet.** Tiers 1 and 2 measure cost and enforcement. The two exploratory outcome rounds ([findings](docs/findings.md)) ran once per cell with one grader, on small precise tasks. They found no quality gain from a harness on those tasks.
 - **Six golden tasks is a small sample.** Report rates, not rankings, until more tasks exist. Adding a task is a directory: `repo/`, `issue.md`, `hidden/`, `reference.patch`, `task.json`.
 - **Token counts use a proxy tokenizer** (`anthropic==0.37.1`, pinned by sha256), good for comparing arms with each other and not exact billing.
 - **The Cursor verdicts follow Cursor's documented hook semantics.** No Cursor binary was available to validate them.
@@ -139,7 +167,8 @@ harness-benchmark/
 │   └── agents/              # Claude Code agent that keeps each harness's install
 ├── scripts/live.sh          # live tier with a spend guard
 ├── results/                 # committed outputs and REPORT.md
-├── docs/                    # live-tier.md, methodology.md
+├── docs/                    # findings.md, talk.md, next-steps.md, process.md, criteria.md,
+│                            # live-tier.md, methodology.md, experiments/
 └── .github/workflows/       # verify.yml, live.yml
 ```
 

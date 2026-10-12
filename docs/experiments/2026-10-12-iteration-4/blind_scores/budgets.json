@@ -1,0 +1,48 @@
+{
+  "scores": {
+    "P": {"design": 7, "correctness": 8, "readability": 8, "tests": 8, "mean": 7.75},
+    "Q": {"design": 8, "correctness": 7, "readability": 8, "tests": 8, "mean": 7.75},
+    "R": {"design": 7, "correctness": 5, "readability": 7, "tests": 6, "mean": 6.25},
+    "S": {"design": 7, "correctness": 6, "readability": 8, "tests": 8, "mean": 7.25},
+    "T": {"design": 3, "correctness": 2, "readability": 5, "tests": 4, "mean": 3.5},
+    "U": {"design": 9, "correctness": 7, "readability": 9, "tests": 8, "mean": 8.25}
+  },
+  "defects": {
+    "P": [
+      "Rejects valid positive limits that are not whole cents (models.py:91-92): `budget set x 10.005` -> `error: limit 10.005 must be a whole number of cents` rc=2; spec only requires LIMIT > 0",
+      "Scope creep beyond the feature: Transaction.month rewritten (models.py:39-43), overflow probe with localcontext (models.py:85-90), FORMAT_VERSION bumped to 2 (storage.py:13), storage imports budgets.parse_limit (storage.py:10). Not a crash, but extra surface"
+    ],
+    "Q": [
+      "Multi-month import gives two alerts for one category (budgets.py:38-43 keys on (category, month)): import of 2026-01 -150, 2026-02 -150, 2026-01 -5 with food limit 100 -> `alert: food over budget for 2026-01 (155.00/100.00)` AND `alert: food over budget for 2026-02 (150.00/100.00)`; spec says once per category per command",
+      "report budget accepts a malformed month silently: `report budget 2026-1` -> prints 0.00 lines rc=0 (reports.py:33)"
+    ],
+    "R": [
+      "Alerts again on every new expense once a category is already over (reports.py:43 `spent > before`): limit 200, spent 305, `tx add c 2026-01-08 -1 food` -> `alert: food over budget for 2026-01 (306.00/200.00)`; spec says alert when the command pushes spending past the limit",
+      "Traceback on a NaN amount in a budgeted category (models.py:69 `t.amount < 0`): `tx add c 2026-01-10 NaN food` -> decimal.InvalidOperation rc=1",
+      "Traceback in report for a tiny limit (reports.py:32 quantize): `budget set tiny 0.0000000001; tx add c 2026-03-01 -1e21 tiny; report budget 2026-03` -> decimal.InvalidOperation rc=1",
+      "Multi-month import gives two alerts for one category (same repro as Q)",
+      "No month validation: `report budget 2026-1` rc=0"
+    ],
+    "S": [
+      "Traceback on a NaN amount in a budgeted category (models.py:40 outflow `t.amount < 0`): `tx add c 2026-01-10 NaN food` -> decimal.InvalidOperation rc=1",
+      "Traceback in report for a tiny limit (reports.py:34 quantize): same repro as R -> decimal.InvalidOperation rc=1",
+      "Multi-month import gives two alerts for one category (reports.py:46-55 keyed on (category, month)); same repro as Q"
+    ],
+    "T": [
+      "report budget omits budgeted categories with no spending (reports.py `if category in spending`): budgets food 200, rent 1000 -> `report budget 2026-01` prints only the food line; spec: one line per budgeted category",
+      "PCT uses float round() = banker's rounding (reports.py `round(float(...))`): spent 1 of 200 -> `(0%)` (expected 1%); spent 5 of 200 -> `(2%)` (expected 3%)",
+      "`budget set x NaN` -> decimal.InvalidOperation traceback rc=1 (cli.py:85 `limit <= 0` without is_finite)",
+      "`budget set x Infinity` accepted -> `set budget for x to Infinity` rc=0",
+      "Alerts whenever the category is over after any tx, incl. refunds and already-over (cli.py:13-30): `tx add c 2026-01-09 5 food` while over -> `alert: food over budget for 2026-01 (306.00/200.00)`",
+      "Traceback on NaN amount in a budgeted category: `tx add c 2026-01-10 NaN food` -> decimal.InvalidOperation rc=1 (cli.py:25)",
+      "Multi-month import gives two alerts for one category; no month validation (`report budget 2026-1` rc=0)",
+      "Alert logic and spending math live in cli.py and are duplicated in reports.py; no model-level set_budget, so storage/cli validation is ad hoc"
+    ],
+    "U": [
+      "Traceback on a NaN amount in a budgeted category (models.py:47 Transaction.spending `self.amount < 0`): `tx add c 2026-01-10 NaN food` -> decimal.InvalidOperation rc=1 (base CLI accepts NaN amounts; budget code now crashes on them)",
+      "Minor: sub-cent limit shown rounded (`budget set x 10.005` lists `x: 10.00`) while PCT uses the exact value; tested deliberately"
+    ]
+  },
+  "ranking": ["U", "P", "Q", "S", "R", "T"],
+  "notes": "Alert semantics: P, Q, S, U alert only on crossing (before <= limit < after); R and T alert again when already over (T even on refunds). Once-per-category: P and U hold one alert per category across months (earliest month); Q, R, S, T emit one per (category, month). P and Q are the only solutions that reject NaN/Infinity amounts and so avoid the InvalidOperation crash; R, S, T, U crash on `tx add ... NaN <budgeted category>`. R and S use quantize without a precision guard and crash on extreme ratios; P (to_integral_value), Q (adaptive localcontext) and U (to_integral_value) do not. T is clearly worst: zero-spend categories are missing from the report, PCT uses banker's rounding, and NaN limits give a traceback. P vs Q tie on mean; P ranks higher because its alert rule matches 'once per category' and it validates months, but P loses design points for scope creep (whole-cents rule, overflow probe, Transaction.month rewrite, format version bump) and a 595-line test file. All suites pass: P 126, Q 85, R 17, S 38, T 23, U 52 tests."
+}

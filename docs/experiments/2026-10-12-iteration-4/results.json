@@ -1,0 +1,310 @@
+{
+  "runs": {
+    "multicurrency/cadence": {
+      "arm_dir": "with_skill",
+      "hidden": "6/6",
+      "process": "9/10",
+      "quality": 6.75,
+      "scores": {
+        "design": 6,
+        "correctness": 7,
+        "readability": 7,
+        "tests": 7,
+        "mean": 6.75
+      },
+      "seconds": 4060.9,
+      "tokens": 288989
+    },
+    "multicurrency/ship_feature": {
+      "arm_dir": "old_skill",
+      "hidden": "6/6",
+      "process": "8/10",
+      "quality": 8.0,
+      "scores": {
+        "design": 7,
+        "correctness": 8,
+        "readability": 8,
+        "tests": 9,
+        "mean": 8.0
+      },
+      "seconds": 3801.9,
+      "tokens": 278963
+    },
+    "multicurrency/opus_oneshot": {
+      "arm_dir": "opus_oneshot",
+      "hidden": "6/6",
+      "process": "2/9",
+      "quality": 8.75,
+      "scores": {
+        "design": 9,
+        "correctness": 9,
+        "readability": 9,
+        "tests": 8,
+        "mean": 8.75
+      },
+      "seconds": 124.5,
+      "tokens": 70733
+    },
+    "multicurrency/sonnet_oneshot": {
+      "arm_dir": "sonnet_oneshot",
+      "hidden": "6/6",
+      "process": "2/9",
+      "quality": 7.25,
+      "scores": {
+        "design": 8,
+        "correctness": 7,
+        "readability": 8,
+        "tests": 6,
+        "mean": 7.25
+      },
+      "seconds": 77.4,
+      "tokens": 64890
+    },
+    "multicurrency/haiku_oneshot": {
+      "arm_dir": "haiku_oneshot",
+      "hidden": "5/6",
+      "process": "2/9",
+      "quality": 3.25,
+      "scores": {
+        "design": 4,
+        "correctness": 2,
+        "readability": 4,
+        "tests": 3,
+        "mean": 3.25
+      },
+      "seconds": 242.0,
+      "tokens": 69673
+    },
+    "budgets/cadence": {
+      "arm_dir": "with_skill_fixed",
+      "hidden": "7/7",
+      "process": "10/10",
+      "quality": 7.75,
+      "scores": {
+        "design": 8,
+        "correctness": 7,
+        "readability": 8,
+        "tests": 8,
+        "mean": 7.75
+      },
+      "seconds": 3964.1,
+      "tokens": 305629
+    },
+    "budgets/ship_feature": {
+      "arm_dir": "old_skill",
+      "hidden": "7/7",
+      "process": "8/9",
+      "quality": 7.75,
+      "scores": {
+        "design": 7,
+        "correctness": 8,
+        "readability": 8,
+        "tests": 8,
+        "mean": 7.75
+      },
+      "seconds": 3078.5,
+      "tokens": 244230
+    },
+    "budgets/opus_oneshot": {
+      "arm_dir": "opus_oneshot",
+      "hidden": "7/7",
+      "process": "2/9",
+      "quality": 7.25,
+      "scores": {
+        "design": 7,
+        "correctness": 6,
+        "readability": 8,
+        "tests": 8,
+        "mean": 7.25
+      },
+      "seconds": 129.0,
+      "tokens": 67841
+    },
+    "budgets/sonnet_oneshot": {
+      "arm_dir": "sonnet_oneshot",
+      "hidden": "7/7",
+      "process": "2/9",
+      "quality": 6.25,
+      "scores": {
+        "design": 7,
+        "correctness": 5,
+        "readability": 7,
+        "tests": 6,
+        "mean": 6.25
+      },
+      "seconds": 66.9,
+      "tokens": 62241
+    },
+    "budgets/haiku_oneshot": {
+      "arm_dir": "haiku_oneshot",
+      "hidden": "7/7",
+      "process": "2/9",
+      "quality": 3.5,
+      "scores": {
+        "design": 3,
+        "correctness": 2,
+        "readability": 5,
+        "tests": 4,
+        "mean": 3.5
+      },
+      "seconds": 189.7,
+      "tokens": 60516
+    },
+    "budgets/cadence_prefix": {
+      "arm_dir": "with_skill",
+      "hidden": "7/7",
+      "process": "8/10",
+      "quality": 8.25,
+      "scores": {
+        "design": 9,
+        "correctness": 7,
+        "readability": 9,
+        "tests": 8,
+        "mean": 8.25
+      },
+      "seconds": 840.7,
+      "tokens": 203882
+    },
+    "audit-undo/cadence": {
+      "arm_dir": "with_skill_fixed",
+      "hidden": "6/6",
+      "process": "10/10",
+      "quality": 7.5,
+      "scores": {
+        "design": 7,
+        "correctness": 8,
+        "readability": 8,
+        "tests": 7,
+        "mean": 7.5
+      },
+      "seconds": 3266.1,
+      "tokens": 241657
+    },
+    "audit-undo/ship_feature": {
+      "arm_dir": "old_skill",
+      "hidden": "0/6",
+      "process": "4/10",
+      "quality": null,
+      "scores": null,
+      "seconds": 608.5,
+      "tokens": 112550
+    },
+    "audit-undo/opus_oneshot": {
+      "arm_dir": "opus_oneshot",
+      "hidden": "6/6",
+      "process": "2/9",
+      "quality": 8.0,
+      "scores": {
+        "design": 8,
+        "correctness": 8,
+        "readability": 8,
+        "tests": 8,
+        "mean": 8.0
+      },
+      "seconds": 126.1,
+      "tokens": 67195
+    },
+    "audit-undo/sonnet_oneshot": {
+      "arm_dir": "sonnet_oneshot",
+      "hidden": "6/6",
+      "process": "2/9",
+      "quality": 7.75,
+      "scores": {
+        "design": 8,
+        "correctness": 8,
+        "readability": 8,
+        "tests": 7,
+        "mean": 7.75
+      },
+      "seconds": 199.1,
+      "tokens": 63932
+    },
+    "audit-undo/haiku_oneshot": {
+      "arm_dir": "haiku_oneshot",
+      "hidden": "5/6",
+      "process": "2/9",
+      "quality": 3.0,
+      "scores": {
+        "design": 3,
+        "correctness": 2,
+        "readability": 4,
+        "tests": 3,
+        "mean": 3.0
+      },
+      "seconds": 339.2,
+      "tokens": 84140
+    },
+    "audit-undo/cadence_prefix": {
+      "arm_dir": "with_skill",
+      "hidden": "0/6",
+      "process": "1/10",
+      "quality": null,
+      "scores": null,
+      "seconds": 572.2,
+      "tokens": 118727
+    }
+  },
+  "summary": {
+    "cadence": {
+      "tasks": 3,
+      "quality_tasks": 3,
+      "hidden": "19/19",
+      "seconds_mean": 3764,
+      "tokens_mean": 278758,
+      "delivered": "3 of 3",
+      "quality_mean_all_graded_runs": 7.33,
+      "quality_mean_delivered": 7.33
+    },
+    "ship_feature": {
+      "tasks": 3,
+      "quality_tasks": 2,
+      "hidden": "13/19",
+      "seconds_mean": 2496,
+      "tokens_mean": 211914,
+      "delivered": "2 of 3",
+      "quality_mean_all_graded_runs": 7.88,
+      "quality_mean_delivered": 7.88
+    },
+    "opus_oneshot": {
+      "tasks": 3,
+      "quality_tasks": 3,
+      "hidden": "19/19",
+      "seconds_mean": 127,
+      "tokens_mean": 68590,
+      "delivered": "3 of 3",
+      "quality_mean_all_graded_runs": 8.0,
+      "quality_mean_delivered": 8.0
+    },
+    "sonnet_oneshot": {
+      "tasks": 3,
+      "quality_tasks": 3,
+      "hidden": "19/19",
+      "seconds_mean": 114,
+      "tokens_mean": 63688,
+      "delivered": "3 of 3",
+      "quality_mean_all_graded_runs": 7.08,
+      "quality_mean_delivered": 7.08
+    },
+    "haiku_oneshot": {
+      "tasks": 3,
+      "quality_tasks": 3,
+      "hidden": "17/19",
+      "seconds_mean": 257,
+      "tokens_mean": 71443,
+      "delivered": "1 of 3",
+      "quality_mean_all_graded_runs": 3.25,
+      "quality_mean_delivered": 3.5
+    },
+    "cadence_prefix": {
+      "tasks": 2,
+      "quality_tasks": 1,
+      "hidden": "7/13",
+      "seconds_mean": 706,
+      "tokens_mean": 161304,
+      "delivered": "1 of 2",
+      "quality_mean_all_graded_runs": 8.25,
+      "quality_mean_delivered": 8.25
+    }
+  },
+  "note": "Delivered follows criteria v1 M1 (every hidden test passes). The docs use quality_mean_delivered."
+}
