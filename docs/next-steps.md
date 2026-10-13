@@ -43,6 +43,13 @@ the defects that reach the delivered code, and the evidence that the run leaves 
   the arm's cheap model. (b) *Cheap + Opus reviews*: the cheap model plans and implements; the review
   peers (plan review, adversarial review, PR review, test benchmark) run on Opus 5.5, and their Opus tokens
   count in the arm's cost. Comparing (a) and (b) shows what Opus reviews add, per dollar.
+- **A harness run is never cut off.** Harness arms have no per-trial time cap. A Cadence run took
+  54–68 minutes in iteration 4, and criteria v1's 1800 s cap would have scored every one as not
+  delivered. Spend is controlled by a budget for the whole run set, recorded before it starts, not by
+  stopping a trial. (One-shot arms keep a generous time cap only as a guard against a hung session.)
+- **Cursor CLI and OpenAI arms.** The Cursor CLI runs in `auto` mode (Cursor picks the model) and on
+  its cheapest models; the OpenAI arms use the cheapest tool-using models the account can call. Each
+  of these runs with Cadence and alone.
 - **Opus never orchestrates a Cadence run.** It appears only as the one-shot bar and as the reviewer in
   variant (b). Sonnet does not run a harness arm. The lift of the harness is measured on the cheap models,
   against each model's own one-shot. The main claim is "cheap model + Cadence is not worse than the Opus
@@ -70,13 +77,18 @@ variant only.
 | Anthropic, cheapest | Claude Code | Haiku 5.5 | Cadence, all cheap | one-shot |
 | Opus reviews | Claude Code | Haiku 5.5 implements, Opus 5.5 reviews | Cadence, cheap + Opus reviews | shares the Haiku 5.5 one-shot |
 | Anthropic, cheap | Claude Code | Haiku 4.5 | Cadence | one-shot |
-| Cross-vendor | Cursor CLI (`cursor-agent`) | `gpt-5.4-mini-*` | Cadence | one-shot |
-| Cross-vendor | Cursor CLI | `gemini-3.8-flash-*` | Cadence | one-shot |
-| Cross-vendor | Cursor CLI | `composer-2.5` | Cadence | one-shot |
-| Cross-vendor | OpenAI API (an agent CLI or a small tool loop) | the cheapest tool-using OpenAI model the account can call | Cadence (headless gate protocol) | one-shot |
+| Cursor | Cursor CLI (`cursor-agent`) | `auto` (Cursor picks the model) | Cadence | one-shot |
+| Cursor, cheap | Cursor CLI | the cheapest models in `cursor-agent --list-models`, for example `gpt-5.4-mini-*`, `gemini-3.6-flash-*` to `gemini-3.8-flash-*`, `composer-2.5` | Cadence | one-shot |
+| OpenAI, cheap | OpenAI API (an agent CLI or a small tool loop) | the cheapest tool-using OpenAI models the account can call (from the account's model list at run time) | Cadence (headless gate protocol) | one-shot |
 
 Sonnet 5.5 costs half of Opus per token, so it is not a cheap arm. It joins only if no cheap arm
 matches Opus, as a step to find where the line is.
+
+**`auto` needs its own reporting.** In `auto` mode Cursor chooses the model per request, so the arm is
+"whatever Cursor routes to", not one model. Record the model of each request where the CLI's JSON output
+reports it, and the cost from Cursor's own usage accounting; when the model is not reported, say so. The
+`auto` arm answers "what does the default Cursor experience give", and it is compared with the Opus
+one-shot like any other arm.
 
 The Cursor model ids above are names from `cursor-agent --list-models` on 2026-10-12. Pin the exact
 id, its effort level and the CLI version in `frameworks.lock.json` at run time. Add each model's price
@@ -128,10 +140,11 @@ M10 auditability are reported beside it. They do not decide. If no arm matches, 
 and the harness case rests on auditability and enforcement. Each arm is also compared with the one-shot
 on its own model, as criteria v1 requires, so the harness effect and the model effect stay separate.
 
-**Caps (owner decision before the run set).** Criteria v1 caps a trial at 1800 s and $1 for Haiku arms.
-Every iteration-4 Cadence run took 3,266–4,061 s on Opus, so at 1800 s every harness run would count as
-not delivered. This question needs a higher time cap and per-model dollar caps, chosen and recorded in
-criteria before the first run. That is a new criteria version, with a changelog entry.
+**Caps (owner decision, 2026-10-12).** Harness arms have no per-trial time cap: a harness run is never
+cut off. Criteria v1's 1800 s cap would have scored every iteration-4 Cadence run (3,266–4,061 s) as not
+delivered. Spend is controlled by one budget for the run set, recorded in the criteria before the first
+run; the run set stops scheduling new trials when the budget is spent, and never stops a trial in
+progress. This changes criteria v1 §6 and is part of the next criteria version, with a changelog entry.
 
 ## Plan
 
@@ -144,8 +157,8 @@ criteria before the first run. That is a new criteria version, with a changelog 
 
 ## Prerequisites (stage 0)
 
-1. **Caps.** Choose the time and dollar caps for this question and record them in a new criteria version
-   (see above).
+1. **Caps.** Record the run-set budget, and the removal of the per-trial time cap for harness arms, in the
+   next criteria version (see above).
 2. **Cost capture.** Record input, output and cache tokens and dollars for the whole session, nested
    subagents included, from the host's own accounting. Verify that this includes the harness's peers.
 3. **Clean room per run, checked.** Each run gets a clean `HOME` with only its arm's own harness
