@@ -66,8 +66,35 @@ flowchart LR
 | Two Haiku runs never committed their work | A branch archive would have graded the untouched baseline | Blind folders now use the delivered working tree, as criteria v1 already requires for grading |
 | The first scrub left phase labels and finding ids in comments | Those labels would have shown which folders came from a harness | Extra scrub rules. `build_blind.py` now ends with a search for harness words and fails if one is left |
 | A review agent ran `install.sh --help`, and the script has no help flag | It changed the live install of the skill. The host blocked its attempt to undo this | The owner restored the links. Lesson: an installer must reject unknown flags |
+| Every session was shown the 96 user-level skills, some described as TDD | The one-shot baselines were exposed to skill descriptions. None used a skill (checked) | A clean `HOME` per run and `clean_room_check.py` as a gate before grading |
 | The completion notice reports total tokens only | No dollar figures | Next design: record input, output and cache tokens per session |
 | GitHub Actions did not start (an account billing block) | The two Cadence fixes merged on local test evidence, by owner decision | Recorded on each PR |
+
+## Clean room
+
+A run counts only if it saw and used nothing but its own arm's tools. Iterations 3 and 4 did not meet
+that bar. Every Claude Code session is shown the names and descriptions of every user-level skill, and
+on this host that list had 96 skills, some described as "strict TDD discipline". A one-shot baseline
+that can see such a list is not neutral ([criteria §2](criteria.md#2-arms)), and a description can also
+fire a skill on a wake word.
+
+[`scripts/clean_room_check.py`](../scripts/clean_room_check.py) reads a run's transcript and returns:
+
+| Verdict | Exit | Meaning |
+|---|---|---|
+| `clean` | 0 | No skill outside the arm's allowlist was listed or used |
+| `exposed` | 1 | Skills outside the allowlist were listed to the session, and none was used |
+| `contaminated` | 2 | A skill outside the allowlist was called, or a skill, rule, command or memory file was read |
+
+From the next run set on, a run is graded only when the check returns `clean`. Each run gets a clean
+`HOME` with only its arm's harness installed, so a harness arm's own files are the only ones that can
+appear, and the check is exact.
+
+**Iteration 4, checked after the fact** ([`clean_room.json`](experiments/2026-10-12-iteration-4/clean_room.json)):
+all 9 one-shot runs were `exposed` (96 skills listed) and none was `contaminated`: no one-shot called a
+skill or read a skill, rule or command file. The harness runs cannot be judged from their transcripts:
+path matching cannot tell their own bundled files from user-level ones, and their peer agents'
+transcripts, where cadence#53 substitutions happened, were not kept.
 
 ## 4. Rules we kept
 
