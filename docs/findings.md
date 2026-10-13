@@ -108,7 +108,7 @@ and Haiku on that task. It is not evidence for a harness.
   [`clean_room_check.py`](../scripts/clean_room_check.py).
 - **Harder tasks.** Opus alone did these tasks in about 2 minutes. The next run set uses class L and O
   tasks, starting with the [L3 open-data BI pipeline](tasks/L3-open-data-bi-pipeline.md), and runs the
-  harness only on cheap models ([next steps](next-steps.md)).
+  harness on cheap models, all cheap and with Opus as reviewer only ([next steps](next-steps.md)).
 - **More runs and a second grader.** Each cell ran once. Apart from Haiku's results and the 2.0-point
   quality gap on multicurrency, every gap here is within single-run noise.
 - **Class L and O tasks.** If a harness does not reduce defects there, the case for it rests on

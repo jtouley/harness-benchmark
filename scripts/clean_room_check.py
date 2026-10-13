@@ -6,10 +6,11 @@ memory that its arm did not bring. Every Claude Code session is shown a list of 
 and their descriptions can prime a model ("strict TDD discipline") or be invoked on a
 wake word, so a one-shot baseline that can see them is not neutral (criteria v1 section 2).
 
-Input: a run's transcripts. Give the run agent's transcript, and either the other
-transcripts of the run or `--agents-dir DIR` with the run agent's id: then every nested
-agent the run spawned (found through `parentAgentId` in `agent-*.meta.json`) is read
-too. Nested peers are where a user-level skill can stand in for a harness's own.
+Input: a run's transcripts. For a top-level session, give `<session>.jsonl`: the agents
+in `<session>/subagents/` are read too. For a run that is itself a subagent, give
+`--agents-dir DIR` with the run agent's id: every agent it spawned (found through
+`parentAgentId` in `agent-*.meta.json`) is read too. Nested peers are where a user-level
+skill can stand in for a harness's own.
 
 The check reads three things in every transcript:
 
@@ -20,8 +21,9 @@ The check reads three things in every transcript:
   shell command that names a skill, rule, command, plugin or memory location. Text that
   a tool writes (content, new_string) is not a contact.
 
-Skills the host always lists (scripts/clean_room_builtin_skills.json) are allowed for
-every arm. Allowed paths match by whole path components.
+Skills the host always lists (scripts/clean_room_builtin_skills.json) may appear in the
+listing of any arm, but calling one needs `--allow` like any other skill. Allowed paths
+match by whole path components.
 
 Verdicts (exit code): clean (0), exposed (1: skills outside the allowlist were listed,
 none used), contaminated (2: a skill outside the allowlist was called, or a location
@@ -42,19 +44,28 @@ from pathlib import Path
 
 BUILTIN = Path(__file__).with_name("clean_room_builtin_skills.json")
 LISTING_BLOCK = re.compile(r"The following skills are available[^\n]*\n(.*?)(?:</system-reminder>|\Z)", re.S)
-LISTING_NAME = re.compile(r"^- ([^:\s]+(?::[^:\s]+)?):", re.M)
+LISTING_NAME = re.compile(r"^- ([^:\s]+(?::[^:\s]+)*)(?::|[ \t]*$)", re.M)
 LOCATION = re.compile(
     r"\.(?:claude|cursor)/(?:skills|rules|commands|plugins|agents)(?:/|$|(?=[\s'\"]))"
     r"|\.claude/projects/[^/\s]+/memory(?:/|$)"
     r"|(?:^|/)(?:SKILL|CLAUDE|AGENTS|MEMORY)\.md\b"
 )
-PATH_FIELDS = ("file_path", "path", "pattern", "notebook_path")
+PATH_FIELDS = ("file_path", "path", "notebook_path")  # Grep's `pattern` is a regex, not a path
 TOKEN = re.compile(r"[^\s'\";|&<>()]+")
 
 
 def builtin_skills() -> set[str]:
     data = json.loads(BUILTIN.read_text(encoding="utf-8"))
     return set(data["claude_code"]) | set(data["claude_ai_account"])
+
+
+def session_agents(transcript: Path) -> list[Path]:
+    """Agents of a top-level session: `<session>.jsonl` keeps them in `<session>/subagents/`.
+
+    Direct peers of a top-level session carry no parentAgentId, so they are found here.
+    """
+    folder = transcript.with_suffix("") / "subagents"
+    return sorted(folder.glob("agent-*.jsonl")) if folder.is_dir() else []
 
 
 def run_transcripts(agents_dir: Path, agent: str) -> list[Path]:
@@ -159,9 +170,10 @@ def path_allowed(contact: str, allow_paths: list[str]) -> bool:
 
 
 def verdict(found: dict, allow: set[str], allow_paths: list[str]) -> dict:
-    allowed_names = allow | builtin_skills()
-    unexpected_listed = [n for n in found["listed"] if n not in allowed_names]
-    unexpected_calls = [n for n in found["skill_calls"] if n not in allowed_names]
+    # Built-in skills may be listed (no clean room can remove them), but calling one is use:
+    # a call is clean only when the arm's own allowlist names it.
+    unexpected_listed = [n for n in found["listed"] if n not in allow | builtin_skills()]
+    unexpected_calls = [n for n in found["skill_calls"] if n not in allow]
     unexpected_contacts = [c for c in found["contacts"] if not path_allowed(c, allow_paths)]
     if not found["records"] or not found["saw_listing"]:
         level, code = "unassessable", 3
@@ -185,6 +197,8 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--json", action="store_true", help="print the full result as JSON")
     args = parser.parse_args(argv)
     paths = list(args.transcripts)
+    for transcript in args.transcripts:
+        paths += session_agents(transcript)
     if args.agents_dir and args.agent:
         paths += run_transcripts(args.agents_dir, args.agent)
     result = verdict(scan(paths), set(args.allow), args.allow_path)

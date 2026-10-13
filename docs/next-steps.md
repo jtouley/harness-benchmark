@@ -46,7 +46,8 @@ the defects that reach the delivered code, and the evidence that the run leaves 
 - **A harness run is never cut off.** Harness arms have no per-trial time cap. A Cadence run took
   54–68 minutes in iteration 4, and criteria v1's 1800 s cap would have scored every one as not
   delivered. Spend is controlled by a budget for the whole run set, recorded before it starts, not by
-  stopping a trial. (One-shot arms keep a generous time cap only as a guard against a hung session.)
+  stopping a trial. (One-shot arms keep a generous time cap only as a guard against a hung session. The cap is recorded
+  in the criteria, and a one-shot that hits it is reported separately, not mixed with other failures.)
 - **Cursor CLI and OpenAI arms.** The Cursor CLI runs in `auto` mode (Cursor picks the model) and on
   its cheapest models; the OpenAI arms use the cheapest tool-using models the account can call. Each
   of these runs with Cadence and alone.
@@ -86,7 +87,8 @@ matches Opus, as a step to find where the line is.
 
 **`auto` needs its own reporting.** In `auto` mode Cursor chooses the model per request, so the arm is
 "whatever Cursor routes to", not one model. Record the model of each request where the CLI's JSON output
-reports it, and the cost from Cursor's own usage accounting; when the model is not reported, say so. The
+reports it, and the cost from Cursor's own usage accounting; when the model is not reported, say so. Cursor may route the harness
+arm and the one-shot arm to different models, so report the models of both side by side. The
 `auto` arm answers "what does the default Cursor experience give", and it is compared with the Opus
 one-shot like any other arm.
 

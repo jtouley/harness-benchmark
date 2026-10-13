@@ -122,7 +122,8 @@ def cyclomatic(path: Path, package: str) -> list[dict]:
     for file, blocks in data.items():
         for b in blocks if isinstance(blocks, list) else []:
             if b.get("type") in ("function", "method"):
-                out.append({"file": file, "name": f"{b.get('classname') or ''}.{b['name']}",
+                name = f"{b['classname']}.{b['name']}" if b.get("classname") else b["name"]
+                out.append({"file": file, "name": name,
                             "lines": set(range(b["lineno"], b["endline"] + 1)), "value": b["complexity"]})
     return out
 

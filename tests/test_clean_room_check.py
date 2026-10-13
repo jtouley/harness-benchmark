@@ -136,3 +136,31 @@ def test_nested_agents_of_the_run_are_read(tmp_path):
     result = _verdict(paths, {"cadence"})
     assert result["verdict"] == "contaminated" and result["unexpected_calls"] == ["test-benchmark"]
     assert crc.main(["--agents-dir", str(agents), "--agent", "run", "--allow", "cadence"]) == 2
+
+
+def test_direct_peers_of_a_top_level_session_are_read(tmp_path):
+    """R1 re-review on PR #8: depth-1 agents have no parentAgentId; they live in <session>/subagents/."""
+    session = _write(tmp_path / "S.jsonl", _listing(*BUILTIN), _call("Agent", prompt="/test-benchmark 1"))
+    (tmp_path / "S" / "subagents").mkdir(parents=True)
+    _write(tmp_path / "S" / "subagents" / "agent-p.jsonl", _listing("test-benchmark", *BUILTIN),
+           _call("Skill", skill="test-benchmark"))
+    assert crc.main([str(session)]) == 2
+
+
+def test_calling_a_built_in_skill_needs_the_allowlist(tmp_path):
+    """R1 re-review on PR #8: built-ins may be listed, but a call is use."""
+    t = _transcript(tmp_path, _listing(*BUILTIN), _call("Skill", skill="code-review"))
+    assert _verdict([t])["verdict"] == "contaminated"
+    assert _verdict([t], {"code-review"})["verdict"] == "clean"
+
+
+def test_a_listing_entry_without_a_description_and_a_three_part_name_are_read(tmp_path):
+    text = ("<system-reminder>\nThe following skills are available for use with the Skill tool:\n\n"
+            "- bare-skill\n- org:pack:tool: A three-part name.\n</system-reminder>")
+    t = _transcript(tmp_path, _user(text))
+    assert crc.scan([t])["listed"] == ["bare-skill", "org:pack:tool"]
+
+
+def test_a_grep_pattern_is_not_a_path(tmp_path):
+    t = _transcript(tmp_path, _listing(*BUILTIN), _call("Grep", pattern="SKILL.md", path="/repo/src"))
+    assert _verdict([t])["verdict"] == "clean"
