@@ -9,8 +9,8 @@ A reproducible benchmark of AI coding-workflow harnesses for Claude Code: [Caden
 > out of 10 and Cadence on Opus 7.33, at about 1/30 of the time. Most of that gap is single-run noise.
 > **What the harness did show:** no crash reached its delivered code (each one-shot shipped two), an
 > audit trail a reviewer can check, completion on every task or a recorded stop, and rules the model
-> cannot skip. **Next:** run the harness only on cheap models (Haiku 5.5 and others) on harder tasks, and
-> find the cheapest one that matches Opus alone.
+> cannot skip. **Next:** on harder tasks, run the harness on cheap models (Haiku 5.5 and others), all cheap
+> and with Opus as reviewer only, and find the cheapest arm that matches Opus alone.
 > *Disclosure: the owner of this benchmark wrote Cadence.*
 
 | Arm (iteration 4) | Delivered | Blind quality | Major or critical defects per run | Crashes shipped | Time per task | Audit trail |

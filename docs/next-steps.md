@@ -39,11 +39,14 @@ the defects that reach the delivered code, and the evidence that the run leaves 
   [L3 open-data BI pipeline](tasks/L3-open-data-bi-pipeline.md). T05 stays as a quick pilot only.
 - **Quality is measured by the published [quality model](quality-model.md)**, not by one grader's
   rubric, and every run must pass the [clean-room check](process.md#clean-room) before it is graded.
-- **Every Cadence stage runs on the arm's own cheap model,** reviews included. No stage escalates to a
-  stronger model, so the arm's cost is the cheap model's cost.
-- **A harness on Opus or Sonnet is out of scope.** The lift of the harness is measured only on the cheap
-  models, against each model's own one-shot. The main claim is "cheap model + Cadence is not worse than
-  the Opus one-shot".
+- **Two Cadence variants on the cheap model.** (a) *All cheap*: every stage, reviews included, runs on
+  the arm's cheap model. (b) *Cheap + Opus reviews*: the cheap model plans and implements; the review
+  peers (plan review, adversarial review, PR review, test benchmark) run on Opus 5.5, and their Opus tokens
+  count in the arm's cost. Comparing (a) and (b) shows what Opus reviews add, per dollar.
+- **Opus never orchestrates a Cadence run.** It appears only as the one-shot bar and as the reviewer in
+  variant (b). Sonnet does not run a harness arm. The lift of the harness is measured on the cheap models,
+  against each model's own one-shot. The main claim is "cheap model + Cadence is not worse than the Opus
+  one-shot".
 
 ## Hypotheses
 
@@ -53,16 +56,19 @@ the defects that reach the delivered code, and the evidence that the run leaves 
 | H2 | It costs less per defect-free delivered run than the Opus one-shot, however many tokens it uses | Its dollars per defect-free delivered run are higher than the Opus one-shot's |
 | H3 | It leaves a complete audit trail (M10) on every delivered run | Plans, independent reviews or closure records are missing, or do not match the delivered head |
 | H4 | The harness closes more of the gap on hard tasks than on easy ones | Its defect gap to the Opus one-shot is no smaller on class L and O tasks than on T05 |
+| H5 | Opus reviews on a cheap implementer cut escaped defects below the all-cheap variant, and still cost less per defect-free delivered run than the Opus one-shot | Variant (b) has no fewer escaped defects than (a), or costs more per defect-free delivered run than the Opus one-shot |
 
 ## Arms
 
 Each harness arm has a one-shot arm on the same model ([criteria §2](criteria.md)), so the
-harness effect and the model effect stay separate. No harness arm uses Opus.
+harness effect and the model effect stay separate. Opus runs no harness arm by itself; it reviews in one
+variant only.
 
 | Tier | Host | Model (pinned at run time) | Harness arm | One-shot arm |
 |---|---|---|---|---|
 | Bar | Claude Code | Opus 5.5 | none | **Opus one-shot (the bar)** |
-| Anthropic, cheapest | Claude Code | Haiku 5.5 | Cadence | one-shot |
+| Anthropic, cheapest | Claude Code | Haiku 5.5 | Cadence, all cheap | one-shot |
+| Opus reviews | Claude Code | Haiku 5.5 implements, Opus 5.5 reviews | Cadence, cheap + Opus reviews | shares the Haiku 5.5 one-shot |
 | Anthropic, cheap | Claude Code | Haiku 4.5 | Cadence | one-shot |
 | Cross-vendor | Cursor CLI (`cursor-agent`) | `gpt-5.4-mini-*` | Cadence | one-shot |
 | Cross-vendor | Cursor CLI | `gemini-3.8-flash-*` | Cadence | one-shot |
@@ -148,8 +154,11 @@ criteria before the first run. That is a new criteria version, with a changelog 
    the one-shot baselines. [`scripts/clean_room_check.py`](../scripts/clean_room_check.py) reads each
    transcript and must return `clean` before the run is graded ([process](process.md#clean-room)). The
    Harbor tier already gives a clean container; Claude Code and Cursor CLI runs need it set up.
-4. **Cadence on cheap models.** Check that Haiku 5.5 can follow the Cadence procedure end to end
-   (the pilot). Make every peer run on the arm's model, so no stage falls back to a stronger one.
+4. **Cadence on cheap models, with a per-stage model setting.** Check that Haiku 5.5 can follow the
+   Cadence procedure end to end (the pilot). Cadence needs a setting that names the model of each peer
+   stage, so variant (a) keeps every stage on the cheap model and variant (b) sends only the review peers
+   to Opus (jtouley/cadence#58). Today every peer inherits the host's model. The cost accounting must split the session's tokens
+   by model, so each model's tokens are priced at its own price.
 5. **Cursor CLI validation.** Confirm that `cursor-agent --print` runs Cadence's Cursor hooks. This
    also closes the README limitation "No Cursor binary was available to validate them".
 6. **OpenAI host.** Pick the agent runner (an OpenAI-capable coding CLI or a small tool loop over the
