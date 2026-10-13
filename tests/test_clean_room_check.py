@@ -161,6 +161,22 @@ def test_a_listing_entry_without_a_description_and_a_three_part_name_are_read(tm
     assert crc.scan([t])["listed"] == ["bare-skill", "org:pack:tool"]
 
 
+def test_a_relative_path_resolves_against_the_run_cwd(tmp_path):
+    """Pilot 2026-10-13: `cat README* CLAUDE.md` in the task repo is the repo's own file, not a user-level one."""
+    t = _transcript(tmp_path, _listing(*BUILTIN), _call("Bash", command="cat README* CLAUDE.md"))
+    assert _verdict([t])["verdict"] == "contaminated"
+    found = crc.scan([t], cwd="/runs/a/repo")
+    assert found["contacts"] == ["/runs/a/repo/CLAUDE.md"]
+    assert crc.verdict(found, set(), ["/runs/a/repo"])["verdict"] == "clean"
+    assert crc.main([str(t), "--cwd", "/runs/a/repo", "--allow-path", "/runs/a/repo"]) == 0
+
+
+def test_a_home_path_does_not_resolve_against_the_cwd(tmp_path):
+    t = _transcript(tmp_path, _listing(*BUILTIN), _call("Bash", command="cat ~/.claude/skills/x/SKILL.md"))
+    found = crc.scan([t], cwd="/runs/a/repo")
+    assert crc.verdict(found, set(), ["/runs/a/repo"])["verdict"] == "contaminated"
+
+
 def test_a_grep_pattern_is_not_a_path(tmp_path):
     t = _transcript(tmp_path, _listing(*BUILTIN), _call("Grep", pattern="SKILL.md", path="/repo/src"))
     assert _verdict([t])["verdict"] == "clean"

@@ -31,7 +31,7 @@ outside the allowed paths was touched), unassessable (3: no transcript records, 
 skill listing at all, so the check cannot tell what the run was offered).
 
 usage: clean_room_check.py TRANSCRIPT [TRANSCRIPT ...] [--agents-dir DIR --agent ID]
-       [--allow SKILL ...] [--allow-path PATH ...] [--json]
+       [--allow SKILL ...] [--allow-path PATH ...] [--cwd DIR] [--json]
 """
 
 from __future__ import annotations
@@ -110,21 +110,32 @@ def _texts(content):
                     yield from _texts(part["content"])
 
 
-def _locations(tool_input: dict) -> list[str]:
+def _resolve(path: str, cwd: str | None) -> str:
+    """A relative path names a file under the run's cwd; `~` and absolute paths stay as they are."""
+    if cwd is None or path.startswith(("/", "~", "$")):
+        return path
+    return f"{cwd.rstrip('/')}/{path.removeprefix('./')}"
+
+
+def _locations(tool_input: dict, cwd: str | None = None) -> list[str]:
     """Skill, rule, command, plugin or memory locations a tool call reads or runs on."""
     found = []
     for field in PATH_FIELDS:
         value = tool_input.get(field)
         if isinstance(value, str) and LOCATION.search(value):
-            found.append(value)
+            found.append(_resolve(value, cwd))
     command = tool_input.get("command")
     if isinstance(command, str):
-        found.extend(t for t in TOKEN.findall(command) if LOCATION.search(t))
+        found.extend(_resolve(t, cwd) for t in TOKEN.findall(command) if LOCATION.search(t))
     return found
 
 
-def scan(paths: list[Path]) -> dict:
-    """Listed skill names, Skill calls and locations touched, over all transcripts of a run."""
+def scan(paths: list[Path], cwd: str | None = None) -> dict:
+    """Listed skill names, Skill calls and locations touched, over all transcripts of a run.
+
+    With `cwd`, a relative path in a tool call is read as a file under the run's working
+    directory, so `--allow-path` can allow the task repo's own CLAUDE.md or AGENTS.md.
+    """
     listed: set[str] = set()
     calls: list[str] = []
     contacts: set[str] = set()
@@ -150,7 +161,7 @@ def scan(paths: list[Path]) -> dict:
                 tool_input = part.get("input") if isinstance(part.get("input"), dict) else {}
                 if part.get("name") == "Skill":
                     calls.append(str(tool_input.get("skill") or ""))
-                contacts.update(_locations(tool_input))
+                contacts.update(_locations(tool_input, cwd))
     return {"transcripts": len(paths), "records": records, "saw_listing": saw_listing,
             "listed": sorted(listed), "skill_calls": calls, "contacts": sorted(contacts)}
 
@@ -194,6 +205,7 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--agent", help="the run agent's id; its nested agents are read too")
     parser.add_argument("--allow", action="append", default=[], help="a skill the arm brings (exact name, repeatable)")
     parser.add_argument("--allow-path", action="append", default=[], help="a path the arm may touch (whole components)")
+    parser.add_argument("--cwd", help="the run's working directory: relative paths in tool calls resolve against it")
     parser.add_argument("--json", action="store_true", help="print the full result as JSON")
     args = parser.parse_args(argv)
     paths = list(args.transcripts)
@@ -201,7 +213,7 @@ def main(argv: list[str] | None = None) -> int:
         paths += session_agents(transcript)
     if args.agents_dir and args.agent:
         paths += run_transcripts(args.agents_dir, args.agent)
-    result = verdict(scan(paths), set(args.allow), args.allow_path)
+    result = verdict(scan(paths, args.cwd), set(args.allow), args.allow_path)
     if args.json:
         print(json.dumps(result, indent=2))
     else:

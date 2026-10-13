@@ -1,16 +1,40 @@
 {
-  "about": "Skills that the host lists to every session whatever HOME holds: built into Claude Code, or attached by the claude.ai account the session logs in with. A clean room cannot remove these, so the clean-room check allows them. Pinned to one Claude Code version; a new version needs a new list, taken from a session started with an empty HOME.",
-  "claude_code_version": "2.1.286",
-  "taken_on": "2026-10-12",
+  "about": "Skills that the host lists to every session whatever HOME holds: built into Claude Code, or attached by the claude.ai account the session logs in with. A clean room cannot remove these, so the clean-room check allows them. Each Claude Code version adds to the list, taken from a session started with an empty HOME. The claude.ai account skills appear only when the session logs in with that account; an API-key session does not list them.",
+  "claude_code_version": "2.1.286, 2.1.287",
+  "taken_on": "2026-10-12 (2.1.286), 2026-10-13 (2.1.287)",
   "claude_code": [
-    "artifact-capabilities", "artifact-design", "artifact-diagramming", "claude-api", "claude-in-chrome",
-    "code-review", "dataviz", "fewer-permission-prompts", "init", "keybindings-help", "loop", "run",
-    "schedule", "security-review", "simplify", "update-config"
+    "artifact-capabilities",
+    "artifact-design",
+    "artifact-diagramming",
+    "claude-api",
+    "claude-in-chrome",
+    "code-review",
+    "dataviz",
+    "fewer-permission-prompts",
+    "init",
+    "keybindings-help",
+    "loop",
+    "plugin-authoring",
+    "run",
+    "schedule",
+    "security-review",
+    "simplify",
+    "update-config",
+    "workflow-authoring"
   ],
   "claude_ai_account": [
-    "anthropic-skills:built-in-browser", "anthropic-skills:chrome-browser", "anthropic-skills:computer-use",
-    "anthropic-skills:deep-research", "anthropic-skills:docs", "anthropic-skills:docx",
-    "anthropic-skills:google-workspace", "anthropic-skills:import-memory", "anthropic-skills:morning",
-    "anthropic-skills:pdf", "anthropic-skills:pptx", "anthropic-skills:skill-creator", "anthropic-skills:xlsx"
+    "anthropic-skills:built-in-browser",
+    "anthropic-skills:chrome-browser",
+    "anthropic-skills:computer-use",
+    "anthropic-skills:deep-research",
+    "anthropic-skills:docs",
+    "anthropic-skills:docx",
+    "anthropic-skills:google-workspace",
+    "anthropic-skills:import-memory",
+    "anthropic-skills:morning",
+    "anthropic-skills:pdf",
+    "anthropic-skills:pptx",
+    "anthropic-skills:skill-creator",
+    "anthropic-skills:xlsx"
   ]
 }
