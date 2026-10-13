@@ -56,6 +56,19 @@ the defects that reach the delivered code, and the evidence that the run leaves 
   against each model's own one-shot. The main claim is "cheap model + Cadence is not worse than the Opus
   one-shot".
 
+## Task selection: calibrated against the bar (owner direction, 2026-10-13)
+
+The pilot showed the problem again: on T05 the Opus 5.5 one-shot delivered a correct, tool-clean change in 111 seconds for $0.40. A task like that cannot show what a harness is for. A task is "hard" only when the bar fails it, not when it looks hard.
+
+- **Calibration rule.** A task enters the benchmark only if the Opus 5.5 one-shot fails it in calibration: at most 1 pass in 3 clean-room tries, graded by the task's own acceptance check. A task the bar passes 2 or 3 times is dropped, however large it looks.
+- **Real defects, not specified features.** Each task starts from a symptom or a product request, as a user would write it. It needs a running system to confirm (a database, a queue, a worker), and has more than one cause. Its existing tests stay green while the defect is present. The model of this class is a private brownfield bug: several stacked faults across services, hidden by passing mocked tests.
+- **Implementation-agnostic grading.** The acceptance check observes the product outcome in the running stack (rows, alerts, responses), never function names that one fix happened to use.
+- **Sources.**
+  1. *Private brownfield tasks.* Real repositories that cannot be published. The benchmark publishes the scores and the grader design, not the code. B01 is the first.
+  2. *Review-caught defects from Cadence's own history.* A first implementation passed its own tests, then a review found the bug (for example the closed-run `peer_models` defect in jtouley/cadence#62). The task is the original request; the hidden check is the behavior the review added.
+  3. *A published hard set* (for example the public SWE-bench Pro split) for comparison with outside numbers, filtered by the same calibration rule.
+- **Calibration records** are kept per task: the three tries, their cost and time, and the grader output. A task that the bar fails also gets the harness arms; one that it passes does not.
+
 ## Hypotheses
 
 | # | Hypothesis | What would refute it |
@@ -155,7 +168,7 @@ progress. This changes criteria v1 §6 and is part of the next criteria version,
 |---|---|---|---|
 | 0. Prerequisites | See the list below | none | Each item has a test or a recorded check |
 | 1. Pilot | T05 (budgets: the only task where every one-shot shipped a crash) only, n = 1, every arm | ~13 runs | Drop an arm that cannot follow the Cadence procedure at all. Keep the rest. The pilot decides nothing else |
-| 2. Hard tasks | The [L3 open-data BI pipeline](tasks/L3-open-data-bi-pipeline.md) and two more class L or O tasks, once committed under `golden/tasks/`, n = 5, the arms that passed the pilot, plus the Opus bar | ≤ 195 runs | The decision rule above, per task and per class |
+| 2. Hard tasks | Tasks that pass calibration (see "Task selection"): B01 and the other real-defect tasks first, then the [L3 open-data BI pipeline](tasks/L3-open-data-bi-pipeline.md) if the bar fails it. n = 5, the arms that passed the pilot, plus the Opus bar | ≤ 195 runs | The decision rule above, per task and per class |
 | 3. Easy tasks, for contrast | T04–T06, n = 5, the same arms | ≤ 195 runs | Tests H4: does the harness matter more on hard tasks |
 
 ## Prerequisites (stage 0)
