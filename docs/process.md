@@ -66,35 +66,48 @@ flowchart LR
 | Two Haiku runs never committed their work | A branch archive would have graded the untouched baseline | Blind folders now use the delivered working tree, as criteria v1 already requires for grading |
 | The first scrub left phase labels and finding ids in comments | Those labels would have shown which folders came from a harness | Extra scrub rules. `build_blind.py` now ends with a search for harness words and fails if one is left |
 | A review agent ran `install.sh --help`, and the script has no help flag | It changed the live install of the skill. The host blocked its attempt to undo this | The owner restored the links. Lesson: an installer must reject unknown flags |
-| Every session was shown the 96 user-level skills, some described as TDD | The one-shot baselines were exposed to skill descriptions. None used a skill (checked) | A clean `HOME` per run and `clean_room_check.py` as a gate before grading |
+| Every session was shown the user-installed skills (67 of 96 listed), some described as TDD | The one-shot baselines were exposed to skill descriptions. None used a skill (checked) | A clean `HOME` per run and `clean_room_check.py` as a gate before grading |
 | The completion notice reports total tokens only | No dollar figures | Next design: record input, output and cache tokens per session |
 | GitHub Actions did not start (an account billing block) | The two Cadence fixes merged on local test evidence, by owner decision | Recorded on each PR |
 
 ## Clean room
 
 A run counts only if it saw and used nothing but its own arm's tools. Iterations 3 and 4 did not meet
-that bar. Every Claude Code session is shown the names and descriptions of every user-level skill, and
-on this host that list had 96 skills, some described as "strict TDD discipline". A one-shot baseline
-that can see such a list is not neutral ([criteria §2](criteria.md#2-arms)), and a description can also
-fire a skill on a wake word.
+that bar. Every Claude Code session is shown the names and descriptions of the skills it can call. On
+this host that list had 96 skills: 67 installed by the user (36 user skills and commands, 31 from a
+plugin), some described as "strict TDD discipline", and 29 that every session gets (16 built into Claude
+Code 2.1.286, 13 attached by the claude.ai account). A one-shot baseline that can see user-installed
+skills is not neutral ([criteria §2](criteria.md#2-arms)), and a description can also fire a skill on a
+wake word.
 
-[`scripts/clean_room_check.py`](../scripts/clean_room_check.py) reads a run's transcript and returns:
+[`scripts/clean_room_check.py`](../scripts/clean_room_check.py) reads a run's transcripts, including every
+nested agent the run spawned (found through `parentAgentId`), and returns:
 
 | Verdict | Exit | Meaning |
 |---|---|---|
-| `clean` | 0 | No skill outside the arm's allowlist was listed or used |
-| `exposed` | 1 | Skills outside the allowlist were listed to the session, and none was used |
-| `contaminated` | 2 | A skill outside the allowlist was called, or a skill, rule, command or memory file was read |
+| `clean` | 0 | No skill outside the arm's allowlist and the built-in list was listed or used |
+| `exposed` | 1 | Skills outside those lists were listed to the session, and none was used |
+| `contaminated` | 2 | Such a skill was called, or a tool read a skill, rule, command, plugin or memory location outside the arm's allowed paths |
+| `unassessable` | 3 | No transcript records, or no skill listing at all: the check cannot tell what the run was offered |
+
+The skills every session gets are pinned in
+[`clean_room_builtin_skills.json`](../scripts/clean_room_builtin_skills.json), for one Claude Code
+version; a new version needs a new list, taken from a session started with an empty `HOME`. A session
+authenticated with an API key instead of a claude.ai login does not get the 13 account skills.
 
 From the next run set on, a run is graded only when the check returns `clean`. Each run gets a clean
-`HOME` with only its arm's harness installed, so a harness arm's own files are the only ones that can
-appear, and the check is exact.
+`HOME` with only its arm's harness installed, so the only skills it can see are its own and the pinned
+built-in ones.
 
 **Iteration 4, checked after the fact** ([`clean_room.json`](experiments/2026-10-12-iteration-4/clean_room.json)):
-all 9 one-shot runs were `exposed` (96 skills listed) and none was `contaminated`: no one-shot called a
-skill or read a skill, rule or command file. The harness runs cannot be judged from their transcripts:
-path matching cannot tell their own bundled files from user-level ones, and their peer agents'
-transcripts, where cadence#53 substitutions happened, were not kept.
+
+- All 9 one-shot runs were `exposed` (the 67 user-installed skills were listed) and none was
+  `contaminated`: no one-shot called a skill or read a skill, rule, command, plugin or memory location.
+- The harness runs are not assessable: they read their own bundled files, often by relative path. But
+  their nested peers called skills by peer name (`vibe-test`, `test-benchmark`, `pr-review-local`,
+  `plan-review` and others). Cadence was not installed as a plugin here, so for the Cadence arms those
+  names reached user-level skills, not Cadence's bundled peers: cadence#53, seen in the transcripts. For
+  ship-feature, whose peers are user-level by design, this is its normal setup.
 
 ## 4. Rules we kept
 

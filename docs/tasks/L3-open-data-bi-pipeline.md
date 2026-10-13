@@ -48,7 +48,9 @@ After `make build`, a hidden test suite runs read-only SQL against the delivered
    including the unknown-county member.
 5. Idempotence: the row counts and totals are unchanged after a second `make build`.
 
-The expected answers come from the reference solution and are stored hashed in the hidden suite. Names of
+The expected answers come from the reference solution and are stored hashed in the hidden suite. Each
+money answer is rounded to whole cents and each count is exact before it is hashed, so a correct solution
+that sums in a different order still matches. Names of
 tables and columns are not prescribed. The suite reads a small `oracle_map.yml` that the agent must write
 (the spec asks for it), which says which model and column answer each question. A missing or wrong map
 is a failed question, not a crash.
@@ -58,9 +60,10 @@ is a failed question, not a crash.
 - **M1 acceptance**: all five oracle questions pass.
 - **M2 defects** and **M3 false success**: a run that reports success while an oracle answer is wrong is a
   false success, the most expensive failure ([criteria §4](../criteria.md#4-measures)).
-- **The [quality model](../quality-model.md)**: the tool gate on the Python and SQL the run adds (sqlfluff
-  for the dbt SQL joins the pinned tools for this task), and the design checklist, including "dbt tests
-  on every key" and "the grain of each model is documented".
+- **The [quality model](../quality-model.md)**: the design checklist, including "dbt tests on every key"
+  and "the grain of each model is documented", and the tool gate. `scripts/quality_metrics.py` measures
+  Python only; this task's dbt SQL needs its own measures (sqlfluff, and dbt test coverage of each model's
+  keys), added to the script before the task is admitted.
 
 ## Work to admit it
 

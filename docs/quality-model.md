@@ -24,7 +24,7 @@ characteristics that a code change can affect, and how this benchmark measures e
 | Maintainability | Analysability | **Maintainability index**, reported, not gated | Coleman et al. (1994), as computed by radon (the Visual Studio variant, 0–100) |
 | Reliability | Faultlessness | **No new bug-class static findings**: pyflakes, syntax errors, flake8-bugbear, pylint errors | The "no new bugs" condition of the Sonar way gate, measured with ruff |
 | Maintainability | Analysability | **Code smells per 100 new lines** (the other ruff rules: pycodestyle without line length, pylint conventions and refactors, simplify, pyupgrade, mccabe), reported | The Sonar maintainability rating idea (smells relative to code size) |
-| Maintainability | Modifiability | **No new type errors** (mypy, default settings) | Static type checking, the Python community standard checker |
+| Maintainability | Modifiability | **No new type errors** (mypy with `--check-untyped-defs`, so unannotated code is checked too) | Static type checking, the Python community standard checker |
 | Maintainability | Modularity, reusability | **Design fit**, judged against a checklist (below) | Reviewer judgment; no tool measures it |
 
 Line length (pycodestyle E501) is formatting, not quality, and the Sonar way gate does not use it, so
@@ -68,8 +68,10 @@ one-shot passes the hidden tests but ships crashes that only a reviewer reproduc
 
 ## Iteration 4, measured this way
 
-Computed by [`scripts/quality_metrics.py`](../scripts/quality_metrics.py) on the delivered trees
-against the untouched baseline. Raw data: [`quality_metrics.json`](experiments/2026-10-12-iteration-4/quality_metrics.json).
+Computed by [`scripts/quality_metrics.py`](../scripts/quality_metrics.py) (tool versions pinned) on the
+delivered trees against the untouched baseline. A finding counts only on a line the change added, or in a
+function whose body holds one, so fixing an old problem cannot hide a new one. A tool that fails leaves
+its measure unmeasured, and the gate then fails. Raw data: [`quality_metrics.json`](experiments/2026-10-12-iteration-4/quality_metrics.json).
 Mutation score is not included: mutmut 3 does not run on this code (it imports modules by bare name).
 
 | Arm | Tool gate passed | New-code coverage | Branch coverage | Highest cognitive complexity | New bug findings | New type errors |

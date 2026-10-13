@@ -13,11 +13,16 @@ _spec = importlib.util.spec_from_file_location("clean_room_check", ROOT / "scrip
 crc = importlib.util.module_from_spec(_spec)
 _spec.loader.exec_module(crc)
 
+BUILTIN = sorted(crc.builtin_skills())
+
+
+def _write(path: Path, *records: dict) -> Path:
+    path.write_text("\n".join(json.dumps(r) for r in records) + ("\n" if records else ""), encoding="utf-8")
+    return path
+
 
 def _transcript(tmp_path: Path, *records: dict) -> Path:
-    path = tmp_path / "t.jsonl"
-    path.write_text("\n".join(json.dumps(r) for r in records) + "\n", encoding="utf-8")
-    return path
+    return _write(tmp_path / "t.jsonl", *records)
 
 
 def _listing(*names: str) -> dict:
@@ -33,23 +38,40 @@ def _user(text: str) -> dict:
     return {"type": "user", "message": {"role": "user", "content": [{"type": "text", "text": text}]}}
 
 
-def test_a_run_with_no_listing_and_no_contact_is_clean(tmp_path):
-    t = _transcript(tmp_path, _user("Add budgets"), _call("Bash", command="pytest -q"))
+def _verdict(paths, allow=(), allow_paths=()):
+    return crc.verdict(crc.scan(list(paths)), set(allow), list(allow_paths))
+
+
+def test_only_built_in_skills_listed_and_no_contact_is_clean(tmp_path):
+    t = _transcript(tmp_path, _listing(*BUILTIN), _user("Add budgets"), _call("Bash", command="pytest -q"))
     assert crc.main([str(t)]) == 0
 
 
+def test_an_empty_transcript_is_unassessable(tmp_path):
+    """R1 on PR #8: an empty transcript was graded clean."""
+    t = _transcript(tmp_path)
+    assert crc.main([str(t)]) == 3
+
+
+def test_a_transcript_with_no_skill_listing_is_unassessable(tmp_path):
+    t = _transcript(tmp_path, _call("Bash", command="pytest -q"))
+    assert _verdict([t])["verdict"] == "unassessable"
+
+
 def test_a_listing_of_other_skills_is_exposure(tmp_path):
-    t = _transcript(tmp_path, _listing("spec-driven", "test-benchmark"), _call("Bash", command="pytest -q"))
-    result = crc.verdict(crc.scan(t), set(), [])
+    t = _transcript(tmp_path, _listing("spec-driven", "test-benchmark", *BUILTIN), _call("Bash", command="pytest -q"))
+    result = _verdict([t])
     assert result["verdict"] == "exposed"
     assert result["unexpected_listed"] == ["spec-driven", "test-benchmark"]
     assert crc.main([str(t)]) == 1
 
 
-def test_the_plain_text_listing_is_read_too(tmp_path):
-    text = "<system-reminder>\nThe following skills are available for use with the Skill tool:\n\n- spec-driven: Execute with strict TDD.\n- cadence: Gated pipeline.\n"
+def test_the_plain_text_listing_is_read_with_multi_line_descriptions(tmp_path):
+    text = ("<system-reminder>\nThe following skills are available for use with the Skill tool:\n\n"
+            "- spec-driven: Execute with strict TDD.\n  More text on a second line.\n"
+            "- cadence: Gated pipeline.\n</system-reminder>")
     t = _transcript(tmp_path, _user(text))
-    assert crc.scan(t)["listed"] == ["cadence", "spec-driven"]
+    assert crc.scan([t])["listed"] == ["cadence", "spec-driven"]
 
 
 def test_a_skill_call_outside_the_allowlist_is_contamination(tmp_path):
@@ -57,31 +79,60 @@ def test_a_skill_call_outside_the_allowlist_is_contamination(tmp_path):
     assert crc.main([str(t)]) == 2
 
 
-@pytest.mark.parametrize("tool_input", [
-    {"file_path": "/Users/x/.claude/skills/spec-driven/SKILL.md"},
-    {"command": "cat ~/.cursor/rules/001-core-tdd-protocol.mdc"},
-    {"command": "sed -n 1,40p /Users/x/.cursor/skills/ship-feature/SKILL.md"},
-    {"file_path": "/repo/CLAUDE.md"},
+@pytest.mark.parametrize("tool, tool_input", [
+    ("Read", {"file_path": "/Users/x/.claude/skills/spec-driven/SKILL.md"}),
+    ("Bash", {"command": "cat ~/.cursor/rules/001-core-tdd-protocol.mdc"}),
+    ("Bash", {"command": "sed -n 1,40p /Users/x/.cursor/skills/ship-feature/SKILL.md"}),
+    ("Read", {"file_path": "/repo/CLAUDE.md"}),
+    ("Read", {"file_path": "/Users/x/.claude/plugins/cache/every/ce/skills/tdd/references/steps.md"}),
+    ("Read", {"file_path": "/Users/x/.claude/projects/-Users-x-repo/memory/MEMORY.md"}),
+    ("Grep", {"pattern": "TDD", "path": "/Users/x/.claude/skills"}),
 ])
-def test_reading_a_skill_rule_or_memory_file_is_contamination(tmp_path, tool_input):
-    t = _transcript(tmp_path, _call("Read" if "file_path" in tool_input else "Bash", **tool_input))
-    assert crc.verdict(crc.scan(t), set(), [])["verdict"] == "contaminated"
+def test_touching_a_skill_rule_plugin_or_memory_location_is_contamination(tmp_path, tool, tool_input):
+    t = _transcript(tmp_path, _listing(*BUILTIN), _call(tool, **tool_input))
+    assert _verdict([t])["verdict"] == "contaminated"
+
+
+def test_text_that_a_tool_writes_is_not_a_contact(tmp_path):
+    """R1 on PR #8: a Write whose content mentions .cursor/rules/ was counted as contamination."""
+    t = _transcript(tmp_path, _listing(*BUILTIN), _call("Write", file_path="/repo/README.md",
+                                                       content="Never read ~/.cursor/rules/ in this repo"))
+    assert _verdict([t])["verdict"] == "clean"
 
 
 def test_an_arm_may_list_call_and_read_its_own_harness(tmp_path):
-    t = _transcript(tmp_path, _listing("cadence"), _call("Skill", skill="cadence"),
+    t = _transcript(tmp_path, _listing("cadence", *BUILTIN), _call("Skill", skill="cadence"),
                     _call("Read", file_path="/Users/x/Projects/cadence-wt/main-eval/SKILL.md"))
-    result = crc.verdict(crc.scan(t), {"cadence"}, ["cadence-wt/main-eval/"])
-    assert result["verdict"] == "clean"
+    assert _verdict([t], {"cadence"}, ["cadence-wt/main-eval"])["verdict"] == "clean"
 
 
-def test_a_plugin_prefixed_name_matches_its_allowlisted_base(tmp_path):
-    t = _transcript(tmp_path, _listing("cadence:pr-review-local"))
-    assert crc.verdict(crc.scan(t), {"pr-review-local"}, [])["verdict"] == "clean"
+def test_an_allowed_path_matches_whole_components_only(tmp_path):
+    """R1 on PR #8: cadence-wt/main-eval also allowed cadence-wt/main-eval-old/."""
+    t = _transcript(tmp_path, _listing("cadence", *BUILTIN),
+                    _call("Read", file_path="/Users/x/Projects/cadence-wt/main-eval-old/skills/x/SKILL.md"))
+    assert _verdict([t], {"cadence"}, ["cadence-wt/main-eval"])["verdict"] == "contaminated"
 
 
-def test_a_harness_arm_that_loads_a_user_level_peer_is_contamination(tmp_path):
-    """cadence#53: a user-level skill with a peer's name ran in place of the harness's own peer."""
-    t = _transcript(tmp_path, _listing("cadence", "test-benchmark"), _call("Skill", skill="test-benchmark"))
-    result = crc.verdict(crc.scan(t), {"cadence"}, [])
+def test_a_plugin_prefixed_name_needs_its_own_allowlist_entry(tmp_path):
+    """R1 on PR #8: any <plugin>:cadence passed an allowlist of cadence."""
+    t = _transcript(tmp_path, _listing("other-plugin:cadence", *BUILTIN))
+    assert _verdict([t], {"cadence"})["verdict"] == "exposed"
+    assert _verdict([t], {"other-plugin:cadence"})["verdict"] == "clean"
+
+
+def test_nested_agents_of_the_run_are_read(tmp_path):
+    """cadence#53 happened in a nested peer: its transcript must be part of the run."""
+    agents = tmp_path / "subagents"
+    agents.mkdir()
+    _write(agents / "agent-run.jsonl", _listing("cadence", *BUILTIN), _call("Agent", prompt="/test-benchmark 1"))
+    (agents / "agent-run.meta.json").write_text(json.dumps({"spawnDepth": 1}))
+    _write(agents / "agent-peer.jsonl", _listing("cadence", "test-benchmark", *BUILTIN),
+           _call("Skill", skill="test-benchmark"))
+    (agents / "agent-peer.meta.json").write_text(json.dumps({"parentAgentId": "run", "spawnDepth": 2}))
+    _write(agents / "agent-other.jsonl", _call("Skill", skill="spec-driven"))
+    (agents / "agent-other.meta.json").write_text(json.dumps({"spawnDepth": 1}))
+    paths = crc.run_transcripts(agents, "run")
+    assert sorted(p.name for p in paths) == ["agent-peer.jsonl", "agent-run.jsonl"]
+    result = _verdict(paths, {"cadence"})
     assert result["verdict"] == "contaminated" and result["unexpected_calls"] == ["test-benchmark"]
+    assert crc.main(["--agents-dir", str(agents), "--agent", "run", "--allow", "cadence"]) == 2

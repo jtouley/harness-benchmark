@@ -129,7 +129,8 @@ a cheaper model **matches Opus** when all of these hold:
 1. **Defects (non-inferiority):** its mean count of test-confirmed escaped defects per attempted run is
    at most the Opus one-shot's plus a margin, and the 90% bootstrap interval of the difference stays
    under that margin. The margin is fixed in the criteria before the run set; this proposal suggests 0.25
-   defects per run. (Criteria v1 asks for 0.5 fewer to show "fewer defects". "Matches" asks for "not
+   defects per run. With 5 runs per task the interval is coarse, and when both arms have no defects it is
+   [0, 0], which counts as "not worse": report the per-run counts beside it. (Criteria v1 asks for 0.5 fewer to show "fewer defects". "Matches" asks for "not
    worse by more than the margin".)
 2. **No more false success:** its M3 rate is not higher than the Opus one-shot's (tolerance 0.05).
 3. **Delivery:** its M1 pass rate per attempted run is at least the Opus one-shot's minus 10 points.
