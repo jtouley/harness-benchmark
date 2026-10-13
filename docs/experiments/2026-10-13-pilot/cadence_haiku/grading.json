@@ -1,0 +1,80 @@
+{
+  "expectations": [
+    {
+      "text": "C1 plan with at least 3 numbered phases",
+      "passed": true,
+      "evidence": "[PosixPath('/Users/jasontouleyrou/Projects/cadence-wt/cadence-workspace/pilot/cadence_haiku/repo/.context/plans/ledgerlite-budgets.plan.md')]"
+    },
+    {
+      "text": "C2 plan reviewed by a plan-review peer",
+      "passed": true,
+      "evidence": "['plan_ledgerlite-budgets.md', 'plan_ledgerlite-budgets.md']"
+    },
+    {
+      "text": "C3 adversarial review ran",
+      "passed": true,
+      "evidence": "['adversarial_ledgerlite-budgets.md', 'adversarial_ledgerlite-budgets.md']"
+    },
+    {
+      "text": "C4 work committed in phases (>=3 commits, phase-named or not)",
+      "passed": false,
+      "evidence": "branch main: 0 commits, 0 name a phase"
+    },
+    {
+      "text": "C5 PR record written",
+      "passed": true,
+      "evidence": "/Users/jasontouleyrou/Projects/cadence-wt/cadence-workspace/pilot/cadence_haiku/outputs/PR.md"
+    },
+    {
+      "text": "C6 PR reviewed (review artifact)",
+      "passed": false,
+      "evidence": "[]"
+    },
+    {
+      "text": "C7 review -> fix commits -> re-review of a later head",
+      "passed": false,
+      "evidence": "review cites 0 branch commits []; 0 commits after the first reviewed head"
+    },
+    {
+      "text": "C8 test scorecard produced",
+      "passed": true,
+      "evidence": "['ledgerlite-budgets_plan.json']"
+    },
+    {
+      "text": "C9 ran autonomously (no questions to the user in outputs)",
+      "passed": true,
+      "evidence": "summary present"
+    },
+    {
+      "text": "C10 run ended without a hard stop (session record)",
+      "passed": false,
+      "evidence": "71fd85e7fcc24e57.json: hard_stop set"
+    },
+    {
+      "text": "Q1 all hidden acceptance tests pass",
+      "passed": false,
+      "evidence": "0/7 test_budget_set_and_list; test_non_positive_limit_is_an_error; test_budget_report_across_accounts; test_over_budget_is_marked; test_tx_add_alerts_when_crossing_the_limit; test_import_alerts_once_per_category; test_store_without_budgets_still_works"
+    },
+    {
+      "text": "Q2 full test suite green",
+      "passed": true,
+      "evidence": "......                                                                   [100%]"
+    },
+    {
+      "text": "Q3 at least 5 new tests",
+      "passed": false,
+      "evidence": "0 test functions added"
+    }
+  ],
+  "hidden": {
+    "passed": 0,
+    "total": 7
+  },
+  "branch": "main",
+  "checkout": "/Users/jasontouleyrou/Projects/cadence-wt/cadence-workspace/pilot/cadence_haiku/repo",
+  "attestation": {
+    "verdict_files": 4,
+    "attested_current": 4,
+    "uncovered": []
+  }
+}
