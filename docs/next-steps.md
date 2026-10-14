@@ -81,7 +81,7 @@ The pilot showed the problem again: on T05 the Opus 5.5 one-shot delivered a cor
 - **Lift task:** the Opus one-shot is reliable and the cheap one-shots are not. Question: does a harness lift the cheap model to the bar's reliability, and at what cost?
 - **Beyond task:** the Opus one-shot is unreliable. Question: does a harness raise reliability above the bar?
 
-Reliability is measured over repeated runs (pass^k, k ≥ 3), not one pass: a one-shot that passes once says nothing about the next run.
+Reliability is measured over repeated runs (pass^k, k ≥ 3), not one pass: a one-shot that passes once says nothing about the next run. pass^k selects and describes tasks. Whether an arm matches Opus is still decided by the decision rule below (M1 delivery and M2 defects); pass^k is reported beside it.
 
 **B01 so far (interim and unsourced; n is small).** B01 is private: its prompt, grader and run records are not in this repository, so nobody can check the numbers below from it. They come from the operator's local run records. The B01 runs ran on the host, not in a container, and workers from one run could outlive it and share a message broker with later runs (a known defect of the B01 calibration). Grader: the product outcome in the running stack, plus a second check for a defect on another entry point that the original human-assisted fix also missed. Costs are from token counts at `pricing.json` list prices. Haiku 5.5 costs use the base price, so they are lower bounds for requests above 100 K tokens.
 

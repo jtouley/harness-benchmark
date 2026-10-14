@@ -36,7 +36,7 @@ if [ -d "$D/cadence" ]; then
   for s in "$D"/cadence/skills/*/; do extra+=(--allow "cadence:$(basename "$s")"); done
   for c in "$D"/cadence/commands/*.md; do extra+=(--allow "cadence:$(basename "$c" .md)"); done
 fi
-python3 "$HB/scripts/clean_room_check.py" "${transcripts[0]}" --cwd "$D/repo" --allow-path "$D/repo" \
+python3 "$HB/scripts/clean_room_check.py" "${transcripts[0]}" --cwd "$D/repo" --allow-path "$D/repo" --allow-path "$D/outputs" \
   ${ALLOW[@]+"${ALLOW[@]}"} ${extra[@]+"${extra[@]}"} --json > "$D/clean_room.json" || true
 
 # Cost from token counts at pricing.json list prices (Claude Code does not price Haiku 5.5).
