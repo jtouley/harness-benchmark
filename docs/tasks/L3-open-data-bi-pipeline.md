@@ -75,8 +75,9 @@ is a failed question, not a crash.
 3. Reference solution: dlt pipeline, dbt models and tests, `oracle_map.yml`.
 4. Hidden suite and answer key, generated from the reference solution.
 5. Checks: the untouched skeleton fails all five questions, and the reference passes all five, twice.
-   And the task is hard enough: a Haiku one-shot fails the oracle in at least half of 5 pilot runs. A
-   task that a cheap model alone passes cannot show what a harness adds.
+   And the task is hard enough: a Haiku 5.5 one-shot fails the oracle in at least half of 5 pilot runs.
+   A task that a cheap model alone passes cannot show what a harness adds. These admission runs are not
+   part of the results.
 6. Caps: this task needs a higher time cap than criteria v1's 1800 s, recorded in the next criteria
    version before the run set.
 

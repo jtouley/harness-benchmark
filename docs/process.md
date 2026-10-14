@@ -80,19 +80,27 @@ Code 2.1.286, 13 attached by the claude.ai account). A one-shot baseline that ca
 skills is not neutral ([criteria §2](criteria.md#2-arms)), and a description can also fire a skill on a
 wake word.
 
-[`scripts/clean_room_check.py`](../scripts/clean_room_check.py) reads a run's transcripts, including every
-nested agent the run spawned (found through `parentAgentId`), and returns:
+[`scripts/clean_room_check.py`](../scripts/clean_room_check.py) reads a run's Claude Code transcripts,
+including every nested agent the run spawned (found through `parentAgentId`), and returns:
 
 | Verdict | Exit | Meaning |
 |---|---|---|
-| `clean` | 0 | No skill outside the arm's allowlist and the built-in list was listed or used |
-| `exposed` | 1 | Skills outside those lists were listed to the session, and none was used |
-| `contaminated` | 2 | Such a skill was called, or a tool read a skill, rule, command, plugin or memory location outside the arm's allowed paths |
+| `clean` | 0 | Nothing outside the arm's allowlist was listed, called or touched. Built-in skills and agent types may be listed, and built-in agent types may be spawned; a built-in skill call needs the allowlist |
+| `exposed` | 1 | Skills or subagent types outside those lists were listed to the session, and none was used |
+| `contaminated` | 2 | Such a skill was called or such a subagent type spawned; or a tool touched a host config directory (`.claude`, `.cursor`, `.codex`, `.agents`) or an instruction file (`SKILL.md`, `CLAUDE.md`, `AGENTS.md`, `MEMORY.md`) outside the arm's allowed paths; or the host loaded such an instruction file into the session |
 | `unassessable` | 3 | No transcript records, or no skill listing at all: the check cannot tell what the run was offered |
 
-The skills every session gets are pinned in
-[`clean_room_builtin_skills.json`](../scripts/clean_room_builtin_skills.json), for one Claude Code
-version; a new version needs a new list, taken from a session started with an empty `HOME`. A session
+Allowed paths are absolute folders. A path counts as inside one only after `..` is resolved, and a
+relative path in a shell command that changes directory never counts as inside one. One regression test
+per known leak channel is in [`tests/test_clean_room_check.py`](../tests/test_clean_room_check.py); a
+newly found channel gets a test there first.
+
+The check reads Claude Code transcripts only. Another host's transcript is `unassessable`, so other hosts
+need their own check (see [next steps](next-steps.md)).
+
+The skills and agent types every session gets are pinned in
+[`clean_room_builtin_skills.json`](../scripts/clean_room_builtin_skills.json). Each Claude Code version
+adds to the list, taken from a session started with an empty `HOME`. A session
 authenticated with an API key instead of a claude.ai login does not get the 13 account skills.
 
 From the next run set on, a run is graded only when the check returns `clean`. Each run gets a clean
@@ -102,7 +110,9 @@ built-in ones.
 **Iteration 4, checked after the fact** ([`clean_room.json`](experiments/2026-10-12-iteration-4/clean_room.json)):
 
 - All 9 one-shot runs were `exposed` (the 67 user-installed skills were listed) and none was
-  `contaminated`: no one-shot called a skill or read a skill, rule, command, plugin or memory location.
+  `contaminated`: no one-shot called a skill or touched a skill, rule, command, plugin or memory location
+  by a tool path. That version of the check did not read loaded instruction files or subagent types, and
+  these transcripts were not re-checked with the current one.
 - The harness runs are not assessable: they read their own bundled files, often by relative path. But
   their nested peers called skills by peer name (`vibe-test`, `test-benchmark`, `pr-review-local`,
   `plan-review` and others). Cadence was not installed as a plugin here, so for the Cadence arms those
