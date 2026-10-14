@@ -9,7 +9,8 @@ A reproducible benchmark of AI coding-workflow harnesses for Claude Code: [Caden
 > out of 10 and Cadence on Opus 7.33, at about 1/30 of the time. Most of that gap is single-run noise.
 > **What the harness did show:** no crash reached its delivered code (each one-shot shipped two), an
 > audit trail a reviewer can check, completion on every task or a recorded stop, and rules the model
-> cannot skip. **Next:** find the cheapest model that matches Opus inside the harness.
+> cannot skip. **Next:** on harder tasks, run the harness on cheap models (Haiku 5.5 and others), all cheap
+> and with Opus as reviewer only, and find the cheapest arm that matches Opus alone.
 > *Disclosure: the owner of this benchmark wrote Cadence.*
 
 | Arm (iteration 4) | Delivered | Blind quality | Major or critical defects per run | Crashes shipped | Time per task | Audit trail |
@@ -26,7 +27,9 @@ A reproducible benchmark of AI coding-workflow harnesses for Claude Code: [Caden
 | [**20-minute talk track**](docs/talk.md) | Slides, numbers and speaker notes, with the questions to expect |
 | [**Next steps**](docs/next-steps.md) | The cheapest model that matches Opus with an audit trail: Claude Code, Cursor CLI and OpenAI arms |
 | [Iteration 4](docs/experiments/2026-10-12-iteration-4.md) · [Iteration 3](docs/experiments/2026-10-10-harness-vs-oneshot.md) | Full write-ups, data, confounds |
-| [How the rounds were run](docs/process.md) | The process end to end, and what went wrong |
+| [How the rounds were run](docs/process.md) | The process end to end, what went wrong, and the clean-room check |
+| [**Quality model**](docs/quality-model.md) | What "great code" means here: ISO/IEC 25010, measured by published tools and thresholds |
+| [Proposed task L3](docs/tasks/L3-open-data-bi-pipeline.md) | A harder task: DuckDB, dlt and dbt on public government data, ready for BI |
 
 These rounds ran outside the Harbor live tier, so they are not [criteria v1](docs/criteria.md) results.
 

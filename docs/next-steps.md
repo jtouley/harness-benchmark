@@ -1,14 +1,16 @@
 # Next steps: the cheapest model that matches Opus, with an audit trail
 
 Status: proposed design (October 2026). Nothing here has run yet. It follows from the
-[findings so far](findings.md) and must meet [criteria v1](criteria.md) before any result counts.
+[findings so far](findings.md). It changes parts of criteria v1 (the caps, the comparison arm, the
+primary defect measure), so it must be written up as criteria v2 before the run set starts, and no
+result counts before that.
 
 ## The question
 
 **What is the cheapest model that, inside a harness, matches or beats Opus 5.5 working alone,
 and leaves an audit trail that a one-shot run cannot?**
 
-The cheap model may use more tokens than Opus. What counts is the dollar cost per delivered task,
+The cheap model may use many more tokens than Opus. What counts is the dollar cost per defect-free delivered run,
 the defects that reach the delivered code, and the evidence that the run leaves behind.
 
 ## Why this is the right next question
@@ -28,30 +30,70 @@ the defects that reach the delivered code, and the evidence that the run leaves 
 - Haiku 4.5 alone delivered 1 of 3 tasks, with quality 3.50 on that one. A cheap model alone does not reach Opus. The open question is how
   much of that gap a plan, independent review and verified fixes can close.
 
+## Owner decisions for this design (2026-10-12)
+
+- **No harness runs on Opus.** Opus 5.5 appears only as the one-shot bar. Every harness arm runs on a
+  cheap model. The point is that a harness may spend many tokens, because on a model that costs
+  pennies the token count does not matter; dollars per defect-free delivered run does.
+- **The tasks must be harder.** On T04–T06, Opus alone finished in about 2 minutes with the top
+  scores. Those tasks are too easy to show what a harness is for. The main run set uses class L and O
+  tasks ([criteria §3](criteria.md#3-task-classes)), starting with the proposed
+  [L3 open-data BI pipeline](tasks/L3-open-data-bi-pipeline.md). T05 stays as a quick pilot only.
+- **Quality is measured by the published [quality model](quality-model.md)**, not by one grader's
+  rubric, and every run must pass a clean-room check before it is graded: on Claude Code,
+  [`clean_room_check.py`](process.md#clean-room); on other hosts, the check in stage 0, step 3.
+- **Two Cadence variants on the cheap model.** (a) *All cheap*: every stage, reviews included, runs on
+  the arm's cheap model. (b) *Cheap + Opus reviews*: the cheap model plans and implements; the review
+  peers (plan review, adversarial review, PR review, test benchmark) run on Opus 5.5, and their Opus tokens
+  count in the arm's cost. Comparing (a) and (b) shows what Opus reviews add, per dollar.
+- **A harness run is never cut off.** Harness arms have no per-trial time cap. A Cadence run took
+  54–68 minutes in iteration 4, and criteria v1's 1800 s cap would have scored every one as not
+  delivered. Spend is controlled by a budget for the whole run set, recorded before it starts, not by
+  stopping a trial. (One-shot arms keep a generous time cap only as a guard against a hung session. The cap is recorded
+  in the criteria, and a one-shot that hits it is reported separately, not mixed with other failures.)
+- **Cursor CLI and OpenAI arms.** The Cursor CLI runs in `auto` mode (Cursor picks the model) and on
+  its cheapest models; the OpenAI arms use the cheapest tool-using models the account can call. Each
+  of these runs with Cadence and alone.
+- **Opus never orchestrates a Cadence run.** It appears only as the one-shot bar and as the reviewer in
+  variant (b). Sonnet does not run a harness arm. The lift of the harness is measured on the cheap models,
+  against each model's own one-shot. The main claim is "cheap model + Cadence is not worse than the Opus
+  one-shot".
+
 ## Hypotheses
 
 | # | Hypothesis | What would refute it |
 |---|---|---|
-| H1 | Cadence on a model at 1/10 of the Opus price per token has no more major or critical defects per run than the Opus one-shot, and delivers as often | Its defect rate or delivery rate is worse than the Opus one-shot's after 5 runs per task |
-| H2 | It costs less per delivered task than the Opus one-shot, including its extra tokens | Its dollars per delivered task are higher than the Opus one-shot's |
+| H1 | Cadence on a model at 1/10 of the Opus price per token or less has no more major or critical defects per run than the Opus one-shot, and delivers as often | Its defect rate or delivery rate is worse than the Opus one-shot's after 5 runs per task |
+| H2 | It costs less per defect-free delivered run than the Opus one-shot, however many tokens it uses | Its dollars per defect-free delivered run are higher than the Opus one-shot's |
 | H3 | It leaves a complete audit trail (M10) on every delivered run | Plans, independent reviews or closure records are missing, or do not match the delivered head |
-| H4 | A cheap implementer with a strong reviewer (Opus only for R1) is the cheapest arm that matches Opus | Single-model cheap arms match Opus for less, or the mixed arm does not match Opus |
+| H4 | The harness closes more of the gap on hard tasks than on easy ones | Its defect gap to the Opus one-shot is no smaller on class L and O tasks than on T05 |
+| H5 | Opus reviews on a cheap implementer cut escaped defects below the all-cheap variant, and still cost less per defect-free delivered run than the Opus one-shot | Variant (b) has no fewer escaped defects than (a), or costs more per defect-free delivered run than the Opus one-shot |
 
 ## Arms
 
 Each harness arm has a one-shot arm on the same model ([criteria §2](criteria.md)), so the
-harness effect and the model effect stay separate.
+harness effect and the model effect stay separate. Opus runs no harness arm by itself; it reviews in one
+variant only.
 
 | Tier | Host | Model (pinned at run time) | Harness arm | One-shot arm |
 |---|---|---|---|---|
-| Bar | Claude Code | Opus 5.5 | Cadence (ceiling) | **Opus one-shot (the bar)** |
-| Anthropic ladder | Claude Code | Sonnet 5.5 | Cadence | one-shot |
-| Anthropic ladder | Claude Code | Haiku 5.5 | Cadence | one-shot |
-| Cross-vendor | Cursor CLI (`cursor-agent`) | `gpt-5.4-mini-*` | Cadence | one-shot |
-| Cross-vendor | Cursor CLI | `gemini-3.8-flash-*` | Cadence | one-shot |
-| Cross-vendor | Cursor CLI | `composer-2.5` | Cadence | one-shot |
-| Cross-vendor | OpenAI API (an agent CLI or a small tool loop) | the cheapest tool-using OpenAI model the account can call | Cadence (headless gate protocol) | one-shot |
-| Mixed | Claude Code | Haiku 5.5 implements, Opus 5.5 runs R1 only | Cadence | not applicable |
+| Bar | Claude Code | Opus 5.5 | none | **Opus one-shot (the bar)** |
+| Anthropic, cheapest | Claude Code | Haiku 5.5 | Cadence, all cheap | one-shot |
+| Opus reviews | Claude Code | Haiku 5.5 implements, Opus 5.5 reviews | Cadence, cheap + Opus reviews | shares the Haiku 5.5 one-shot |
+| Anthropic, cheap | Claude Code | Haiku 4.5 | Cadence | one-shot |
+| Cursor | Cursor CLI (`cursor-agent`) | `auto` (Cursor picks the model) | Cadence | one-shot |
+| Cursor, cheap | Cursor CLI | the cheapest models in `cursor-agent --list-models`, for example `gpt-5.4-mini-*`, `gemini-3.6-flash-*` to `gemini-3.8-flash-*`, `composer-2.5` | Cadence | one-shot |
+| OpenAI, cheap | OpenAI API (an agent CLI or a small tool loop) | the cheapest tool-using OpenAI models the account can call (from the account's model list at run time) | Cadence (headless gate protocol) | one-shot |
+
+Sonnet 5.5 costs half of Opus per token, so it is not a cheap arm. It joins only if no cheap arm
+matches Opus, as a step to find where the line is.
+
+**`auto` needs its own reporting.** In `auto` mode Cursor chooses the model per request, so the arm is
+"whatever Cursor routes to", not one model. Record the model of each request where the CLI's JSON output
+reports it, and the cost from Cursor's own usage accounting; when the model is not reported, say so. Cursor may route the harness
+arm and the one-shot arm to different models, so report the models of both side by side. The
+`auto` arm answers "what does the default Cursor experience give", and it is compared with the Opus
+one-shot like any other arm.
 
 The Cursor model ids above are names from `cursor-agent --list-models` on 2026-10-12. Pin the exact
 id, its effort level and the CLI version in `frameworks.lock.json` at run time. Add each model's price
@@ -72,7 +114,11 @@ an attested Claude Code trail with an unattested one as if they were equal.
 
 The [criteria v1](criteria.md#4-measures) measures, with these points stressed for this question:
 
-- **M1 acceptance** gates delivery. **M2 reproduced defects** and **M7 quality** decide "matches Opus".
+- **M1 acceptance** gates delivery. **M2 reproduced defects, test-confirmed** decide "matches Opus": a
+  defect counts only with a reproduction test that fails on the run's code and passes on the reference
+  solution, and only critical and major defects count in the rule below. The other layers of the
+  [quality model](quality-model.md) (the tool gate, the design checklist, follow-up success, the
+  hidden-suite pass fraction) are reported beside it.
 - **M9 cost in dollars**: input, output and cache tokens of the whole session, nested subagents
   included, priced from `pricing.json`. Iterations 3 and 4 did not record this split. This run must.
 - **M10 auditability**, scored as a checklist per run: a plan; a spec check; a plan review, an
@@ -88,42 +134,57 @@ The rule is criteria v1 §6 ([decision rule](criteria.md#6-decision-rule-pre-reg
 each harness arm against the **Opus one-shot** instead of a one-shot on its own model. A harness arm on
 a cheaper model **matches Opus** when all of these hold:
 
-1. **Defects:** its mean critical plus major defects (M2) per attempted run is not higher than the Opus
-   one-shot's. (Criteria v1 asks for 0.5 fewer to show "fewer defects". "Matches" asks for no more.)
+1. **Defects (non-inferiority):** its mean count of critical or major M2 defects (test-confirmed) per attempted run is
+   at most the Opus one-shot's plus a margin, and the 90% bootstrap interval of the difference stays
+   under that margin. The margin is fixed in the criteria before the run set; this proposal suggests 0.25
+   defects per run. With 5 runs per task the interval is coarse, and when both arms have no defects it is
+   [0, 0], which counts as "not worse": report the per-run counts beside it. (Criteria v1 asks for 0.5 fewer to show "fewer defects". "Matches" asks for "not
+   worse by more than the margin".)
 2. **No more false success:** its M3 rate is not higher than the Opus one-shot's (tolerance 0.05).
 3. **Delivery:** its M1 pass rate per attempted run is at least the Opus one-shot's minus 10 points.
 
 Among the arms that match, the answer is the one with the lowest **cost per defect-free delivered run**
-(M9 dollars divided by the attempted runs that pass M1 with no critical or major defect). M7 quality and
-M10 auditability are reported beside it. They do not decide. If no arm matches, the answer is "none yet",
+(M9 dollars divided by the attempted runs that pass M1 with no critical or major M2 defect). M10
+auditability is reported beside it, and M7 (the 1–10 rubric) only for comparison with iterations 3 and 4. They do not decide. If no arm matches, the answer is "none yet",
 and the harness case rests on auditability and enforcement. Each arm is also compared with the one-shot
 on its own model, as criteria v1 requires, so the harness effect and the model effect stay separate.
 
-**Caps (owner decision before the run set).** Criteria v1 caps a trial at 1800 s and $1 for Haiku arms.
-Every iteration-4 Cadence run took 3,266–4,061 s on Opus, so at 1800 s every harness run would count as
-not delivered. This question needs a higher time cap and per-model dollar caps, chosen and recorded in
-criteria before the first run. That is a new criteria version, with a changelog entry.
+**Caps (owner decision, 2026-10-12).** Harness arms have no per-trial time cap: a harness run is never
+cut off. Criteria v1's 1800 s cap would have scored every iteration-4 Cadence run (3,266–4,061 s) as not
+delivered. Spend is controlled by one budget for the run set, recorded in the criteria before the first
+run; the run set stops scheduling new trials when the budget is spent, and never stops a trial in
+progress. This changes criteria v1 §6 and is part of the next criteria version, with a changelog entry.
 
 ## Plan
 
 | Stage | What | Size | Exit |
 |---|---|---|---|
 | 0. Prerequisites | See the list below | none | Each item has a test or a recorded check |
-| 1. Pilot | T05 (budgets: the only task where every one-shot shipped a crash) only, n = 1, every arm | ~15 runs | Drop an arm that cannot follow the Cadence procedure at all. Keep the rest. The pilot decides nothing else |
-| 2. Ladder | T04–T06, n = 5, the arms that passed the pilot, plus the Opus bar | ≤ 150 runs | The decision rule above, per task |
-| 3. Harder tasks | Class L and O tasks ([criteria §3](criteria.md)) once committed under `golden/tasks/` | per criteria | Repeat the decision rule where a harness should earn most |
+| 1. Pilot | T05 (budgets: the only task where every one-shot shipped a crash) only, n = 1, every arm | ~13 runs | Drop an arm that cannot follow the Cadence procedure at all. Keep the rest. The pilot decides nothing else |
+| 2. Hard tasks | The [L3 open-data BI pipeline](tasks/L3-open-data-bi-pipeline.md) and two more class L or O tasks, once committed under `golden/tasks/`, n = 5, the arms that passed the pilot, plus the Opus bar | ≤ 195 runs | The decision rule above, per task and per class |
+| 3. Easy tasks, for contrast | T04–T06, n = 5, the same arms | ≤ 195 runs | Tests H4: does the harness matter more on hard tasks |
 
 ## Prerequisites (stage 0)
 
-1. **Caps.** Choose the time and dollar caps for this question and record them in a new criteria version
-   (see above).
+1. **Caps.** Record the run-set budget, and the removal of the per-trial time cap for harness arms, in the
+   next criteria version (see above).
 2. **Cost capture.** Record input, output and cache tokens and dollars for the whole session, nested
    subagents included, from the host's own accounting. Verify that this includes the harness's peers.
-3. **Isolated environment per run.** Each run gets a clean `HOME`, so no user-level skill takes the
-   place of a Cadence peer (cadence#53), and no sandbox rule blocks a harness's own scripts. The
-   Harbor tier already gives a clean container.
-4. **Cadence on cheap models.** A per-stage model setting, so a stage (for example R1) can run on a
-   stronger model than the implementer (H4). Today all peers inherit the host model.
+3. **Clean room per run, checked.** Each run gets a clean `HOME` with only its arm's own harness
+   installed: no user-level skill, rule, command or memory. That keeps a user-level skill from taking
+   the place of a Cadence peer (cadence#53) and keeps skill descriptions such as "strict TDD" away from
+   the one-shot baselines. [`scripts/clean_room_check.py`](../scripts/clean_room_check.py) reads each
+   Claude Code transcript and must return `clean` before the run is graded ([process](process.md#clean-room)).
+   It reads Claude Code transcripts only; any other transcript is `unassessable`. For Cursor CLI and
+   OpenAI runs, the check is a listing taken before and after each run: `~/.cursor`, `~/.codex`,
+   `~/.agents` and `~/.claude` hold only the arm's own harness files, and the listing is stored with the
+   run's results. A parser per host can replace it later. The Harbor tier already gives a clean
+   container; Claude Code and Cursor CLI runs need it set up.
+4. **Cadence on cheap models, with a per-stage model setting.** Check that Haiku 5.5 can follow the
+   Cadence procedure end to end (the pilot). Cadence needs a setting that names the model of each peer
+   stage, so variant (a) keeps every stage on the cheap model and variant (b) sends only the review peers
+   to Opus (jtouley/cadence#58). Today every peer inherits the host's model. The cost accounting must split the session's tokens
+   by model, so each model's tokens are priced at its own price.
 5. **Cursor CLI validation.** Confirm that `cursor-agent --print` runs Cadence's Cursor hooks. This
    also closes the README limitation "No Cursor binary was available to validate them".
 6. **OpenAI host.** Pick the agent runner (an OpenAI-capable coding CLI or a small tool loop over the
@@ -134,7 +195,7 @@ criteria before the first run. That is a new criteria version, with a changelog 
 ## What we will report
 
 - One table per task: arm, model, host, delivered, M2 defects by severity, M3, cost per defect-free
-  delivered run, M7, M10 share, completion.
+  delivered run, M10 share, completion; M7 in a separate column marked "for comparison only".
 - A cost and quality chart with the Opus one-shot as the reference point.
 - The answer to the question, by the decision rule, including "none yet" if that is the result.
 - Every result that goes against the harness, reported the same way as a result for it.
