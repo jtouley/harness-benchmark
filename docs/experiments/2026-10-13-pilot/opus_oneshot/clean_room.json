@@ -1,0 +1,29 @@
+{
+  "transcripts": 1,
+  "records": 79,
+  "saw_listing": true,
+  "listed": [
+    "claude-api",
+    "code-review",
+    "dataviz",
+    "fewer-permission-prompts",
+    "init",
+    "keybindings-help",
+    "loop",
+    "plugin-authoring",
+    "run",
+    "security-review",
+    "simplify",
+    "update-config",
+    "workflow-authoring"
+  ],
+  "skill_calls": [],
+  "contacts": [
+    "/Users/jasontouleyrou/Projects/cadence-wt/cadence-workspace/pilot/opus_oneshot/repo/CLAUDE.md"
+  ],
+  "unexpected_listed": [],
+  "unexpected_calls": [],
+  "unexpected_contacts": [],
+  "verdict": "clean",
+  "exit": 0
+}

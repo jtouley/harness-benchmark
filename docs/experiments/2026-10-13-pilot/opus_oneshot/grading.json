@@ -1,0 +1,75 @@
+{
+  "expectations": [
+    {
+      "text": "C1 plan with at least 3 numbered phases",
+      "passed": false,
+      "evidence": "[]"
+    },
+    {
+      "text": "C2 plan reviewed by a plan-review peer",
+      "passed": false,
+      "evidence": "[]"
+    },
+    {
+      "text": "C3 adversarial review ran",
+      "passed": false,
+      "evidence": "[]"
+    },
+    {
+      "text": "C4 work committed in phases (>=3 commits, phase-named or not)",
+      "passed": false,
+      "evidence": "branch feat/category-budgets: 1 commits, 0 name a phase"
+    },
+    {
+      "text": "C5 PR record written",
+      "passed": true,
+      "evidence": "/Users/jasontouleyrou/Projects/cadence-wt/cadence-workspace/pilot/opus_oneshot/outputs/PR.md"
+    },
+    {
+      "text": "C6 PR reviewed (review artifact)",
+      "passed": false,
+      "evidence": "[]"
+    },
+    {
+      "text": "C7 review -> fix commits -> re-review of a later head",
+      "passed": false,
+      "evidence": "review cites 0 branch commits []; 0 commits after the first reviewed head"
+    },
+    {
+      "text": "C8 test scorecard produced",
+      "passed": false,
+      "evidence": "[]"
+    },
+    {
+      "text": "C9 ran autonomously (no questions to the user in outputs)",
+      "passed": true,
+      "evidence": "summary present"
+    },
+    {
+      "text": "Q1 all hidden acceptance tests pass",
+      "passed": true,
+      "evidence": "7/7 "
+    },
+    {
+      "text": "Q2 full test suite green",
+      "passed": true,
+      "evidence": "......................                                                   [100%]"
+    },
+    {
+      "text": "Q3 at least 5 new tests",
+      "passed": true,
+      "evidence": "12 test functions added"
+    }
+  ],
+  "hidden": {
+    "passed": 7,
+    "total": 7
+  },
+  "branch": "feat/category-budgets",
+  "checkout": "/Users/jasontouleyrou/Projects/cadence-wt/cadence-workspace/pilot/opus_oneshot/repo",
+  "attestation": {
+    "verdict_files": 0,
+    "attested_current": 0,
+    "uncovered": []
+  }
+}

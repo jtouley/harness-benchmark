@@ -55,9 +55,45 @@ the defects that reach the delivered code, and the evidence that the run leaves 
   its cheapest models; the OpenAI arms use the cheapest tool-using models the account can call. Each
   of these runs with Cadence and alone.
 - **Opus never orchestrates a Cadence run.** It appears only as the one-shot bar and as the reviewer in
-  variant (b). Sonnet does not run a harness arm. The lift of the harness is measured on the cheap models,
+  variant (b). Sonnet does not run a Cadence arm (the B01 review-loop rows below are a minimal harness, not Cadence). The lift of the harness is measured on the cheap models,
   against each model's own one-shot. The main claim is "cheap model + Cadence is not worse than the Opus
   one-shot".
+
+## Task selection: calibrated against the bar (owner direction, 2026-10-13)
+
+The pilot showed the problem again: on T05 the Opus 5.5 one-shot delivered a correct, tool-clean change in 111 seconds for $0.40. A task like that cannot show what a harness adds to Opus. A task is "hard" only when calibration shows it (the bar fails it, or the cheap one-shots fail it), not when it looks hard.
+
+- **Calibration rule (revised 2026-10-14).** Each task is calibrated with clean-room tries of the Opus 5.5 one-shot and of the cheap one-shots, graded by the task's own acceptance check. A task enters the benchmark in one of the two classes defined below: a **beyond** task (the bar passes at most 1 of 3 tries) or a **lift** task (the bar is reliable and the cheap one-shots are not). A task that the bar and the cheap one-shots all pass reliably is dropped, however large it looks.
+- **Real defects, not specified features.** Each task starts from a symptom or a product request, as a user would write it. It needs a running system to confirm (a database, a queue, a worker), and has more than one cause. Its existing tests stay green while the defect is present. The model of this class is a private brownfield bug: several stacked faults across services, hidden by passing mocked tests.
+- **Implementation-agnostic grading.** The acceptance check observes the product outcome in the running stack (rows, alerts, responses), never function names that one fix happened to use.
+- **Sources.**
+  1. *Private brownfield tasks.* Real repositories that cannot be published. The benchmark publishes the scores and the grader design, not the code. B01 is the first.
+  2. *Review-caught defects from Cadence's own history.* A first implementation passed its own tests, then a review found the bug (for example the closed-run `peer_models` defect in jtouley/cadence#62). The task is the original request; the hidden check is the behavior the review added.
+  3. *A published hard set* (for example the public SWE-bench Pro split) for comparison with outside numbers, filtered by the same calibration rule.
+- **Calibration records** are kept per task: the three tries, their cost and time, and the grader output. A task admitted as lift or beyond gets the harness arms; a dropped task does not.
+
+| Task | Source | Opus 5.5 one-shot | Result |
+|---|---|---|---|
+| B01 | private brownfield bug (several stacked faults across services) | 10 of 10 passed, including a second defect on another entry point (mean 7.3 min, $1.29) | Not a "beyond" task. A **lift** task (see below). Interim and unsourced: the runs are private. |
+
+**Two task classes (revised 2026-10-14).** The owner's question is whether a cheap model, which does the tool calls and the writing, plus a harness can reach the bar's reliability for less. So a task qualifies in one of two ways:
+
+- **Lift task:** the Opus one-shot is reliable and the cheap one-shots are not. Question: does a harness lift the cheap model to the bar's reliability, and at what cost?
+- **Beyond task:** the Opus one-shot is unreliable. Question: does a harness raise reliability above the bar?
+
+Reliability is measured over repeated runs (pass^k, k ≥ 3), not one pass: a one-shot that passes once says nothing about the next run. pass^k selects and describes tasks. Whether an arm matches Opus is still decided by the decision rule below (M1 delivery and M2 defects); pass^k is reported beside it.
+
+**B01 so far (interim and unsourced; n is small).** B01 is private: its prompt, grader and run records are not in this repository, so nobody can check the numbers below from it. They come from the operator's local run records. The B01 runs ran on the host, not in a container, and workers from one run could outlive it and share a message broker with later runs (a known defect of the B01 calibration). Grader: the product outcome in the running stack, plus a second check for a defect on another entry point that the original human-assisted fix also missed. Costs are from token counts at `pricing.json` list prices. Haiku 5.5 costs use the base price, so they are lower bounds for requests above 100 K tokens.
+
+| Arm | Main path fixed | Both defects fixed | Mean cost | Notes |
+|---|---|---|---|---|
+| Opus 5.5 one-shot | 10/10 | 10/10 | $1.29 | |
+| Sonnet 5.5 one-shot | 4/5 | 1/5 | $0.39 | |
+| Haiku 5.5 one-shot | 5/5 | 0/5 | $0.11 | |
+| Haiku 5.5 + Opus review loop | 2/2 | 2/2 | $1.15 ($0.16 Haiku, $0.99 Opus) | minimal harness: cheap model works, an Opus subagent reviews in the running system, the cheap model fixes |
+| Sonnet 5.5 + Opus review loop | 1/1 | 1/1 | $1.24 ($0.47 Sonnet, $0.77 Opus) | same |
+
+Reading: in 2 of 2 Haiku runs and 1 of 1 Sonnet run, an Opus review loop fixed both defects, where the cheap one-shots fixed both in 0 of 5 and 1 of 5. That is a signal, not yet a reliability measure (pass^k needs k ≥ 3). It does not save money. The reviewer must run the stack to check the work, and that costs about as much as Opus doing the task. The open cost question is whether a cheaper reviewer (Sonnet reviewing Haiku) keeps the reliability. Runs were cut short by repeated Docker Desktop failures on the test host; two runs were set aside as invalid (Docker down during the run); their arms are not recorded here.
 
 ## Hypotheses
 
@@ -161,7 +197,7 @@ progress. This changes criteria v1 §6 and is part of the next criteria version,
 |---|---|---|---|
 | 0. Prerequisites | See the list below | none | Each item has a test or a recorded check |
 | 1. Pilot | T05 (budgets: the only task where every one-shot shipped a crash) only, n = 1, every arm | ~13 runs | Drop an arm that cannot follow the Cadence procedure at all. Keep the rest. The pilot decides nothing else |
-| 2. Hard tasks | The [L3 open-data BI pipeline](tasks/L3-open-data-bi-pipeline.md) and two more class L or O tasks, once committed under `golden/tasks/`, n = 5, the arms that passed the pilot, plus the Opus bar | ≤ 195 runs | The decision rule above, per task and per class |
+| 2. Hard tasks | Tasks admitted as lift or beyond tasks (see "Task selection"): B01 (lift) and the other real-defect tasks first, then the [L3 open-data BI pipeline](tasks/L3-open-data-bi-pipeline.md) if calibration admits it. n = 5, the arms that passed the pilot, plus the Opus bar | ≤ 195 runs | The decision rule above, per task and per class |
 | 3. Easy tasks, for contrast | T04–T06, n = 5, the same arms | ≤ 195 runs | Tests H4: does the harness matter more on hard tasks |
 
 ## Prerequisites (stage 0)

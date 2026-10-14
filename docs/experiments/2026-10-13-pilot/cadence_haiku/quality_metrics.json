@@ -1,0 +1,37 @@
+{
+  "package_lines_added": 0,
+  "tests_passed": 6,
+  "tests_failed": 0,
+  "line_coverage": 89.8,
+  "branch_coverage": 78.6,
+  "new_code_coverage": null,
+  "new_executable_lines": 0,
+  "cyclomatic_max": 7,
+  "cyclomatic_over_10_in_changed_functions": [],
+  "cognitive_max": 8,
+  "cognitive_over_15_new": [],
+  "maintainability_index": 63.6,
+  "lint_new_by_rule": {},
+  "bug_findings_new": 0,
+  "smells_per_100_new_lines": 0.0,
+  "type_errors_new": 0,
+  "gate": {
+    "tests_pass": true,
+    "new_code_coverage_at_least_80": false,
+    "no_changed_function_over_cyclomatic_10": true,
+    "no_new_function_over_cognitive_15": true,
+    "no_new_bug_findings": true,
+    "no_new_type_errors": true
+  },
+  "gate_passed": false,
+  "tool_errors": {},
+  "tools": {
+    "ruff": "ruff==0.17.0",
+    "radon": "radon==6.0.1",
+    "complexipy": "complexipy==8.0.1",
+    "mypy": "mypy==2.4.0",
+    "pytest": "pytest==9.1.1",
+    "pytest-cov": "pytest-cov==7.1.0",
+    "coverage": "coverage==7.16.2"
+  }
+}
