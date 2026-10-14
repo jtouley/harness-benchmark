@@ -25,6 +25,10 @@ Over four rounds of measurement, the answer moved twice.
    diagnosed it correctly once, then decided to "leave that out of this change and report it" and never
    reported it. Sonnet mostly never exercised that path. The gap is scope judgment and coverage, not
    reasoning depth. Haiku took more turns than Opus.
+5. **On a published benchmark sample, the cheap one-shot is close to the strong one.** On 20 SWE-bench Pro
+   tasks, one try per model, Opus 5.5 passed 18, Sonnet 5.5 18 and Haiku 5.5 17, and Haiku cost about one
+   tenth of Opus. Those tasks leave a harness little to lift. Two tasks passed only 2 of 5 Opus tries; they,
+   and reliability over repeats, are the open questions there.
 
 Our current position: **a harness earns its cost by verification and by holding scope, not by
 ceremony.** A planning pipeline on a weak model mostly adds places to stop. An independent check of the
@@ -148,10 +152,26 @@ This points to two harness mechanisms that need no strong model:
 
 ### 3.5 A published benchmark: where the bar is unreliable
 
-SWE-bench Pro (Harbor, Claude Code in each task's container), 20 Python tasks drawn at random
-([calibration](../calibration/README.md)): the Opus 5.5 one-shot passed 17. Two tasks passed only 2 of 5
-tries. Those are beyond candidates: a harness that raises their pass rate does something the strong model
-alone cannot do reliably.
+SWE-bench Pro (Harbor 0.24.0, Claude Code in each task's container), 20 Python tasks drawn at random
+([calibration](../calibration/README.md)), one one-shot try per model:
+
+| Model | Passed | Cost (list prices) | Per task |
+|---|---|---|---|
+| Opus 5.5 | 18/20 | $5.79 | $0.290 |
+| Sonnet 5.5 | 18/20 | $2.57 | $0.129 |
+| Haiku 5.5 | 17/20 | $0.54 | $0.027 |
+
+Pass/fail per task, and the script that merges the runs: [`round2.md`](../calibration/swebench-pro/round2.md).
+
+- **Haiku 5.5 alone is within one task of Opus 5.5, at about one tenth of the cost.** Only one task passed
+  on Opus and failed on both cheaper models, each once; one try does not make it a lift task. So this
+  sample is not where a harness can show lift: a cheap model alone already gets nearly all of it.
+- **Where the bar is unreliable.** Two tasks passed only 2 of 5 Opus tries. Those are beyond candidates: a
+  harness that raises their pass rate does something the strong model alone cannot do reliably.
+- **What one try does not show.** A single pass rate says nothing about the next run. The open measure is
+  reliability over repeats (pass^k) on the beyond tasks and on the tasks the models split on.
+- **Limits.** 20 tasks; one try per model; 15 trials (Haiku 10, Sonnet 4, Opus 1) died in container setup
+  before the model ran and were rerun once; they are not counted as fails. Cost is computed from token counts at list prices, because Claude Code misprices Haiku 5.5.
 
 ## 4. What this means for building a harness
 
@@ -176,7 +196,8 @@ peer of its stage (cadence#66); deferrals are judged in real time (cadence#68).
   in its own container ([harness-benchmark#10](https://github.com/jtouley/harness-benchmark/issues/10)).
 - **Infrastructure losses.** Emulated x86 containers crashed the test laptop's Docker three times; the
   affected trials are recorded as infrastructure errors, not failures, and were rerun.
-- **One task per class so far.** B01 is one bug; SWE-bench Pro is one benchmark's sample of 20.
+- **One task per class so far.** B01 is one bug; SWE-bench Pro is one benchmark's sample of 20, with one
+  try per model.
 - **Author bias.** Mitigated by pre-registration, blind grading, and stating the unfavorable results first.
 
 ## 6. What comes next

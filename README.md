@@ -15,7 +15,9 @@ A reproducible benchmark of AI coding-workflow harnesses for Claude Code: [Caden
 > its own loops). On a real multi-cause bug, Haiku and Sonnet one-shots fixed the main path but the second
 > defect in only 0/5 and 1/5 runs, against Opus 10/10; an independent review loop recovered it in 3/3 runs,
 > at about the Opus one-shot's cost. The cheap models miss by **scope narrowing and coverage**, not
-> reasoning depth. **Next:** cheap verification (contracts before code, real-time deferral review),
+> reasoning depth. On a 20-task SWE-bench Pro sample (one try per model), a one-shot Haiku 5.5 passed
+> 17 against Opus 5.5's 18 at about one tenth of the cost; the open questions there are the tasks where
+> Opus is unreliable and pass rates over repeats. **Next:** cheap verification (contracts before code, real-time deferral review),
 > long-horizon pipeline tasks, and traceability when work goes wrong. Full argument: the
 > [**whitepaper**](docs/whitepaper.md).
 > *Disclosure: the owner of this benchmark wrote Cadence.*
