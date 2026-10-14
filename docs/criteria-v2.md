@@ -191,21 +191,24 @@ side [QM].
 |---|---|---|---|---|
 | M1 | **Acceptance** | The hidden checks (or the oracle) on the delivered working tree, in the running system where the task has one | Gate: a run that fails M1 is not delivered | [v1] [TS] |
 | M1f | **Hidden-suite pass fraction** | The fraction of the hidden checks that pass (30 or more per task where the task has a suite) | Reported | [QM] |
-| M2 | **Reproduced defects** | Blind reviewers (§6) list defects. Each needs a command and its output, re-run by a script in a clean copy. Severity: critical (data loss, wrong result reported as success), major (crash, spec violation), minor. A test-confirmed defect (a reproduction test that fails on the run's code and passes on the reference solution) needs no severity call to count as confirmed | **Primary** | [v1] [QM] |
-| M3 | **False success** | Places where the run reports success but M1 or M2 shows failure. A harness that stops with a recorded reason is not a false success | **Primary** for beyond tasks; reported for all | [v1] [DR] |
+| M2 | **Reproduced defects** | Blind reviewers (§6) list defects. Each needs a command and its output, re-run by a script in a clean copy. Severity: critical (data loss, wrong result reported as success), major (crash, spec violation), minor. A defect counts only when it is test-confirmed: a reproduction test fails on the run's code and passes on the reference solution | **Primary.** Only test-confirmed critical and major defects count in the decision rule (§8); minor ones are reported | [v1] [QM] [DR] |
+| M3 | **False success** | Places where the run reports success but M1 or M2 shows failure. A harness that stops with a recorded reason is not a false success | Decision rule input (§8.2–§8.4), beside M2 | [v1] [DR] |
 | M8 | **Completion** | Finished without a human answer. A hard stop or a question to the user counts as not complete | Reported | [v1] |
 
 ### 4.2 Layer 2: the tool gate
 
 Computed by [`scripts/quality_metrics.py`](../scripts/quality_metrics.py), with the tools pinned in the
-lockfile. A finding counts only on a line that the change added, or in a function whose body holds one. A
-tool that fails leaves its measure unmeasured, and the gate then fails [QM].
+lockfile. A lint or type finding counts only on a line that the change added. For both complexity measures,
+one rule applies: a function is flagged when the change takes it over the threshold, that is, it is new and
+over the threshold, or it was at or under the threshold in the baseline and is over it now (output keys
+`cognitive_newly_over_15` and `cyclomatic_newly_over_10`). A tool that fails leaves its measure
+unmeasured, and the gate then fails [QM].
 
 | Measure | Threshold | Source |
 |---|---|---|
 | New-code line and branch coverage | ≥ 80% | [QM] (Sonar way gate) |
-| Cognitive complexity per new function | ≤ 15 | [QM] (SonarSource) |
-| Cyclomatic complexity per new function | ≤ 10 | [QM] (McCabe) |
+| Functions that the change takes over cognitive complexity 15 | 0 | [QM] (SonarSource) |
+| Functions that the change takes over cyclomatic complexity 10 | 0 | [QM] (McCabe) |
 | New bug-class static findings | 0 | [QM] |
 | New type errors (mypy, `--check-untyped-defs`) | 0 | [QM] |
 | Test strength: the run's own tests against mutants of the reference solution | ≥ 80%, joins the gate when built | [QM] |
@@ -237,7 +240,9 @@ Design checklist items [QM] [OC]:
 - Configuration, not code, holds what differs between pipelines where the request asks for it (P2).
 - No logic is copied between the batch and the stream paths where one shared function fits.
 
-v1's 1–10 rubric (M7) is replaced by layers 2 and 3. Pairwise judging (two or three LLM judges, each pair
+v1's 1–10 rubric (M7) is replaced by layers 2 and 3 as a quality measure. It is reported only for
+comparison with iterations 3 and 4, in a separate column marked "for comparison only", and it does not
+decide [DR]. Pairwise judging (two or three LLM judges, each pair
 twice with positions swapped) is a tie-breaker only, where the measures above tie [#16] [QM].
 
 ### 4.4 Reliability (pass^k)
@@ -250,7 +255,10 @@ A one-shot that passes once says nothing about the next run. Reliability is meas
   not part of the run set.
 - **pass^k.** For a cell with c passing runs out of n, pass^k = C(c, k) / C(n, k): the estimated chance
   that k fresh runs all pass [v2]. Report pass^1 and pass^5 per cell. A pass means M1 passes and M2 has no
-  critical or major defect [v2].
+  test-confirmed critical or major defect [v2].
+- **What pass^k does.** pass^k selects tasks (§3.2) and describes each cell. It does not decide whether an
+  arm matches the bar: that is the decision rule (§8.3), on M1 delivery and M2 defects. pass^k is reported
+  beside it [TC].
 
 ### 4.5 Follow-up tasks
 
@@ -286,7 +294,7 @@ closure record that names the delivered head; the deferral log (§2.5). Report t
 |---|---|---|
 | M5 test-first evidence | Reported where the run commits; not a decision input | [v1] |
 | M6 changed-line coverage | Folded into the tool gate (layer 2). It did not separate arms in v1 data or in iteration 4 | [v1] [QM] |
-| M7 code quality rubric | Replaced by layers 2 and 3 | [#16] [QM] |
+| M7 code quality rubric | Replaced by layers 2 and 3; reported only for comparison with iterations 3 and 4, not a decision input | [#16] [QM] [DR] |
 
 ## 5. Running a trial
 
@@ -343,8 +351,8 @@ caps before the first v2 run set [CAP] [v2].
 - **Defects (M2).** A reviewer lists each defect with a repro command and its expected and observed output.
   A script re-runs every repro command in a clean copy of that arm's tree. A defect counts only if the
   script reproduces it. Reproduced defects from both reviewers are merged by root cause. When both list a
-  defect, it takes the lower of their two severities [v1]. A reviewer may file a test-confirmed defect
-  instead (§4.1) [QM].
+  defect, it takes the lower of their two severities [v1]. A reproduced defect counts for M2 only once a
+  reproduction test confirms it (§4.1) [QM] [DR].
 - **Design checklist (layer 3).** Each reviewer answers each item yes or no, with a file and line as
   evidence [QM] [OC]. An item where the two reviewers differ goes to a third reviewer, and the majority
   stands [v2].
@@ -488,7 +496,7 @@ These items must be filled or confirmed by the owner, with a changelog entry, be
 | 5 | Claims by lift and beyond classes; v1 classes S, L and O stay as descriptions; T04–T06 only for contrast (§3.2, §3.3) | 2026-10-14 | [next steps: two task classes](next-steps.md#task-selection-calibrated-against-the-bar-owner-direction-2026-10-13) |
 | 6 | Task sources: private brownfield tasks (scores published, code not), review-caught defects, a published hard set, the pipeline family (§3.3) | 2026-10-13 | [next steps: task selection](next-steps.md#task-selection-calibrated-against-the-bar-owner-direction-2026-10-13), [pipeline family](tasks/pipeline-family.md) |
 | 7 | Reliability over repeats: pass^k per cell, n = 5 per cell (§4.4) | 2026-10-14 | [next steps: two task classes](next-steps.md#task-selection-calibrated-against-the-bar-owner-direction-2026-10-13), [whitepaper](whitepaper.md) |
-| 8 | The quality model is the quality measure: three layers, a tool gate with published thresholds, a design checklist; v1's M7 rubric is replaced, M6 folds into the tool gate (§4) | 2026-10-13 | [harness-benchmark#16](https://github.com/jtouley/harness-benchmark/issues/16), [quality model](quality-model.md) |
+| 8 | The quality model is the quality measure: three layers, a tool gate with published thresholds, a design checklist; M2 (test-confirmed, critical or major) is the primary measure; v1's M7 rubric is replaced and kept only for comparison, M6 folds into the tool gate (§4) | 2026-10-13 | [harness-benchmark#16](https://github.com/jtouley/harness-benchmark/issues/16), [quality model](quality-model.md), [next steps: measures](next-steps.md#measures) |
 | 9 | Owner success criteria: DRY (duplication ≤ 3%), SOLID (coupling, checklist, edit radius), extensible (follow-up success and cost), traceable (audit scores), cheapest in the top design tier (§4.3, §8.5) | 2026-10-14 | [quality model: owner criteria](quality-model.md#owner-criteria-2026-10-14-dry-solid-extensible-traceable-cheap), [pipeline family](tasks/pipeline-family.md#success-criteria-owner-2026-10-14) |
 | 10 | Haiku-only harness arms, reviews included; the Opus one-shot is the bar; Haiku and Sonnet one-shots; named comparison arms only where named (§2.1, §2.2). The 2026-10-12 Cursor, OpenAI, Haiku 4.5 and Opus-review arms are not in the v2 run set | 2026-10-14 | [pipeline family: arms](tasks/pipeline-family.md#arms), [next steps: owner decisions](next-steps.md#owner-decisions-for-this-design-2026-10-12) |
 | 11 | Follow-up tasks on the arm's own frozen code (§4.5) | 2026-10-14 | [follow-up task](tasks/pipeline-followup.md) |
