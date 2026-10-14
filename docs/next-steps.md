@@ -71,7 +71,7 @@ The pilot showed the problem again: on T05 the Opus 5.5 one-shot delivered a cor
 
 | Task | Source | Opus 5.5 one-shot | Result |
 |---|---|---|---|
-| B01 | private brownfield bug (several stacked faults across services) | 10 of 10 passed, including a second defect on another entry point (mean 7.3 min, $1.29) | Not a "beyond" task. A **lift** task (see below). |
+| B01 | private brownfield bug (several stacked faults across services) | 10 of 10 passed, including a second defect on another entry point (mean 7.3 min, $1.29) | Not a "beyond" task. A **lift** task (see below). Interim and unsourced: the runs are private. |
 
 **Two task classes (revised 2026-10-14).** The owner's question is whether a cheap model, which does the tool calls and the writing, plus a harness can reach the bar's reliability for less. So a task qualifies in one of two ways:
 
