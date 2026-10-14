@@ -19,6 +19,7 @@ jobs:
       # A pinned framework in a private repo (jtouley/cadence) cannot be fetched with no
       # credentials. verify recomputes every result from every framework, so it cannot run
       # on a partial set: skip fetch and verify with a warning, and run them locally instead.
+      # GitHub answers "Repository not found" when the checkout token cannot see a private repo.
       # Any other fetch failure (network, bad sha) still fails the job.
       - name: Check that every pinned framework can be fetched without credentials
         id: access
@@ -29,7 +30,7 @@ jobs:
           for repo in $(jq -r '.frameworks[].repo // empty' frameworks.lock.json); do
             if ! out=$(git ls-remote --exit-code "$repo" HEAD 2>&1); then
               case "$out" in
-                *"could not read Username"*|*"Authentication failed"*) private="$private $repo" ;;
+                *"could not read Username"*|*"Authentication failed"*|*"Repository not found"*) private="$private $repo" ;;
                 *) echo "$out"; echo "::error::cannot reach $repo"; exit 1 ;;
               esac
             fi
