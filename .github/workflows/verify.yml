@@ -16,9 +16,35 @@ jobs:
           node-version: 22
       - uses: astral-sh/setup-uv@v5
       - run: npm install -g @anthropic-ai/claude-code@2.1.294
+      # A pinned framework in a private repo (jtouley/cadence) cannot be fetched with no
+      # credentials. verify recomputes every result from every framework, so it cannot run
+      # on a partial set: skip fetch and verify with a warning, and run them locally instead.
+      # Any other fetch failure (network, bad sha) still fails the job.
+      - name: Check that every pinned framework can be fetched without credentials
+        id: access
+        env:
+          GIT_TERMINAL_PROMPT: "0"
+        run: |
+          private=""
+          for repo in $(jq -r '.frameworks[].repo // empty' frameworks.lock.json); do
+            if ! out=$(git ls-remote --exit-code "$repo" HEAD 2>&1); then
+              case "$out" in
+                *"could not read Username"*|*"Authentication failed"*) private="$private $repo" ;;
+                *) echo "$out"; echo "::error::cannot reach $repo"; exit 1 ;;
+              esac
+            fi
+          done
+          if [ -n "$private" ]; then
+            echo "::warning title=fetch and verify skipped::these pinned repos need credentials:$private. Run 'python -m cbench fetch && python -m cbench verify' locally with access."
+            echo "fetchable=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "fetchable=true" >> "$GITHUB_OUTPUT"
+          fi
       - name: Fetch pinned frameworks
+        if: steps.access.outputs.fetchable == 'true'
         run: uv run --frozen --with tokenizers python -m cbench fetch
       - name: Verify every committed result byte for byte
+        if: steps.access.outputs.fetchable == 'true'
         run: uv run --frozen --with tokenizers python -m cbench verify
       - name: Unit and pipeline tests
         run: uv run --frozen --with tokenizers python -m pytest -q

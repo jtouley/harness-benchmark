@@ -66,8 +66,11 @@ def test_agent_hook_matches_harbor():
 
     import pytest
 
-    pytest.importorskip("harbor", reason="harbor is only needed for the live tier")
-    from harbor.agents.installed.claude_code import ClaudeCode
+    # The repo's own harbor/ folder (no __init__.py) imports as a namespace package named
+    # harbor, so importorskip("harbor") passes without the package; skip on the real module.
+    ClaudeCode = pytest.importorskip(
+        "harbor.agents.installed.claude_code", reason="harbor is only needed for the live tier"
+    ).ClaudeCode
 
     sys.path.insert(0, str(harbor.HARBOR_DIR / "agents"))
     try:
