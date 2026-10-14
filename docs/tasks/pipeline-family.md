@@ -66,29 +66,71 @@ This is the measure the family exists for.
    often means redoing the work. With a harness record, the auditor finds both, and repair touches one
    phase.
 
+## Success criteria (owner, 2026-10-14)
+
+Which arm comes closest to a **DRY, SOLID and extensible** system, **whose path we can understand**,
+and **at what cost**. The measures are in the [quality model](../quality-model.md#owner-criteria-2026-10-14-dry-solid-extensible-traceable-cheap).
+Each base task has a [follow-up task](pipeline-followup.md) (a new data mart and a Streamlit dashboard)
+that the same arm builds on its own code; its success, cost and edit radius measure extensibility.
+
 ## Arms
 
-The arms of [next steps](../next-steps.md#arms), on each task:
+Cost is the point: a harness may spend many tokens if each one is cheap. So every harness arm runs on
+Haiku 5.5, reviews included, unless the arm says otherwise.
 
-- the Opus 5.5 one-shot (the bar), and one-shots on each cheap model;
-- the review loop (a cheap model works; an independent reviewer checks the running result; the cheap
-  model fixes);
-- the verification harness (a cheap model, plus a contract and automated checks written before the code,
-  that the model must run and pass; no model reviewer);
-- full Cadence with `peer_models`.
+- The Opus 5.5 one-shot: the bar for checks and design, not a harness arm.
+- One-shots on Haiku 5.5 and Sonnet 5.5: each model's own baseline.
+- The review loop, Haiku 5.5 working and Haiku 5.5 reviewing (and, for comparison on B01 only, a Sonnet or
+  Opus reviewer).
+- The verification harness: an executable contract written before the code (by Haiku 5.5), and a stop
+  gate that runs it; no model reviewer.
+- Full Cadence with `peer_models: {"default": "haiku"}`, after jtouley/cadence#63–#66 are fixed.
+
+**Deferrals are reviewed in real time.** In every harness arm, each deferral (work the harness decides
+not to do now) goes to an independent Haiku 5.5 reviewer at the moment it is proposed. The reviewer
+judges it against the request: *accept* (it is outside the request, or blocked, with a reason) or
+*reject* (it is part of the request). A rejected deferral is implemented before the run may finish.
+The log of proposals and verdicts is part of the run record and of the audit. Cadence does not do this
+yet: its P8 gate checks a deferral's form (ticket, ripeness), not whether it was the right call
+(jtouley/cadence#68). This rule comes from B01, where Haiku correctly diagnosed a second defect, decided
+to "leave that out of this change and report it", and then reported nothing.
+
+## Prompt hygiene
+
+The prompts must not poison any run:
+
+1. Every arm gets the same request text, word for word. No arm's prompt adds hints, quality adjectives
+   ("staff level", "production quality") or knowledge of the traps, checks or follow-up.
+2. A harness arm differs only by its installed harness (plugin, hooks, skill) and one line naming it
+   ("Use the review-loop skill."). The harness's own instructions are generic: none names this task, its
+   data or its traps.
+3. The follow-up request is not visible to any arm until its base task is frozen.
+4. The trap catalog, the answer key and this page are not in any arm's environment.
+5. The staff-level bar is applied by the grading (checks, quality model, audit), not by the prompt.
 
 The verification-harness arm follows from B01: Haiku saw its second defect in all 5 runs, diagnosed it
 once, then left it out ("I'll leave that out of this change and report it") and never reported it. A
 check the model must pass removes that judgment call. It costs far less than a reviewer that re-verifies
 by hand.
 
-## Runner
+## Runner and isolation
 
-P3 runs Spark and a JVM build, and P1 and P2 run a replay server and a consumer. The test host (a 16 GB
-Apple Silicon laptop with Docker Desktop) failed three times under emulated containers in the
-calibration runs. These tasks run on a remote Linux host (x86-64, at least 8 cores and 32 GB RAM), one
-trial per host at a time, with the replay server and grader in the same container network. Harbor
-supports this through a custom environment; the task images are built once and pinned by digest.
+Every trial runs fully isolated from the owner's machine: the agent process, its tools, every virtual
+environment and package cache, the database and broker containers, and anything the agent starts live in
+one disposable environment that is deleted after grading. Nothing runs on the host but the orchestration
+that starts and collects trials.
+
+- Each trial gets its own container with its own Docker daemon inside (Docker-in-Docker, or a sysbox
+  runtime), so a task that starts Postgres or Spark cannot reach another trial or the host. A worker an
+  agent leaves running dies with the container. (The B01 calibration found that workers left by earlier
+  runs consumed later runs' events through a shared Redis port; isolation per trial removes that class.)
+- Python dependencies install into the trial's own virtual environment inside the container; the JVM
+  build uses its own cache inside the container.
+- The host is a remote Linux machine (x86-64, at least 8 cores and 32 GB RAM), one trial per machine at a
+  time. The test laptop (16 GB Apple Silicon, Docker Desktop) failed three times under emulated x86
+  containers in the calibration runs.
+- Harbor runs the trials (its agent runs inside the trial container). The task images are built once and
+  pinned by digest.
 
 ## Work to admit the family
 
