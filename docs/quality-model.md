@@ -70,9 +70,11 @@ one-shot passes the hidden tests but ships crashes that only a reviewer reproduc
 ## Iteration 4, measured this way
 
 Computed by [`scripts/quality_metrics.py`](../scripts/quality_metrics.py) (tool versions pinned) on the
-delivered trees against the untouched baseline. A finding counts only on a line the change added, or in a
-function whose body holds one, so fixing an old problem cannot hide a new one. A tool that fails leaves
-its measure unmeasured, and the gate then fails. Raw data: [`quality_metrics.json`](experiments/2026-10-12-iteration-4/quality_metrics.json).
+delivered trees against the untouched baseline (`quality_metrics.py SOLUTION BASELINE`, with each
+solution's `CHANGE.diff`). A lint or type finding counts only on a line the change added, and a function
+counts as too complex only when the change takes it over the threshold, so fixing an old problem cannot
+hide a new one. The reference rows apply each task's `reference.patch` to the same baseline. A tool that
+fails leaves its measure unmeasured, and the gate then fails. Raw data: [`quality_metrics.json`](experiments/2026-10-12-iteration-4/quality_metrics.json).
 Mutation score is not included: mutmut 3 does not run on this code (it imports modules by bare name).
 
 | Arm | Tool gate passed | New-code coverage | Branch coverage | Highest cognitive complexity | New bug findings | New type errors |
@@ -81,18 +83,24 @@ Mutation score is not included: mutmut 3 does not run on this code (it imports m
 | Cadence | 1 of 3 | 100% | **90.7–93.3%** | 12–19 | 0 | 0–1 |
 | ship-feature (2 delivered) | 0 of 2 | 100% | 90.3–93.8% | 13–18 | 0 | 0–3 |
 | Sonnet one-shot | 1 of 3 | 97.0–100% | 82.6–87.0% | 12–21 | 0 | 0 |
-| Haiku 4.5 one-shot | 1 of 3 | 95.2–100% | 82.4–86.1% | 12–32 | 0–2 | 0–1 |
+| Haiku 4.5 one-shot | 1 of 3 | 95.2–100% | 82.4–86.1% | 12–32 | 0 | 0–1 |
+| *Reference solution (task author)* | *1 of 3* | *100%* | *89.3–91.9%* | *11–15* | *0* | *0–1* |
 
 What the tools add to the picture:
 
 - **New-code coverage does not separate the arms.** Every solution covers 95–100% of its new lines.
   Criteria v1 already found this. Branch coverage separates more: the harnesses reach 90–94%, the
-  one-shots 82–88%.
+  one-shots 82–89%.
 - **The harness solutions fail the gate on complexity and types, not on tests.** Cadence's audit-undo
   has one function at cognitive complexity 19 (cyclomatic 13), and its budgets solution adds one type
   error. That matches the graders' "heavier than needed".
-- **Opus alone is the only arm that passes the tool gate on every task.** Together with its blind
-  quality score, that is consistent: on small, precise tasks, Opus alone writes simple, well-typed code.
+- **The gate is not calibrated on these tasks.** The reference solutions fail it on budgets and
+  audit-undo: each adds a subcommand, which takes the CLI dispatcher `cli.run` (cyclomatic 7 in the
+  baseline) to 11 or 12, and audit-undo's adds one type error. Every failing solution fails on that
+  same function or on type errors. So the complexity condition here mostly records whether a solution
+  moved the dispatch out of `cli.run`. Opus alone is the only arm that passes on every task, but that is
+  not yet evidence of simpler code. Criteria v2 should adopt the gate only on tasks whose reference
+  passes it, or record why not.
 - **The tools miss what the reviewers found.** The Opus budgets solution passes the gate and still ships
   two crashes. Layer 1 needs the reviewers.
 
