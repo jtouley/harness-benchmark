@@ -71,7 +71,26 @@ The pilot showed the problem again: on T05 the Opus 5.5 one-shot delivered a cor
 
 | Task | Source | Opus 5.5 one-shot | Result |
 |---|---|---|---|
-| B01 | private brownfield bug (several stacked faults across services) | 2 of 2 passed (5.4 min, $1.17; 8.5 min, $1.44). The third try was stopped: the rule was decided. | Dropped. The bar solves it when it can run the stack. |
+| B01 | private brownfield bug (several stacked faults across services) | 10 of 10 passed, including a second defect on another entry point (mean 7.3 min, $1.29) | Not a "beyond" task. A **lift** task (see below). |
+
+**Two task classes (revised 2026-10-14).** The owner's question is whether a cheap model, which does the tool calls and the writing, plus a harness can reach the bar's reliability for less. So a task qualifies in one of two ways:
+
+- **Lift task:** the Opus one-shot is reliable and the cheap one-shots are not. Question: does a harness lift the cheap model to the bar's reliability, and at what cost?
+- **Beyond task:** the Opus one-shot is unreliable. Question: does a harness raise reliability above the bar?
+
+Reliability is measured over repeated runs (pass^k), not one pass: a one-shot that passes once says nothing about the next run.
+
+**B01 so far (interim, n is small).** Grader: the product outcome in the running stack, plus a second check for a defect on another entry point that the original human-assisted fix also missed. Costs are from token counts at `pricing.json` list prices.
+
+| Arm | Main path fixed | Both defects fixed | Mean cost | Notes |
+|---|---|---|---|---|
+| Opus 5.5 one-shot | 10/10 | 10/10 | $1.29 | |
+| Sonnet 5.5 one-shot | 4/5 | 1/5 | $0.39 | |
+| Haiku 5.5 one-shot | 5/5 | 0/5 | $0.11 | |
+| Haiku 5.5 + Opus review loop | 2/2 | 2/2 | $1.15 ($0.16 Haiku, $0.99 Opus) | minimal harness: cheap model works, an Opus subagent reviews in the running system, the cheap model fixes |
+| Sonnet 5.5 + Opus review loop | 1/1 | 1/1 | $1.24 ($0.47 Sonnet, $0.77 Opus) | same |
+
+Reading: an independent Opus review closes the reliability gap of the cheap models on this task, but it does not save money. The reviewer must run the stack to check the work, and that costs about as much as Opus doing the task. The open cost question is whether a cheaper reviewer (Sonnet reviewing Haiku) keeps the reliability. Runs were cut short by repeated Docker Desktop failures on the test host; two runs were set aside as invalid (Docker down during the run).
 
 ## Hypotheses
 
