@@ -69,6 +69,10 @@ The pilot showed the problem again: on T05 the Opus 5.5 one-shot delivered a cor
   3. *A published hard set* (for example the public SWE-bench Pro split) for comparison with outside numbers, filtered by the same calibration rule.
 - **Calibration records** are kept per task: the three tries, their cost and time, and the grader output. A task that the bar fails also gets the harness arms; one that it passes does not.
 
+| Task | Source | Opus 5.5 one-shot | Result |
+|---|---|---|---|
+| B01 | private brownfield bug (several stacked faults across services) | 2 of 2 passed (5.4 min, $1.17; 8.5 min, $1.44). The third try was stopped: the rule was decided. | Dropped. The bar solves it when it can run the stack. |
+
 ## Hypotheses
 
 | # | Hypothesis | What would refute it |
