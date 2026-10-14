@@ -1,0 +1,85 @@
+# Isolated runner
+
+One trial, one disposable container ([issue #10](https://github.com/jtouley/harness-benchmark/issues/10),
+[runner and isolation](../docs/tasks/pipeline-family.md#runner-and-isolation)). Everything a trial needs
+runs inside it: Claude Code (headless, `claude -p`), the arm's plugin (`--plugin-dir`), the task
+repository, a Docker daemon of its own (Docker-in-Docker, privileged) for any database or broker the task
+starts, the task's virtual environments and caches, and the grader. The host keeps only the collected
+outputs. The container and its volume are deleted when the trial ends, also when it is interrupted.
+
+## Use
+
+```sh
+docker build -t harness-benchmark/runner:local runner/     # once; native architecture of the host
+ANTHROPIC_API_KEY=... runner/run_trial.sh \
+  --repo path/to/task-repo --prompt path/to/prompt.txt --grader path/to/grader.sh \
+  --model claude-opus-5-5 [--plugin-dir harnesses/reviewloop] [--suffix "text"] \
+  --out results/runs/<trial>
+```
+
+Run one trial at a time on the laptop. `--help` lists every option (timeouts, permission mode, image).
+
+| Input | Inside the container |
+|---|---|
+| `--repo` (copied; the host copy is not changed) | `/trial/repo`, the agent's working directory, owned by user `agent` |
+| `--prompt`, plus ` ` and `--suffix` | `/trial/prompt.txt` |
+| `--plugin-dir` | `/trial/plugin`, passed as `claude --plugin-dir` |
+| `--grader` | `/trial/grader`, copied in after the agent has finished; run as `grader /trial/repo` |
+| `ANTHROPIC_API_KEY` | standard input of the container; given to the agent process only |
+
+The agent can write extra outputs to `$HB_OUTPUTS` (`/trial/out/agent`); a prompt that asks for a
+summary file should name that path.
+
+| Output (in `--out`) | What |
+|---|---|
+| `transcript.jsonl` | Claude Code's `stream-json` output |
+| `result.json` | the transcript's last `result` line (cost, usage, `duration_ms`) |
+| `grade.json`, `grade.stderr` | the grader's stdout and stderr |
+| `timing.json` | agent and grader seconds and exit codes, leftover agent processes killed |
+| `host.json` | container name, exit code, wall seconds |
+| `agent/`, `claude-projects/` | files the agent wrote to `$HB_OUTPUTS`; Claude Code's session logs |
+| `runner.log`, `agent.stderr`, `dockerd.log` | logs |
+
+## What happens in a trial
+
+1. `run_trial.sh` creates the container (no bind mount, no published port), copies the inputs in, and
+   starts it with the API key on standard input.
+2. `entrypoint.sh` starts the inner `dockerd`; its storage is the container's anonymous volume.
+3. The agent runs as user `agent` (in the `docker` group) under a timeout, with the key in its
+   environment only.
+4. Every process of user `agent` is killed, so no worker the agent left can serve the grader. Containers
+   the agent started in the inner daemon stay up for the grader.
+5. `run_trial.sh` copies the grader in only now (the agent never sees it); it runs as root, without the key.
+6. `run_trial.sh` copies `/trial/out` to `--out`, then `docker rm -f -v`: the container, its volume, the
+   inner daemon and everything in it go.
+
+The API key is never a process argument (it is written by a shell builtin), and it is not in the image,
+the container configuration (`docker inspect`), a file or a log. The agent itself can read it from its
+own environment, as on the host.
+
+## Image
+
+`Dockerfile`: Debian bookworm-slim (glibc, so task virtualenvs get manylinux wheels), the static Docker
+29.9.0 binaries and `dind` wrapper from `docker:29.9.0-dind` (daemon, CLI, compose, buildx), uv 0.13.1,
+Claude Code 2.1.287 (native installer), git, Python 3.11, jq. 814 MB on arm64. Build it on the machine
+that runs the trials: arm64 on the Apple Silicon laptop, x86-64 on a cloud host.
+
+## Tests
+
+`tests/test_runner.py`. Without Docker: argument checks, and that the key reaches the container only by
+standard input. With `HB_RUNNER_DOCKER_TESTS=1`: builds the image, then runs stub trials (no API call)
+whose agent starts a service in the inner daemon, leaves a background process, commits and holds; the
+tests check the container while it runs and after it ends, and interrupt one trial. One more trial runs
+the real Claude Code agent with a plugin and no key: it loads the plugin and model, stops at login, and
+makes no API request.
+
+## Not yet done
+
+- No real Claude Code trial has run in the container (it costs API money); first run: B01.
+- The inner daemon starts empty each trial, so every trial pulls the task's images (no cache or mirror).
+- Parallel trials on a remote x86-64 host (the account is an owner decision); the image has not been
+  built on x86-64.
+- Harbor does not use this runner yet.
+- The isolation protects the host and other trials, not the grader from a hostile agent: the agent is in
+  the inner daemon's `docker` group (root inside the container), and containers it leaves running in the
+  inner daemon are still up while the grader runs.
