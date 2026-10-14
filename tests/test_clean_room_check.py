@@ -289,6 +289,10 @@ def test_reading_a_saved_tool_output_of_the_session_is_not_a_contact(tmp_path):
     "grep -rn TDD $HOME",
     "cd && grep -rl 'strict TDD' .",
     "git -C /home/u/notes grep TDD",
+    "cat `find / -name SKILL.md`",
+    "sh -c 'find / -name SKILL.md -exec cat {} +'",
+    'bash -c "grep -rl TDD ~"',
+    "egrep -r TDD /home/u",
 ])
 def test_a_search_outside_the_allowed_folders_is_a_contact(tmp_path, command):
     """R7 on PR #8: a search names folders, and its pattern can name any file in them."""

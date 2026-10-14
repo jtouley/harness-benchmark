@@ -69,7 +69,7 @@ PATH_FIELDS = ("file_path", "path", "notebook_path")  # Grep's `pattern` is a re
 TOKEN = re.compile(r"[^\s'\";|&<>()]+")
 CHANGES_DIR = re.compile(r"(?:^|[\s;&|(])(?:cd|pushd)(?:\s+([^\s;&|)]+)|(?=[\s;&|)]|$))")
 # A search reads every file under the folders it names, and its pattern can name any of them.
-SEARCH = re.compile(r"(?:^|[\s;&|(])(?:find|fd|rg|ag|ack|locate|grep\b[^;&|]*\s(?:-[a-zA-Z]*[rR][a-zA-Z]*|--recursive)"
+SEARCH = re.compile(r"(?:^|[\s;&|(`'\"])(?:find|fd|rg|ag|ack|ugrep|locate|[ef]?grep\b[^;&|]*\s(?:-[a-zA-Z]*[rR][a-zA-Z]*|--recursive)"
                     r"|git\b[^;&|]*\sgrep)(?=\s|$)")
 SEARCH_TOOLS = ("Grep", "Glob")
 LOADED_FILE = re.compile(r"Contents of (\S+?\.md)\b")
