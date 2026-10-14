@@ -1,3 +1,5 @@
+> Superseded for new run sets by [criteria v2](criteria-v2.md). This version stays as history.
+
 # Benchmark criteria (v1)
 
 Status: **pre-registered**. These criteria are fixed before the outcome runs that they judge.
