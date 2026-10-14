@@ -179,7 +179,7 @@ def test_a_home_path_does_not_resolve_against_the_cwd(tmp_path):
 
 def test_a_grep_pattern_is_not_a_path(tmp_path):
     t = _transcript(tmp_path, _listing(*BUILTIN), _call("Grep", pattern="SKILL.md", path="/repo/src"))
-    assert _verdict([t])["verdict"] == "clean"
+    assert _verdict([t], allow_paths=["/repo"])["verdict"] == "clean"
 
 
 # Negative fixtures, one per known leak channel (review of PR #8 at 20257f2). Each must be non-clean.
@@ -280,15 +280,45 @@ def test_reading_a_saved_tool_output_of_the_session_is_not_a_contact(tmp_path):
 
 @pytest.mark.parametrize("command", [
     "find ~ -name SKILL.md -exec cat {} +",
+    "find / -name SKILL.md -exec cat {} +",
+    "find /home -name SKILL.md -exec cat {} +",
+    "find ~/. -name SKILL.md -exec cat {} +",
     "rg --files -g CLAUDE.md /home/u",
+    "rg --files -g CLAUDE.md /",
     "grep -rl 'strict TDD' /home/u",
     "grep -rn TDD $HOME",
-    "ls /Users/x",
+    "cd && grep -rl 'strict TDD' .",
+    "git -C /home/u/notes grep TDD",
 ])
-def test_a_command_over_the_home_folder_is_a_contact(tmp_path, command):
-    """R7 on PR #8: a bare instruction-file name was a search pattern, resolved into the allowed repo."""
+def test_a_search_outside_the_allowed_folders_is_a_contact(tmp_path, command):
+    """R7 on PR #8: a search names folders, and its pattern can name any file in them."""
     t = _transcript(tmp_path, _listing(*BUILTIN), _call("Bash", command=command))
     assert _repo_verdict(t) == "contaminated"
+
+
+@pytest.mark.parametrize("tool_input", [{"pattern": "TDD", "path": "/home"}, {"pattern": "**/SKILL.md", "path": "/"}])
+def test_a_search_tool_over_a_folder_outside_the_allowed_ones_is_a_contact(tmp_path, tool_input):
+    t = _transcript(tmp_path, _listing(*BUILTIN), _call("Grep", **tool_input), _call("Glob", **tool_input))
+    assert _repo_verdict(t) == "contaminated"
+
+
+@pytest.mark.parametrize("calls", [
+    [("Bash", {"command": "find . -name '*.py' | xargs grep -n budget"})],
+    [("Bash", {"command": "grep -rn budget ledgerlite/ tests/"})],
+    [("Grep", {"pattern": "budget", "path": f"{REPO}/ledgerlite"})],
+    [("Bash", {"command": f'cd "{REPO}" && cat CLAUDE.md'})],
+    [("Bash", {"command": "echo $HOME && ls ~"})],
+])
+def test_ordinary_work_inside_the_repo_stays_clean(tmp_path, calls):
+    t = _transcript(tmp_path, _listing(*BUILTIN), *(_call(name, **inp) for name, inp in calls))
+    assert _repo_verdict(t) == "clean"
+
+
+def test_loaded_file_text_written_by_the_assistant_is_not_a_contact(tmp_path):
+    said = {"type": "assistant", "message": {"role": "assistant", "content": [
+        {"type": "text", "text": "Contents of /home/u/.claude/CLAUDE.md are not loaded here."}]}}
+    t = _transcript(tmp_path, _listing(*BUILTIN), said)
+    assert _repo_verdict(t) == "clean"
 
 
 def test_a_cd_to_one_absolute_folder_sets_the_base_for_relative_paths(tmp_path):

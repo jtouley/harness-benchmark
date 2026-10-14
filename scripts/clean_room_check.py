@@ -23,10 +23,11 @@ The check reads three things in every transcript:
   path joined with its pattern) or a shell command token that names a host config
   directory (.claude, .cursor, .codex, .agents) or an instruction file (SKILL, CLAUDE,
   AGENTS, MEMORY .md); and every instruction file the host loads into the session
-  (`instructions` attachments, "Contents of <path>" text outside tool results); and a
-  command or path that names the whole home folder (~, $HOME, /Users/<name>), since a
-  search over it reads everything in it. Text that a tool writes (content, new_string)
-  is not a contact.
+  (`instructions` attachments, "Contents of <path>" text in user or system messages);
+  and every folder a search names (find, fd, rg, ag, ack, locate, grep -r, git grep, and
+  the Grep and Glob tools' path), since a search reads everything under it and its
+  pattern can name any file. Text that a tool writes (content, new_string) is not a
+  contact.
 
 Skills and agent types the host always lists (scripts/clean_room_builtin_skills.json)
 may appear in the listing of any arm. Calling a built-in skill needs `--allow` like any
@@ -67,7 +68,10 @@ LOCATION = re.compile(
 PATH_FIELDS = ("file_path", "path", "notebook_path")  # Grep's `pattern` is a regex, not a path
 TOKEN = re.compile(r"[^\s'\";|&<>()]+")
 CHANGES_DIR = re.compile(r"(?:^|[\s;&|(])(?:cd|pushd)(?:\s+([^\s;&|)]+)|(?=[\s;&|)]|$))")
-HOME_ROOT = re.compile(r"^(?:~|\$HOME|\$\{HOME\}|/home/[^/]+|/Users/[^/]+|/root)/?$")  # a sweep of the whole home folder
+# A search reads every file under the folders it names, and its pattern can name any of them.
+SEARCH = re.compile(r"(?:^|[\s;&|(])(?:find|fd|rg|ag|ack|locate|grep\b[^;&|]*\s(?:-[a-zA-Z]*[rR][a-zA-Z]*|--recursive)"
+                    r"|git\b[^;&|]*\sgrep)(?=\s|$)")
+SEARCH_TOOLS = ("Grep", "Glob")
 LOADED_FILE = re.compile(r"Contents of (\S+?\.md)\b")
 AGENT_TOOLS = ("Task", "Agent")
 SAVED_OUTPUT = re.compile(r"\.claude/projects/[^/]+/[^/]+/tool-results/[^/]+$")  # the session's own large tool outputs
@@ -160,13 +164,23 @@ def _locations(tool_name: str, tool_input: dict, cwd: str | None = None) -> list
     if tool_name == "Glob" and isinstance(tool_input.get("pattern"), str):
         values.append(posixpath.join(tool_input.get("path") or "", tool_input["pattern"]))
     found = [_resolve(v, cwd) for v in values if _is_location(v)]
+    if tool_name in SEARCH_TOOLS and isinstance(tool_input.get("path"), str):
+        found.append(_resolve(tool_input["path"], cwd))  # a search reads the whole folder
     command = tool_input.get("command")
     return found + (_command_locations(command, cwd) if isinstance(command, str) else [])
 
 
 def _command_locations(command: str, cwd: str | None) -> list[str]:
     base = _command_base(command, cwd)
-    return [_resolve(t, base) for t in TOKEN.findall(command) if _is_location(t)]
+    tokens = TOKEN.findall(command)
+    found = [_resolve(t, base) for t in tokens if _is_location(t)]
+    if SEARCH.search(command):
+        found += [_resolve(t, base) for t in tokens if _is_folder_argument(t)]
+    return found
+
+
+def _is_folder_argument(token: str) -> bool:
+    return not token.startswith("-") and (token.startswith(("/", "~", "$", ".")) or "/" in token)
 
 
 def _command_base(command: str, cwd: str | None) -> str | None:
@@ -178,15 +192,12 @@ def _command_base(command: str, cwd: str | None) -> str | None:
     targets = [m.group(1) for m in CHANGES_DIR.finditer(command)]
     if not targets:
         return cwd
-    if len(targets) == 1 and targets[0] and targets[0].startswith("/"):
-        return posixpath.normpath(targets[0])
-    return None
+    target = (targets[0] or "").strip("'\"") if len(targets) == 1 else ""
+    return posixpath.normpath(target) if target.startswith("/") else None
 
 
 def _is_location(value) -> bool:
-    if not isinstance(value, str) or SAVED_OUTPUT.search(value):
-        return False
-    return bool(LOCATION.search(value) or HOME_ROOT.match(value))
+    return isinstance(value, str) and bool(LOCATION.search(value)) and not SAVED_OUTPUT.search(value)
 
 
 def _loaded_files(attachment: dict) -> list[str]:
@@ -220,11 +231,15 @@ class _Run:
         message = record.get("message") if isinstance(record.get("message"), dict) else {}
         for text in _texts(message.get("content")):
             self._text(text)
-        self._loaded_text(message.get("content"))
         if message.get("role") == "assistant":
-            for part in message.get("content") or []:
-                if isinstance(part, dict) and part.get("type") == "tool_use":
-                    self._tool_use(str(part.get("name")), part.get("input") if isinstance(part.get("input"), dict) else {})
+            self._tool_uses(message.get("content") or [])
+        else:
+            self._loaded_text(message.get("content"))
+
+    def _tool_uses(self, content: list) -> None:
+        for part in content:
+            if isinstance(part, dict) and part.get("type") == "tool_use":
+                self._tool_use(str(part.get("name")), part.get("input") if isinstance(part.get("input"), dict) else {})
 
     def _attachment(self, attachment: dict) -> None:
         kind = attachment.get("type")
