@@ -17,9 +17,14 @@ on work that does not fit one session.
 
 | Task | Stack | What it adds |
 |---|---|---|
-| [P1](P1-duckdb-dlt-dbt.md) | Python: dlt, DuckDB, dbt-duckdb | The SQL-first stack. Successor to L3 |
-| [P2](P2-config-arrow-polars-datafusion.md) | Python: a config-driven engine on Apache Arrow, Polars and DataFusion | The pipeline is data (YAML), not code; the engine must be general |
-| [P3](P3-scala-spark.md) | Scala 2.13, Apache Spark 3.5 (local mode), Structured Streaming | The JVM batch and streaming stack; a heavier build and run |
+| [P1](P1-duckdb-dlt-dbt.md) | Ingestion: dlt (Python). Models: dbt-duckdb | The reference stack. Successor to L3 |
+| [P2](P2-config-arrow-polars-datafusion.md) | Ingestion: a config-driven engine on Apache Arrow, Polars and DataFusion. Models: dbt-duckdb | The ingestion pipeline is data (YAML), not code; the engine must be general |
+| [P3](P3-scala-spark.md) | Ingestion: Scala 2.13, Apache Spark 3.5 batch and Structured Streaming. Models: dbt-spark on the same local Spark | The JVM stack; a heavier build and run |
+
+All three share one architecture (owner direction, 2026-10-14): ingestion lands a **Parquet lake**, a
+**dbt project** builds every model after it, and the marts are **published as Parquet**. So the modeling
+layer, its tests and the follow-up mart are comparable across stacks, and the stacks differ where they
+really differ: ingestion, streaming and exactly-once delivery.
 
 All three get the same [request](pipeline-spec.md), inputs and checks. The [trap catalog](pipeline-traps.md)
 is shared.

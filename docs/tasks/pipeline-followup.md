@@ -22,8 +22,9 @@ the follow-up cannot change the base score.
 > - *Wikipedia edits*: the latest 5-minute windows by wiki, human against bot, refreshed while
 >   `make stream` runs.
 >
-> The dashboard reads only the published Parquet marts under `out/`, never the raw data or internal
-> tables. Add the new mart to `oracle_map.yml`. Keep `make build` and `make stream` working as before.
+> The new mart is a dbt model with a contract, published under `out/marts/` like the others. The
+> dashboard reads only `out/marts/`, never the lake, the raw data or dbt's internal tables. Add the new
+> mart to `oracle_map.yml`. Keep `make build` and `make stream` working as before.
 
 ## Checks (hidden)
 
@@ -33,7 +34,7 @@ the follow-up cannot change the base score.
 2. The UEI fallback count matches the key.
 3. Every base check still passes (no regression).
 4. Dashboard smoke test with Streamlit's `AppTest`: both pages render, each filter changes the shown
-   rows, and the app opens no file outside `out/` (checked with an audit hook on `open`).
+   rows, and the app opens no file outside `out/marts/` (checked with an audit hook on `open`).
 5. Edit radius: the diff of the follow-up against the frozen base, split into new files and changed
    existing files.
 

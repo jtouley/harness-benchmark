@@ -11,8 +11,12 @@ Status: **proposed** (2026-10-14). Part of the [pipeline family](pipeline-family
 > - Data moves between steps as Apache Arrow tables or record batches (`pyarrow`). Use Polars for
 >   row-wise and dataframe transforms and Apache DataFusion (`datafusion` Python package) for SQL
 >   transforms. A transform in the YAML names its engine.
-> - Sinks write Parquet under `out/`. The stream sink writes in micro-batches and commits the consumer's
->   position in the same step as the data, so a crash between them cannot lose or repeat an event.
+> - Sinks write the Parquet lake under `lake/`. The stream sink writes in micro-batches and commits the
+>   consumer's position in the same step as the data, so a crash between them cannot lose or repeat an
+>   event.
+> - The engine does ingestion and the transforms needed to land clean source tables. Everything after the
+>   lake is the dbt project (dbt-duckdb reading the lake), as the shared spec says. DataFusion has no
+>   mature dbt adapter, so DataFusion and Polars work on the ingestion side.
 > - The engine validates each YAML file against a schema before it runs, and reports the file, line and
 >   problem on an error.
 > - `make build` and `make stream` call the engine with the matching YAML.
@@ -39,10 +43,10 @@ Each of these is a claim about the pinned tool versions. It is verified when the
 
 ## Extra check: generality
 
-The grader adds a third YAML pipeline that the arm never saw: the same Census file to a new mart
-(population by state) with one Polars transform and one DataFusion SQL transform. It must run with no
-code change and produce the right totals.
+The grader adds a third YAML pipeline that the arm never saw: a new source (the same Census file under a
+new name) landed in the lake with one Polars transform and one DataFusion SQL transform. It must run with
+no engine code change and land the right rows.
 
 ## Oracle
 
-The shared checks, read from `out/` Parquet through `oracle_map.yml`, plus the generality check.
+The shared checks, read from `out/marts/` through `oracle_map.yml`, plus the generality check.

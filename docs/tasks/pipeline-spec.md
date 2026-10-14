@@ -33,6 +33,15 @@ in the text an arm gets.
 >   recorded capture. The replay server behaves like the real service, including disconnects. In a live
 >   demo the same code points at `https://stream.wikimedia.org/v2/stream/recentchange`.
 >
+> ### Architecture
+>
+> - **Lake.** Ingestion writes every source to a Parquet lake under `lake/` (one folder per source table,
+>   partitioned where it helps). The lake keeps the source's data and adds only load metadata.
+> - **Models.** A dbt project in `transform/` builds everything after the lake: staging models, the star
+>   schema and the marts. Each mart has a dbt model contract (column names and types enforced).
+> - **Publish.** The marts are materialized as Parquet under `out/marts/` (one folder per mart). Anything
+>   downstream reads only `out/marts/`.
+>
 > ### Outputs
 >
 > 1. A star schema for Question A: one fact table at the grain of one award transaction, and dimensions
@@ -40,9 +49,10 @@ in the text an arm gets.
 >    net obligations, population and obligations per person.
 > 2. For Question B: a fact table of edits at the grain of one change event, and a mart of 5-minute
 >    windows by wiki, namespace and actor type (human or bot), with the edit count and the net bytes
->    added.
-> 3. Every output table is written as Parquet under `out/` (one folder per table), plus whatever the
->    stack section asks for.
+>    added. The stream consumer lands micro-batches in the lake; incremental dbt models build the edit
+>    fact and the window mart from them.
+> 3. The lake under `lake/`, the dbt project under `transform/`, and the published marts under
+>    `out/marts/`, plus whatever the stack section asks for.
 > 4. `oracle_map.yml`: for each question in the "Checks" list below, the table and column (or SQL view)
 >    that answers it.
 > 5. `DECISIONS.md`: each place where this spec left a choice to you, what you chose and why.
@@ -56,7 +66,7 @@ in the text an arm gets.
 > - Event time, not arrival time, places an edit in a window. An event that arrives more than 10 minutes
 >   after its window ended is not added to that window; count it in a `late_events` table instead.
 > - Money is in US dollars, summed exactly (no floating-point sums).
-> - Document the grain of each table. Test the keys of each table.
+> - Document the grain of each model. Test the keys of each model with dbt tests.
 >
 > ### Checks the analysts will run
 >
