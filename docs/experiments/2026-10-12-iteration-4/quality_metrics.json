@@ -8,11 +8,11 @@
     "new_code_coverage": 100.0,
     "new_executable_lines": 113,
     "cyclomatic_max": 12,
-    "cyclomatic_over_10_in_changed_functions": [
-      "ledgerlite/storage.py:.load=12"
+    "cyclomatic_newly_over_10": [
+      "ledgerlite/storage.py:load=12"
     ],
     "cognitive_max": 13,
-    "cognitive_over_15_new": [],
+    "cognitive_newly_over_15": [],
     "maintainability_index": 67.4,
     "lint_new_by_rule": {},
     "bug_findings_new": 0,
@@ -21,8 +21,8 @@
     "gate": {
       "tests_pass": true,
       "new_code_coverage_at_least_80": true,
-      "no_changed_function_over_cyclomatic_10": false,
-      "no_new_function_over_cognitive_15": true,
+      "no_function_newly_over_cyclomatic_10": false,
+      "no_function_newly_over_cognitive_15": true,
       "no_new_bug_findings": true,
       "no_new_type_errors": true
     },
@@ -47,9 +47,9 @@
     "new_code_coverage": 100.0,
     "new_executable_lines": 70,
     "cyclomatic_max": 9,
-    "cyclomatic_over_10_in_changed_functions": [],
+    "cyclomatic_newly_over_10": [],
     "cognitive_max": 12,
-    "cognitive_over_15_new": [],
+    "cognitive_newly_over_15": [],
     "maintainability_index": 60.4,
     "lint_new_by_rule": {
       "PLR2004": 1
@@ -60,8 +60,8 @@
     "gate": {
       "tests_pass": true,
       "new_code_coverage_at_least_80": true,
-      "no_changed_function_over_cyclomatic_10": true,
-      "no_new_function_over_cognitive_15": true,
+      "no_function_newly_over_cyclomatic_10": true,
+      "no_function_newly_over_cognitive_15": true,
       "no_new_bug_findings": true,
       "no_new_type_errors": true
     },
@@ -86,9 +86,9 @@
     "new_code_coverage": 97.5,
     "new_executable_lines": 80,
     "cyclomatic_max": 9,
-    "cyclomatic_over_10_in_changed_functions": [],
+    "cyclomatic_newly_over_10": [],
     "cognitive_max": 12,
-    "cognitive_over_15_new": [],
+    "cognitive_newly_over_15": [],
     "maintainability_index": 65.1,
     "lint_new_by_rule": {},
     "bug_findings_new": 0,
@@ -97,8 +97,8 @@
     "gate": {
       "tests_pass": true,
       "new_code_coverage_at_least_80": true,
-      "no_changed_function_over_cyclomatic_10": true,
-      "no_new_function_over_cognitive_15": true,
+      "no_function_newly_over_cyclomatic_10": true,
+      "no_function_newly_over_cognitive_15": true,
       "no_new_bug_findings": true,
       "no_new_type_errors": true
     },
@@ -123,9 +123,9 @@
     "new_code_coverage": 100.0,
     "new_executable_lines": 123,
     "cyclomatic_max": 10,
-    "cyclomatic_over_10_in_changed_functions": [],
+    "cyclomatic_newly_over_10": [],
     "cognitive_max": 15,
-    "cognitive_over_15_new": [],
+    "cognitive_newly_over_15": [],
     "maintainability_index": 60.3,
     "lint_new_by_rule": {},
     "bug_findings_new": 0,
@@ -134,8 +134,8 @@
     "gate": {
       "tests_pass": true,
       "new_code_coverage_at_least_80": true,
-      "no_changed_function_over_cyclomatic_10": true,
-      "no_new_function_over_cognitive_15": true,
+      "no_function_newly_over_cyclomatic_10": true,
+      "no_function_newly_over_cognitive_15": true,
       "no_new_bug_findings": true,
       "no_new_type_errors": true
     },
@@ -160,9 +160,9 @@
     "new_code_coverage": 95.2,
     "new_executable_lines": 62,
     "cyclomatic_max": 9,
-    "cyclomatic_over_10_in_changed_functions": [],
+    "cyclomatic_newly_over_10": [],
     "cognitive_max": 12,
-    "cognitive_over_15_new": [],
+    "cognitive_newly_over_15": [],
     "maintainability_index": 65.8,
     "lint_new_by_rule": {},
     "bug_findings_new": 0,
@@ -171,8 +171,45 @@
     "gate": {
       "tests_pass": true,
       "new_code_coverage_at_least_80": true,
-      "no_changed_function_over_cyclomatic_10": true,
-      "no_new_function_over_cognitive_15": true,
+      "no_function_newly_over_cyclomatic_10": true,
+      "no_function_newly_over_cognitive_15": true,
+      "no_new_bug_findings": true,
+      "no_new_type_errors": true
+    },
+    "gate_passed": true,
+    "tool_errors": {},
+    "tools": {
+      "ruff": "ruff==0.17.0",
+      "radon": "radon==6.0.1",
+      "complexipy": "complexipy==8.0.1",
+      "mypy": "mypy==2.4.0",
+      "pytest": "pytest==9.1.1",
+      "pytest-cov": "pytest-cov==7.1.0",
+      "coverage": "coverage==7.16.2"
+    }
+  },
+  "multicurrency/reference": {
+    "package_lines_added": 123,
+    "tests_passed": 52,
+    "tests_failed": 0,
+    "line_coverage": 95.5,
+    "branch_coverage": 89.3,
+    "new_code_coverage": 100.0,
+    "new_executable_lines": 91,
+    "cyclomatic_max": 8,
+    "cyclomatic_newly_over_10": [],
+    "cognitive_max": 11,
+    "cognitive_newly_over_15": [],
+    "maintainability_index": 65.6,
+    "lint_new_by_rule": {},
+    "bug_findings_new": 0,
+    "smells_per_100_new_lines": 0.0,
+    "type_errors_new": 0,
+    "gate": {
+      "tests_pass": true,
+      "new_code_coverage_at_least_80": true,
+      "no_function_newly_over_cyclomatic_10": true,
+      "no_function_newly_over_cognitive_15": true,
       "no_new_bug_findings": true,
       "no_new_type_errors": true
     },
@@ -197,11 +234,11 @@
     "new_code_coverage": 100.0,
     "new_executable_lines": 93,
     "cyclomatic_max": 13,
-    "cyclomatic_over_10_in_changed_functions": [
-      "ledgerlite/cli.py:.run=13"
+    "cyclomatic_newly_over_10": [
+      "ledgerlite/cli.py:run=13"
     ],
     "cognitive_max": 18,
-    "cognitive_over_15_new": [
+    "cognitive_newly_over_15": [
       "ledgerlite/cli.py:run=18"
     ],
     "maintainability_index": 62.5,
@@ -212,8 +249,8 @@
     "gate": {
       "tests_pass": true,
       "new_code_coverage_at_least_80": true,
-      "no_changed_function_over_cyclomatic_10": false,
-      "no_new_function_over_cognitive_15": false,
+      "no_function_newly_over_cyclomatic_10": false,
+      "no_function_newly_over_cognitive_15": false,
       "no_new_bug_findings": true,
       "no_new_type_errors": false
     },
@@ -238,9 +275,9 @@
     "new_code_coverage": 100.0,
     "new_executable_lines": 88,
     "cyclomatic_max": 9,
-    "cyclomatic_over_10_in_changed_functions": [],
+    "cyclomatic_newly_over_10": [],
     "cognitive_max": 12,
-    "cognitive_over_15_new": [],
+    "cognitive_newly_over_15": [],
     "maintainability_index": 66.4,
     "lint_new_by_rule": {},
     "bug_findings_new": 0,
@@ -249,8 +286,8 @@
     "gate": {
       "tests_pass": true,
       "new_code_coverage_at_least_80": true,
-      "no_changed_function_over_cyclomatic_10": true,
-      "no_new_function_over_cognitive_15": true,
+      "no_function_newly_over_cyclomatic_10": true,
+      "no_function_newly_over_cognitive_15": true,
       "no_new_bug_findings": true,
       "no_new_type_errors": false
     },
@@ -275,11 +312,11 @@
     "new_code_coverage": 98.2,
     "new_executable_lines": 57,
     "cyclomatic_max": 13,
-    "cyclomatic_over_10_in_changed_functions": [
-      "ledgerlite/cli.py:.run=13"
+    "cyclomatic_newly_over_10": [
+      "ledgerlite/cli.py:run=13"
     ],
     "cognitive_max": 21,
-    "cognitive_over_15_new": [
+    "cognitive_newly_over_15": [
       "ledgerlite/cli.py:run=21"
     ],
     "maintainability_index": 58.6,
@@ -290,8 +327,8 @@
     "gate": {
       "tests_pass": true,
       "new_code_coverage_at_least_80": true,
-      "no_changed_function_over_cyclomatic_10": false,
-      "no_new_function_over_cognitive_15": false,
+      "no_function_newly_over_cyclomatic_10": false,
+      "no_function_newly_over_cognitive_15": false,
       "no_new_bug_findings": true,
       "no_new_type_errors": true
     },
@@ -316,9 +353,9 @@
     "new_code_coverage": 97.1,
     "new_executable_lines": 70,
     "cyclomatic_max": 10,
-    "cyclomatic_over_10_in_changed_functions": [],
+    "cyclomatic_newly_over_10": [],
     "cognitive_max": 15,
-    "cognitive_over_15_new": [],
+    "cognitive_newly_over_15": [],
     "maintainability_index": 60.8,
     "lint_new_by_rule": {
       "PLR2004": 1
@@ -329,8 +366,8 @@
     "gate": {
       "tests_pass": true,
       "new_code_coverage_at_least_80": true,
-      "no_changed_function_over_cyclomatic_10": true,
-      "no_new_function_over_cognitive_15": true,
+      "no_function_newly_over_cyclomatic_10": true,
+      "no_function_newly_over_cognitive_15": true,
       "no_new_bug_findings": true,
       "no_new_type_errors": true
     },
@@ -355,11 +392,11 @@
     "new_code_coverage": 100.0,
     "new_executable_lines": 70,
     "cyclomatic_max": 18,
-    "cyclomatic_over_10_in_changed_functions": [
-      "ledgerlite/cli.py:.run=18"
+    "cyclomatic_newly_over_10": [
+      "ledgerlite/cli.py:run=18"
     ],
     "cognitive_max": 32,
-    "cognitive_over_15_new": [
+    "cognitive_newly_over_15": [
       "ledgerlite/cli.py:run=32"
     ],
     "maintainability_index": 63.1,
@@ -368,15 +405,15 @@
       "F541": 1,
       "SIM102": 1
     },
-    "bug_findings_new": 2,
-    "smells_per_100_new_lines": 1.1,
+    "bug_findings_new": 0,
+    "smells_per_100_new_lines": 3.4,
     "type_errors_new": 1,
     "gate": {
       "tests_pass": true,
       "new_code_coverage_at_least_80": true,
-      "no_changed_function_over_cyclomatic_10": false,
-      "no_new_function_over_cognitive_15": false,
-      "no_new_bug_findings": false,
+      "no_function_newly_over_cyclomatic_10": false,
+      "no_function_newly_over_cognitive_15": false,
+      "no_new_bug_findings": true,
       "no_new_type_errors": false
     },
     "gate_passed": false,
@@ -400,11 +437,11 @@
     "new_code_coverage": 98.8,
     "new_executable_lines": 81,
     "cyclomatic_max": 12,
-    "cyclomatic_over_10_in_changed_functions": [
-      "ledgerlite/cli.py:.run=12"
+    "cyclomatic_newly_over_10": [
+      "ledgerlite/cli.py:run=12"
     ],
     "cognitive_max": 16,
-    "cognitive_over_15_new": [
+    "cognitive_newly_over_15": [
       "ledgerlite/cli.py:run=16"
     ],
     "maintainability_index": 61.6,
@@ -415,8 +452,47 @@
     "gate": {
       "tests_pass": true,
       "new_code_coverage_at_least_80": true,
-      "no_changed_function_over_cyclomatic_10": false,
-      "no_new_function_over_cognitive_15": false,
+      "no_function_newly_over_cyclomatic_10": false,
+      "no_function_newly_over_cognitive_15": false,
+      "no_new_bug_findings": true,
+      "no_new_type_errors": true
+    },
+    "gate_passed": false,
+    "tool_errors": {},
+    "tools": {
+      "ruff": "ruff==0.17.0",
+      "radon": "radon==6.0.1",
+      "complexipy": "complexipy==8.0.1",
+      "mypy": "mypy==2.4.0",
+      "pytest": "pytest==9.1.1",
+      "pytest-cov": "pytest-cov==7.1.0",
+      "coverage": "coverage==7.16.2"
+    }
+  },
+  "budgets/reference": {
+    "package_lines_added": 156,
+    "tests_passed": 75,
+    "tests_failed": 0,
+    "line_coverage": 97.6,
+    "branch_coverage": 91.9,
+    "new_code_coverage": 100.0,
+    "new_executable_lines": 114,
+    "cyclomatic_max": 11,
+    "cyclomatic_newly_over_10": [
+      "ledgerlite/cli.py:run=11"
+    ],
+    "cognitive_max": 15,
+    "cognitive_newly_over_15": [],
+    "maintainability_index": 61.7,
+    "lint_new_by_rule": {},
+    "bug_findings_new": 0,
+    "smells_per_100_new_lines": 0.0,
+    "type_errors_new": 0,
+    "gate": {
+      "tests_pass": true,
+      "new_code_coverage_at_least_80": true,
+      "no_function_newly_over_cyclomatic_10": false,
+      "no_function_newly_over_cognitive_15": true,
       "no_new_bug_findings": true,
       "no_new_type_errors": true
     },
@@ -441,11 +517,11 @@
     "new_code_coverage": 97.0,
     "new_executable_lines": 67,
     "cyclomatic_max": 11,
-    "cyclomatic_over_10_in_changed_functions": [
-      "ledgerlite/cli.py:.run=11"
+    "cyclomatic_newly_over_10": [
+      "ledgerlite/cli.py:run=11"
     ],
     "cognitive_max": 18,
-    "cognitive_over_15_new": [
+    "cognitive_newly_over_15": [
       "ledgerlite/audit.py:undo=18"
     ],
     "maintainability_index": 62.9,
@@ -458,8 +534,8 @@
     "gate": {
       "tests_pass": true,
       "new_code_coverage_at_least_80": true,
-      "no_changed_function_over_cyclomatic_10": false,
-      "no_new_function_over_cognitive_15": false,
+      "no_function_newly_over_cyclomatic_10": false,
+      "no_function_newly_over_cognitive_15": false,
       "no_new_bug_findings": true,
       "no_new_type_errors": true
     },
@@ -484,12 +560,12 @@
     "new_code_coverage": 96.2,
     "new_executable_lines": 78,
     "cyclomatic_max": 13,
-    "cyclomatic_over_10_in_changed_functions": [
-      "ledgerlite/cli.py:.run=13",
-      "ledgerlite/cli.py:.undo_change=12"
+    "cyclomatic_newly_over_10": [
+      "ledgerlite/cli.py:run=13",
+      "ledgerlite/cli.py:undo_change=12"
     ],
     "cognitive_max": 18,
-    "cognitive_over_15_new": [
+    "cognitive_newly_over_15": [
       "ledgerlite/cli.py:run=18",
       "ledgerlite/cli.py:undo_change=18"
     ],
@@ -498,15 +574,15 @@
       "F841": 1,
       "UP017": 1
     },
-    "bug_findings_new": 1,
-    "smells_per_100_new_lines": 0.7,
+    "bug_findings_new": 0,
+    "smells_per_100_new_lines": 1.4,
     "type_errors_new": 0,
     "gate": {
       "tests_pass": true,
       "new_code_coverage_at_least_80": true,
-      "no_changed_function_over_cyclomatic_10": false,
-      "no_new_function_over_cognitive_15": false,
-      "no_new_bug_findings": false,
+      "no_function_newly_over_cyclomatic_10": false,
+      "no_function_newly_over_cognitive_15": false,
+      "no_new_bug_findings": true,
       "no_new_type_errors": true
     },
     "gate_passed": false,
@@ -530,9 +606,9 @@
     "new_code_coverage": 96.3,
     "new_executable_lines": 81,
     "cyclomatic_max": 10,
-    "cyclomatic_over_10_in_changed_functions": [],
+    "cyclomatic_newly_over_10": [],
     "cognitive_max": 12,
-    "cognitive_over_15_new": [],
+    "cognitive_newly_over_15": [],
     "maintainability_index": 64.9,
     "lint_new_by_rule": {
       "UP017": 1
@@ -543,8 +619,8 @@
     "gate": {
       "tests_pass": true,
       "new_code_coverage_at_least_80": true,
-      "no_changed_function_over_cyclomatic_10": true,
-      "no_new_function_over_cognitive_15": true,
+      "no_function_newly_over_cyclomatic_10": true,
+      "no_function_newly_over_cognitive_15": true,
       "no_new_bug_findings": true,
       "no_new_type_errors": true
     },
@@ -569,11 +645,11 @@
     "new_code_coverage": 100.0,
     "new_executable_lines": 73,
     "cyclomatic_max": 13,
-    "cyclomatic_over_10_in_changed_functions": [
-      "ledgerlite/cli.py:.run=13"
+    "cyclomatic_newly_over_10": [
+      "ledgerlite/cli.py:run=13"
     ],
     "cognitive_max": 19,
-    "cognitive_over_15_new": [
+    "cognitive_newly_over_15": [
       "ledgerlite/cli.py:run=19"
     ],
     "maintainability_index": 62.0,
@@ -586,10 +662,51 @@
     "gate": {
       "tests_pass": true,
       "new_code_coverage_at_least_80": true,
-      "no_changed_function_over_cyclomatic_10": false,
-      "no_new_function_over_cognitive_15": false,
+      "no_function_newly_over_cyclomatic_10": false,
+      "no_function_newly_over_cognitive_15": false,
       "no_new_bug_findings": true,
       "no_new_type_errors": true
+    },
+    "gate_passed": false,
+    "tool_errors": {},
+    "tools": {
+      "ruff": "ruff==0.17.0",
+      "radon": "radon==6.0.1",
+      "complexipy": "complexipy==8.0.1",
+      "mypy": "mypy==2.4.0",
+      "pytest": "pytest==9.1.1",
+      "pytest-cov": "pytest-cov==7.1.0",
+      "coverage": "coverage==7.16.2"
+    }
+  },
+  "audit-undo/reference": {
+    "package_lines_added": 151,
+    "tests_passed": 49,
+    "tests_failed": 0,
+    "line_coverage": 95.9,
+    "branch_coverage": 90.0,
+    "new_code_coverage": 100.0,
+    "new_executable_lines": 101,
+    "cyclomatic_max": 12,
+    "cyclomatic_newly_over_10": [
+      "ledgerlite/cli.py:run=12"
+    ],
+    "cognitive_max": 15,
+    "cognitive_newly_over_15": [],
+    "maintainability_index": 62.4,
+    "lint_new_by_rule": {
+      "UP017": 1
+    },
+    "bug_findings_new": 0,
+    "smells_per_100_new_lines": 0.7,
+    "type_errors_new": 1,
+    "gate": {
+      "tests_pass": true,
+      "new_code_coverage_at_least_80": true,
+      "no_function_newly_over_cyclomatic_10": false,
+      "no_function_newly_over_cognitive_15": true,
+      "no_new_bug_findings": true,
+      "no_new_type_errors": false
     },
     "gate_passed": false,
     "tool_errors": {},

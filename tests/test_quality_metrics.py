@@ -52,3 +52,38 @@ def test_output_that_is_not_json_raises():
     except qm.ToolError:
         return
     raise AssertionError("bad JSON must raise ToolError")
+
+
+def test_a_no_newline_marker_does_not_shift_added_lines():
+    """N4 on PR #8: the marker was counted as a context line."""
+    diff = ("--- a/ledgerlite/x.py\n+++ b/ledgerlite/x.py\n@@ -1,2 +1,3 @@\n a = 1\n-b = 2\n"
+            "\\ No newline at end of file\n+b = 2\n+c = 3\n")
+    assert qm.added_lines(diff, "ledgerlite") == {"ledgerlite/x.py": {2, 3}}
+
+
+def test_one_complexity_rule_flags_a_function_only_when_the_change_takes_it_over_the_threshold():
+    """R4 on PR #8: cyclomatic flagged any changed function over 10, cognitive only a newly-over one."""
+    before = [{"file": "p/a.py", "name": "run", "value": 7}, {"file": "p/a.py", "name": "old", "value": 12}]
+    after = [{"file": "p/a.py", "name": "run", "value": 11}, {"file": "p/a.py", "name": "old", "value": 14},
+             {"file": "p/b.py", "name": "new", "value": 16}, {"file": "p/b.py", "name": "small", "value": 3}]
+    assert qm.newly_over(after, before, 10) == ["p/a.py:run=11", "p/b.py:new=16"]
+
+
+def test_new_code_coverage_counts_executable_added_lines_only():
+    data = {"files": {"p/a.py": {"executed_lines": [1, 2, 5], "missing_lines": [3]}}}
+    assert qm.new_line_coverage(data, {"p/a.py": {2, 3, 4}}) == (1, 2)
+
+
+def test_only_likely_bugs_count_as_bug_findings():
+    """N1 on PR #8: unused imports and f-strings without placeholders are smells, not bugs."""
+    assert [c for c in ("F401", "F541", "F841", "F821", "F811", "F632", "F701", "E999", "B006", "PLE0101")
+            if qm.is_bug(c)] == ["F821", "F811", "F632", "F701", "E999", "B006", "PLE0101"]
+
+
+def test_the_committed_gate_results_record_the_reference_calibration():
+    """R3 on PR #8: a gate result means little unless the task author's own solution is measured too."""
+    import json
+    data = json.loads((ROOT / "docs/experiments/2026-10-12-iteration-4/quality_metrics.json").read_text())
+    for task in ("multicurrency", "budgets", "audit-undo"):
+        assert "gate_passed" in data[f"{task}/reference"]
+    assert all("cyclomatic_newly_over_10" in row for row in data.values())

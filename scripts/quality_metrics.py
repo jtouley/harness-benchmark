@@ -4,10 +4,13 @@
 The measures and thresholds are defined in docs/quality-model.md. Each comes from a
 published, widely used source, so that anyone can recompute it:
 
-- new-code coverage (line and branch): coverage.py on the lines the change adds, the
-  "new code" idea of the SonarQube "Sonar way" quality gate (>= 80%);
+- new-code coverage: coverage.py line coverage of the executable lines the change adds,
+  the "new code" idea of the SonarQube "Sonar way" quality gate (>= 80%); line and
+  branch coverage of the whole package are reported too;
 - cyclomatic complexity per function: radon (McCabe 1976; > 10 flagged);
 - cognitive complexity per function: complexipy (SonarSource 2017; > 15 flagged);
+  for both, a function is flagged when the change takes it over the threshold: it is
+  new and over it, or it was at or under it in the baseline and is over it now;
 - maintainability index: radon (the Visual Studio variant, 0-100), reported;
 - lint: ruff with a fixed rule set (pyflakes, pycodestyle without line length, bugbear,
   pylint, simplify, pyupgrade, mccabe);
@@ -39,9 +42,11 @@ TOOLS = {"ruff": "ruff==0.17.0", "radon": "radon==6.0.1", "complexipy": "complex
 PYTEST = ["--with", "pytest==9.1.1", "--with", "pytest-cov==7.1.0", "--with", "coverage==7.16.2"]
 RUFF_RULES = "E,F,W,B,PL,SIM,UP,C90"
 RUFF_IGNORE = "E501"  # line length is formatting, not a defect; the Sonar way gate does not use it
-# Findings that are likely bugs, the analogue of the gate's "no new bugs": pyflakes (F),
-# syntax and runtime errors (E9), bugbear (B) and pylint errors (PLE). The rest are smells.
-BUG_PREFIXES = ("F", "E9", "B", "PLE")
+# Findings that are likely bugs, the analogue of the gate's "no new bugs": undefined or
+# redefined names and broken comparisons or statements from pyflakes (F82, F811, F63, F7),
+# syntax and runtime errors (E9), bugbear (B) and pylint errors (PLE). The rest, such as
+# an unused import (F401), are smells.
+BUG_PREFIXES = ("F82", "F811", "F63", "F7", "E9", "B", "PLE")
 THRESHOLDS = {"new_code_coverage": 80.0, "cyclomatic": 10, "cognitive": 15}
 
 
@@ -80,9 +85,31 @@ def added_lines(diff: str, package: str) -> dict[str, set[int]]:
         elif current and line.startswith("+") and not line.startswith("+++"):
             out[current].add(line_no)
             line_no += 1
-        elif current and not line.startswith("-"):
+        elif current and not line.startswith(("-", "\\")):  # "\ No newline at end of file" is not a line
             line_no += 1
     return out
+
+
+def is_bug(code: str) -> bool:
+    return code.startswith(BUG_PREFIXES)
+
+
+def newly_over(after: list[dict], before: list[dict], threshold: int) -> list[str]:
+    """Functions the change takes over the threshold: new and over it, or over it now and not before."""
+    was = {(f["file"], f["name"]): f["value"] for f in before}
+    return sorted(f"{f['file']}:{f['name']}={f['value']}" for f in after
+                  if f["value"] > threshold and was.get((f["file"], f["name"]), 0) <= threshold)
+
+
+def new_line_coverage(data: dict, added: dict[str, set[int]]) -> tuple[int, int]:
+    """(covered, executable) counts over the added lines, from a coverage.py JSON report."""
+    hit = executable = 0
+    for path, lines in added.items():
+        f = data["files"].get(path) or {}
+        executed = set(f.get("executed_lines", []))
+        executable += len(lines & (executed | set(f.get("missing_lines", []))))
+        hit += len(lines & executed)
+    return hit, executable
 
 
 def coverage(solution: Path, package: str, added: dict[str, set[int]]) -> dict:
@@ -97,12 +124,7 @@ def coverage(solution: Path, package: str, added: dict[str, set[int]]) -> dict:
     passed = re.search(r"(\d+) passed", proc.stdout)
     failed = re.search(r"(\d+) failed", proc.stdout)
     errors = re.search(r"(\d+) errors?\b", proc.stdout)
-    new_exec = new_hit = 0
-    for path, lines in added.items():
-        f = data["files"].get(path) or {}
-        executable = set(f.get("executed_lines", [])) | set(f.get("missing_lines", []))
-        new_exec += len(lines & executable)
-        new_hit += len(lines & set(f.get("executed_lines", [])))
+    new_hit, new_exec = new_line_coverage(data, added)
     totals = data["totals"]
     return {
         "tests_passed": int(passed.group(1)) if passed else 0,
@@ -184,25 +206,14 @@ def measure(solution: Path, baseline: Path, package: str) -> dict:
     if err:
         errors["coverage"] = err
 
-    cc, err = _measure(cyclomatic, solution, package)
-    if err:
-        errors["cyclomatic"] = err
-    else:
-        changed = [f for f in cc if f["lines"] & added.get(f["file"], set())]
-        result["cyclomatic_max"] = max((f["value"] for f in cc), default=0)
-        result["cyclomatic_over_10_in_changed_functions"] = sorted(
-            f"{f['file']}:{f['name']}={f['value']}" for f in changed if f["value"] > THRESHOLDS["cyclomatic"])
-
-    cx, err1 = _measure(cognitive, solution, package)
-    cx0, err2 = _measure(cognitive, baseline, package)
-    if err1 or err2:
-        errors["cognitive"] = err1 or err2
-    else:
-        before = {(f["file"], f["name"]): f["value"] for f in cx0}
-        result["cognitive_max"] = max((f["value"] for f in cx), default=0)
-        result["cognitive_over_15_new"] = sorted(
-            f"{f['file']}:{f['name']}={f['value']}" for f in cx
-            if f["value"] > THRESHOLDS["cognitive"] and before.get((f["file"], f["name"]), 0) <= THRESHOLDS["cognitive"])
+    for kind, tool in (("cyclomatic", cyclomatic), ("cognitive", cognitive)):
+        after, err1 = _measure(tool, solution, package)
+        before, err2 = _measure(tool, baseline, package)
+        if err1 or err2:
+            errors[kind] = err1 or err2
+            continue
+        result[f"{kind}_max"] = max((f["value"] for f in after), default=0)
+        result[f"{kind}_newly_over_{THRESHOLDS[kind]}"] = newly_over(after, before, THRESHOLDS[kind])
 
     mi, err = _measure(maintainability, solution, package)
     result["maintainability_index"] = mi
@@ -215,7 +226,7 @@ def measure(solution: Path, baseline: Path, package: str) -> dict:
     else:
         new = _on_added(findings, added)
         result["lint_new_by_rule"] = {c: sum(1 for f in new if f["code"] == c) for c in sorted({f["code"] for f in new})}
-        result["bug_findings_new"] = sum(1 for f in new if f["code"].startswith(BUG_PREFIXES))
+        result["bug_findings_new"] = sum(1 for f in new if is_bug(f["code"]))
         lines = result["package_lines_added"]
         result["smells_per_100_new_lines"] = round(100 * (len(new) - result["bug_findings_new"]) / lines, 1) if lines else 0.0
 
@@ -229,8 +240,8 @@ def measure(solution: Path, baseline: Path, package: str) -> dict:
     result["gate"] = {
         "tests_pass": result.get("tests_failed") == 0 and (result.get("tests_passed") or 0) > 0,
         "new_code_coverage_at_least_80": ncc is not None and ncc >= THRESHOLDS["new_code_coverage"],
-        "no_changed_function_over_cyclomatic_10": "cyclomatic" not in errors and not result["cyclomatic_over_10_in_changed_functions"],
-        "no_new_function_over_cognitive_15": "cognitive" not in errors and not result["cognitive_over_15_new"],
+        "no_function_newly_over_cyclomatic_10": "cyclomatic" not in errors and not result["cyclomatic_newly_over_10"],
+        "no_function_newly_over_cognitive_15": "cognitive" not in errors and not result["cognitive_newly_over_15"],
         "no_new_bug_findings": "lint" not in errors and result["bug_findings_new"] == 0,
         "no_new_type_errors": "types" not in errors and result["type_errors_new"] == 0,
     }

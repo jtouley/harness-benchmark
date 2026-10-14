@@ -1,7 +1,9 @@
 # Next steps: the cheapest model that matches Opus, with an audit trail
 
 Status: proposed design (October 2026). Nothing here has run yet. It follows from the
-[findings so far](findings.md) and must meet [criteria v1](criteria.md) before any result counts.
+[findings so far](findings.md). It changes parts of criteria v1 (the caps, the comparison arm, the
+primary defect measure), so it must be written up as criteria v2 before the run set starts, and no
+result counts before that.
 
 ## The question
 
@@ -38,7 +40,8 @@ the defects that reach the delivered code, and the evidence that the run leaves 
   tasks ([criteria §3](criteria.md#3-task-classes)), starting with the proposed
   [L3 open-data BI pipeline](tasks/L3-open-data-bi-pipeline.md). T05 stays as a quick pilot only.
 - **Quality is measured by the published [quality model](quality-model.md)**, not by one grader's
-  rubric, and every run must pass the [clean-room check](process.md#clean-room) before it is graded.
+  rubric, and every run must pass a clean-room check before it is graded: on Claude Code,
+  [`clean_room_check.py`](process.md#clean-room); on other hosts, the check in stage 0, step 3.
 - **Two Cadence variants on the cheap model.** (a) *All cheap*: every stage, reviews included, runs on
   the arm's cheap model. (b) *Cheap + Opus reviews*: the cheap model plans and implements; the review
   peers (plan review, adversarial review, PR review, test benchmark) run on Opus 5.5, and their Opus tokens
@@ -147,8 +150,11 @@ an attested Claude Code trail with an unattested one as if they were equal.
 
 The [criteria v1](criteria.md#4-measures) measures, with these points stressed for this question:
 
-- **M1 acceptance** gates delivery. **M2 reproduced defects** decide "matches Opus". The other layers of
-  the [quality model](quality-model.md) (the tool gate and the design checklist) are reported beside it.
+- **M1 acceptance** gates delivery. **M2 reproduced defects, test-confirmed** decide "matches Opus": a
+  defect counts only with a reproduction test that fails on the run's code and passes on the reference
+  solution, and only critical and major defects count in the rule below. The other layers of the
+  [quality model](quality-model.md) (the tool gate, the design checklist, follow-up success, the
+  hidden-suite pass fraction) are reported beside it.
 - **M9 cost in dollars**: input, output and cache tokens of the whole session, nested subagents
   included, priced from `pricing.json`. Iterations 3 and 4 did not record this split. This run must.
 - **M10 auditability**, scored as a checklist per run: a plan; a spec check; a plan review, an
@@ -164,7 +170,7 @@ The rule is criteria v1 §6 ([decision rule](criteria.md#6-decision-rule-pre-reg
 each harness arm against the **Opus one-shot** instead of a one-shot on its own model. A harness arm on
 a cheaper model **matches Opus** when all of these hold:
 
-1. **Defects (non-inferiority):** its mean count of test-confirmed escaped defects per attempted run is
+1. **Defects (non-inferiority):** its mean count of critical or major M2 defects (test-confirmed) per attempted run is
    at most the Opus one-shot's plus a margin, and the 90% bootstrap interval of the difference stays
    under that margin. The margin is fixed in the criteria before the run set; this proposal suggests 0.25
    defects per run. With 5 runs per task the interval is coarse, and when both arms have no defects it is
@@ -174,8 +180,8 @@ a cheaper model **matches Opus** when all of these hold:
 3. **Delivery:** its M1 pass rate per attempted run is at least the Opus one-shot's minus 10 points.
 
 Among the arms that match, the answer is the one with the lowest **cost per defect-free delivered run**
-(M9 dollars divided by the attempted runs that pass M1 with no critical or major defect). M7 quality and
-M10 auditability are reported beside it. They do not decide. If no arm matches, the answer is "none yet",
+(M9 dollars divided by the attempted runs that pass M1 with no critical or major M2 defect). M10
+auditability is reported beside it, and M7 (the 1–10 rubric) only for comparison with iterations 3 and 4. They do not decide. If no arm matches, the answer is "none yet",
 and the harness case rests on auditability and enforcement. Each arm is also compared with the one-shot
 on its own model, as criteria v1 requires, so the harness effect and the model effect stay separate.
 
@@ -204,8 +210,12 @@ progress. This changes criteria v1 §6 and is part of the next criteria version,
    installed: no user-level skill, rule, command or memory. That keeps a user-level skill from taking
    the place of a Cadence peer (cadence#53) and keeps skill descriptions such as "strict TDD" away from
    the one-shot baselines. [`scripts/clean_room_check.py`](../scripts/clean_room_check.py) reads each
-   transcript and must return `clean` before the run is graded ([process](process.md#clean-room)). The
-   Harbor tier already gives a clean container; Claude Code and Cursor CLI runs need it set up.
+   Claude Code transcript and must return `clean` before the run is graded ([process](process.md#clean-room)).
+   It reads Claude Code transcripts only; any other transcript is `unassessable`. For Cursor CLI and
+   OpenAI runs, the check is a listing taken before and after each run: `~/.cursor`, `~/.codex`,
+   `~/.agents` and `~/.claude` hold only the arm's own harness files, and the listing is stored with the
+   run's results. A parser per host can replace it later. The Harbor tier already gives a clean
+   container; Claude Code and Cursor CLI runs need it set up.
 4. **Cadence on cheap models, with a per-stage model setting.** Check that Haiku 5.5 can follow the
    Cadence procedure end to end (the pilot). Cadence needs a setting that names the model of each peer
    stage, so variant (a) keeps every stage on the cheap model and variant (b) sends only the review peers
@@ -221,7 +231,7 @@ progress. This changes criteria v1 §6 and is part of the next criteria version,
 ## What we will report
 
 - One table per task: arm, model, host, delivered, M2 defects by severity, M3, cost per defect-free
-  delivered run, M7, M10 share, completion.
+  delivered run, M10 share, completion; M7 in a separate column marked "for comparison only".
 - A cost and quality chart with the Opus one-shot as the reference point.
 - The answer to the question, by the decision rule, including "none yet" if that is the result.
 - Every result that goes against the harness, reported the same way as a result for it.
