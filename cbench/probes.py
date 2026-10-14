@@ -15,7 +15,7 @@ from .context import Hook, claude_hooks, cursor_hooks, matches
 from .hookrun import aggregate, classify, run_hook
 from .install import Sandbox, canonicalize_host_text, restore
 from .lock import Framework, Lock
-from .util import GOLDEN_DIR, cache_dir, load_json, sha256_file
+from .util import GOLDEN_DIR, load_json, sha256_file
 
 LONG_PLAN = "# Plan\n\n" + "".join(f"- Step {n}: implement part {n} of the feature and test it.\n" for n in range(1, 301))
 _ANSI = re.compile(r"\x1b\[[0-9;]*[A-Za-z]")
@@ -93,7 +93,7 @@ def payloads(host: str, action: dict, sb: Sandbox) -> list[tuple[str, str | None
 def _clean(text: str, sb: Sandbox, limit: int) -> str:
     """Strip colors and machine-specific paths so evidence is identical on every machine."""
     text = canonicalize_host_text(_ANSI.sub("", text))
-    text = text.replace(str(sb.root), "<ROOT>").replace(str(cache_dir()), "<CACHE>")
+    text = text.replace(str(sb.root), "<ROOT>")
     text = _LOCALE_WARN.sub("", text).strip()
     return text[:limit]
 

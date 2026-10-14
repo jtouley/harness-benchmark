@@ -117,9 +117,11 @@ def canonicalize_host_text(text: str) -> str:
     text = _NODE_CHAIN.sub(_hide_baked_node, text)
     # Marketplace metadata records the checkout under ~/.cache/cadence-bench.
     # The home prefix differs per machine; the cache-relative suffix does not.
+    # Match only a whole path segment: a short CBENCH_CACHE such as /cache
+    # must not rewrite "/cache-api.md" or ".../plugins/cache/...".
     cache = str(cache_dir())
     if cache in text:
-        text = text.replace(cache, "<CACHE>")
+        text = re.sub(rf"(?<![\w.@+-]){re.escape(cache)}(?![\w.@+-])", "<CACHE>", text)
     return text
 
 

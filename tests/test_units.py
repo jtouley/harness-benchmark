@@ -136,3 +136,31 @@ def test_sort_manifest_files_is_independent_of_directory_order():
     twice = _sort_manifest_files(once)
     assert once == twice
     assert list(json.loads(once)["files"]) == ["a.md", "b.md"]
+
+
+def test_canonicalize_cache_dir_matches_only_at_a_path_boundary(monkeypatch, tmp_path):
+    """CBENCH_CACHE may be short (/cache). Text that merely contains it must not change."""
+    cache = tmp_path / "cache"
+    monkeypatch.setenv("CBENCH_CACHE", str(cache))
+    text = (
+        f"docs/specs/cache-api.md\n"
+        f"{cache}-api.md\n"
+        f'"installPath": "{cache}/src/superpowers@abc"\n'
+        f"{cache}\n"
+    )
+    out = canonicalize_host_text(text)
+    assert out == (
+        "docs/specs/cache-api.md\n"
+        f"{cache}-api.md\n"
+        '"installPath": "<CACHE>/src/superpowers@abc"\n'
+        "<CACHE>\n"
+    )
+
+
+def test_probe_evidence_keeps_text_that_only_starts_with_the_cache_dir(monkeypatch, tmp_path):
+    cache = tmp_path / "cache"
+    monkeypatch.setenv("CBENCH_CACHE", str(cache))
+    sb = Sandbox(root=Path("/tmp/cbench/x"), home=Path("/tmp/cbench/x/home"),
+                 proj=Path("/tmp/cbench/x/proj"), src=None, plugin_dirs=())
+    out = _clean(f"{cache}-api.md {cache}/src/a", sb, 500)
+    assert out == f"{cache}-api.md <CACHE>/src/a"
