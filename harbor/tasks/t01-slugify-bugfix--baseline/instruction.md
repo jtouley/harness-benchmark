@@ -11,5 +11,3 @@
   (`slugify("supercalifragilistic", max_length=5)` → `"super"`).
 
 Keep the public signature `slugify(text: str, max_length: int = 50) -> str`.
-
-Implement this change in the repository, run the tests, and commit your work locally on the current branch.

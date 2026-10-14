@@ -137,101 +137,111 @@
     },
     "cadence": {
       "always_on": {
-        "listing_tokens": 562,
+        "listing_tokens": 671,
         "memory_tokens": 0,
-        "session_start": [],
+        "session_start": [
+          {
+            "command": "python3 \"${CADENCE_SKILL_ROOT:-$HOME/.claude/skills/cadence}/hooks/session_start.py\"",
+            "context_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+            "exit": 0,
+            "origin": "home/.claude/settings.json",
+            "tokens": 0
+          }
+        ],
         "session_start_tokens": 0,
-        "total_tokens": 562
+        "total_tokens": 671
       },
       "claude_code_hooks": {
-        "PreToolUse": 2,
+        "PreToolUse": 3,
+        "SessionStart": 1,
         "Stop": 1,
+        "SubagentStart": 1,
         "SubagentStop": 1
       },
-      "corpus_tokens": 14889,
+      "corpus_tokens": 17386,
       "cost_usd": {
         "claude-fable-5-1": {
-          "always_on_100_requests_cached": "0.020935",
-          "always_on_per_request_cache_read": "0.000140",
-          "always_on_per_request_uncached": "0.005620",
-          "workflow_load_lower": "0.067520",
-          "workflow_load_upper": "1.091350"
+          "always_on_100_requests_cached": "0.024995",
+          "always_on_per_request_cache_read": "0.000168",
+          "always_on_per_request_uncached": "0.006710",
+          "workflow_load_lower": "0.089650",
+          "workflow_load_upper": "0.590550"
         },
         "claude-haiku-4-5": {
-          "always_on_100_requests_cached": "0.006266",
-          "always_on_per_request_cache_read": "0.000056",
-          "always_on_per_request_uncached": "0.000562",
-          "workflow_load_lower": "0.006752",
-          "workflow_load_upper": "0.109135"
+          "always_on_100_requests_cached": "0.007482",
+          "always_on_per_request_cache_read": "0.000067",
+          "always_on_per_request_uncached": "0.000671",
+          "workflow_load_lower": "0.008965",
+          "workflow_load_upper": "0.059055"
         },
         "claude-haiku-5-5": {
-          "always_on_100_requests_cached": "0.000626",
-          "always_on_per_request_cache_read": "0.000006",
-          "always_on_per_request_uncached": "0.000056",
-          "workflow_load_lower": "0.000675",
-          "workflow_load_upper": "0.010914"
+          "always_on_100_requests_cached": "0.000748",
+          "always_on_per_request_cache_read": "0.000007",
+          "always_on_per_request_uncached": "0.000067",
+          "workflow_load_lower": "0.000896",
+          "workflow_load_upper": "0.005906"
         },
         "claude-opus-5-5": {
-          "always_on_100_requests_cached": "0.013938",
-          "always_on_per_request_cache_read": "0.000112",
-          "always_on_per_request_uncached": "0.002248",
-          "workflow_load_lower": "0.027008",
-          "workflow_load_upper": "0.436540"
+          "always_on_100_requests_cached": "0.016641",
+          "always_on_per_request_cache_read": "0.000134",
+          "always_on_per_request_uncached": "0.002684",
+          "workflow_load_lower": "0.035860",
+          "workflow_load_upper": "0.236220"
         },
         "claude-sonnet-5-5": {
-          "always_on_100_requests_cached": "0.012533",
-          "always_on_per_request_cache_read": "0.000112",
-          "always_on_per_request_uncached": "0.001124",
-          "workflow_load_lower": "0.013504",
-          "workflow_load_upper": "0.218270"
+          "always_on_100_requests_cached": "0.014964",
+          "always_on_per_request_cache_read": "0.000134",
+          "always_on_per_request_uncached": "0.001342",
+          "workflow_load_lower": "0.017930",
+          "workflow_load_upper": "0.118110"
         }
       },
       "framework": "cadence",
       "install": {
-        "files": 651,
-        "tree_sha256": "eb8c3021e8a0c54a025e3e1c6c3474586e48ba80766597e6dff5a8db3db7392d"
+        "files": 608,
+        "tree_sha256": "b724b51fff6ce628024aae1d0fe1f216d3790addc21280b20154395f253e29f2"
       },
       "items": {
         "command": 7,
         "skill": 6
       },
-      "sha": "3ce6280ba05f3b22c02b61e7b143769ffca47a67",
+      "sha": "812998f7a8f670f28cfd6dd358de8c655656fb23",
       "title": "Cadence",
       "workflow": {
-        "lower_tokens": 6752,
+        "lower_tokens": 8965,
         "source": "derived: skill `cadence`, then every slash-command stage in stages.json order, resolved through references/bundled-peers.json",
         "steps": [
           {
             "at_includes": 0,
-            "lower_tokens": 3682,
+            "lower_tokens": 4667,
             "origin": "user",
             "ref": "skill:cadence",
             "resolved_name": "cadence",
-            "upper_tokens": 106065
+            "upper_tokens": 54757
           },
           {
             "at_includes": 0,
-            "lower_tokens": 292,
+            "lower_tokens": 482,
             "origin": "user",
             "ref": "skill:vibe-test",
             "resolved_name": "vibe-test",
-            "upper_tokens": 292
+            "upper_tokens": 482
           },
           {
             "at_includes": 0,
-            "lower_tokens": 240,
+            "lower_tokens": 314,
             "origin": "user",
             "ref": "command:plan-create",
             "resolved_name": "plan-create",
-            "upper_tokens": 240
+            "upper_tokens": 314
           },
           {
             "at_includes": 0,
-            "lower_tokens": 279,
+            "lower_tokens": 606,
             "origin": "user",
             "ref": "command:plan-review",
             "resolved_name": "plan-review",
-            "upper_tokens": 279
+            "upper_tokens": 606
           },
           {
             "at_includes": 0,
@@ -243,46 +253,46 @@
           },
           {
             "at_includes": 0,
-            "lower_tokens": 456,
+            "lower_tokens": 663,
             "origin": "user",
             "ref": "skill:test-benchmark",
             "resolved_name": "test-benchmark",
-            "upper_tokens": 456
+            "upper_tokens": 663
           },
           {
             "at_includes": 0,
-            "lower_tokens": 263,
+            "lower_tokens": 319,
             "origin": "user",
             "ref": "command:spec-driven",
             "resolved_name": "spec-driven",
-            "upper_tokens": 263
+            "upper_tokens": 319
           },
           {
             "at_includes": 0,
-            "lower_tokens": 425,
+            "lower_tokens": 468,
             "origin": "user",
             "ref": "command:commit-push-pr",
             "resolved_name": "commit-push-pr",
-            "upper_tokens": 425
+            "upper_tokens": 468
           },
           {
             "at_includes": 0,
-            "lower_tokens": 359,
+            "lower_tokens": 483,
             "origin": "user",
             "ref": "command:pr-review-local",
             "resolved_name": "pr-review-local",
-            "upper_tokens": 359
+            "upper_tokens": 483
           },
           {
             "at_includes": 0,
-            "lower_tokens": 456,
+            "lower_tokens": 663,
             "origin": "user",
             "ref": "skill:test-benchmark",
             "resolved_name": "test-benchmark",
-            "upper_tokens": 456
+            "upper_tokens": 663
           }
         ],
-        "upper_tokens": 109135
+        "upper_tokens": 59055
       }
     },
     "gsd-core": {
@@ -291,7 +301,7 @@
         "memory_tokens": 0,
         "session_start": [
           {
-            "command": "\"$(for n in \"/opt/node22/bin/node\" \"$(command -v node)\" /usr/local/bin/node /usr/bin/node; do [ -x \"$n\" ] && { [ \"${n#/}\" != \"$n\" ] || [ \"${n#?:}\" != \"$n\" ]; } && printf '%s' \"$n\" && break; done)\" \"$CLAUDE_PROJECT_DIR\"/.claude/hooks/gsd-check-update.js",
+            "command": "\"$(for n in \"<NODE>\" \"$(command -v node)\" <NODE> <NODE>; do [ -x \"$n\" ] && { [ \"${n#/}\" != \"$n\" ] || [ \"${n#?:}\" != \"$n\" ]; } && printf '%s' \"$n\" && break; done)\" \"$CLAUDE_PROJECT_DIR\"/.claude/hooks/gsd-check-update.js",
             "context_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
             "exit": 0,
             "origin": "proj/.claude/settings.local.json",
@@ -358,7 +368,7 @@
       "framework": "gsd-core",
       "install": {
         "files": 831,
-        "tree_sha256": "2ab1cf98a9ade5773307b2453b8e85848d6a5a990999c049b3a53217b73d91a1"
+        "tree_sha256": "7f84a2aeb2b8a4000ae252ff0d447121a4bdaaa1897b0bb610baaee51a56793b"
       },
       "items": {
         "agent": 35,
@@ -744,7 +754,7 @@
   "pricing_as_of": "2026-10-08",
   "provenance": {
     "canonical_root": "/tmp/cbench",
-    "lockfile_sha256": "72f9833aba2d85acd69d9451257c75fe3d4f01cb0ce45f6728a8b2c06c6178b2",
+    "lockfile_sha256": "9515e62a3f5d325135ca89728b45fb958245c6536fabf9ab3f178150c0b29e68",
     "pricing_sha256": "7af66e689754689850c47229da79af75d229e3882a798826de3f50317f292139",
     "tokenizer": {
       "id": "anthropic==0.37.1:anthropic/tokenizer.json",

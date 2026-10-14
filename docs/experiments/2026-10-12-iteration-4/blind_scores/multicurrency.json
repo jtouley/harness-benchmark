@@ -1,0 +1,39 @@
+{
+  "scores": {
+    "P": {"design": 7, "correctness": 8, "readability": 8, "tests": 9, "mean": 8.0},
+    "Q": {"design": 8, "correctness": 7, "readability": 8, "tests": 6, "mean": 7.25},
+    "R": {"design": 9, "correctness": 9, "readability": 9, "tests": 8, "mean": 8.75},
+    "S": {"design": 6, "correctness": 7, "readability": 7, "tests": 7, "mean": 6.75},
+    "T": {"design": 4, "correctness": 2, "readability": 4, "tests": 3, "mean": 3.25}
+  },
+  "defects": {
+    "P": [
+      "Regression for hand-edited legacy stores: a JSON-number amount used to load (Decimal(5)) and now fails (storage.py:40 parse_decimal rejects non-str, models.py:32). Repro: store {\"version\":1,\"accounts\":{\"old\":{\"transactions\":[{\"id\":\"a\",\"on\":\"2026-01-01\",\"amount\":5,\"category\":\"c\",\"memo\":\"\"}]}}}; `report balances` -> 'error: bad amount 5' exit 2 (Q/R/S/T load it as 5.00 USD)",
+      "Strict v2 schema: a version-2 account without 'currency' is an error rather than defaulting to USD (storage.py:33). Repro: {\"version\":2,\"accounts\":{\"a\":{\"transactions\":[]}}} -> 'store ... is missing field 'currency'' exit 2. Deliberate and tested, but stricter than needed",
+      "Scope creep (not a functional bug): CSV header case/space normalization and duplicate-column rejection (importers.py:19-24), store shape/version validation (storage.py:24-28)"
+    ],
+    "Q": [
+      "No inverse rates: with only `rate set EUR USD 1.10`, `report balances --base EUR` -> 'error: no exchange rate from USD to EUR' exit 2 (models.py convert). Documented in README as 'direct rates only'; defensible reading of the spec but a usability gap",
+      "README contains a stray '``````' line after the currency paragraph (CHANGE.diff README hunk)",
+      "Rate keys stored as 'EUR->USD' strings and split on load without validation (storage.py rates loop); a malformed key raises ValueError, not LedgerError"
+    ],
+    "R": [
+      "None functional reproduced. Minor: currency codes normalized twice on the rate path (cli.py rate branch and Ledger.set_rate); storage load does not normalize/validate stored currency or rate rows"
+    ],
+    "S": [
+      "No inverse rates: `rate set EUR USD 1.10` then `report balances --base EUR` -> 'error: no exchange rate from USD to EUR' exit 2 (models.py:84-95); documented in README",
+      "normalize_currency does not strip whitespace (models.py:18-22), so a CSV cell 'EUR ' or `--currency ' EUR'` is rejected as a bad currency",
+      "Scope creep that changes existing output: `_fmt` uses the 'z' format so -0.00 prints 0.00 (reports.py:12-14); overflow/DecimalException wrapping in Account.balance and reports (models.py:55-59, reports.py:17-21); CSV header normalization (importers.py:17-18)"
+    ],
+    "T": [
+      "report monthly ignores --base and never converts (reports.py monthly: base_currency param unused). Repro: checking USD -42.50, savings EUR 100, `rate set EUR USD 1.10`, `report monthly 2026-01` -> 'transfer: 100.00 / NET: 57.50' (expected 110.00 / 67.50)",
+      "Blank CSV currency cell is rejected: 'date,amount,category,currency\\n2026-01-01,5,a,\\n' into EUR account -> 'error: line 2: currency  doesn't match account currency EUR' exit 2 (importers.py currency check compares raw cell)",
+      "Currency codes are case-sensitive and unvalidated: `account add low --currency eur` then `report balances` -> 'error: no rate for eur to USD'; `report balances --base usd` -> 'error: no rate for USD to usd'; `account add x --currency EURO` succeeds",
+      "Rate values not validated: `rate set GBP USD 0`, `-1`, and `NaN` all succeed (models.py set_rate); a NaN rate would poison totals",
+      "No inverse rates (`--base EUR` with only EUR->USD stored -> exit 2), not documented",
+      "Dead try/except that re-raises unchanged with a misleading comment (reports.py balances loop); 'USD' literal duplicated across cli/models/storage/reports instead of a constant; rates keyed by 'EUR_USD' strings; FORMAT_VERSION not bumped; README not updated"
+    ]
+  },
+  "ranking": ["R", "P", "Q", "S", "T"],
+  "notes": "All five suites pass (P 106, Q 14, R 25, S 82, T 11 tests). Probed every solution via the CLI with the same script (missing rate, inverse base, monthly conversion, case, bad rates, CSV blank/lowercase/mismatch, legacy v1/no-version stores). R is the cleanest: minimal changes in the right modules, inverse-rate support with a clear rate()/convert() split, a reverse pair replaces the old rate, and a focused test_multicurrency.py covering failure paths, persistence and rollback on a failed import. P is equally correct and has the best-layered tests (models/storage/importers/reports/cli), but adds hardening beyond the spec, and that hardening rejects numeric amounts in legacy stores. Q is minimal and fits the codebase, but it has no inverse rates, a stray README fence and thin tests. S is correct within its direct-rates-only design, but it carries a lot of out-of-scope hardening, changes -0.00 output, and puts 554 lines of tests in one file. T fails the spec: monthly is never converted, blank CSV currency cells fail, and currency/rate input is not validated or normalized. Its tests miss monthly conversion entirely."
+}

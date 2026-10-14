@@ -101,7 +101,7 @@ def test_normalize_hides_macos_tmp_realpath_and_baked_node_path():
     assert "/private/tmp" not in out
     assert "/tmp/cbench/gsd-core/" in out
     assert "/Users/" not in out
-    assert "/opt/node22/bin/node" in out
+    assert "<NODE>" in out
 
 
 def test_probe_stderr_drops_bash_setlocale_warning():
@@ -164,3 +164,21 @@ def test_probe_evidence_keeps_text_that_only_starts_with_the_cache_dir(monkeypat
                  proj=Path("/tmp/cbench/x/proj"), src=None, plugin_dirs=())
     out = _clean(f"{cache}-api.md {cache}/src/a", sb, 500)
     assert out == f"{cache}-api.md <CACHE>/src/a"
+def test_normalizer_hides_where_node_is_installed():
+    """PR #6 review: GSD's hook command embeds the node path, which varies by machine."""
+    from cbench.install import normalizer
+    from cbench.lock import load_lock
+
+    norm = normalizer(load_lock())
+    assert norm('"/usr/local/bin/node" hooks/x.js') == '"<NODE>" hooks/x.js'
+    assert norm("/opt/node22/bin/node hooks/x.js") == "<NODE> hooks/x.js"
+    assert norm("npx node-gyp; /usr/bin/nodejs") == "npx node-gyp; /usr/bin/nodejs"
+
+
+def test_normalizer_hides_a_node_binary_that_lives_under_the_cache_dir(monkeypatch, tmp_path):
+    """The bench can install node under its own cache; the node rule must win over <CACHE>."""
+    cache = tmp_path / "cache"
+    monkeypatch.setenv("CBENCH_CACHE", str(cache))
+    norm = normalizer(load_lock())
+    assert norm(f'"{cache}/node-v22/bin/node" hooks/x.js') == '"<NODE>" hooks/x.js'
+    assert norm(f'"{cache}/src/superpowers@abc"') == '"<CACHE>/src/superpowers@abc"'

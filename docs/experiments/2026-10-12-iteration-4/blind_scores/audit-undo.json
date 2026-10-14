@@ -1,0 +1,33 @@
+{
+  "scores": {
+    "P": {"design": 8, "correctness": 8, "readability": 8, "tests": 7, "mean": 7.75},
+    "Q": {"design": 3, "correctness": 2, "readability": 4, "tests": 3, "mean": 3.0},
+    "R": {"design": 8, "correctness": 8, "readability": 8, "tests": 8, "mean": 8.0},
+    "S": {"design": 7, "correctness": 8, "readability": 8, "tests": 7, "mean": 7.5}
+  },
+  "defects": {
+    "P": [
+      "Minor: audit.py:78 silently skips reverting a tx/import change when its account no longer exists, yet still logs a successful undo entry (only reachable through a hand-edited store).",
+      "Minor: models.py:49 types Ledger.audit as a bare `list` and leaves a comment instead of a type; record_tx_add/record_import leave tx/added untyped (audit.py:45,50)."
+    ],
+    "Q": [
+      "The summary repeats the command. `account add checking` then `audit` prints '1 account add account add checking'; the tx line is '2 tx add tx add <id>'; the import line is '3 import import 2 transactions' (cli.py:79,87,91). This breaks the spec example `1 account add checking`.",
+      "An undo blocks all earlier changes (models.py:97-125 stop at the most recent undo entry). After account add, tx add, import: `undo` gives exit 0, then `undo` gives exit 2 with 'error: cannot undo 1 changes', so the tx and the account can never be undone. With 'add a; add b; undo; add c', `undo 2` gives exit 2 although a and c are both undoable.",
+      "`undo 0` and `undo -1` give exit 0 and append audit entries '5 undo undo 0' and '6 undo undo -1'. No count is validated.",
+      "One undo entry per command with summary 'undo N', which does not record which seqs were reverted (cli.py:110).",
+      "Dead state: _undone_count and mark_as_undone are never read (models.py:62,95,127). undo_change has duplicate 'tx' and 'import' branches (cli.py:26-35). The undo logic sits in cli.py instead of a domain module.",
+      "test_undo_cannot_undo_past_undo locks in the wrong blocking behavior, and test_audit_records_account_add asserts the doubled summary."
+    ],
+    "R": [
+      "Minor: the undone state is stored twice, as the mutable `undone_by` on target entries (audit.py:26,78) and as `reverted` in the undo entry's change. A hand-edit can make them disagree.",
+      "Minor: _revert (audit.py:74) changes the in-memory ledger before a later target can raise. undo N stays atomic only because cli.run does not save on an exception, which the docstring states."
+    ],
+    "S": [
+      "Spec deviation (judgment call): an import with 0 rows writes no audit entry (cli.py:67). The spec says every import command appends one entry.",
+      "Minor: like R, undo N reverts in place and depends on the caller not saving after an error (audit.py:41-51, documented in the docstring).",
+      "Over-engineering: a duplicate-seq guard with an O(n) count inside the loop (audit.py:43), a FORMAT_VERSION bump to 2 (storage.py:12), and a clock seam. None of these is required by the spec."
+    ]
+  },
+  "ranking": ["R", "P", "S", "Q"],
+  "notes": "All four suites pass (P 14, Q 18, R 19, S 50). I drove each CLI through the same scenario: three changes, then undo, undo, undo 2 (too many), undo, audit, undo 0/-1, an empty import, a legacy v1 store, and an interleaved undo N after a new change. P, R and S behave correctly in every case: undo order, undo-N atomicity (store bytes unchanged on exit 2), imports as one change, undo entries never undone, legacy stores, and seq continuing after undos. They differ only in the undo entry shape: P and S write one undo entry per reverted change ('4 undo 3 import ...' / '4 undo 3'); R writes one entry per command ('5 undo 4 1'). R has the cleanest layering: an audit module, remove_account/remove_transactions on Ledger, and read-only commands that return before saving. Its tests are focused and cover the CLI exit code and stderr. P is compact, makes undo atomic by working on a deepcopy, and keeps revert logic in audit.py instead of on Ledger. Its tests are strong but few, with some combined assertions. S is very robust and has the strongest unit and seam tests, but it is heavier than needed (430-line test file, hand-edit corruption cases, duplicate-seq guard, version bump) and skips auditing empty imports. Q fails the core semantics: doubled summaries, undo blocking earlier changes, and no count validation."
+}

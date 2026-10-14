@@ -1,0 +1,4 @@
+Use Spec Kit for this change. Run /speckit-specify with the issue below, then /speckit-plan, /speckit-tasks, /speckit-implement and /speckit-converge, in that order.
+
+Issue:
+Add an audit trail and undo to ledgerlite. Every command that changes the ledger (account add, tx add, import) appends one entry to an audit log kept in the store: a sequence number starting at 1, an ISO timestamp, the command, and what changed. Read-only commands are not audited. `audit` prints entries oldest first as `SEQ COMMAND SUMMARY` (e.g. `1 account add checking`). `undo` reverts the most recent change that is not yet undone; `undo N` reverts the last N, and fails with exit 2 without changing anything if fewer than N changes can be undone. An import is one change: undo removes all of its rows. An undo is itself recorded in the audit log with command `undo` and is never undone. Existing stores without an audit log keep working.

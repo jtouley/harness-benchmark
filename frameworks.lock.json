@@ -11,6 +11,11 @@
       "why": "skills add records the checkout path relative to the project",
       "pattern": "\"source\": \"[^\"]*bmad@[0-9a-f]+\"",
       "replace": "\"source\": \"<BMAD_SRC>\""
+    },
+    {
+      "why": "GSD writes the absolute path of the node binary into its hook command; it depends on where node is installed, not on the framework",
+      "pattern": "(?<![\\w.-])(?:/[\\w.+-]+)+/bin/node\\b",
+      "replace": "<NODE>"
     }
   ],
   "ignore": [
@@ -30,12 +35,12 @@
         "source": "control arm: no framework installed",
         "steps": []
       },
-      "drive_prompt": "{issue}\n\nImplement this change in the repository, run the tests, and commit your work locally on the current branch."
+      "drive_prompt": "{issue}"
     },
     "cadence": {
       "title": "Cadence",
       "repo": "https://github.com/jtouley/cadence",
-      "sha": "3ce6280ba05f3b22c02b61e7b143769ffca47a67",
+      "sha": "812998f7a8f670f28cfd6dd358de8c655656fb23",
       "build": [],
       "install": [
         {

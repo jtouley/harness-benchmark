@@ -1,0 +1,4 @@
+Use bmad-build for this change.
+
+Issue:
+Add multi-currency support to ledgerlite. Accounts get a currency: `account add NAME --currency EUR` (default USD). Exchange rates live in the store: `rate set EUR USD 1.10` means 1 EUR = 1.10 USD. `report balances` shows each account in its own currency (`savings: 100.00 EUR`) and the TOTAL in a base currency chosen with `--base` (default USD), e.g. `TOTAL: 67.50 USD`, converting with stored rates. A missing rate is an error (exit 2) that names both currencies. `report monthly` amounts are converted to the base currency (line format unchanged). CSV import accepts an optional `currency` column; a row whose currency differs from the account's currency is an error. Existing ledger files without currencies must keep loading as USD.

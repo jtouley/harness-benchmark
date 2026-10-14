@@ -1,7 +1,7 @@
 # Live tier (Harbor)
 
 Tier 3 asks the question the first two tiers cannot: **does the harness change
-outcomes?** It runs Claude Code on the three golden tasks with each framework
+outcomes?** It runs Claude Code on the six golden tasks with each framework
 installed, then grades the result with hidden tests. [Harbor](https://github.com/harbor-framework/harbor)
 (pinned to 0.24.0) runs the trials, grades them and records tokens and cost.
 Nothing here is run by CI by default. A run spends money.
@@ -14,10 +14,11 @@ Nothing here is run by CI by default. A run spends money.
 | `cadence`, `superpowers`, `spec-kit`, `openspec`, `gsd-core`, `bmad` | Haiku 5.5 | The cheap model with each harness. |
 | `baseline` | Sonnet 5.5 | One-shotting in Claude Code with a stronger model. |
 
-The comparison of note is **cost per resolved task**, and whether *Haiku + harness*
-meets or beats *Sonnet one-shot*. A trial is *resolved* only when every hidden test
-passes. Three trials per cell; a task has three tests of code, so report rates, not
-rankings, until more tasks exist.
+The decision rule, the measures and the sample size are in
+[`criteria.md`](criteria.md) (§4–§6); this page only describes how the live tier runs. The
+`baseline` arm on Haiku is the same-model one-shot that criteria §2 requires for the Haiku
+framework arms; the Sonnet baseline is reported for context. Its drive prompt is `{issue}`
+only (criteria §2).
 
 ## What Harbor does and does not do
 
@@ -53,14 +54,17 @@ harbor run -p harbor/tasks -i 't01-slugify-bugfix--baseline' -a nop -y     # unt
 
 export ANTHROPIC_API_KEY=...
 CBENCH_BUDGET_USD=1 scripts/live.sh smoke           # one Haiku trial, capped at $1
-CBENCH_BUDGET_USD=90 scripts/live.sh                # the full matrix
+CBENCH_BUDGET_USD=300 scripts/live.sh               # the full matrix (240 trials)
+# 240 trials at up to 1800 s each, 2 at a time, can take far longer than one 6-hour CI job.
+# Run the full matrix on a host without that limit; a cut-off job leaves cells short of n = 5,
+# and criteria §6 does not allow a short run set.
 uv run python -m cbench harbor-collect jobs && uv run python -m cbench report
 ```
 
 > [!WARNING]
 > `scripts/live.sh` refuses to start until `CBENCH_BUDGET_USD` is at least the worst case
-> (trials × the per-trial `--max-budget-usd` cap). The full matrix is 63 Haiku trials at a
-> $1 cap plus 9 Sonnet trials at a $3 cap, so the worst case is $90. Typical spend is a
+> (trials × the per-trial `--max-budget-usd` cap). The full matrix is 210 Haiku trials at a
+> $1 cap plus 30 Sonnet trials at a $3 cap (6 tasks, 5 trials each), so the worst case is $300. Typical spend is a
 > fraction of that, and the cap is enforced per trial by Claude Code.
 
 ## Notes for restricted networks

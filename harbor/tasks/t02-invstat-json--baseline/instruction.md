@@ -15,5 +15,3 @@ Add machine-readable output and low-stock reporting to `invstat`.
    (no traceback).
 
 `main(argv)` must keep returning the exit code instead of calling `sys.exit`.
-
-Implement this change in the repository, run the tests, and commit your work locally on the current branch.

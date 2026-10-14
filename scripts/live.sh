@@ -2,16 +2,16 @@
 # Run the live tier on Harbor. Spends real money, so it refuses to start unless you
 # state a budget at least as large as the worst case (trials x per-trial cap).
 #
-#   CBENCH_BUDGET_USD=90 ANTHROPIC_API_KEY=... scripts/live.sh            # full matrix
+#   CBENCH_BUDGET_USD=300 ANTHROPIC_API_KEY=... scripts/live.sh           # full matrix
 #   CBENCH_BUDGET_USD=1  ANTHROPIC_API_KEY=... scripts/live.sh smoke      # 1 trial, ~$1 cap
 #
-# Environment knobs: TRIALS (default 3), HAIKU_CAP_USD (1.00), BASELINE_CAP_USD (3.00),
+# Environment knobs: TRIALS (default 5, docs/criteria.md §6), HAIKU_CAP_USD (1.00), BASELINE_CAP_USD (3.00),
 # BASELINE_MODEL (claude-sonnet-5-5), JOBS_DIR (jobs).
 set -euo pipefail
 cd "$(dirname "$0")/.."
 
 mode="${1:-full}"
-trials="${TRIALS:-3}"
+trials="${TRIALS:-5}"
 haiku_cap="${HAIKU_CAP_USD:-1.00}"
 base_cap="${BASELINE_CAP_USD:-3.00}"
 base_model="${BASELINE_MODEL:-claude-sonnet-5-5}"
@@ -20,7 +20,7 @@ claude_version="$(python3 -c 'import re;print(re.search(r"CLAUDE_CODE_VERSION = 
 
 # Arms run on Haiku 5.5: every framework plus a bare-Haiku control.
 haiku_arms=(baseline cadence superpowers spec-kit openspec gsd-core bmad)
-tasks=(t01-slugify-bugfix t02-invstat-json t03-token-bucket)
+tasks=(t01-slugify-bugfix t02-invstat-json t03-token-bucket t04-ledgerlite-multicurrency t05-ledgerlite-budgets t06-ledgerlite-audit-undo)
 if [ "$mode" = smoke ]; then haiku_arms=(baseline); tasks=(t01-slugify-bugfix); trials=1; fi
 
 haiku_trials=$(( ${#haiku_arms[@]} * ${#tasks[@]} * trials ))

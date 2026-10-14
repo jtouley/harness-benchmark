@@ -1,0 +1,21 @@
+{
+  "skill_name": "cadence",
+  "baseline": "ship-feature",
+  "evals": [
+    {
+      "id": 1,
+      "name": "multicurrency",
+      "prompt": "Add multi-currency support to ledgerlite. Accounts get a currency: `account add NAME --currency EUR` (default USD). Exchange rates live in the store: `rate set EUR USD 1.10` means 1 EUR = 1.10 USD. `report balances` shows each account in its own currency (`savings: 100.00 EUR`) and the TOTAL in a base currency chosen with `--base` (default USD), e.g. `TOTAL: 67.50 USD`, converting with stored rates. A missing rate is an error (exit 2) that names both currencies. `report monthly` amounts are converted to the base currency (line format unchanged). CSV import accepts an optional `currency` column; a row whose currency differs from the account's currency is an error. Existing ledger files without currencies must keep loading as USD."
+    },
+    {
+      "id": 2,
+      "name": "budgets",
+      "prompt": "Add monthly category budgets to ledgerlite. `budget set CATEGORY LIMIT` sets a monthly spending limit across all accounts (LIMIT must be positive, else exit 2); `budget list` prints `CATEGORY: LIMIT` sorted by category. `report budget YYYY-MM` prints one line per budgeted category: `CATEGORY: spent SPENT of LIMIT (PCT%)`, with ` OVER` appended when spent > limit. Spending is the sum of the negative amounts in that category and month, as a positive number (refunds do not reduce it); PCT is spent/limit*100 rounded to the nearest integer; money is shown with 2 decimals. When `tx add` or `import` pushes a category's spending for that month past its limit, the command also prints `alert: CATEGORY over budget for YYYY-MM (SPENT/LIMIT)`, once per category per command. SPENT in the alert is the month's spending after the whole command. Budgets persist in the store; existing stores without budgets keep working."
+    },
+    {
+      "id": 3,
+      "name": "audit-undo",
+      "prompt": "Add an audit trail and undo to ledgerlite. Every command that changes the ledger (account add, tx add, import) appends one entry to an audit log kept in the store: a sequence number starting at 1, an ISO timestamp, the command, and what changed. Read-only commands are not audited. `audit` prints entries oldest first as `SEQ COMMAND SUMMARY` (e.g. `1 account add checking`). `undo` reverts the most recent change that is not yet undone; `undo N` reverts the last N, and fails with exit 2 without changing anything if fewer than N changes can be undone. An import is one change: undo removes all of its rows. An undo is itself recorded in the audit log with command `undo` and is never undone. Existing stores without an audit log keep working."
+    }
+  ]
+}

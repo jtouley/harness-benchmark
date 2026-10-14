@@ -9,7 +9,7 @@ keywords = ["harness-benchmark", "spec-kit", "T02-invstat-json"]
 task = "T02-invstat-json"
 arm = "spec-kit"
 framework_sha = "b9e08bf3e1a9d82b2a7358e278a6224d54d8783b"
-lock_sha256 = "72f9833aba2d85acd69d9451257c75fe3d4f01cb0ce45f6728a8b2c06c6178b2"
+lock_sha256 = "9515e62a3f5d325135ca89728b45fb958245c6536fabf9ab3f178150c0b29e68"
 
 [verifier]
 timeout_sec = 300.0
