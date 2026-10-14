@@ -276,3 +276,28 @@ def test_reading_a_saved_tool_output_of_the_session_is_not_a_contact(tmp_path):
     t = _transcript(tmp_path, _listing(*BUILTIN), _call("Read", file_path=saved),
                     _call("Read", file_path="/home/u/.claude/projects/-runs-a-repo/memory/notes.md"))
     assert _verdict([t])["unexpected_contacts"] == ["/home/u/.claude/projects/-runs-a-repo/memory/notes.md"]
+
+
+@pytest.mark.parametrize("command", [
+    "find ~ -name SKILL.md -exec cat {} +",
+    "rg --files -g CLAUDE.md /home/u",
+    "grep -rl 'strict TDD' /home/u",
+    "grep -rn TDD $HOME",
+    "ls /Users/x",
+])
+def test_a_command_over_the_home_folder_is_a_contact(tmp_path, command):
+    """R7 on PR #8: a bare instruction-file name was a search pattern, resolved into the allowed repo."""
+    t = _transcript(tmp_path, _listing(*BUILTIN), _call("Bash", command=command))
+    assert _repo_verdict(t) == "contaminated"
+
+
+def test_a_cd_to_one_absolute_folder_sets_the_base_for_relative_paths(tmp_path):
+    t = _transcript(tmp_path, _listing(*BUILTIN), _call("Bash", command=f"cd {REPO} && cat CLAUDE.md"))
+    assert _repo_verdict(t) == "clean"
+
+
+def test_loaded_file_text_inside_a_tool_result_is_not_a_contact(tmp_path):
+    result = {"type": "user", "message": {"role": "user", "content": [{"type": "tool_result", "tool_use_id": "x",
+              "content": "Contents of /home/u/.claude/CLAUDE.md: see the docs"}]}}
+    t = _transcript(tmp_path, _listing(*BUILTIN), result)
+    assert _repo_verdict(t) == "clean"

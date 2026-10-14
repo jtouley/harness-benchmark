@@ -23,15 +23,18 @@ The check reads three things in every transcript:
   path joined with its pattern) or a shell command token that names a host config
   directory (.claude, .cursor, .codex, .agents) or an instruction file (SKILL, CLAUDE,
   AGENTS, MEMORY .md); and every instruction file the host loads into the session
-  (`instructions` attachments, "Contents of <path>" text). Text that a tool writes
-  (content, new_string) is not a contact.
+  (`instructions` attachments, "Contents of <path>" text outside tool results); and a
+  command or path that names the whole home folder (~, $HOME, /Users/<name>), since a
+  search over it reads everything in it. Text that a tool writes (content, new_string)
+  is not a contact.
 
 Skills and agent types the host always lists (scripts/clean_room_builtin_skills.json)
 may appear in the listing of any arm. Calling a built-in skill needs `--allow` like any
 other skill; spawning a built-in agent type does not. `--allow-path` values must be
 absolute. A contact is allowed only when its normalised path lies under one of them. A
-relative path resolves against `--cwd`, except in a shell command that changes
-directory, where the cwd is unknown and the path is never allowed.
+relative path resolves against `--cwd`, or against the one absolute folder a shell
+command changes to. After any other `cd` the directory is unknown and the path is never
+allowed.
 
 The check reads Claude Code transcripts only. A transcript of another host has no skill
 listing, so it is unassessable.
@@ -63,7 +66,8 @@ LOCATION = re.compile(
 )
 PATH_FIELDS = ("file_path", "path", "notebook_path")  # Grep's `pattern` is a regex, not a path
 TOKEN = re.compile(r"[^\s'\";|&<>()]+")
-CHANGES_DIR = re.compile(r"(?:^|[\s;&|(])(?:cd|pushd)(?:\s|$)")
+CHANGES_DIR = re.compile(r"(?:^|[\s;&|(])(?:cd|pushd)(?:\s+([^\s;&|)]+)|(?=[\s;&|)]|$))")
+HOME_ROOT = re.compile(r"^(?:~|\$HOME|\$\{HOME\}|/home/[^/]+|/Users/[^/]+|/root)/?$")  # a sweep of the whole home folder
 LOADED_FILE = re.compile(r"Contents of (\S+?\.md)\b")
 AGENT_TOOLS = ("Task", "Agent")
 SAVED_OUTPUT = re.compile(r"\.claude/projects/[^/]+/[^/]+/tool-results/[^/]+$")  # the session's own large tool outputs
@@ -129,6 +133,14 @@ def _texts(content):
                     yield from _texts(part["content"])
 
 
+def _own_texts(content):
+    """Text of the message itself, without the content of tool results."""
+    if isinstance(content, str):
+        yield content
+    elif isinstance(content, list):
+        yield from (p["text"] for p in content if isinstance(p, dict) and p.get("type") == "text" and isinstance(p.get("text"), str))
+
+
 def _resolve(path: str, cwd: str | None) -> str:
     """An absolute path is normalised, so `..` cannot climb out of an allowed folder.
 
@@ -153,13 +165,28 @@ def _locations(tool_name: str, tool_input: dict, cwd: str | None = None) -> list
 
 
 def _command_locations(command: str, cwd: str | None) -> list[str]:
-    # After a cd the shell's directory is unknown, so a relative token stays unresolved.
-    base = None if CHANGES_DIR.search(command) else cwd
+    base = _command_base(command, cwd)
     return [_resolve(t, base) for t in TOKEN.findall(command) if _is_location(t)]
 
 
+def _command_base(command: str, cwd: str | None) -> str | None:
+    """The folder relative tokens resolve against: the cwd, or the one absolute folder the command cds to.
+
+    After any other cd (`cd ~`, `cd ..`, two cds) the shell's directory is unknown, so a relative token
+    stays unresolved and is never allowed.
+    """
+    targets = [m.group(1) for m in CHANGES_DIR.finditer(command)]
+    if not targets:
+        return cwd
+    if len(targets) == 1 and targets[0] and targets[0].startswith("/"):
+        return posixpath.normpath(targets[0])
+    return None
+
+
 def _is_location(value) -> bool:
-    return isinstance(value, str) and bool(LOCATION.search(value)) and not SAVED_OUTPUT.search(value)
+    if not isinstance(value, str) or SAVED_OUTPUT.search(value):
+        return False
+    return bool(LOCATION.search(value) or HOME_ROOT.match(value))
 
 
 def _loaded_files(attachment: dict) -> list[str]:
@@ -193,6 +220,7 @@ class _Run:
         message = record.get("message") if isinstance(record.get("message"), dict) else {}
         for text in _texts(message.get("content")):
             self._text(text)
+        self._loaded_text(message.get("content"))
         if message.get("role") == "assistant":
             for part in message.get("content") or []:
                 if isinstance(part, dict) and part.get("type") == "tool_use":
@@ -207,11 +235,15 @@ class _Run:
             self.listed.update(_user_level_agents(attachment))
         self.contacts.update(_resolve(p, self.cwd) for p in _loaded_files(attachment))
 
+    def _loaded_text(self, content) -> None:
+        """Instruction files the host pasted in ("Contents of ..."). Tool results are left out: a tool may print anything."""
+        for text in _own_texts(content):
+            self.contacts.update(_resolve(p, self.cwd) for p in LOADED_FILE.findall(text) if LOCATION.search(p))
+
     def _text(self, text: str) -> None:
         for block in LISTING_BLOCK.finditer(text):
             self.saw_listing = True
             self.listed.update(LISTING_NAME.findall(block.group(1)))
-        self.contacts.update(_resolve(p, self.cwd) for p in LOADED_FILE.findall(text) if LOCATION.search(p))
 
     def _tool_use(self, name: str, tool_input: dict) -> None:
         if name == "Skill":

@@ -87,11 +87,12 @@ including every nested agent the run spawned (found through `parentAgentId`), an
 |---|---|---|
 | `clean` | 0 | Nothing outside the arm's allowlist was listed, called or touched. Built-in skills and agent types may be listed, and built-in agent types may be spawned; a built-in skill call needs the allowlist |
 | `exposed` | 1 | Skills or subagent types outside those lists were listed to the session, and none was used |
-| `contaminated` | 2 | Such a skill was called or such a subagent type spawned; or a tool touched a host config directory (`.claude`, `.cursor`, `.codex`, `.agents`) or an instruction file (`SKILL.md`, `CLAUDE.md`, `AGENTS.md`, `MEMORY.md`) outside the arm's allowed paths; or the host loaded such an instruction file into the session |
+| `contaminated` | 2 | Such a skill was called or such a subagent type spawned; or a tool touched a host config directory (`.claude`, `.cursor`, `.codex`, `.agents`) or an instruction file (`SKILL.md`, `CLAUDE.md`, `AGENTS.md`, `MEMORY.md`) outside the arm's allowed paths, or named the whole home folder (`~`, `$HOME`, `/Users/<name>`); or the host loaded such an instruction file into the session |
 | `unassessable` | 3 | No transcript records, or no skill listing at all: the check cannot tell what the run was offered |
 
-Allowed paths are absolute folders. A path counts as inside one only after `..` is resolved, and a
-relative path in a shell command that changes directory never counts as inside one. One regression test
+Allowed paths are absolute folders. A path counts as inside one only after `..` is resolved. In a shell
+command that changes directory, a relative path resolves against the folder it changes to when that is
+one absolute folder; after any other `cd` it never counts as inside one. One regression test
 per known leak channel is in [`tests/test_clean_room_check.py`](../tests/test_clean_room_check.py); a
 newly found channel gets a test there first.
 
