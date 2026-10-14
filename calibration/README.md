@@ -26,7 +26,7 @@ instructions are generic: none names a task, its data or its traps ([prompt hygi
   - `ansible-d9f18662`: 4 of 4 passed (the round 1 miss was infrastructure).
 - Round 2 also runs one Sonnet 5.5 and one Haiku 5.5 try on all 20, to find **lift** candidates (the bar
   passes, a cheap one-shot does not).
-- Two earlier attempts of round 2 lost every trial to Docker Desktop failures (emulated x86 images on an
+- Two earlier attempts of round 2 lost all or most of their trials to Docker Desktop failures (emulated x86 images on an
   arm64 laptop); they are kept in `results.json` as `infra_error`, not as failures.
 
 Reproduce: `./swebench-pro/make_samples.sh`, then `./swebench-pro/round2.sh`, then `./swebench-pro/collect.py`.
@@ -34,7 +34,7 @@ Reproduce: `./swebench-pro/make_samples.sh`, then `./swebench-pro/round2.sh`, th
 ## Known defects of this calibration (tracked as issues in this repository)
 
 - Agents ran on the host, not in a container, for B01. Workers they started outlived their runs and
-  shared one Redis port with later runs and the grader. The grader now uses a private Redis database and
+  shared one message broker with later runs and the grader. The grader now uses a private broker database and
   kills stray workers; the fix in full is one isolated container per trial.
 - The B01 runner script was edited while a run executed it, which lost that run's timing (recovered from
   Claude Code's own `duration_ms`).

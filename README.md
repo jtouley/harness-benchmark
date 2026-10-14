@@ -9,8 +9,15 @@ A reproducible benchmark of AI coding-workflow harnesses for Claude Code: [Caden
 > out of 10 and Cadence on Opus 7.33, at about 1/30 of the time. Most of that gap is single-run noise.
 > **What the harness did show:** no crash reached its delivered code (each one-shot shipped two), an
 > audit trail a reviewer can check, completion on every task or a recorded stop, and rules the model
-> cannot skip. **Next:** on harder tasks, run the harness on cheap models (Haiku 5.5 and others), all cheap
-> and with Opus as reviewer only, and find the cheapest arm that matches Opus alone.
+> cannot skip.
+>
+> **Since then (October 13–14):** full Cadence on Haiku 5.5 delivered nothing in the pilot (it stopped in
+> its own loops). On a real multi-cause bug, Haiku and Sonnet one-shots fixed the main path but the second
+> defect in only 0/5 and 1/5 runs, against Opus 10/10; an independent review loop recovered it in 3/3 runs,
+> at about the Opus one-shot's cost. The cheap models miss by **scope narrowing and coverage**, not
+> reasoning depth. **Next:** cheap verification (contracts before code, real-time deferral review),
+> long-horizon pipeline tasks, and traceability when work goes wrong. Full argument: the
+> [**whitepaper**](docs/whitepaper.md).
 > *Disclosure: the owner of this benchmark wrote Cadence.*
 
 | Arm (iteration 4) | Delivered | Blind quality | Major or critical defects per run | Crashes shipped | Time per task | Audit trail |
@@ -23,13 +30,16 @@ A reproducible benchmark of AI coding-workflow harnesses for Claude Code: [Caden
 
 | Read | For |
 |---|---|
+| [**Whitepaper**](docs/whitepaper.md) | The whole argument, iteration 4 to now: method, results, why cheap models miss, what a harness is for |
 | [**What a harness buys you**](docs/findings.md) | The conclusions: what we got from Cadence, what we did not, and what one-shotting gives |
 | [**20-minute talk track**](docs/talk.md) | Slides, numbers and speaker notes, with the questions to expect |
 | [**Next steps**](docs/next-steps.md) | The cheapest model that matches Opus with an audit trail: Claude Code, Cursor CLI and OpenAI arms |
 | [Iteration 4](docs/experiments/2026-10-12-iteration-4.md) · [Iteration 3](docs/experiments/2026-10-10-harness-vs-oneshot.md) | Full write-ups, data, confounds |
 | [How the rounds were run](docs/process.md) | The process end to end, what went wrong, and the clean-room check |
 | [**Quality model**](docs/quality-model.md) | What "great code" means here: ISO/IEC 25010, measured by published tools and thresholds |
-| [Proposed task L3](docs/tasks/L3-open-data-bi-pipeline.md) | A harder task: DuckDB, dlt and dbt on public government data, ready for BI |
+| [Pilot](docs/experiments/2026-10-13-pilot.md) · [Calibration](calibration/README.md) | Cadence on Haiku 5.5; how tasks are chosen against the Opus one-shot; SWE-bench Pro sample |
+| [**Pipeline task family**](docs/tasks/pipeline-family.md) | Long-horizon tasks: one spec on three stacks (dlt and dbt; Arrow, Polars and DataFusion; Spark), a follow-up change, and a traceability audit |
+| [Harness arms](harnesses/) | Minimal harnesses used as arms: a review loop and a verification harness (contracts before code) |
 
 These rounds ran outside the Harbor live tier, so they are not [criteria v1](docs/criteria.md) results.
 
