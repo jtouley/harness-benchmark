@@ -1,17 +1,24 @@
 #!/usr/bin/env bash
 # Pilot (harness-benchmark next-steps stage 1): one clean-room run of one arm on T05 budgets.
-# Usage: run_arm.sh ARM
+# Usage: run_arm.sh ARM WORKSPACE
 #   cadence_haiku         Cadence, every peer stage on Haiku 5.5 (peer_models default haiku)
 #   cadence_haiku_opus    Cadence on Haiku 5.5, review peers (P3 P6 P7 R1 R2) on Opus 5.5
 #   opus_oneshot          Opus 5.5, no harness
-# Needs: CADENCE_SRC (a Cadence checkout with cd-58 peer_models merged), the workspace from
-# make_workspace.sh (fixture/, evals.json). Each run gets its own empty HOME: no user-level skill,
-# rule, command, memory or settings. Cadence is loaded with --plugin-dir for that session only.
-# Runs use permission mode "auto": the host's safety classifier still checks each action.
-# A harness run has no time cap (owner decision 2026-10-12).
+# WORKSPACE is a folder outside this repository. If it has no fixture/, it is built with the
+# iteration-4 make_workspace.sh (fixture/, evals.json, grade.py). The run goes to WORKSPACE/pilot/ARM.
+# Cadence arms need CADENCE_SRC (a Cadence checkout with cd-58 peer_models merged). Each run gets its
+# own empty HOME: no user-level skill, rule, command, memory or settings. Cadence is loaded with
+# --plugin-dir for that session only. Runs use permission mode "auto": the host's safety classifier
+# still checks each action. A harness run has no time cap (owner decision 2026-10-12).
+# provenance.json records the Cadence commit and the Claude Code version of the run.
 set -euo pipefail
-ARM="${1:?usage: run_arm.sh ARM}"
-W="$(cd "$(dirname "$0")/.." && pwd)"
+ARM="${1:?usage: run_arm.sh ARM WORKSPACE}"
+W="${2:?usage: run_arm.sh ARM WORKSPACE}"
+HERE="$(cd "$(dirname "$0")" && pwd)"
+ROOT="$(cd "$HERE/../../.." && pwd)"
+case "$ARM" in cadence_haiku|cadence_haiku_opus|opus_oneshot) ;; *) echo "unknown arm: $ARM" >&2; exit 2 ;; esac
+[ -d "$W/fixture" ] || bash "$ROOT/docs/experiments/2026-10-12-iteration-4/make_workspace.sh" "$W" > /dev/null
+W="$(cd "$W" && pwd)"
 P="$W/pilot"
 D="$P/$ARM"
 [ -e "$D" ] && { echo "exists: $D" >&2; exit 1; }
@@ -20,6 +27,7 @@ HOME_DIR="$D/home"
 
 # Repository: the shared ledgerlite fixture, with a local bare origin.
 tmp="$(mktemp -d)"
+trap 'rm -rf "$tmp"' EXIT
 cp -R "$W/fixture/." "$tmp/"
 rm -rf "$tmp/.venv"
 printf '.context/\n__pycache__/\n.venv/\n.pytest_cache/\n' > "$tmp/.gitignore"
@@ -37,9 +45,11 @@ ENV_NOTE="Environment (same for every run): there is no GitHub and no Linear. Wh
 
 PLUGIN=()
 EXTRA_ENV=()
+CADENCE_SHA=""
 case "$ARM" in
   cadence_haiku|cadence_haiku_opus)
     : "${CADENCE_SRC:?set CADENCE_SRC to a Cadence checkout with cd-58 merged}"
+    CADENCE_SHA="$(git -C "$CADENCE_SRC" rev-parse HEAD 2>/dev/null || true)"
     cp -R "$CADENCE_SRC" "$D/cadence"
     rm -rf "$D/cadence/.git" "$D/cadence/.venv" "$D/cadence/.context"
     if [ "$ARM" = cadence_haiku ]; then
@@ -72,6 +82,11 @@ $ENV_NOTE"
 esac
 
 printf '%s\n' "$PROMPT" > "$D/prompt.txt"
+python3 - "$D/provenance.json" "$CADENCE_SHA" "$(claude --version 2>/dev/null || true)" <<'PY'
+import json, sys
+path, sha, version = sys.argv[1:4]
+json.dump({"cadence_sha": sha or None, "claude_version": version or None}, open(path, "w"), indent=2)
+PY
 start=$(python3 -c 'import time;print(time.time())')
 cd "$D/repo"
 # The haiku alias (used by peer_models) must resolve to Haiku 5.5, not Claude Code's default Haiku.

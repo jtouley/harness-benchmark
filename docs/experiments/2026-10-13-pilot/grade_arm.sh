@@ -1,11 +1,12 @@
 #!/usr/bin/env bash
 # Grade one pilot arm: hidden tests and procedure (grade.py), clean room, quality model, cost.
-# Usage: grade_arm.sh ARM   (HB = harness-benchmark checkout with clean_room_check.py and quality_metrics.py)
+# Usage: grade_arm.sh ARM WORKSPACE   (WORKSPACE as given to run_arm.sh)
+# The quality, clean-room and pricing tools come from this repository (HB, default: its root).
 set -euo pipefail
-ARM="${1:?usage: grade_arm.sh ARM}"
-W="$(cd "$(dirname "$0")/.." && pwd)"
+ARM="${1:?usage: grade_arm.sh ARM WORKSPACE}"
+W="$(cd "${2:?usage: grade_arm.sh ARM WORKSPACE}" && pwd)"
 D="$W/pilot/$ARM"
-HB="${HB:-/Users/jasontouleyrou/Projects/harness-benchmark-wt/cleanroom}"
+HB="${HB:-$(cd "$(dirname "$0")/../../.." && pwd)}"
 
 # The delivered head: the newest commit on any branch of the run's repo.
 HEAD_SHA="$(git -C "$D/repo" for-each-ref --sort=-committerdate --format='%(objectname)' refs/heads | head -1)"
@@ -22,17 +23,21 @@ python3 "$HB/scripts/quality_metrics.py" "$D/solution" "$D/baseline" > "$D/quali
 
 ALLOW=()
 case "$ARM" in cadence_*) ALLOW=(--allow-path "$D/cadence") ;; esac
-for t in "$D"/home/.claude/projects/*/*.jsonl; do
-  # Cadence arms may call their own plugin's skills; list them from the plugin's skills folder.
-  extra=()
-  if [ -d "$D/cadence" ]; then
-    extra+=(--allow cadence:cadence)
-    for s in "$D"/cadence/skills/*/; do extra+=(--allow "cadence:$(basename "$s")"); done
-    for c in "$D"/cadence/commands/*.md; do extra+=(--allow "cadence:$(basename "$c" .md)"); done
-  fi
-  python3 "$HB/scripts/clean_room_check.py" "$t" --cwd "$D/repo" --allow-path "$D/repo" \
-    ${ALLOW[@]+"${ALLOW[@]}"} ${extra[@]+"${extra[@]}"} --json > "$D/clean_room.json" || true
-done
+# One session per run: the checker follows its subagent transcripts. More than one top-level
+# transcript (a resumed session) would need one verdict each, so stop instead of keeping only the last.
+shopt -s nullglob
+transcripts=("$D"/home/.claude/projects/*/*.jsonl)
+shopt -u nullglob
+[ "${#transcripts[@]}" -eq 1 ] || { echo "expected 1 top-level transcript, found ${#transcripts[@]}: $D/home" >&2; exit 1; }
+# Cadence arms may call their own plugin's skills; list them from the plugin's skills folder.
+extra=()
+if [ -d "$D/cadence" ]; then
+  extra+=(--allow cadence:cadence)
+  for s in "$D"/cadence/skills/*/; do extra+=(--allow "cadence:$(basename "$s")"); done
+  for c in "$D"/cadence/commands/*.md; do extra+=(--allow "cadence:$(basename "$c" .md)"); done
+fi
+python3 "$HB/scripts/clean_room_check.py" "${transcripts[0]}" --cwd "$D/repo" --allow-path "$D/repo" \
+  ${ALLOW[@]+"${ALLOW[@]}"} ${extra[@]+"${extra[@]}"} --json > "$D/clean_room.json" || true
 
 # Cost from token counts at pricing.json list prices (Claude Code does not price Haiku 5.5).
 python3 - "$D" "$HB/pricing.json" <<'PY'
