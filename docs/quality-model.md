@@ -1,7 +1,7 @@
 # Quality model: what "great code" means in this benchmark
 
 Status: **proposed** for criteria v2 (October 2026). Criteria v1 used one blind grader with four
-1–10 dimensions (design, correctness, readability, tests, M7). That rubric is a judgment. It is not a
+1–10 dimensions (design, correctness, readability, tests: measure M7). That rubric is a judgment. It is not a
 published standard, and nobody can recompute it. This model replaces it as a measure of quality with measures that come
 from published, widely used standards and tools. Each one has a fixed threshold, and a script
 recomputes it ([`scripts/quality_metrics.py`](../scripts/quality_metrics.py)). A grader still judges
