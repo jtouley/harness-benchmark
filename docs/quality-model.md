@@ -56,6 +56,16 @@ extensible system, whose path we can understand, and at what cost.** Each part h
 | Traceable ("how we got there") | **Audit scores**: diagnosis accuracy, origin accuracy, audit cost, repair cost | The [audit protocol](tasks/pipeline-family.md#audit-protocol) |
 | Cheap | **Dollars for build + follow-up + repairs**, at list prices from token counts | `pricing.json`; Claude Code's own figure is not used for models it does not price |
 
+[`scripts/quality_metrics.py`](../scripts/quality_metrics.py) measures the first three rows. Duplication:
+jscpd 5.4.1 over Python, SQL, Scala and YAML in the package, minimum block 5 lines (and jscpd's default
+of 50 tokens), run as `uvx --from nodejs-wheel==24.19.0 npx --yes jscpd@5.4.1`, so Node is pinned from
+PyPI and the host's Node is not used; both sides of each clone count, and the measure is the share of
+added lines inside a clone (`new_code_duplication`, gate `new_code_duplication_at_most_3`). Coupling:
+`module_coupling`, from the Python import graph (imports inside the package only; SQL, Scala and YAML
+readers are not written yet and plug into `IMPORT_GRAPHS`). Edit radius: `--follow-up REPO BASE HEAD`
+adds `edit_radius` (existing files modified or deleted and their added and removed lines, apart from new
+files; a rename counts as a deletion plus a new file).
+
 Design checklist additions, each yes or no with a file and line, by two blind reviewers:
 
 - Each module has one reason to change (sources, transforms, sinks, orchestration and configuration are
