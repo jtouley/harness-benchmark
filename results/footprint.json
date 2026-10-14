@@ -158,66 +158,66 @@
         "SubagentStart": 1,
         "SubagentStop": 1
       },
-      "corpus_tokens": 17386,
+      "corpus_tokens": 17499,
       "cost_usd": {
         "claude-fable-5-1": {
           "always_on_100_requests_cached": "0.024995",
           "always_on_per_request_cache_read": "0.000168",
           "always_on_per_request_uncached": "0.006710",
-          "workflow_load_lower": "0.089650",
-          "workflow_load_upper": "0.590550"
+          "workflow_load_lower": "0.090780",
+          "workflow_load_upper": "0.621410"
         },
         "claude-haiku-4-5": {
           "always_on_100_requests_cached": "0.007482",
           "always_on_per_request_cache_read": "0.000067",
           "always_on_per_request_uncached": "0.000671",
-          "workflow_load_lower": "0.008965",
-          "workflow_load_upper": "0.059055"
+          "workflow_load_lower": "0.009078",
+          "workflow_load_upper": "0.062141"
         },
         "claude-haiku-5-5": {
           "always_on_100_requests_cached": "0.000748",
           "always_on_per_request_cache_read": "0.000007",
           "always_on_per_request_uncached": "0.000067",
-          "workflow_load_lower": "0.000896",
-          "workflow_load_upper": "0.005906"
+          "workflow_load_lower": "0.000908",
+          "workflow_load_upper": "0.006214"
         },
         "claude-opus-5-5": {
           "always_on_100_requests_cached": "0.016641",
           "always_on_per_request_cache_read": "0.000134",
           "always_on_per_request_uncached": "0.002684",
-          "workflow_load_lower": "0.035860",
-          "workflow_load_upper": "0.236220"
+          "workflow_load_lower": "0.036312",
+          "workflow_load_upper": "0.248564"
         },
         "claude-sonnet-5-5": {
           "always_on_100_requests_cached": "0.014964",
           "always_on_per_request_cache_read": "0.000134",
           "always_on_per_request_uncached": "0.001342",
-          "workflow_load_lower": "0.017930",
-          "workflow_load_upper": "0.118110"
+          "workflow_load_lower": "0.018156",
+          "workflow_load_upper": "0.124282"
         }
       },
       "framework": "cadence",
       "install": {
-        "files": 608,
-        "tree_sha256": "b724b51fff6ce628024aae1d0fe1f216d3790addc21280b20154395f253e29f2"
+        "files": 650,
+        "tree_sha256": "c59a68491e742dceafce8adccf4da995cb00bccd01cfa180c16b895e594235db"
       },
       "items": {
         "command": 7,
         "skill": 6
       },
-      "sha": "812998f7a8f670f28cfd6dd358de8c655656fb23",
+      "sha": "e5c3a9289eb28d6cdefc29844c704674ec985001",
       "title": "Cadence",
       "workflow": {
-        "lower_tokens": 8965,
+        "lower_tokens": 9078,
         "source": "derived: skill `cadence`, then every slash-command stage in stages.json order, resolved through references/bundled-peers.json",
         "steps": [
           {
             "at_includes": 0,
-            "lower_tokens": 4667,
+            "lower_tokens": 4780,
             "origin": "user",
             "ref": "skill:cadence",
             "resolved_name": "cadence",
-            "upper_tokens": 54757
+            "upper_tokens": 57843
           },
           {
             "at_includes": 0,
@@ -292,7 +292,7 @@
             "upper_tokens": 663
           }
         ],
-        "upper_tokens": 59055
+        "upper_tokens": 62141
       }
     },
     "gsd-core": {
@@ -754,7 +754,7 @@
   "pricing_as_of": "2026-10-08",
   "provenance": {
     "canonical_root": "/tmp/cbench",
-    "lockfile_sha256": "9515e62a3f5d325135ca89728b45fb958245c6536fabf9ab3f178150c0b29e68",
+    "lockfile_sha256": "6cbe9b8e94ddf931201caf9f77023e7d69ba6340197f01918fd0a19db10e5055",
     "pricing_sha256": "7af66e689754689850c47229da79af75d229e3882a798826de3f50317f292139",
     "tokenizer": {
       "id": "anthropic==0.37.1:anthropic/tokenizer.json",
