@@ -1,0 +1,6 @@
+{
+  "name": "reviewloop",
+  "version": "0.1.0",
+  "description": "Minimal harness: the session model does the work; an independent reviewer on a stronger model checks it in the running system; the session fixes the findings until the reviewer approves.",
+  "skills": ["./skills/review-loop"]
+}

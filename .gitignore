@@ -1,3 +1,9 @@
 .venv/
 __pycache__/
 .pytest_cache/
+
+# Private tasks (u21-interview brownfield, etc.): kept with the benchmark, never pushed (this repo is public)
+private/
+# Raw run directories and Harbor jobs: large and machine-local
+calibration/**/runs/
+calibration/**/jobs/
