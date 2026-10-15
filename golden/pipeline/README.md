@@ -1,9 +1,9 @@
 # Pipeline task family: builder files (hidden from arms)
 
 Inputs, replay server, answer key, grader and reference solutions for the
-[pipeline family](../../docs/tasks/pipeline-family.md) (P1, P2, P3; issue #11). Increment 1 builds
-the shared inputs, the key, the grader and the P1 reference. P2 and P3 have no skeleton or reference
-yet.
+[pipeline family](../../docs/tasks/pipeline-family.md) (P1, P2, P3; issue #11). Increment 1 built
+the shared inputs, the key, the grader and the P1 reference; increment 2 adds the P2 skeleton, prompt
+and reference, graded by the same grader against the same key. P3 has no skeleton or reference yet.
 
 **Nothing in this folder goes into a trial except `<task>/skeleton/` and `data/raw/`**, which
 `pipetask/assemble.py` copies into the starting repository. The task prompt is passed separately.
@@ -18,9 +18,11 @@ The capture, the replay server code, the key, the grader, the references and thi
 | `pipetask/schedule.py`, `pipetask/replay.py` | Replay server and its seeded fault schedule (F1 to F5) | Runs as a service (`replay.pyz`), its files unreadable to the agent |
 | `pipetask/key.py`, `key/answer_key.json` | Answer key and the wrong answer of each single trap, computed independently of any reference | No (inside `grader.pyz`, copied in after the agent) |
 | `pipetask/oracle.py`, `pipetask/grade.py`, `pipetask/trial.py` | Grader: reads `oracle_map.yml`, runs `make build` twice and `make stream` twice against the replay, checks the seven answers | No (inside `grader.pyz`) |
-| `pipetask/prompt.py`, `P1/prompt.md` | The P1 prompt, word for word from the specs | Passed as the prompt |
+| `pipetask/prompt.py`, `P1/prompt.md`, `P2/prompt.md` | Each prompt, word for word from the specs (shared request plus the task's stack section) | Passed as the prompt |
 | `P1/skeleton/` | `Makefile` (both targets fail), `pyproject.toml` and `uv.lock` (pinned dlt, dbt-core, dbt-duckdb, duckdb), empty dbt project with `profiles.yml` | Copied into the repo |
 | `P1/reference/` | The P1 reference solution (dlt, DuckDB, dbt-duckdb, Parquet lake), an overlay on the skeleton | **Never** |
+| `P2/skeleton/` | The same layout as P1's, pinning pyarrow, polars, datafusion, dbt-core, dbt-duckdb, duckdb | Copied into the repo |
+| `P2/reference/` | The P2 reference solution: a YAML-driven engine (`engine/`, schema in `engine/pipeline.schema.yml`) running `pipelines/batch.yml` and `pipelines/stream.yml` on Arrow, Polars and DataFusion into the Parquet lake, then dbt-duckdb (the P1 models, adapted to this lake's load metadata). An overlay on the skeleton; it adds `pyyaml` and `jsonschema` (already in the lock through dbt-core) as direct dependencies | **Never** |
 | `pipetask/bundle.py` | Builds `replay.pyz` and `grader.pyz`, the two files a trial container needs | — |
 
 ## Commands
@@ -36,7 +38,7 @@ python3 -m pipetask.replay --capture data/capture/recentchange.jsonl.gz --seed 0
 # grade a delivered repository: build twice, stream twice, check
 uv run --project ../.. python -m pipetask.trial --repo /tmp/p1-repo \
     --key key/answer_key.json --capture data/capture/recentchange.jsonl.gz
-# the reference, end to end
+# the reference, end to end (P1 or P2)
 python3 -m pipetask.assemble P1 --out /tmp/p1-ref --with-reference
 uv run --project ../.. python -m pipetask.trial --repo /tmp/p1-ref \
     --key key/answer_key.json --capture data/capture/recentchange.jsonl.gz
@@ -46,7 +48,13 @@ uv run --project ../.. python -m pipetask.key --raw data/raw \
 uv run --project ../.. python -m pipetask.manifest
 ```
 
-The full reference trial is also a test: `HB_PIPELINE_REFERENCE=1 uv run --frozen --python 3.12 python -m pytest tests/test_pipeline_reference.py`.
+The full reference trials are also tests (both tasks, plus P2's generality, validation and crash
+recovery checks): `HB_PIPELINE_REFERENCE=1 uv run --frozen --python 3.12 --with tokenizers python -m pytest tests/test_pipeline_reference.py`.
+
+Measured on the test laptop (Apple Silicon, uv cache warm): the P2 reference's first `make build`
+takes 16.5 s (most of it the virtual environment), the second 3.5 s; the full trial (two builds, two
+stream runs of 30 s and 90 s, grading) 152 s. Result: 7 of 7 checks, reward 1.0, no output changed
+by the second build.
 
 ## A trial on the isolated runner
 
@@ -112,3 +120,41 @@ Connecticut counties and seven territory codes). The capture has 21,502 frames o
 wikis, two canary events (which carry only `meta`), and SSE ids whose two data-centre entries do not
 always advance together. The CSV quirks a loader meets: quoted values that span lines (USAspending)
 and Latin-1 text (Census).
+
+## P2 stack traps on the pinned versions
+
+The P2 page says each stack trap is a claim about the pinned versions, checked when the reference is
+built. Checked with pyarrow 26.0.0, polars 2.0.0 and datafusion 55.0.0 on the frozen data:
+
+| Trap | Reproduced | Evidence |
+|---|---|---|
+| A1 | Yes | `polars.read_csv` and `pyarrow.csv.read_csv` both infer `STATE` and `COUNTY` of the Census file as Int64 (`01` becomes `1`). The reference reads every CSV column as text |
+| A2 | No | Casting `federal_action_obligation` to Float64 and summing gives the same cents as the decimal sum, per agency and per month and county (as for B8). The grader cannot name it; it stays a design-review point |
+| A3 | Yes | An inner join on a key with a NULL on both sides drops that row in Polars (default `join`) and in DataFusion SQL. The reference never joins on a NULL key: transactions without a county get an unknown member of the place dimension |
+| A4 | By design | The engine writes a micro-batch's files, then replaces the checkpoint by an atomic rename, and on start deletes files above the checkpoint. `test_the_p2_stream_commit_drops_a_batch_that_never_committed` simulates the crash; F6 (two `make stream` runs) exercises the resume |
+| A5 | Not graded yet | The generality check is not in `pipetask/trial.py` (open point 1 below). `test_the_p2_engine_runs_a_pipeline_it_has_never_seen` runs it against the reference |
+
+Polars 2.0 removed the cast from text to `Date` (`str.to_date` replaces it). An arm that writes
+`cast(pl.Date)` gets an error at once, not a wrong answer, so it is not a trap.
+
+## Open points of increment 2 (for the owner)
+
+Gaps in the P2 page that the reference had to fill; the shared spec and the prompts are unchanged.
+
+1. **How the grader runs the generality check.** The page says the grader adds a third pipeline file
+   and it must "land the right rows", but not where the file goes, what command runs one file (the
+   reference uses `python -m engine run pipelines/<file>.yml`; an arm may choose anything), what lake
+   table name to expect, or whether the check is an eighth check in the reward. Until then the grader
+   scores P2 on the seven shared checks only, and the reference's generality is a test, not a grade.
+2. **No skeleton section.** P1's page describes its skeleton; P2's does not. The P2 skeleton copies
+   P1's layout and pins dbt-core, dbt-duckdb and duckdb at P1's versions besides the three the page
+   names. The stack section also does not say "do not change the versions", as P1's does.
+3. **"A new source or mart … needs YAML only."** In the shared architecture every mart is a dbt model,
+   so a mart never needs engine code anyway. Probably "a new source or lake table" is meant.
+4. **A2 does not reproduce** on the frozen data (table above). The page says such a trap is removed.
+5. **A3 assumes joins on the engine side.** The architecture puts every join in dbt, where DuckDB
+   drops NULL keys in the same way; the trap as written applies only to an arm that joins in the
+   engine.
+6. **"Commits the position in the same step as the data"** is exact only for one sink. With two (the
+   events and the frames that are not JSON) the reference commits files then a checkpoint, and deletes
+   uncommitted files on start. The page does not say whether that, or one sink per stream, is meant.
