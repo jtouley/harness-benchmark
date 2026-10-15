@@ -1,4 +1,4 @@
-"""The replay server's schedule and its faults (docs/tasks/pipeline-traps.md#stream-faults).
+"""The replay server's schedule and its faults (docs/tasks/pipeline-traps.md#stream-faults-injected-by-the-replay-server-from-a-seed).
 
 The schedule tests use a small synthetic capture, so each fault's position can be checked exactly.
 """
@@ -14,7 +14,10 @@ from pathlib import Path
 
 import pytest
 
+from pipetask import key as keymod
 from pipetask import replay, schedule
+
+CAPTURE = Path(__file__).resolve().parents[1] / "golden" / "pipeline" / "data" / "capture" / "recentchange.jsonl.gz"
 
 T0 = 1_790_000_000  # a multiple of 300, so windows start at T0
 
@@ -106,7 +109,7 @@ def test_f1_f2_each_disconnect_is_inside_a_timestamp_group_so_a_resume_resends(p
     for pos in plan.disconnects:
         resume = plan.resume_position(plan.sse_id(pos))
         assert resume < pos  # at least two frames are sent again
-        assert plan.positions[resume].id_ts == plan.positions[pos].id_ts
+        assert {p.id_ts for p in plan.positions[resume:pos + 1]} == {plan.positions[pos].id_ts}
 
 
 def test_resume_without_or_with_a_bad_id_starts_at_the_beginning(plan):
@@ -183,3 +186,23 @@ def test_server_answers_404_off_the_stream_path(frames, tmp_path):
     finally:
         server.shutdown()
         server.server_close()
+
+
+# ------------------------------------------------------------------ the frozen capture under the late rule
+
+
+@pytest.fixture(scope="module")
+def captured():
+    return schedule.load_capture(CAPTURE)
+
+
+def test_the_capture_holds_canary_events(captured):
+    events = [schedule.event(f) for f in captured]
+    assert any((ev or {}).get("meta", {}).get("domain") == "canary" for ev in events)
+
+
+@pytest.mark.parametrize("seed", [0, 1, 2])
+def test_f4_the_held_back_batch_is_late_by_the_rule_and_no_other_event_is(captured, seed):
+    plan = schedule.build(captured, seed)
+    batch = {json.loads(captured[i].data)["meta"]["id"] for i in plan.late_batch}
+    assert keymod.late_ids(plan) == batch

@@ -252,7 +252,7 @@ def scalar_check(res, key) -> dict:
 def check4(res, key) -> dict:
     want = key["answer"]
     months = key_columns(res, year_month)
-    counties = key_columns(res, lambda v: county_fips(v) or (None if v is not None else "unknown"), 0.5)
+    counties = key_columns(res, county_fips, 0.5)
     states = key_columns(res, state_fips, 0.5)
     if not months:
         return {"pass": False, "error": "no month column found"}
@@ -354,7 +354,10 @@ def grade(repo: Path, key: dict) -> dict:
         entries = oracle.load_map(repo)
     except oracle.MapError as exc:
         return {"checks": {n: {"pass": False, "error": str(exc)} for n in oracle.CHECKS}, "passed": 0, "total": 7}
-    con = oracle.connect(repo)
+    try:
+        con = oracle.connect(repo)
+    except oracle.MapError as exc:
+        return {"checks": {n: {"pass": False, "error": str(exc)} for n in oracle.CHECKS}, "passed": 0, "total": 7}
     for n in oracle.CHECKS:
         if n not in entries:
             out[n] = {"pass": False, "error": f"oracle_map.yml has no entry for check {n}"}

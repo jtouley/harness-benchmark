@@ -56,6 +56,21 @@ extensible system, whose path we can understand, and at what cost.** Each part h
 | Traceable ("how we got there") | **Audit scores**: diagnosis accuracy, origin accuracy, audit cost, repair cost | The [audit protocol](tasks/pipeline-family.md#audit-protocol) |
 | Cheap | **Dollars for build + follow-up + repairs**, at list prices from token counts | `pricing.json`; Claude Code's own figure is not used for models it does not price |
 
+[`scripts/quality_metrics.py`](../scripts/quality_metrics.py) measures the first three rows. Duplication:
+jscpd 5.4.1 over Python, SQL, Scala and YAML in the package, minimum block 5 lines (and jscpd's default
+of 50 tokens), run as `uvx --from nodejs-wheel==24.19.0 npx --yes jscpd@5.4.1`, so Node is pinned from
+PyPI and the host's Node is not used. jscpd gets an empty config file of its own and `--no-gitignore`,
+so a `.jscpd.json`, a `package.json` "jscpd" key or a `.gitignore` that the measured solution ships cannot
+change what is scanned. Both sides of each clone count, and the measure is the share of
+added lines inside a clone (`new_code_duplication`, gate `new_code_duplication_at_most_3`). Coupling:
+`module_coupling`, from the Python import graph (imports inside the package only; SQL, Scala and YAML
+readers are not written yet and plug into `IMPORT_GRAPHS`). Edit radius: `--follow-up REPO BASE HEAD`
+adds `edit_radius` (existing files modified or deleted and their added and removed lines, apart from new
+files; a rename counts as a deletion plus a new file). It is reported twice: `edit_radius.package` counts
+only files under `--package`, and `edit_radius.repo` counts every file, tests and docs included. The
+owner criterion ("the existing files the follow-up change has to modify") reads `package`, so that plan,
+ledger or docs files an arm writes do not enlarge its radius; `repo` is kept beside it for context.
+
 Design checklist additions, each yes or no with a file and line, by two blind reviewers:
 
 - Each module has one reason to change (sources, transforms, sinks, orchestration and configuration are
@@ -75,7 +90,8 @@ A solution is **great code** for this benchmark when all three layers hold:
 1. **It does what the spec says.** Every hidden test passes (M1), and the blind reviewers reproduced no
    critical or major defect (M2).
 2. **It passes the tool gate.** New-code coverage ≥ 80%, no function that the change takes over
-   cognitive complexity 15 or cyclomatic complexity 10, no new bug-class finding, no new type error.
+   cognitive complexity 15 or cyclomatic complexity 10, no new bug-class finding, no new type error,
+   duplicated lines on new code ≤ 3%.
    Test strength (the kill rate on the reference solution's mutants) ≥ 80% joins the gate when it is
    built. The tool gate is reported for every arm; it does not rank arms. The decision rule
    ([next steps](next-steps.md#decision-rule-for-this-question)) decides on M2 defects, test-confirmed,

@@ -1,0 +1,6 @@
+{
+  "name": "verifyloop",
+  "version": "0.1.0",
+  "description": "Verification harness: a stronger model writes an executable contract before the code; the session model implements; a Stop hook runs the contract and will not let the session end while a check fails.",
+  "skills": ["./skills/verify-loop"]
+}
