@@ -15,7 +15,7 @@ with landed as (
         received_at,
         _batch as load_id,
         json_extract_string(event, '$.meta.domain') as domain,
-        try_cast(json_extract(event, '$.timestamp') as bigint) as event_ts
+        cast(json_extract(event, '$.timestamp') as bigint) as event_ts  -- as P1: a malformed time fails the build
     from {{ source('lake', 'recentchange_events') }}
 ),
 
