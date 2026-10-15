@@ -89,7 +89,7 @@ bytes and probe verdicts reproduce on the merged main code. Source: [`results/RE
 
 **Conclusion (tiers 1–2):** only Cadence's installed hooks block a forged approval, a self-certified verdict, a shell edit before plan approval and a stop mid-run; GSD Core blocks reading `.env` and overwriting the plan, which Cadence does not. That is the axis Cadence is designed for. The other harnesses never claimed to enforce, so this shows a different category, not a better one. Loading any harness's whole workflow costs cents. **The live tier has not run, so no criteria v1 outcome result exists yet.** Two exploratory outcome rounds ran outside it: see [Findings so far](#findings-so-far) and [`docs/live-tier.md`](docs/live-tier.md).
 
-**Criteria:** what counts as a harness being worth its cost, the neutral one-shot baseline, the measures and the pre-registered decision rule are in [`docs/criteria.md`](docs/criteria.md) (v1).
+**Criteria:** what counts as a harness being worth its cost, the neutral one-shot baseline, the measures and the pre-registered decision rule are in [`docs/criteria-v2.md`](docs/criteria-v2.md) (v2, for new run sets; [v1](docs/criteria.md) stays as history).
 
 ## Setup Requirements
 
