@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import importlib.util
+import json
 import shutil
 import subprocess
 from pathlib import Path
@@ -154,6 +155,19 @@ def test_jscpd_finds_a_copied_function_in_new_code(tmp_path):
 
 
 @pytest.mark.skipif(shutil.which("uvx") is None, reason="needs uv to run the pinned jscpd")
+def test_jscpd_ignores_a_config_that_the_measured_solution_ships(tmp_path):
+    ignore_all = '{"ignore": ["**/*"], "minLines": 500}'
+    _write(tmp_path, {"pkg/a.py": f"def f(values):\n    total = 0\n{BLOCK}    return total\n",
+                      "pkg/b.py": f"def g(values):\n    total = 0\n{BLOCK}    return total\n",
+                      ".jscpd.json": ignore_all, "pkg/.jscpd.json": ignore_all,
+                      "package.json": f'{{"name": "x", "jscpd": {ignore_all}}}',
+                      ".gitignore": "pkg/\n"})
+    _git(tmp_path, "init", "-q")
+    found = qm.duplication(tmp_path, "pkg", {"pkg/b.py": set(range(1, 12))})
+    assert found["new_code_duplication"] == 100.0
+
+
+@pytest.mark.skipif(shutil.which("uvx") is None, reason="needs uv to run the pinned jscpd")
 def test_jscpd_on_a_missing_package_raises(tmp_path):
     with pytest.raises(qm.ToolError):
         qm.duplication(tmp_path, "nope", {})
@@ -204,25 +218,98 @@ def _git(repo, *args) -> str:
                           capture_output=True, text=True, check=True).stdout.strip()
 
 
-def test_edit_radius_separates_existing_files_from_new_ones(tmp_path):
-    _git(tmp_path, "init", "-q")
-    _write(tmp_path, {"a.py": "one\ntwo\nthree\n", "b.py": "gone\n", "keep.py": "same\n"})
-    _git(tmp_path, "add", "-A")
-    _git(tmp_path, "commit", "-qm", "base")
-    base = _git(tmp_path, "rev-parse", "HEAD")
-    _write(tmp_path, {"a.py": "one\nTWO\nthree\nfour\n", "c.py": "new\nfile\n"})
-    (tmp_path / "b.py").unlink()
-    _git(tmp_path, "add", "-A")
-    _git(tmp_path, "commit", "-qm", "follow-up")
-    assert qm.edit_radius(tmp_path, base, "HEAD") == {
+def _follow_up(repo, before: dict[str, str], after: dict[str, str], removed: tuple[str, ...] = ()) -> str:
+    """Commit `before`, then a follow-up commit with `after` and `removed`; return the base sha."""
+    _git(repo, "init", "-q")
+    _write(repo, before)
+    _git(repo, "add", "-A")
+    _git(repo, "commit", "-qm", "base")
+    base = _git(repo, "rev-parse", "HEAD")
+    _write(repo, after)
+    for name in removed:
+        (repo / name).unlink()
+    _git(repo, "add", "-A")
+    _git(repo, "commit", "-qm", "follow-up")
+    return base
+
+
+def test_edit_radius_separates_existing_files_from_new_ones_in_the_package_and_the_repo(tmp_path):
+    base = _follow_up(tmp_path,
+                      {"pkg/a.py": "one\ntwo\nthree\n", "pkg/b.py": "gone\n", "pkg/keep.py": "same\n",
+                       "tests/test_a.py": "x\n", "README.md": "r\n"},
+                      {"pkg/a.py": "one\nTWO\nthree\nfour\n", "pkg/c.py": "new\nfile\n",
+                       "tests/test_a.py": "y\n", "docs/plan.md": "p\n"},
+                      removed=("pkg/b.py",))
+    radius = qm.edit_radius(tmp_path, base, "HEAD", "pkg")
+    assert radius["package"] == {
         "existing_files_changed": 2,
         "existing_lines_changed": 4,
-        "existing": [{"file": "a.py", "added": 2, "removed": 1}, {"file": "b.py", "added": 0, "removed": 1}],
-        "new_files": [{"file": "c.py", "added": 2}],
+        "existing": [{"file": "pkg/a.py", "added": 2, "removed": 1}, {"file": "pkg/b.py", "added": 0, "removed": 1}],
+        "new_files": [{"file": "pkg/c.py", "added": 2}],
     }
+    assert radius["repo"]["existing_files_changed"] == 3
+    assert radius["repo"]["existing_lines_changed"] == 6
+    assert [n["file"] for n in radius["repo"]["new_files"]] == ["docs/plan.md", "pkg/c.py"]
+
+
+def test_edit_radius_reports_unusual_file_names_unquoted(tmp_path):
+    name = "pkg/caf\u00e9 \t\"q\".py"
+    base = _follow_up(tmp_path, {name: "a\n"}, {name: "b\n"})
+    assert qm.edit_radius(tmp_path, base, "HEAD", "pkg")["package"]["existing"] == [
+        {"file": name, "added": 1, "removed": 1}]
 
 
 def test_edit_radius_on_an_unknown_commit_raises(tmp_path):
     _git(tmp_path, "init", "-q")
     with pytest.raises(qm.ToolError):
-        qm.edit_radius(tmp_path, "deadbeef", "HEAD")
+        qm.edit_radius(tmp_path, "deadbeef", "HEAD", "pkg")
+
+
+# --- Wiring through measure() and main() ----------------------------------------------
+
+
+def _fail(*_args):
+    raise qm.ToolError("tool down")
+
+
+@pytest.fixture
+def passing_tools(monkeypatch, tmp_path):
+    """Every tool stubbed to a passing result; the solution holds an empty CHANGE.diff."""
+    monkeypatch.setattr(qm, "coverage", lambda *_: {"tests_passed": 1, "tests_failed": 0, "new_code_coverage": 100.0})
+    for name in ("cyclomatic", "cognitive", "lint", "type_errors"):
+        monkeypatch.setattr(qm, name, lambda *_: [])
+    monkeypatch.setattr(qm, "maintainability", lambda *_: 100.0)
+    monkeypatch.setattr(qm, "duplication", lambda *_: {"new_code_duplication": 0.0})
+    monkeypatch.setattr(qm, "module_coupling", lambda *_: {})
+    (tmp_path / "CHANGE.diff").write_text("")
+    return tmp_path
+
+
+@pytest.mark.parametrize(("tool", "gate", "error_key"), [
+    ("duplication", "new_code_duplication_at_most_3", "duplication"),
+    ("module_coupling", None, "module_coupling"),
+])
+def test_a_design_tool_error_is_recorded_and_fails_its_gate(passing_tools, monkeypatch, tool, gate, error_key):
+    assert qm.measure(passing_tools, passing_tools, "pkg")["gate_passed"] is True
+    monkeypatch.setattr(qm, tool, _fail)
+    result = qm.measure(passing_tools, passing_tools, "pkg")
+    assert result["tool_errors"] == {error_key: "tool down"}
+    if gate:
+        assert result["gate"][gate] is False
+        assert result["gate_passed"] is False
+
+
+def test_follow_up_reports_the_edit_radius_and_routes_its_errors(monkeypatch, capsys, tmp_path):
+    calls = []
+    monkeypatch.setattr(qm, "measure", lambda *_: {"tool_errors": {}})
+    monkeypatch.setattr(qm, "edit_radius", lambda *args: calls.append(args) or {"repo": {}})
+    argv = [str(tmp_path), str(tmp_path), "--package", "pkg", "--follow-up", str(tmp_path), "b", "h"]
+    assert qm.main(argv) == 0
+    assert json.loads(capsys.readouterr().out)["edit_radius"] == {"repo": {}}
+    assert calls == [(tmp_path.resolve(), "b", "h", "pkg")]
+
+    monkeypatch.setattr(qm, "edit_radius", _fail)
+    qm.main(argv)
+    out = json.loads(capsys.readouterr().out)
+    assert out["edit_radius"] is None
+    assert out["tool_errors"] == {"edit_radius": "tool down"}

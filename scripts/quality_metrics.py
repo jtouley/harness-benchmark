@@ -20,7 +20,7 @@ published, widely used source, so that anyone can recompute it:
 - module coupling: afferent and efferent coupling and instability per module, from the
   import graph (Martin, Agile Software Development, 2002), reported, not gated;
 - edit radius (--follow-up REPO BASE HEAD): the existing files a follow-up change modifies
-  and their changed lines, apart from the files it adds.
+  and their changed lines, apart from the files it adds; for the package and for the whole repo.
 
 "New" means on the lines the change adds (from CHANGE.diff): a finding on an added line,
 or a function whose body holds an added line. Fixing an old problem cannot hide a new one.
@@ -221,9 +221,14 @@ def new_code_duplication(duplicated: dict[str, set[int]], added: dict[str, set[i
 
 
 def duplication(path: Path, package: str, added: dict[str, set[int]]) -> dict:
+    """jscpd over the package. An empty config of our own and --no-gitignore keep a `.jscpd.json`,
+    a `package.json` "jscpd" key or a `.gitignore` in the measured solution from changing the scan."""
     with tempfile.TemporaryDirectory() as tmp:
-        _run(["uvx", "--quiet", "--from", NODE, "npx", "--yes", JSCPD, "--min-lines", str(MIN_CLONE_LINES),
-              "--format", JSCPD_FORMATS, "--reporters", "json", "--output", tmp, "--silent", package], path)
+        config = Path(tmp) / "jscpd.json"
+        config.write_text("{}")
+        _run(["uvx", "--quiet", "--from", NODE, "npx", "--yes", JSCPD, "--config", str(config), "--no-gitignore",
+              "--min-lines", str(MIN_CLONE_LINES), "--format", JSCPD_FORMATS, "--reporters", "json",
+              "--output", tmp, "--silent", package], path)
         report_file = Path(tmp) / "jscpd-report.json"
         if not report_file.is_file():
             raise ToolError("jscpd wrote no report")
@@ -307,26 +312,36 @@ def module_coupling(path: Path, package: str, language: str = "python") -> dict[
     return coupling(reader(path, package))
 
 
-def edit_radius(repo: Path, base: str, head: str) -> dict:
+def _radius(existing: list[dict], new: list[dict]) -> dict:
+    return {"existing_files_changed": len(existing),
+            "existing_lines_changed": sum(e["added"] + e["removed"] for e in existing),
+            "existing": existing, "new_files": new}
+
+
+def edit_radius(repo: Path, base: str, head: str, package: str) -> dict:
     """The existing files (modified or deleted) a change from base to head touches and their
-    changed lines, apart from the files it adds. Renames count as a deletion plus a new file."""
-    status = _run(["git", "diff", "--no-renames", "--name-status", base, head], repo).stdout
-    counts = _run(["git", "diff", "--no-renames", "--numstat", base, head], repo).stdout
+    changed lines, apart from the files it adds. Renames count as a deletion plus a new file.
+    Reported for the package and for the whole repo (tests, docs and other files included).
+    `git diff -z` keeps file names raw, so a name with a tab or non-ASCII characters is not quoted."""
+    status = _run(["git", "diff", "-z", "--no-renames", "--name-status", base, head], repo).stdout
+    counts = _run(["git", "diff", "-z", "--no-renames", "--numstat", base, head], repo).stdout
     lines: dict[str, tuple[int, int]] = {}
-    for row in counts.splitlines():
+    for row in filter(None, counts.split("\0")):
         added, removed, name = row.split("\t", 2)
         lines[name] = (int(added) if added != "-" else 0, int(removed) if removed != "-" else 0)
+    fields = status.split("\0")
     existing, new = [], []
-    for row in status.splitlines():
-        kind, name = row.split("\t", 1)
+    for kind, name in zip(fields[0::2], fields[1::2]):
         added, removed = lines.get(name, (0, 0))
         if kind == "A":
             new.append({"file": name, "added": added})
         else:
             existing.append({"file": name, "added": added, "removed": removed})
-    return {"existing_files_changed": len(existing),
-            "existing_lines_changed": sum(e["added"] + e["removed"] for e in existing),
-            "existing": existing, "new_files": new}
+
+    def in_package(rows: list[dict]) -> list[dict]:
+        return [r for r in rows if r["file"].startswith(f"{package}/")]
+
+    return {"package": _radius(in_package(existing), in_package(new)), "repo": _radius(existing, new)}
 
 
 def _on_added(items: list[dict], added: dict[str, set[int]]) -> list[dict]:
@@ -350,7 +365,7 @@ def _design_measures(solution: Path, package: str, diff: str, errors: dict[str, 
         errors["duplication"] = err
     out["module_coupling"], err = _measure(module_coupling, solution, package, "python")
     if err:
-        errors["coupling"] = err
+        errors["module_coupling"] = err
     return out
 
 
@@ -425,7 +440,8 @@ def main(argv: list[str] | None = None) -> int:
     result = measure(args.solution.resolve(), args.baseline.resolve(), args.package)
     if args.follow_up:
         repo, base, head = args.follow_up
-        result["edit_radius"], err = _measure(edit_radius, Path(repo).resolve(), base, head)
+        result["edit_radius"], err = _measure(edit_radius, Path(repo).resolve(), base, head,
+                                                  args.package)
         if err:
             result["tool_errors"]["edit_radius"] = err
     print(json.dumps(result, indent=2))
