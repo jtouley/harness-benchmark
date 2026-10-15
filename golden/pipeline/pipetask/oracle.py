@@ -160,9 +160,21 @@ def resolve(entry, con) -> Result:
         name = _table_name(table, con)
         sql, source = f'select * from "{name}"', f"table {name}"
     try:
-        rel = con.sql(sql)
+        rel = _without_time_zones(con.sql(sql))
         rows = rel.fetchall()
     except duckdb.Error as exc:
         raise MapError(f"{source} failed: {str(exc).splitlines()[0]}") from exc
     return Result(columns=list(rel.columns), types=[str(t) for t in rel.types], rows=rows,
                   hints=[h.lower() for h in hints], source=source)
+
+
+def _without_time_zones(rel: duckdb.DuckDBPyRelation) -> duckdb.DuckDBPyRelation:
+    """Timestamps with a time zone as UTC timestamps without one. DuckDB hands TIMESTAMPTZ to Python
+    only with pytz installed, which the grader does not need otherwise; Spark, for one, writes its
+    TIMESTAMP to Parquet as an instant (isAdjustedToUTC), which DuckDB reads as TIMESTAMPTZ."""
+    types = [str(t) for t in rel.types]
+    if "TIMESTAMP WITH TIME ZONE" not in types:
+        return rel
+    cols = [f'"{c}"::timestamp as "{c}"' if t == "TIMESTAMP WITH TIME ZONE" else f'"{c}"'
+            for c, t in zip(rel.columns, types)]
+    return rel.project(", ".join(cols))
