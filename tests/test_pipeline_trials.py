@@ -89,13 +89,9 @@ def test_a_session_busy_until_the_guard_cap_is_a_guard_cap_run(tmp_path):
     assert row["outcome"] == "guard_cap" and row["counts_as_model_failure"] is True
 
 
-def test_caps_come_from_the_measured_worst_case_plus_half():
-    grades = [{"grader_seconds": 100.0, "build": [{"seconds": 20.0}, {"seconds": 4.0}],
-               "stream": [{"seconds": 40.0}, {"seconds": 95.0}], "durations": [30, 90]},
-              {"grader_seconds": 120.0, "build": [{"seconds": 30.0}, {"seconds": 5.0}],
-               "stream": [{"seconds": 36.0}, {"seconds": 100.0}], "durations": [30, 90]}]
+def test_the_grading_deadline_is_the_measured_worst_case_plus_half():
+    grades = [{"grader_seconds": 100.0}, {"grader_seconds": 120.0}]
     caps = pt.caps_from_measurements(grades)
-    assert caps["grader_timeout"] == 180  # 1.5 x 120
-    assert caps["build_timeout"] == 45  # 1.5 x 30
-    assert caps["stream_grace"] == 15  # 1.5 x 10 (the most a run took past its DURATION)
-    assert caps["measured"] == {"grader_seconds": 120.0, "build_seconds": 30.0, "stream_overrun_seconds": 10.0}
+    assert caps["grader_deadline"] == 180  # 1.5 x 120: the whole grading run
+    assert caps["grader_timeout"] == 180 + pt.RUNNER_MARGIN  # the runner's backstop, above the deadline
+    assert caps["measured"] == {"grader_seconds": [100.0, 120.0], "worst": 120.0}

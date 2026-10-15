@@ -19,6 +19,8 @@ fresh, empty HOME that all four runs share and that is removed afterwards, so st
 development (dlt's `~/.dlt/pipelines/`) is not graded. `--make-user` runs it as that user (`setpriv`;
 the grader must run as root), so the build cannot read the grader's archive or temporary files.
 `--stream-grace` is how long a `make stream` run may take beyond its DURATION before it is killed.
+`--deadline` caps the whole grading run: each step gets at most what is left of it, a step that would
+start after it is skipped, and the JSON is still printed (`deadline_hit`).
 
 Prints one JSON object. `reward` is the share of the seven checks that pass, and 0 when a second build
 changed an output, no `make stream` run exited 0, or the consumer never read the grading stream up to
@@ -145,8 +147,11 @@ def reward(result: dict) -> float:
 
 def trial(repo: Path, key: dict, capture: Path, *, seed: int, port: int, speed: float,
           durations: tuple[int, int], build_timeout: float, logs: Path, stream_grace: float = 300,
-          make_env: dict[str, str] | None = None, make_user: str | None = None) -> dict:
+          make_env: dict[str, str] | None = None, make_user: str | None = None,
+          deadline: float | None = None) -> dict:
+    t_end = time.monotonic() + deadline if deadline else None
     result: dict = {"seed": seed, "durations": list(durations), "speed": speed,
+                    "deadline": deadline, "deadline_hit": False,
                     "build_timeout": build_timeout, "stream_grace": stream_grace,
                     "make_user": make_user, "make_fresh_home": make_env is not None or make_user is not None}
     if make_user and os.geteuid() != 0:
@@ -155,15 +160,29 @@ def trial(repo: Path, key: dict, capture: Path, *, seed: int, port: int, speed: 
     if error:
         return {**result, "error": error, "reward": 0.0}
     logs.mkdir(parents=True, exist_ok=True)
-    make = MakeRunner(make_env, make_user)
+    runner = MakeRunner(make_env, make_user)
+
+    def make(cmd: list[str], cwd: Path, timeout: float, log: Path) -> dict:
+        if t_end is None:
+            return runner(cmd, cwd, timeout, log)
+        left = t_end - time.monotonic()
+        if left <= 0:
+            result["deadline_hit"] = True
+            return {"cmd": " ".join(cmd), "exit": None, "seconds": 0.0, "log": log.name,
+                    "skipped": "the grading deadline was reached"}
+        step = runner(cmd, cwd, min(timeout, left), log)
+        if left < timeout and step["exit"] == -signal.SIGKILL:
+            result["deadline_hit"] = True
+        return step
+
     try:
         return _trial(repo, key, capture, result, make, seed=seed, port=port, speed=speed,
                       durations=durations, build_timeout=build_timeout, logs=logs, stream_grace=stream_grace)
     finally:
-        make.close()
+        runner.close()
 
 
-def _trial(repo: Path, key: dict, capture: Path, result: dict, make: MakeRunner, *, seed: int, port: int,
+def _trial(repo: Path, key: dict, capture: Path, result: dict, make, *, seed: int, port: int,
            speed: float, durations: tuple[int, int], build_timeout: float, logs: Path,
            stream_grace: float) -> dict:
     first = make(["make", "build"], repo, build_timeout, logs / "build-1.log")
@@ -219,6 +238,7 @@ def main(argv: list[str] | None = None, key: dict | None = None) -> None:
     ap.add_argument("--make-env-file", type=Path, default=None,
                     help="NAME=VALUE lines: the whole environment of make, plus a fresh HOME")
     ap.add_argument("--make-user", default=None, help="run make as this user (the grader runs as root)")
+    ap.add_argument("--deadline", type=float, default=None, help="seconds for the whole grading run")
     args = ap.parse_args(argv)
     if key is None:
         key = json.loads(args.key.read_text(encoding="utf-8"))
@@ -229,7 +249,7 @@ def main(argv: list[str] | None = None, key: dict | None = None) -> None:
                    speed=args.speed, durations=(d1, d2), build_timeout=args.build_timeout,
                    logs=(args.logs or args.repo / "_grade_logs").resolve(), stream_grace=args.stream_grace,
                    make_env=read_env_file(args.make_env_file) if args.make_env_file else None,
-                   make_user=args.make_user)
+                   make_user=args.make_user, deadline=args.deadline)
     json.dump(result, sys.stdout, indent=1, sort_keys=True, default=str)
     print()
 

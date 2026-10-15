@@ -90,9 +90,11 @@ How each runner change listed for this family is done:
    `localhost:8099` with `--replay-seed` (default 0; the grading seed in the key is 1), waits for the
    port, and stops it after every agent process is killed, so the grader can serve the grading seed on
    the same port. Its log is `replay-dev.log`.
-2. **Time caps.** The grader's caps are passed to it (`--build-timeout`, and `--stream-grace`, the time
-   a `make stream` run may take beyond its DURATION, default 300 s), and the runner's `--grader-timeout`
-   is above their sum. A grader killed at the runner's cap still leaves a `grade.json`:
+2. **Time caps.** The grader gets one deadline for the whole grading run (`grader.pyz --deadline`):
+   each `make` gets at most what is left of it (and never more than its own cap, `--build-timeout`, or
+   DURATION plus `--stream-grace`), a step that would start after it is skipped, and the grader still
+   prints its JSON (`deadline_hit`). The runner's `--grader-timeout` is a backstop 120 s above the
+   deadline; a grader killed there still leaves a `grade.json`:
    `{"error": "the grader was killed at its cap of N s", "reward": 0.0}`. The values are in
    `runner/pipeline/caps.json`, with the measurements they come from (below).
 3. **The candidate's `make` runs unprivileged.** `run_trial.sh` copies the grader into
@@ -117,10 +119,10 @@ From TASK-81; each is the owner's default for these first trials and may change.
   agent's session the offline switches are variables, not a firewall (the agent needs the API).
 - **The warm cache does not count against the agent's loop cost.** The results report wall time with
   and without the first `make build` of grading (the one that builds the environments from the cache).
-- **Cold-cache timeout** (TASK-81 item 17): the grader's caps are the measured worst case of the
-  reference trials through the runner plus 50% (`pipeline_trial.py caps`): `--grader-timeout` from
-  the whole grading run, `--build-timeout` from the slowest build, `--stream-grace` from the most a
-  stream run took past its DURATION. A candidate slower than the reference by more than that is cut off.
+- **Cold-cache timeout** (TASK-81 item 17): the grading deadline is the measured worst case of the
+  task's reference trials through the runner, plus 50% (`pipeline_trial.py caps`). A candidate whose
+  grading takes more than that (a slower build or stream run than the reference allows for) is cut
+  off and scores 0.
 - **The agent's guard cap** (criteria-v2 §5.3, not a TASK-81 item): 7,200 s for the one-shot trials,
   chosen for these first trials.
 - The other TASK-81 questions (the oracle map shape, the readings the key accepts, the traps that do not

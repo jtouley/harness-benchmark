@@ -1,9 +1,54 @@
 {
- "note": "Caps of the pipeline trials. agent_timeout: the one-shot guard cap (criteria-v2 5.3), chosen for these first trials, owner may change. Per task: grader_timeout, build_timeout and stream_grace are the measured worst case of the reference trials through the runner plus 50% (`pipeline_trial.py caps`; owner default, owner may change). Until measured, the grader's own defaults apply.",
+ "note": "Caps of the pipeline trials. agent_timeout: the one-shot guard cap (criteria-v2 5.3), chosen for these first trials; owner may change. Per task, grader_deadline: the whole grading run (grader.pyz --deadline), the measured worst case of the task's reference trials through the runner plus 50% (`pipeline_trial.py caps`; owner default from TASK-81, owner may change). grader_timeout: the runner's backstop (run_trial.sh --grader-timeout), the deadline plus 120 s so the grader reports first. Until a task is measured, it has no deadline and the grader's own per-step caps apply.",
  "agent_timeout": 7200,
  "tasks": {
-  "P1": {"image": "harness-benchmark/runner-pipeline:py", "grader_timeout": 4800, "build_timeout": 1800, "stream_grace": 300},
-  "P2": {"image": "harness-benchmark/runner-pipeline:py", "grader_timeout": 4800, "build_timeout": 1800, "stream_grace": 300},
-  "P3": {"image": "harness-benchmark/runner-pipeline:p3", "grader_timeout": 4800, "build_timeout": 1800, "stream_grace": 300}
+  "P1": {
+   "image": "harness-benchmark/runner-pipeline:py",
+   "grader_timeout": 373,
+   "grader_deadline": 253,
+   "measured": {
+    "grader_seconds": [
+     168.2,
+     156.5
+    ],
+    "worst": 168.2
+   },
+   "from_runs": [
+    "P1-ref-1",
+    "P1-ref-2"
+   ]
+  },
+  "P2": {
+   "image": "harness-benchmark/runner-pipeline:py",
+   "grader_timeout": 358,
+   "grader_deadline": 238,
+   "measured": {
+    "grader_seconds": [
+     158.2,
+     153.7
+    ],
+    "worst": 158.2
+   },
+   "from_runs": [
+    "P2-ref-1",
+    "P2-ref-2"
+   ]
+  },
+  "P3": {
+   "image": "harness-benchmark/runner-pipeline:p3",
+   "grader_timeout": 657,
+   "grader_deadline": 537,
+   "measured": {
+    "grader_seconds": [
+     350.3,
+     357.4
+    ],
+    "worst": 357.4
+   },
+   "from_runs": [
+    "P3-ref-1",
+    "P3-ref-2"
+   ]
+  }
  }
 }

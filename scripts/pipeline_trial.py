@@ -139,15 +139,16 @@ def summarize(run: Path, pricing: dict) -> dict:
 
 # --- caps --------------------------------------------------------------------------------------------
 
+RUNNER_MARGIN = 120  # the runner's backstop above the grader's own deadline (the grader reports first)
+
+
 def caps_from_measurements(grades: list[dict]) -> dict:
-    """Grader caps from reference trials: each the measured worst case plus 50%, rounded up.
-    Each item: the grade JSON plus `grader_seconds` from timing.json."""
-    grader = max(g["grader_seconds"] for g in grades)
-    build = max(b["seconds"] for g in grades for b in g["build"])
-    overrun = max(max(0.0, s["seconds"] - d) for g in grades for s, d in zip(g["stream"], g["durations"]))
-    return {"grader_timeout": math.ceil(1.5 * grader), "build_timeout": math.ceil(1.5 * build),
-            "stream_grace": math.ceil(1.5 * overrun),
-            "measured": {"grader_seconds": grader, "build_seconds": build, "stream_overrun_seconds": overrun}}
+    """The grading deadline: the measured worst case of the reference trials plus 50%, rounded up
+    (owner default, TASK-81). Each item holds `grader_seconds` from a reference trial's timing.json."""
+    seconds = [g["grader_seconds"] for g in grades]
+    deadline = math.ceil(1.5 * max(seconds))
+    return {"grader_deadline": deadline, "grader_timeout": deadline + RUNNER_MARGIN,
+            "measured": {"grader_seconds": seconds, "worst": max(seconds)}}
 
 
 # --- running -----------------------------------------------------------------------------------------
@@ -168,9 +169,11 @@ def run_trial(task: str, out: Path, *, mode: str, model: str | None, plugin_dir:
                "--replay-seed", str(replay_seed), "--out", str(out), "--image", task_caps["image"],
                "--agent-timeout", str(caps["agent_timeout"]),
                "--grader-timeout", str(task_caps["grader_timeout"])]
-        for arg in ("--make-user", "agent", "--make-env-file", "/opt/hb/toolchain.env",
-                    "--logs", "/trial/out/grade-logs", "--build-timeout", str(task_caps["build_timeout"]),
-                    "--stream-grace", str(task_caps["stream_grace"])):
+        grader_args = ["--make-user", "agent", "--make-env-file", "/opt/hb/toolchain.env",
+                       "--logs", "/trial/out/grade-logs"]
+        if "grader_deadline" in task_caps:
+            grader_args += ["--deadline", str(task_caps["grader_deadline"])]
+        for arg in grader_args:
             cmd += ["--grader-arg", arg]
         env = dict(os.environ)
         if mode == "agent":
@@ -185,8 +188,8 @@ def run_trial(task: str, out: Path, *, mode: str, model: str | None, plugin_dir:
         meta = {"task": task, "mode": mode, "model": model if mode == "agent" else None,
                 "arm": "one-shot" if mode == "agent" and not plugin_dir else (plugin_dir.name if plugin_dir else mode),
                 "image": task_caps["image"], "agent_timeout": caps["agent_timeout"],
-                "grader_timeout": task_caps["grader_timeout"], "build_timeout": task_caps["build_timeout"],
-                "stream_grace": task_caps["stream_grace"], "replay_seed": replay_seed,
+                "grader_timeout": task_caps["grader_timeout"], "grader_deadline": task_caps.get("grader_deadline"),
+                "replay_seed": replay_seed,
                 "started_at": datetime.now().astimezone().isoformat(timespec="seconds")}
         rc = subprocess.call(cmd, env=env)
     out.mkdir(parents=True, exist_ok=True)
@@ -235,6 +238,8 @@ def main(argv: list[str] | None = None) -> int:
     if args.cmd == "caps":
         grades = [{**_load(run / "grade.json"), "grader_seconds": _load(run / "timing.json")["grader_seconds"]}
                   for run in args.runs]
+        if any(_load(run / "trial.json").get("mode") != "reference" for run in args.runs):
+            sys.exit("caps come from reference trials only")
         bad = [run.name for run, g in zip(args.runs, grades) if g.get("reward") != 1.0]
         if bad:
             sys.exit(f"not every reference trial scored 1.0: {bad}")

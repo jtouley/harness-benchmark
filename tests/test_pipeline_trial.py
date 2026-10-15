@@ -15,6 +15,7 @@ import os
 import shutil
 import socket
 import subprocess
+import time
 from pathlib import Path
 
 import pytest
@@ -195,3 +196,22 @@ def test_make_env_file_reads_name_value_lines(tmp_path):
     f.write_text("not a variable\n")
     with pytest.raises(ValueError):
         trial.read_env_file(f)
+
+
+def test_the_grading_deadline_caps_the_whole_run_and_still_gives_a_result(key, tmp_path, port):
+    """The owner's cap is one number for the whole grading run: each step gets what is left of it."""
+    repo = delivered(tmp_path, key, port, build="sleep 60")
+    t0 = time.monotonic()
+    result = trial.trial(repo, key, CAPTURE, seed=key["stream"]["seed"], port=port, speed=6000.0,
+                         durations=(1, 1), build_timeout=60, logs=tmp_path / "logs", deadline=3)
+    assert time.monotonic() - t0 < 20
+    assert result["deadline_hit"] is True and result["deadline"] == 3
+    assert result["build"][0]["exit"] == -9 and result["reward"] == 0.0
+    skipped = [step for step in result["build"][1:] + result["stream"] if step.get("skipped")]
+    assert skipped and all(step["exit"] is None for step in skipped)
+
+
+def test_a_run_inside_the_deadline_is_not_marked(key, tmp_path, port):
+    result = trial.trial(delivered(tmp_path, key, port), key, CAPTURE, seed=key["stream"]["seed"], port=port,
+                         speed=6000.0, durations=(1, 1), build_timeout=60, logs=tmp_path / "logs", deadline=120)
+    assert result["deadline_hit"] is False and result["reward"] == 1.0
