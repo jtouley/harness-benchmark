@@ -48,8 +48,12 @@ per person, by state, county, awarding agency and month.
 - `make stream DURATION=<seconds>` consumes the stream for that long and updates the stream tables.
   If the connection drops, the consumer resumes where it stopped. Stopping and starting the consumer
   must not count any event twice or lose one.
-- Event time, not arrival time, places an edit in a window. An event that arrives more than 10 minutes
-  after its window ended is not added to that window; count it in a `late_events` table instead.
+- Event time, not arrival time, places an edit in a window. Windows are 5 minutes long and start on
+  the multiples of 5 minutes (UTC).
+- Lateness is measured in stream time, not by a clock: an event is **late** when, at its first
+  arrival, the highest event time among the events that arrived before it is more than 10 minutes
+  after the end of its window. A late event is not added to its window; put it in a `late_events`
+  table instead. The replay can run faster than real time, so a wall-clock reading of "late" is wrong.
 - Money is in US dollars, summed exactly (no floating-point sums).
 - Document the grain of each model. Test the keys of each model with dbt tests.
 
@@ -59,8 +63,9 @@ per person, by state, county, awarding agency and month.
 2. The ten counties with the highest FY2024 obligations per person.
 3. The number of awards with a net negative obligation in FY2024.
 4. For one month: county totals add up to state totals, and state totals add up to the source total.
-5. For the stream: edits and net bytes per wiki for the replayed hour, split human and bot.
-6. For the stream: the 5-minute windows with the most edits on `en.wikipedia.org`.
+5. For the stream: edits and net bytes per wiki for the replayed hour, split human and bot. Late
+   events are included: this check counts every edit consumed, on time or late.
+6. For the stream: the 5-minute windows with the most edits on `en.wikipedia.org` (on-time edits only).
 7. For the stream: the count of late events.
 
 ### Amendment A (from the analysts, after the first review)

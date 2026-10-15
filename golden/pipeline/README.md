@@ -17,7 +17,7 @@ The capture, the replay server code, the key, the grader, the references and thi
 | `snapshot/` | `fetch_inputs.py`, `capture_stream.py`, `freeze_capture.py`: how `data/` was made | No |
 | `pipetask/schedule.py`, `pipetask/replay.py` | Replay server and its seeded fault schedule (F1 to F5) | Runs as a service (`replay.pyz`), its files unreadable to the agent |
 | `pipetask/key.py`, `key/answer_key.json` | Answer key and the wrong answer of each single trap, computed independently of any reference | No (inside `grader.pyz`, copied in after the agent) |
-| `pipetask/oracle.py`, `pipetask/grade.py`, `pipetask/trial.py` | Grader: reads `oracle_map.yml`, runs `make build` twice and `make stream` twice against the replay, checks the seven answers | No (inside `grader.pyz`) |
+| `pipetask/oracle.py`, `pipetask/grade.py`, `pipetask/trial.py` | Grader: resets the repo to its committed tree (`git clean -ffdx`, then `out/` and `lake/` removed), runs `make build` twice and `make stream` twice against the replay, checks the seven answers. The map's SQL can read only `out/marts/` (DuckDB `allowed_directories`, external access off, settings locked). Reward 0 when a second build changes an output or no `make stream` run exits 0 | No (inside `grader.pyz`) |
 | `pipetask/prompt.py`, `P1/prompt.md` | The P1 prompt, word for word from the specs | Passed as the prompt |
 | `P1/skeleton/` | `Makefile` (both targets fail), `pyproject.toml` and `uv.lock` (pinned dlt, dbt-core, dbt-duckdb, duckdb), empty dbt project with `profiles.yml` | Copied into the repo |
 | `P1/reference/` | The P1 reference solution (dlt, DuckDB, dbt-duckdb, Parquet lake), an overlay on the skeleton | **Never** |
@@ -59,7 +59,7 @@ runner/run_trial.sh --repo /tmp/p1-repo --prompt golden/pipeline/P1/prompt.md \
     --grader /tmp/p1-dist/grader.pyz --model <model> [--plugin-dir <arm>] --out results/runs/<trial>
 ```
 
-Two runner changes are needed for this family (left for the wiring step):
+Three runner changes are needed for this family (left for the wiring step):
 
 1. **The dev replay server.** Before the agent starts, the entrypoint copies `replay.pyz` to a
    root-only path (mode 0700) and starts `python3 replay.pyz --seed <dev seed>` as root on port 8099,
@@ -67,8 +67,18 @@ Two runner changes are needed for this family (left for the wiring step):
    (in the key) must differ from the dev seed. After the agent phase, the entrypoint stops it, so the
    grader can serve the grading seed on the same port.
 2. **Time caps.** The grader runs `make build` twice and `make stream` twice (30 s and 90 s by default),
-   plus a dependency install: allow at least 15 minutes (`--grader-timeout 900` is the current default).
+   plus a dependency install. Its own caps are `--build-timeout` per build (default 1800 s) and
+   DURATION + 300 s per stream run, so its worst case is 2 × 1800 + 330 + 390 = 4,320 s. The runner's
+   `--grader-timeout` must be above that, or the grader must get a smaller `--build-timeout`; otherwise a
+   slow candidate is killed by the runner and leaves no JSON instead of being graded. The current
+   default, `--grader-timeout 900`, is below that worst case.
    The agent cap for this task is an owner decision (the family is meant to exceed one session).
+3. **The candidate's `make` runs unprivileged.** The grader runs the delivered `make build` and
+   `make stream`. It reads the answer key from `grader.pyz` into memory and never writes it to disk,
+   but the archive itself holds the key. So the runner keeps `grader.pyz` (and the grader's temporary
+   directory) owned by root with mode 0700, and runs the candidate's `make` as the unprivileged agent
+   user, not as the grader's user. Until then, a Makefile written in the agent phase could read the
+   archive (PR #26 review, F-02).
 
 ## What the key fixes that the spec leaves open
 
@@ -78,8 +88,7 @@ key); the reference uses the first.
 | Point | Primary (reference) | Also accepted |
 |---|---|---|
 | Event time of an edit | `timestamp` | `meta.dt` |
-| "Arrives more than 10 minutes after its window ended", in a replay at 60x | Against the stream's event-time watermark at arrival | — (a wall-clock reading cannot work at replay speed) |
-| Check 5 counts late edits? | Yes (all edits consumed) | Excluding late edits |
+| What moves the watermark of the spec's lateness rule (the rule itself is in the spec) | Every non-canary event that parses | Canaries, non-edit events and the invalid frame moving it, or not: all eight readings give the same 60 late events (`late_rule` in the key), so none needs its own answer |
 | Check 7 counts late edits or every late event? | Late edits (`edit`, `new`) | Late events of any type |
 | Check 6 label of a window | Its start | Its end |
 | "Latest earlier estimate" for Connecticut's former counties | POPESTIMATE2021 from vintage 2021 | — |
@@ -97,9 +106,9 @@ from the key, so the grader can name it. Grading seed 1. Source: `key/answer_key
 | 2 | B3, B6, B7, S1 | B4: no Connecticut place is in the top ten (B4 shows in check 4) |
 | 3 | B2, B6 | — |
 | 4 | B4, B5, B7 | B8, as in check 1 |
-| 5 | W1, W2, W4, W5, F2, F5 | — |
-| 6 | S3, F4, F5, W2 | W3 (local time): the grading container runs in UTC, so local time is UTC. F2: the re-sent frames do not move an en.wikipedia top window |
-| 7 | S3, F4, F2, F5 | — |
+| 5 | W1, W2, W4, W5, F2, F5, S3 (`S3-drops`: late edits dropped) | S3 and F4 as "late edits added to their window": check 5 counts every edit either way |
+| 6 | S3, F4, F5, F2, W2 | W3 (local time): the grading container runs in UTC, so local time is UTC |
+| 7 | S3, F4, F5 | F2: the re-sent frames arrive right after each disconnect, at the current watermark, so they are not late and an F2 consumer still counts 60 |
 
 Not computable offline, so a failure they cause is "unexplained" and goes to the audit: F1 and F6
 (how much is counted twice depends on when the consumer stops), F3 (assigning windows by wall-clock

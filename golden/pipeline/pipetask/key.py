@@ -13,8 +13,14 @@ Interpretations the key fixes (the spec leaves them open; see golden/pipeline/RE
   estimate (POPESTIMATE2021 of vintage 2021); none for territories, which then have no per-person value.
 - Stream: an edit is an event of type `edit` or `new` whose meta.domain is not `canary`, counted once per
   meta.id. Net bytes are length.new - length.old (old absent: 0). Event time is `timestamp`; meta.dt is
-  accepted as an alternative. An event is late when, at its first arrival, the largest event time seen
-  before it is more than 600 s past the end of its 5-minute window.
+  accepted as an alternative.
+- Lateness is the spec's rule (docs/tasks/pipeline-spec.md, Rules): an event is late when, at its first
+  arrival, the highest event time among the events that arrived before it is more than 600 s past the
+  end of its 5-minute window. The spec leaves open which events move that watermark (canaries, non-edit
+  events, the invalid frame by its SSE id); `late_rule` in the key records that every reading gives the
+  same late set, and any reading that does not is accepted for checks 6 and 7.
+- Check 5 counts every edit consumed, late ones included (the spec says so); dropping late edits is
+  trap S3 (`S3-drops`). Check 6 counts on-time edits only.
 """
 
 from __future__ import annotations
@@ -195,15 +201,21 @@ def _event_time(ev: dict, basis: str) -> int:
     return int(datetime.fromisoformat(ev["meta"]["dt"].replace("Z", "+00:00")).timestamp())
 
 
+def deliveries(plan: sched.Schedule) -> list[int]:
+    """Every position in the order the wire carries it to a client that resumes with Last-Event-ID:
+    after each scheduled close, the frames from the resume position up to the close come again (F2)."""
+    order: list[int] = []
+    for pos in range(len(plan.positions)):
+        order.append(pos)
+        if pos in plan.disconnects:  # each fires once per server
+            order += list(range(plan.resume_position(plan.sse_id(pos)), pos + 1))
+    return order
+
+
 def _arrivals(plan: sched.Schedule, *, stop_at_invalid=False, count_resends=False) -> list[dict]:
     """Events in first-arrival order (or every delivery, with count_resends), invalid frames skipped."""
     seen, out = set(), []
-    deliveries = list(range(len(plan.positions)))
-    if count_resends:
-        for p in plan.disconnects:  # each fires once; the client resumes and gets these again
-            start = plan.resume_position(plan.sse_id(p))
-            deliveries += list(range(start, p + 1))
-    for pos in deliveries:
+    for pos in deliveries(plan) if count_resends else range(len(plan.positions)):
         if stop_at_invalid and pos >= plan.invalid_at:
             continue
         ev = sched.event(plan.positions[pos]) if plan.positions[pos].frame is not None else None
@@ -217,8 +229,45 @@ def _arrivals(plan: sched.Schedule, *, stop_at_invalid=False, count_resends=Fals
     return out
 
 
+WATERMARK_READINGS = {  # which events move the watermark: canaries, non-edit events, the invalid frame
+    f"canary={c},non_edits={n},invalid={i}": {"canary": c, "non_edits": n, "invalid": i}
+    for c in (False, True) for n in (True, False) for i in (False, True)
+}
+PRIMARY_READING = "canary=False,non_edits=True,invalid=False"
+
+
+def late_ids(plan: sched.Schedule, *, canary=False, non_edits=True, invalid=False) -> frozenset[str]:
+    """meta.id of each late (non-canary) event, by the spec's rule, at first arrival. The flags say what
+    else moves the watermark: canary events, non-edit events, and the invalid frame (by its SSE id time)."""
+    seen, late, watermark = set(), set(), 0
+    for d in plan.positions:
+        ev = sched.event(sched.Frame("[]", d.data, 0.0)) if d.frame is not None else None
+        if ev is None:
+            if invalid:
+                watermark = max(watermark, d.id_ts // 1000)
+            continue
+        mid = ev["meta"]["id"]
+        if mid in seen:
+            continue
+        seen.add(mid)
+        t = _event_time(ev, "timestamp")
+        if (ev.get("meta") or {}).get("domain") == "canary":
+            if canary:
+                watermark = max(watermark, t)
+            continue
+        window = t - t % sched.WINDOW_SECONDS
+        if watermark > window + sched.WINDOW_SECONDS + sched.LATE_AFTER_SECONDS:
+            late.add(mid)
+        if non_edits or ev.get("type") in sched.EDIT_TYPES:
+            watermark = max(watermark, t)
+    return frozenset(late)
+
+
 def _stream_answers(events: list[dict], *, basis="timestamp", canary=False, all_types=False,
-                    name_bots=False, new_length=False, late_in_windows=False) -> dict:
+                    name_bots=False, new_length=False, late_in_windows=False, drop_late=False,
+                    late: frozenset[str] | None = None) -> dict:
+    """The answers of checks 5 to 7. `late`: the late events' meta.id, in place of the watermark
+    computed here over `events` in order (which is how a consumer with a single trap sees them)."""
     per_wiki: dict[str, list[int]] = {}
     per_wiki_on_time: dict[str, list[int]] = {}
     windows: dict[int, int] = {}
@@ -230,26 +279,27 @@ def _stream_answers(events: list[dict], *, basis="timestamp", canary=False, all_
             continue
         t = _event_time(ev, basis)
         window = t - t % sched.WINDOW_SECONDS
-        late = watermark > window + sched.WINDOW_SECONDS + sched.LATE_AFTER_SECONDS
+        is_late = (ev["meta"]["id"] in late if late is not None
+                   else watermark > window + sched.WINDOW_SECONDS + sched.LATE_AFTER_SECONDS)
         watermark = max(watermark, t)
         is_edit = all_types or ev.get("type") in sched.EDIT_TYPES or is_canary  # W1 counts canaries
-        late_all += late
-        if not is_edit:
+        late_all += is_late
+        if not is_edit or (drop_late and is_late):
             continue
-        late_edits += late
+        late_edits += is_late
         bot = ev.get("user", "").lower().endswith("bot") if name_bots else bool(ev.get("bot"))
         length = ev.get("length") or {}
         delta = (length.get("new") or 0) - (0 if new_length else (length.get("old") or 0))
         key = f"{ev.get('wiki')}|{'bot' if bot else 'human'}"
-        for table, include in ((per_wiki, True), (per_wiki_on_time, not late)):
+        for table, include in ((per_wiki, True), (per_wiki_on_time, not is_late)):
             if include:
                 row = table.setdefault(key, [0, 0])
                 row[0] += 1
                 row[1] += delta
-        if ev.get("wiki") == "enwiki" and (late_in_windows or not late):
+        if ev.get("wiki") == "enwiki" and (late_in_windows or not is_late):
             windows[window] = windows.get(window, 0) + 1
     top = sorted(windows.items(), key=lambda kv: (-kv[1], kv[0]))[:TOP_WINDOWS]
-    if late_in_windows:  # S3, F4: the late events went into their windows, none into late_events
+    if late_in_windows or drop_late:  # S3, F4: none went into late_events
         late_edits = late_all = 0
     return {"5": dict(sorted(per_wiki.items())), "5-on-time": dict(sorted(per_wiki_on_time.items())),
             "6": {"windows": {str(k): v for k, v in sorted(windows.items())}, "top": [[k, v] for k, v in top]},
@@ -265,10 +315,18 @@ def stream_key(capture: Path, seed: int) -> dict:
         "W1": _stream_answers(events, canary=True), "W2": _stream_answers(events, all_types=True),
         "W4": _stream_answers(events, name_bots=True), "W5": _stream_answers(events, new_length=True),
         "S3": _stream_answers(events, late_in_windows=True),
+        "S3-drops": _stream_answers(events, drop_late=True),
         "F2": _stream_answers(_arrivals(plan, count_resends=True)),
         "F5": _stream_answers(_arrivals(plan, stop_at_invalid=True)),
     }
     variants["F4"] = variants["S3"]
+
+    readings = {name: late_ids(plan, **flags) for name, flags in WATERMARK_READINGS.items()}
+    other_late = {name: _stream_answers(events, late=ids) for name, ids in readings.items()
+                  if ids != readings[PRIMARY_READING]}
+
+    def watermark_readings(num: str) -> dict:
+        return {f"watermark {name}": v[num] for name, v in other_late.items()}
 
     def check(num: str, accepted: dict[str, object]) -> dict:
         answer = accepted["primary"]
@@ -285,13 +343,15 @@ def stream_key(capture: Path, seed: int) -> dict:
         "schedule": {"positions": len(plan.positions), "disconnects": plan.disconnects,
                      "late_window_start": plan.late_window_start, "late_insert_at": plan.late_insert_at,
                      "late_batch_size": len(plan.late_batch), "invalid_at": plan.invalid_at},
+        "late_rule": {"readings": {name: len(ids) for name, ids in readings.items()},
+                      "same_late_set": not other_late},
         "wikis": dict(sorted((k, v) for k, v in wikis.items() if k)),
         "checks": {
-            "5": check("5", {"primary": main["5"], "excluding-late": main["5-on-time"],
-                             "meta-dt": alt["5"], "meta-dt-excluding-late": alt["5-on-time"]}),
-            "6": check("6", {"primary": main["6"], "meta-dt": alt["6"]}),
+            "5": check("5", {"primary": main["5"], "meta-dt": alt["5"]}),
+            "6": check("6", {"primary": main["6"], "meta-dt": alt["6"], **watermark_readings("6")}),
             "7": check("7", {"primary": main["7"], "all-types": main["7-all-types"],
-                             "meta-dt": alt["7"], "meta-dt-all-types": alt["7-all-types"]}),
+                             "meta-dt": alt["7"], "meta-dt-all-types": alt["7-all-types"],
+                             **watermark_readings("7")}),
         },
     }
 

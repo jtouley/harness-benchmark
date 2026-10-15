@@ -1729,80 +1729,6 @@
   "checks": {
    "5": {
     "accepted": {
-     "excluding-late": {
-      "dewiki|bot": [
-       62,
-       87343
-      ],
-      "dewiki|human": [
-       171,
-       48236
-      ],
-      "enwiki|bot": [
-       3195,
-       5610440
-      ],
-      "enwiki|human": [
-       6398,
-       1025729
-      ],
-      "enwiktionary|bot": [
-       64,
-       880
-      ],
-      "enwiktionary|human": [
-       142,
-       11665
-      ],
-      "eswiki|bot": [
-       144,
-       56356
-      ],
-      "eswiki|human": [
-       573,
-       127935
-      ],
-      "frwiki|bot": [
-       936,
-       628782
-      ],
-      "frwiki|human": [
-       239,
-       110607
-      ],
-      "itwiki|bot": [
-       41,
-       64153
-      ],
-      "itwiki|human": [
-       156,
-       64503
-      ],
-      "jawiki|bot": [
-       63,
-       9176
-      ],
-      "jawiki|human": [
-       275,
-       36474
-      ],
-      "ptwiki|bot": [
-       105,
-       2868
-      ],
-      "ptwiki|human": [
-       205,
-       277453
-      ],
-      "simplewiki|bot": [
-       23,
-       1467
-      ],
-      "simplewiki|human": [
-       24,
-       1025
-      ]
-     },
      "meta-dt": {
       "dewiki|bot": [
        62,
@@ -1819,80 +1745,6 @@
       "enwiki|human": [
        6435,
        1033126
-      ],
-      "enwiktionary|bot": [
-       64,
-       880
-      ],
-      "enwiktionary|human": [
-       142,
-       11665
-      ],
-      "eswiki|bot": [
-       144,
-       56356
-      ],
-      "eswiki|human": [
-       573,
-       127935
-      ],
-      "frwiki|bot": [
-       936,
-       628782
-      ],
-      "frwiki|human": [
-       239,
-       110607
-      ],
-      "itwiki|bot": [
-       41,
-       64153
-      ],
-      "itwiki|human": [
-       156,
-       64503
-      ],
-      "jawiki|bot": [
-       63,
-       9176
-      ],
-      "jawiki|human": [
-       275,
-       36474
-      ],
-      "ptwiki|bot": [
-       105,
-       2868
-      ],
-      "ptwiki|human": [
-       205,
-       277453
-      ],
-      "simplewiki|bot": [
-       23,
-       1467
-      ],
-      "simplewiki|human": [
-       24,
-       1025
-      ]
-     },
-     "meta-dt-excluding-late": {
-      "dewiki|bot": [
-       62,
-       87343
-      ],
-      "dewiki|human": [
-       171,
-       48236
-      ],
-      "enwiki|bot": [
-       3195,
-       5610440
-      ],
-      "enwiki|human": [
-       6398,
-       1025729
       ],
       "enwiktionary|bot": [
        64,
@@ -2248,6 +2100,80 @@
       "simplewiki|human": [
        13,
        -16857
+      ]
+     },
+     "S3-drops": {
+      "dewiki|bot": [
+       62,
+       87343
+      ],
+      "dewiki|human": [
+       171,
+       48236
+      ],
+      "enwiki|bot": [
+       3195,
+       5610440
+      ],
+      "enwiki|human": [
+       6398,
+       1025729
+      ],
+      "enwiktionary|bot": [
+       64,
+       880
+      ],
+      "enwiktionary|human": [
+       142,
+       11665
+      ],
+      "eswiki|bot": [
+       144,
+       56356
+      ],
+      "eswiki|human": [
+       573,
+       127935
+      ],
+      "frwiki|bot": [
+       936,
+       628782
+      ],
+      "frwiki|human": [
+       239,
+       110607
+      ],
+      "itwiki|bot": [
+       41,
+       64153
+      ],
+      "itwiki|human": [
+       156,
+       64503
+      ],
+      "jawiki|bot": [
+       63,
+       9176
+      ],
+      "jawiki|human": [
+       275,
+       36474
+      ],
+      "ptwiki|bot": [
+       105,
+       2868
+      ],
+      "ptwiki|human": [
+       205,
+       277453
+      ],
+      "simplewiki|bot": [
+       23,
+       1467
+      ],
+      "simplewiki|human": [
+       24,
+       1025
       ]
      },
      "W1": {
@@ -2678,6 +2604,45 @@
     },
     "sha256": "bb017a2fe1454fc203444198b3448c0fd0587d3c849e2682a8451d07574d1e70",
     "traps": {
+     "F2": {
+      "top": [
+       [
+        1792023900,
+        985
+       ],
+       [
+        1792024200,
+        919
+       ],
+       [
+        1792023600,
+        892
+       ],
+       [
+        1792022400,
+        820
+       ],
+       [
+        1792023000,
+        796
+       ]
+      ],
+      "windows": {
+       "1792021500": 479,
+       "1792021800": 707,
+       "1792022100": 682,
+       "1792022400": 820,
+       "1792022700": 784,
+       "1792023000": 796,
+       "1792023300": 760,
+       "1792023600": 892,
+       "1792023900": 985,
+       "1792024200": 919,
+       "1792024500": 772,
+       "1792024800": 716,
+       "1792025100": 298
+      }
+     },
      "F4": {
       "top": [
        [
@@ -2823,7 +2788,7 @@
      }
     },
     "traps_not_reproduced": [
-     "F2",
+     "S3-drops",
      "W1",
      "W4",
      "W5"
@@ -2839,18 +2804,32 @@
     "answer": 60,
     "sha256": "39fa9ec190eee7b6f4dff1100d6343e10918d044c75eac8f9e9a2596173f80c9",
     "traps": {
-     "F2": 82,
      "F4": 0,
      "F5": 0,
-     "S3": 0
+     "S3": 0,
+     "S3-drops": 0
     },
     "traps_not_reproduced": [
+     "F2",
      "W1",
      "W2",
      "W4",
      "W5"
     ]
    }
+  },
+  "late_rule": {
+   "readings": {
+    "canary=False,non_edits=False,invalid=False": 60,
+    "canary=False,non_edits=False,invalid=True": 60,
+    "canary=False,non_edits=True,invalid=False": 60,
+    "canary=False,non_edits=True,invalid=True": 60,
+    "canary=True,non_edits=False,invalid=False": 60,
+    "canary=True,non_edits=False,invalid=True": 60,
+    "canary=True,non_edits=True,invalid=False": 60,
+    "canary=True,non_edits=True,invalid=True": 60
+   },
+   "same_late_set": true
   },
   "schedule": {
    "disconnects": [
