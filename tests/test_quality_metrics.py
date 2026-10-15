@@ -161,7 +161,7 @@ def test_jscpd_ignores_a_config_that_the_measured_solution_ships(tmp_path):
                       "pkg/b.py": f"def g(values):\n    total = 0\n{BLOCK}    return total\n",
                       ".jscpd.json": ignore_all, "pkg/.jscpd.json": ignore_all,
                       "package.json": f'{{"name": "x", "jscpd": {ignore_all}}}',
-                      ".gitignore": "pkg/\n"})
+                      ".gitignore": "pkg/b.py\n"})
     _git(tmp_path, "init", "-q")
     found = qm.duplication(tmp_path, "pkg", {"pkg/b.py": set(range(1, 12))})
     assert found["new_code_duplication"] == 100.0
@@ -297,6 +297,8 @@ def test_a_design_tool_error_is_recorded_and_fails_its_gate(passing_tools, monke
     if gate:
         assert result["gate"][gate] is False
         assert result["gate_passed"] is False
+    else:
+        assert result["gate_passed"] is True
 
 
 def test_follow_up_reports_the_edit_radius_and_routes_its_errors(monkeypatch, capsys, tmp_path):
