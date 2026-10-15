@@ -1,4 +1,4 @@
-"""docs/criteria-v2.md pins: load-bearing constants and wording (PR #20 review R1-R8, N2-N4, O1).
+"""docs/criteria-v2.md pins: load-bearing constants and wording (PR #20 review R1-R8, N2-N4, O1, NEW-1-NEW-6).
 
 Like tests/test_criteria.py does for v1, each test reads the document as committed and fails when a
 decision input changes without a deliberate edit here.
@@ -60,14 +60,18 @@ def test_every_difference_has_a_fixed_direction():
     assert "pass rate(H) − pass rate(bar) is entirely above 0" in _flat(_section("### 8.4 "))
 
 
-def _bootstrap_95th(a: list[int], b: list[int], reps: int = 10_000) -> float:
-    """95th percentile of mean(a) − mean(b), resampled within each cell (§8.1)."""
+def _bootstrap(a: list[float], b: list[float], reps: int = 10_000) -> tuple[float, float]:
+    """5th and 95th percentiles of mean(a) − mean(b), resampled within each cell (§8.1)."""
     rng = random.Random(20261010)
     out = sorted(
         sum(rng.choice(a) for _ in a) / len(a) - sum(rng.choice(b) for _ in b) / len(b)
         for _ in range(reps)
     )
-    return out[int(0.95 * reps)]
+    return out[int(0.05 * reps)], out[int(0.95 * reps)]
+
+
+def _bootstrap_95th(a: list[float], b: list[float]) -> float:
+    return _bootstrap(a, b)[1]
 
 
 def test_noninferiority_direction_rejects_a_worse_harness():
@@ -92,9 +96,36 @@ def test_non_clean_verdicts_split_by_cause_with_a_rerun_cap():
     gate = _flat(_section("### 5.2 Clean-room gating"))
     assert "at most **2 reruns per cell**" in gate
     assert 'reported as **"unassessable"**' in gate
-    assert "**`contaminated`** (caused by an agent action" in gate
-    assert "is an **attempted run that is not delivered** (§8.1). It is not run again." in gate
-    assert "**Stage-0 transcript check.**" in gate
+    assert "**Agent contamination:**" in gate
+    assert "**attempted run that is not delivered** (§8.1). It is not run again." in gate
+
+
+def test_host_loaded_instruction_files_are_a_setup_fault():
+    """NEW-1: clean_room_check.py counts host-loaded files as contacts; v2 reruns those, capped."""
+    gate = _flat(_section("### 5.2 Clean-room gating"))
+    assert (
+        "**Setup faults** are infrastructure errors: `exposed`, `unassessable`, and a `contaminated` "
+        "verdict whose only causes are instruction files that the host loaded into the session"
+    ) in gate
+    assert "**Agent contamination:** a `contaminated` verdict with any cause from the agent's own actions" in gate
+    check = (ROOT / "scripts" / "clean_room_check.py").read_text(encoding="utf-8")
+    assert "def _loaded_files(" in check  # the carve-out names a real contact source
+
+
+def test_stage_zero_requires_a_clean_smoke_run_per_arm():
+    """NEW-1: stage 0 needs a `clean` verdict with the run-set allowlists, not only a skill listing."""
+    gate = _flat(_section("### 5.2 Clean-room gating"))
+    assert "each arm runs one smoke run in the Harbor container" in gate
+    assert "The arm is admitted only when that run gets a **`clean` verdict**." in gate
+    assert "Stage-0 transcript check" not in V2
+
+
+def test_rerun_cap_counts_graded_runs_and_covers_container_losses():
+    """NEW-5: the cap ends at fewer than 5 graded runs; §5.3 infrastructure losses share it."""
+    gate = _flat(_section("### 5.2 Clean-room gating"))
+    assert "still has **fewer than 5 graded runs**" in gate
+    assert "Infrastructure losses under §5.3 (for example a container-runtime failure) share the same 2 reruns" in gate
+    assert "It shares the cell's 2 reruns of §5.2" in _flat(_section("### 5.3 Caps and the run-set budget"))
 
 
 def test_budget_stop_schedules_round_robin_and_reports_incomplete():
@@ -102,8 +133,18 @@ def test_budget_stop_schedules_round_robin_and_reports_incomplete():
     caps = _flat(_section("### 5.3 Caps and the run-set budget"))
     assert "Run k of every cell starts before run k+1 of any cell" in caps
     unit = _flat(_section("### 8.1 Units and interval"))
-    assert "every cell of that class at n = 5 attempted runs" in unit
-    assert 'the class result is **"incomplete"**' in unit
+    assert "H's result for that comparison is **\"incomplete\"**" in unit
+
+
+def test_incomplete_is_scoped_to_the_arm_and_its_comparator():
+    """NEW-3: a short cell blocks only the claims that use it; §8.5 needs every matching arm complete."""
+    unit = _flat(_section("### 8.1 Units and interval"))
+    assert (
+        "needs H's cells and its comparator's cells of that class (the Haiku one-shot for comparison A, "
+        "the bar for comparisons B and C) at n = 5 attempted runs"
+    ) in unit
+    assert "A short cell of another arm does not block H's claim." in unit
+    assert "every cell of that class" not in unit
 
 
 def test_model_rules_are_scoped_as_the_source_scopes_them():
@@ -111,7 +152,8 @@ def test_model_rules_are_scoped_as_the_source_scopes_them():
     arms = _flat(_section("## 2. Arms"))
     assert "Opus never orchestrates a Cadence run [OD]" in arms
     assert "Sonnet 5.5 runs no Cadence arm [OD]" in arms
-    assert "the §2.2 arms are the only exceptions [v2]" in arms
+    assert "except the §2.2 review-loop comparison arm [v2]" in arms  # NEW-4
+    assert "only exceptions" not in arms
     assert "never runs a harness arm" not in arms
     assert "runs no harness arm" not in arms
 
@@ -131,6 +173,24 @@ def test_top_design_tier_has_an_order_and_a_scope():
         "design-checklist items answered yes (higher is better), then duplicated lines on new code "
         "(lower is better)"
     ) in answer
+    assert "Two arms **tie** on a measure when the 90% interval of their difference includes 0." in answer  # NEW-6
+
+
+def test_top_design_tier_test_is_one_sided():
+    """NEW-2: an arm leaves the tier only when it is worse beyond noise, never when it is better."""
+    answer = _flat(_section("### 8.5 The answer"))
+    assert "The test is **one-sided**" in answer
+    assert "oriented so that a positive value is worse for that measure" in answer
+    assert "**5th percentile of that interval is ≤ 0** for every measure" in answer
+    assert "includes 0) [v2]" not in answer  # the two-sided rule is gone
+
+
+def test_one_sided_tier_keeps_an_arm_that_is_better_on_a_later_measure():
+    """NEW-2 witness: much smaller edit radius than the best arm (smaller is better)."""
+    best, arm = [40.0, 42, 38, 41, 39], [10.0, 12, 9, 11, 10]
+    lo, hi = _bootstrap(arm, best)        # arm − best; positive is worse for edit radius
+    assert lo <= 0                        # one-sided rule: stays in the tier
+    assert not (lo <= 0 <= hi)            # the old two-sided rule would have dropped it
 
 
 def test_guard_cap_hit_is_an_attempted_run():
@@ -144,7 +204,8 @@ def test_reviewer_picks_await_owner_confirmation():
     """§11 lists every review pick as proposed, not decided."""
     open_items = _flat(_section("## 11. Open before the first v2 run set"))
     assert "**Proposed, owner to confirm**" in open_items
-    for topic in ("§3.1", "§5.2, §8.1", "§5.3, §8.1", "§2.1, §2.5", "(§8.1)", "(§8.5)"):
+    for topic in ("§3.1", "§5.2, §8.1", "§5.3, §8.1", "§2.1, §2.5", "(§8.1)", "(§8.5)",
+                  "must get a `clean` verdict for each arm", "the tier test is one-sided"):
         assert topic in open_items, topic
     assert "Status: **draft**" in V2
 
