@@ -170,7 +170,7 @@ def run_trial(task: str, out: Path, *, mode: str, model: str | None, plugin_dir:
                "--agent-timeout", str(caps["agent_timeout"]),
                "--grader-timeout", str(task_caps["grader_timeout"])]
         grader_args = ["--make-user", "agent", "--make-env-file", "/opt/hb/toolchain.env",
-                       "--logs", "/trial/out/grade-logs"]
+                       "--logs", "/trial/out/grade-logs", "--snapshot-worktree"]
         if "grader_deadline" in task_caps:
             grader_args += ["--deadline", str(task_caps["grader_deadline"])]
         for arg in grader_args:

@@ -23,6 +23,7 @@
 # Outputs, under /trial/out (run_trial.sh copies them to the host):
 #   transcript.jsonl  the agent's stdout (Claude Code stream-json)
 #   result.json       the last `"type":"result"` line of the transcript
+#   repo/ (the working tree the agent left, without .git, environments and build outputs),
 #   agent.stderr, grade.json, grade.stderr, timing.json, dockerd.log, agent/ (files the agent wrote),
 #   claude-projects/ (Claude Code's own session logs)
 set -uo pipefail
@@ -113,6 +114,13 @@ if [ -n "$replay_pid" ]; then
   for _ in $(seq 1 30); do port_open || break; sleep 1; done
   if port_open; then log "the dev replay did not stop"; else log "dev replay stopped"; fi
 fi
+
+# The working tree the agent left, for audit and regrading: plain files (no .git, whose objects are
+# compressed and would hide a key from the redaction scan), without environments and build outputs.
+mkdir -p "$OUT/repo"
+tar -C /trial/repo --exclude=./.git --exclude=./.venv --exclude=./out --exclude=./lake --exclude=./target \
+  --exclude=./project/target --exclude=./project/project --exclude=./node_modules -cf - . 2>/dev/null \
+  | tar -C "$OUT/repo" -xf - 2>/dev/null
 
 # A non-JSON line (a tool that wrote to stdout) must not hide the result line.
 jq -cR 'fromjson? | select(.type? == "result")' "$OUT/transcript.jsonl" 2>/dev/null | tail -n 1 >"$OUT/result.json"

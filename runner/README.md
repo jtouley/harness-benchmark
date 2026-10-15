@@ -40,6 +40,7 @@ summary file should name that path.
 | `replay-dev.log` | the dev service's log (with `--replay`) |
 | `host.json` | container name, exit code, wall seconds, `api_key_redacted_files` |
 | `agent/`, `claude-projects/` | files the agent wrote to `$HB_OUTPUTS`; Claude Code's session logs |
+| `repo/` | the working tree the agent left, as plain files: no `.git`, `.venv`, `out/`, `lake/` or `target/` |
 | `runner.log`, `agent.stderr`, `dockerd.log` | logs |
 
 The container exits 0 once the grader has run, also when the agent timed out (`agent_exit` 124) or the

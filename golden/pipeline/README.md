@@ -123,6 +123,14 @@ From TASK-81; each is the owner's default for these first trials and may change.
   task's reference trials through the runner, plus 50% (`pipeline_trial.py caps`). A candidate whose
   grading takes more than that (a slower build or stream run than the reference allows for) is cut
   off and scores 0.
+- **What is graded: the working tree the agent left** (not a TASK-81 item; found in the first Haiku
+  trial). The grader's step 0 (`git clean -ffdx`) deletes every untracked file, so an arm that never
+  commits (the prompt does not ask it to, and criteria-v2 §2.3 says committing is not asked for) was
+  graded on the skeleton plus its changes to tracked files: Haiku's working pipeline scored 0 because
+  its new files were gone. The runner now passes `--snapshot-worktree`: the grader first commits the
+  working tree as the agent user (`git add -A`, so ignored files stay out), then resets. Untracked state
+  the arm did not ignore is graded with the delivery; `out/` and `lake/` are removed in any case. The
+  runner also copies the working tree to `repo/` in the outputs, for audit and regrading.
 - **The agent's guard cap** (criteria-v2 §5.3, not a TASK-81 item): 7,200 s for the one-shot trials,
   chosen for these first trials.
 - The other TASK-81 questions (the oracle map shape, the readings the key accepts, the traps that do not

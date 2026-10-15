@@ -371,7 +371,7 @@ def test_pipeline_trial_isolates_the_grader_from_the_candidates_make(pipeline_im
             "--replay", str(dist / "replay.pyz"), "--agent-cmd", str(FIXTURES / "pipeline_stub_agent.sh"),
             "--model", "stub-model", "--out", str(out), "--image", pipeline_image, "--grader-timeout", "600"]
     for a in ("--make-user", "agent", "--make-env-file", "/opt/hb/toolchain.env", "--logs",
-              "/trial/out/grade-logs", "--speed", "6000", "--durations", "1,1"):
+              "/trial/out/grade-logs", "--speed", "6000", "--durations", "1,1", "--snapshot-worktree"):
         args += ["--grader-arg", a]
     sh(*args, env=env, timeout=1200)
 
@@ -386,6 +386,9 @@ def test_pipeline_trial_isolates_the_grader_from_the_candidates_make(pipeline_im
     grade = json.loads((out / "grade.json").read_text())
     assert grade["make_user"] == "agent" and grade["make_fresh_home"] is True
     assert grade["reward"] == 1.0, grade
+    # The stub agent wrote its probe file in the repository and never committed it: the snapshot took it.
+    assert grade["snapshot"]["files"] >= 1 and (out / "repo" / "agent-was-here.txt").exists()
+    assert not (out / "repo" / ".git").exists()
 
 
 @docker_tests

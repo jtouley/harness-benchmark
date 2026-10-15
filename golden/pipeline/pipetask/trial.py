@@ -19,6 +19,9 @@ fresh, empty HOME that all four runs share and that is removed afterwards, so st
 development (dlt's `~/.dlt/pipelines/`) is not graded. `--make-user` runs it as that user (`setpriv`;
 the grader must run as root), so the build cannot read the grader's archive or temporary files.
 `--stream-grace` is how long a `make stream` run may take beyond its DURATION before it is killed.
+`--snapshot-worktree` first commits the working tree the agent left (`git add -A`: untracked and changed
+files, not ignored ones), so work that was never committed is graded (criteria-v2 §2.3: committing is
+not asked for); step 0 then removes only ignored files and the output folders.
 `--deadline` caps the whole grading run: each step gets at most what is left of it, a step that would
 start after it is skipped, and the JSON is still printed (`deadline_hit`).
 
@@ -138,6 +141,23 @@ def reset(repo: Path) -> str | None:
     return None
 
 
+def snapshot(repo: Path, prefix: tuple[str, ...] = ()) -> dict:
+    """Commit the working tree as it is (ignored files left out). `prefix` runs git as the repo's user."""
+    ident = ["-c", "user.name=harness-benchmark", "-c", "user.email=noreply@example.invalid",
+             "-c", "commit.gpgsign=false", "-c", "core.hooksPath=/dev/null"]
+    add = subprocess.run([*prefix, "git", *ident, "add", "-A"], cwd=repo, capture_output=True, text=True)
+    if add.returncode != 0:
+        return {"error": f"git add failed: {add.stderr.strip()[-500:]}"}
+    files = subprocess.run([*prefix, "git", "diff", "--cached", "--name-only"], cwd=repo, capture_output=True,
+                           text=True).stdout.split()
+    commit = subprocess.run([*prefix, "git", *ident, "commit", "-q", "--allow-empty", "--no-verify", "-m",
+                             "trial: the working tree the agent left"], cwd=repo, capture_output=True, text=True)
+    if commit.returncode != 0:
+        return {"error": f"git commit failed: {commit.stderr.strip()[-500:]}"}
+    head = subprocess.run(["git", "rev-parse", "HEAD"], cwd=repo, capture_output=True, text=True).stdout.strip()
+    return {"commit": head, "files": len(files)}
+
+
 def reward(result: dict) -> float:
     """The share of checks that pass; 0 when a build changed an output or no stream run exited 0."""
     if not result["idempotent"] or not result["stream_ok"]:
@@ -148,7 +168,7 @@ def reward(result: dict) -> float:
 def trial(repo: Path, key: dict, capture: Path, *, seed: int, port: int, speed: float,
           durations: tuple[int, int], build_timeout: float, logs: Path, stream_grace: float = 300,
           make_env: dict[str, str] | None = None, make_user: str | None = None,
-          deadline: float | None = None) -> dict:
+          deadline: float | None = None, snapshot_worktree: bool = False) -> dict:
     t_end = time.monotonic() + deadline if deadline else None
     result: dict = {"seed": seed, "durations": list(durations), "speed": speed,
                     "deadline": deadline, "deadline_hit": False,
@@ -156,6 +176,11 @@ def trial(repo: Path, key: dict, capture: Path, *, seed: int, port: int, speed: 
                     "make_user": make_user, "make_fresh_home": make_env is not None or make_user is not None}
     if make_user and os.geteuid() != 0:
         return {**result, "error": "--make-user needs the grader to run as root", "reward": 0.0}
+    if snapshot_worktree:
+        as_user = ("setpriv", f"--reuid={make_user}", f"--regid={make_user}", "--init-groups") if make_user else ()
+        result["snapshot"] = snapshot(repo, as_user)
+        if "error" in result["snapshot"]:
+            return {**result, "error": result["snapshot"]["error"], "reward": 0.0}
     error = reset(repo)
     if error:
         return {**result, "error": error, "reward": 0.0}
@@ -239,6 +264,8 @@ def main(argv: list[str] | None = None, key: dict | None = None) -> None:
                     help="NAME=VALUE lines: the whole environment of make, plus a fresh HOME")
     ap.add_argument("--make-user", default=None, help="run make as this user (the grader runs as root)")
     ap.add_argument("--deadline", type=float, default=None, help="seconds for the whole grading run")
+    ap.add_argument("--snapshot-worktree", action="store_true",
+                    help="commit the working tree the agent left before the reset")
     args = ap.parse_args(argv)
     if key is None:
         key = json.loads(args.key.read_text(encoding="utf-8"))
@@ -249,7 +276,7 @@ def main(argv: list[str] | None = None, key: dict | None = None) -> None:
                    speed=args.speed, durations=(d1, d2), build_timeout=args.build_timeout,
                    logs=(args.logs or args.repo / "_grade_logs").resolve(), stream_grace=args.stream_grace,
                    make_env=read_env_file(args.make_env_file) if args.make_env_file else None,
-                   make_user=args.make_user, deadline=args.deadline)
+                   make_user=args.make_user, deadline=args.deadline, snapshot_worktree=args.snapshot_worktree)
     json.dump(result, sys.stdout, indent=1, sort_keys=True, default=str)
     print()
 

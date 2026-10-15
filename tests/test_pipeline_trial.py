@@ -215,3 +215,33 @@ def test_a_run_inside_the_deadline_is_not_marked(key, tmp_path, port):
     result = trial.trial(delivered(tmp_path, key, port), key, CAPTURE, seed=key["stream"]["seed"], port=port,
                          speed=6000.0, durations=(1, 1), build_timeout=60, logs=tmp_path / "logs", deadline=120)
     assert result["deadline_hit"] is False and result["reward"] == 1.0
+
+
+# --- what is graded: the working tree the agent left (criteria-v2 §2.3: committing is not asked for) --
+
+def test_the_snapshot_grades_uncommitted_work_and_still_drops_ignored_state(key, tmp_path, port):
+    """The agent never commits: its untracked pipeline must be graded, and its ignored state must not."""
+    repo = delivered(tmp_path, key, port, build=f"test ! -e state/checkpoint.json && {COPY_MARTS}")
+    (repo / "fixture").rename(repo / "work")  # the marts the build needs: now uncommitted work
+    _git(repo, "add", "-A")
+    _git(repo, "-c", "user.name=t", "-c", "user.email=t@t", "commit", "-qm", "only the rename")
+    _git(repo, "rm", "-rq", "--cached", "work")
+    (repo / "Makefile").write_text((repo / "Makefile").read_text().replace("fixture/", "work/"))  # modified
+    (repo / ".gitignore").write_text("state/\n")  # untracked, like the rest of the agent's work
+    (repo / "state").mkdir()
+    (repo / "state" / "checkpoint.json").write_text("{}")  # ignored consumer state from development
+    result = trial.trial(repo, key, CAPTURE, seed=key["stream"]["seed"], port=port, speed=6000.0,
+                         durations=(1, 1), build_timeout=60, logs=tmp_path / "logs", snapshot_worktree=True)
+    assert result["snapshot"]["files"] == 2 and result["reward"] == 1.0, result  # Makefile, .gitignore
+    assert not (repo / "state").exists()
+
+
+def test_without_the_snapshot_untracked_work_is_deleted_before_grading(key, tmp_path, port):
+    """The default: changes to tracked files are graded, files the agent added but never committed are not."""
+    repo = delivered(tmp_path, key, port)
+    _git(repo, "mv", "fixture", "work")
+    _git(repo, "-c", "user.name=t", "-c", "user.email=t@t", "commit", "-qm", "rename")
+    _git(repo, "rm", "-rq", "--cached", "work")
+    (repo / "Makefile").write_text((repo / "Makefile").read_text().replace("fixture/", "work/"))
+    result = run_trial(repo, key, tmp_path, port)
+    assert "snapshot" not in result and not (repo / "work").exists() and result["reward"] == 0.0
