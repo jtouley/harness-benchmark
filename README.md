@@ -60,7 +60,9 @@ documented command runs but the commit cannot drift. See [`frameworks.lock.json`
 
 ### Benchmark Results (October 2026)
 
-Tiers 1 and 2, measured on Linux with Claude Code 2.1.294. Source: [`results/REPORT.md`](results/REPORT.md).
+Tiers 1 and 2, measured on Linux with Claude Code 2.1.294, except the `cadence` row: it was
+measured on macOS with Claude Code 2.1.287 after the pin bump to `e5c3a92`. The cadence install
+bytes and probe verdicts reproduce on the merged main code. Source: [`results/REPORT.md`](results/REPORT.md).
 
 | Harness | Always-on tokens | Workflow tokens (lower–upper) | Hook probes meeting intent |
 |---|---|---|---|
