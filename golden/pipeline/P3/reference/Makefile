@@ -20,11 +20,14 @@ build: $(VENV)/.installed
 	$(DBT) build $(DBT_ARGS) --exclude tag:stream
 
 # Stream: consume for DURATION seconds into the lake (Structured Streaming), then update the
-# incremental stream models.
+# incremental stream models. With no checkpoint the query starts over at batch 0, so the models are
+# rebuilt in full: their incremental filters compare batch numbers kept from before the reset.
 stream: $(VENV)/.installed
-	$(SBT) "runMain pipeline.Stream $(DURATION)"
-	mkdir -p out/marts
-	$(DBT) build $(DBT_ARGS) --select tag:stream
+	@fresh=$$(test -d lake/_checkpoints/recentchange/query || echo --full-refresh); \
+	set -x; \
+	$(SBT) "runMain pipeline.Stream $(DURATION)" && \
+	mkdir -p out/marts && \
+	$(DBT) build $(DBT_ARGS) --select tag:stream $$fresh
 
 # The ingestion's ScalaTest suites (small in-memory DataFrames on a local Spark).
 test:

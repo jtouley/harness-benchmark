@@ -3,8 +3,8 @@
 Two checks, both reported as `<file>:<line>: <problem>`:
 
 1. The file against the JSON Schema in pipeline.schema.yml (shape, types, allowed values).
-2. The references: every table a transform or sink reads is made by an earlier step, and no name is
-   defined twice.
+2. The references: every table a transform or sink reads is made by an earlier step, no name is
+   defined twice, and in a stream pipeline every sink reads the stream (directly or through transforms).
 """
 
 from __future__ import annotations
@@ -98,6 +98,18 @@ def _reference_problems(doc: dict, root: yaml.Node) -> list[tuple[int, str]]:
         problems.append((_line(root, ["sources"]), "a pipeline reads at most one stream source"))
     if streams and any(s["mode"] != "append" for s in doc.get("sinks", [])):
         problems.append((_line(root, ["sinks"]), "a stream pipeline's sinks must use mode: append"))
+    if streams:
+        # Static tables are joined into every micro-batch, so a sink fed only by them would append the
+        # same rows once per micro-batch. Each sink must read the stream, directly or through a transform.
+        from_stream = {streams[0]["name"], streams[0].get("rejects")}
+        for step in doc.get("transforms", []):
+            if set(step.get("inputs") or [step.get("input")]) & from_stream:
+                from_stream.add(step["name"])
+        for i, sink in enumerate(doc.get("sinks", [])):
+            if sink["input"] in defined and sink["input"] not in from_stream:
+                problems.append((_line(root, ["sinks", i, "input"]),
+                                 f"'{sink['input']}' does not come from the stream source, so the sink would "
+                                 f"append it again on every micro-batch"))
     if not streams and any(s["mode"] != "replace" for s in doc.get("sinks", [])):
         problems.append((_line(root, ["sinks"]), "a batch pipeline's sinks must use mode: replace"))
     return problems

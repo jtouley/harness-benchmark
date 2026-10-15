@@ -8,8 +8,8 @@ keywords = ["harness-benchmark", "cadence", "T02-invstat-json"]
 [metadata]
 task = "T02-invstat-json"
 arm = "cadence"
-framework_sha = "812998f7a8f670f28cfd6dd358de8c655656fb23"
-lock_sha256 = "9515e62a3f5d325135ca89728b45fb958245c6536fabf9ab3f178150c0b29e68"
+framework_sha = "e5c3a9289eb28d6cdefc29844c704674ec985001"
+lock_sha256 = "6cbe9b8e94ddf931201caf9f77023e7d69ba6340197f01918fd0a19db10e5055"
 
 [verifier]
 timeout_sec = 300.0

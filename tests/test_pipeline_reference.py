@@ -110,6 +110,138 @@ def test_the_p2_engine_reports_file_and_line_before_running(p2_repo):
     assert done.returncode == 2
     assert f"pipelines/broken.yml:{line}: 'counties_typd' is not defined" in done.stderr, done.stderr
 
+    # A stream pipeline that sinks a table not made from the stream would append it on every micro-batch.
+    static_sink = UNSEEN_STREAM.replace("{input: labelled, table: labelled_events, mode: append}",
+                                        "{input: kinds, table: kinds_copy, mode: append}")
+    (p2_repo / "pipelines" / "broken.yml").write_text(static_sink, encoding="utf-8")
+    done = engine(p2_repo, "validate", "pipelines/broken.yml")
+    line = next(i for i, text in enumerate(static_sink.splitlines(), 1) if "kinds_copy" in text)
+    assert done.returncode == 2
+    assert f"pipelines/broken.yml:{line}: 'kinds' does not come from the stream source" in done.stderr, done.stderr
+
+
+# A stream pipeline the P2 reference never saw: its own source, table and column names, a static CSV
+# joined to each micro-batch by DataFusion, micro-batches of two frames.
+UNSEEN_STREAM = """\
+pipeline: wiki_kinds
+micro_batch: {max_rows: 2}
+sources:
+  - name: frames
+    type: sse
+    url: http://127.0.0.1:9/never-called
+  - name: kinds
+    type: file
+    format: csv
+    paths: [kinds.csv]
+transforms:
+  - name: typed
+    engine: polars
+    input: frames
+    json_fields: {column: event, fields: {kind: "$.type"}}
+  - name: labelled
+    engine: datafusion
+    inputs: [typed, kinds]
+    sql: select typed.arrival_seq, typed.sse_id, kinds.label from typed join kinds on typed.kind = kinds.kind
+sinks:
+  - {input: labelled, table: labelled_events, mode: append}
+"""
+
+# Runs a stream pipeline through engine.run against a fake SSE server that honours Last-Event-ID (no
+# network, under a second). argv: the pipeline file, the checkpoint write that crashes (0: none) and how
+# many frames the server has so far. The crash comes after that batch's data files are written and
+# before its checkpoint replaces the old one.
+FAKE_STREAM = """\
+import json, os, sys
+from pathlib import Path
+from engine import config, run, sinks, sse
+
+FRAMES = [sse.Message(str(i), json.dumps({"type": t})) for i, t in enumerate(["edit", "new", "log", "edit", "new"], 1)]
+asked = []
+
+def fake_stream(url, last_event_id, deadline, *args, **kwargs):
+    asked.append(last_event_id)
+    start = int(last_event_id or 0)
+    yield from (m for m in FRAMES[:int(sys.argv[3])] if int(m.id) > start)
+
+sse.stream = fake_stream
+crash_at, checkpoints, real_replace = int(sys.argv[2]), [], os.replace
+
+def replace(src, dst):
+    if str(dst).endswith(os.path.join("_checkpoints", "wiki_kinds.json")):
+        checkpoints.append(dst)
+        if len(checkpoints) == crash_at:
+            raise RuntimeError("crash before the checkpoint")
+    real_replace(src, dst)
+
+sinks.os.replace = replace
+try:
+    landed = run.run(config.load(Path(sys.argv[1])), Path.cwd(), duration=1)
+except RuntimeError as exc:
+    landed = str(exc)
+print(json.dumps({"landed": landed, "asked": asked}))
+"""
+
+
+def fake_stream(repo: Path, pipeline: str, crash_at: int = 0, served: int = 5) -> dict:
+    done = subprocess.run(["uv", "run", "--frozen", "python", "-c", FAKE_STREAM, pipeline, str(crash_at), str(served)],
+                          cwd=repo, capture_output=True, text=True)
+    assert done.returncode == 0, done.stderr
+    return json.loads(done.stdout)
+
+
+def lake_rows(repo: Path, table: str) -> list[tuple]:
+    return duckdb.connect().execute(
+        "select arrival_seq, sse_id, label, _batch from read_parquet(?) order by arrival_seq",
+        [str(repo / "lake" / table / "*.parquet")]).fetchall()
+
+
+@pytest.fixture()
+def stream_repo(p2_repo):
+    (p2_repo / "kinds.csv").write_text("kind,label\nedit,Edit\nnew,New page\nlog,Log entry\n", encoding="utf-8")
+    (p2_repo / "pipelines" / "wiki_kinds.yml").write_text(UNSEEN_STREAM, encoding="utf-8")
+    for path in (p2_repo / "lake" / "labelled_events", p2_repo / "lake" / "_checkpoints"):
+        shutil.rmtree(path, ignore_errors=True)
+    return p2_repo
+
+
+EXPECTED = [(0, "1", "Edit"), (1, "2", "New page"), (2, "3", "Log entry"), (3, "4", "Edit"), (4, "5", "New page")]
+
+
+def test_the_p2_engine_runs_a_stream_pipeline_it_has_never_seen(stream_repo):
+    out = fake_stream(stream_repo, "pipelines/wiki_kinds.yml")
+    assert out["landed"] == {"labelled_events": 5}
+    assert lake_rows(stream_repo, "labelled_events") == [(*row, n // 2 + 1) for n, row in enumerate(EXPECTED)]
+
+
+def test_the_p2_stream_resumes_after_a_crash_between_data_and_checkpoint(stream_repo):
+    crashed = fake_stream(stream_repo, "pipelines/wiki_kinds.yml", crash_at=2)
+    assert crashed == {"landed": "crash before the checkpoint", "asked": [None]}
+    assert (stream_repo / "lake" / "labelled_events" / "0000000002.parquet").exists()  # written, not committed
+
+    # The server has nothing new yet: the restart lands nothing, and batch 2's files are gone.
+    idle = fake_stream(stream_repo, "pipelines/wiki_kinds.yml", served=2)
+    assert idle == {"landed": {"labelled_events": 0}, "asked": ["2"]}  # from batch 1's checkpoint
+    assert lake_rows(stream_repo, "labelled_events") == [(*row, 1) for row in EXPECTED[:2]]
+
+    resumed = fake_stream(stream_repo, "pipelines/wiki_kinds.yml")
+    assert resumed == {"landed": {"labelled_events": 3}, "asked": ["2"]}
+    assert lake_rows(stream_repo, "labelled_events") == [(*row, n // 2 + 1) for n, row in enumerate(EXPECTED)]
+
+
+# Every CSV column is text, even when a quoted header name spans two lines (trap A1: leading zeros).
+QUOTED_HEADER = """\
+from engine.sources import _csv_as_text
+table = _csv_as_text(b'STATE,"A\\nB"\\n01,007\\n', "utf8")
+print([(f.name, str(f.type)) for f in table.schema], table.to_pylist())
+"""
+
+
+def test_the_p2_file_source_reads_a_quoted_multiline_header_as_text(p2_repo):
+    done = subprocess.run(["uv", "run", "--frozen", "python", "-c", QUOTED_HEADER], cwd=p2_repo,
+                          capture_output=True, text=True)
+    assert done.returncode == 0, done.stderr
+    assert done.stdout.strip() == "[('STATE', 'string'), ('A\\nB', 'string')] [{'STATE': '01', 'A\\nB': '007'}]"
+
 
 CRASH = """\
 from pathlib import Path

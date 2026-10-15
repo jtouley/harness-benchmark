@@ -9,7 +9,7 @@ keywords = ["harness-benchmark", "baseline", "T06-ledgerlite-audit-undo"]
 task = "T06-ledgerlite-audit-undo"
 arm = "baseline"
 framework_sha = "none"
-lock_sha256 = "9515e62a3f5d325135ca89728b45fb958245c6536fabf9ab3f178150c0b29e68"
+lock_sha256 = "6cbe9b8e94ddf931201caf9f77023e7d69ba6340197f01918fd0a19db10e5055"
 
 [verifier]
 timeout_sec = 300.0

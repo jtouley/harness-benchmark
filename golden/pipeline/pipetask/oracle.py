@@ -75,18 +75,43 @@ def _number(key) -> str | None:
     return str(int(m.group())) if m else None
 
 
+def sql_string(text: str) -> str:
+    """A SQL string literal."""
+    return "'" + text.replace("'", "''") + "'"
+
+
+def sql_name(text: str) -> str:
+    """A quoted SQL identifier."""
+    return '"' + text.replace('"', '""') + '"'
+
+
 def connect(repo: Path) -> duckdb.DuckDBPyConnection:
+    """One view per published mart, then file access locked to out/marts/ for the map's SQL.
+
+    The views read Parquet lazily, so out/marts/ must stay readable; everything else (the grader's own
+    files, the rest of the repository) is not, and the map's SQL cannot change the settings back. A
+    symbolic link under out/marts/ would lead out of it, so a tree with one is refused.
+    """
     con = duckdb.connect()
     con.execute("set TimeZone = 'UTC'")
-    marts = repo / "out" / "marts"
+    if any(p.is_symlink() for p in (repo / "out", repo / "out" / "marts")):
+        raise MapError("out/ or out/marts/ is a symbolic link; publish the files themselves")
+    marts = (repo / "out" / "marts").resolve()
     if marts.is_dir():
+        links = sorted(p.relative_to(marts).as_posix() for p in marts.rglob("*") if p.is_symlink())
+        if links:
+            raise MapError(f"out/marts/ holds a symbolic link ({links[0]}); publish the files themselves")
         for folder in sorted(p for p in marts.iterdir() if p.is_dir()):
-            files = sorted(folder.rglob("*.parquet"))
-            if files:
-                glob = (folder / "**" / "*.parquet").as_posix()
-                con.execute(f"create or replace view \"{folder.name}\" as select * from read_parquet('{glob}', union_by_name=true)")
+            if any(folder.rglob("*.parquet")):
+                glob = sql_string((folder / "**" / "*.parquet").as_posix())
+                con.execute(f"create or replace view {sql_name(folder.name)} as "
+                            f"select * from read_parquet({glob}, union_by_name=true)")
         for file in sorted(marts.glob("*.parquet")):  # a mart published as a single file
-            con.execute(f"create or replace view \"{file.stem}\" as select * from read_parquet('{file.as_posix()}')")
+            con.execute(f"create or replace view {sql_name(file.stem)} as "
+                        f"select * from read_parquet({sql_string(file.as_posix())})")
+    con.execute(f"set allowed_directories = [{sql_string(marts.as_posix() + '/')}]")
+    con.execute("set enable_external_access = false")
+    con.execute("set lock_configuration = true")
     return con
 
 
@@ -158,7 +183,7 @@ def resolve(entry, con) -> Result:
         sql, source = query.strip().rstrip(";"), "query"
     else:
         name = _table_name(table, con)
-        sql, source = f'select * from "{name}"', f"table {name}"
+        sql, source = f"select * from {sql_name(name)}", f"table {name}"
     try:
         rel = _without_time_zones(con.sql(sql))
         rows = rel.fetchall()

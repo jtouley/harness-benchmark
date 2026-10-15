@@ -9,8 +9,18 @@ A reproducible benchmark of AI coding-workflow harnesses for Claude Code: [Caden
 > out of 10 and Cadence on Opus 7.33, at about 1/30 of the time. Most of that gap is single-run noise.
 > **What the harness did show:** no crash reached its delivered code (each one-shot shipped two), an
 > audit trail a reviewer can check, completion on every task or a recorded stop, and rules the model
-> cannot skip. **Next:** on harder tasks, run the harness on cheap models (Haiku 5.5 and others), all cheap
-> and with Opus as reviewer only, and find the cheapest arm that matches Opus alone.
+> cannot skip.
+>
+> **Since then (October 13–14):** full Cadence on Haiku 5.5 delivered nothing in the pilot (it stopped in
+> its own loops). On a real multi-cause bug, Haiku and Sonnet one-shots fixed the main path but the second
+> defect in only 0/5 and 1/5 runs, against Opus 10/10; an independent review loop recovered it in 2/2 Haiku
+> runs and 1/1 Sonnet run (a signal, not yet a reliability measure; two more runs were set aside as invalid),
+> at about the Opus one-shot's cost. The cheap models miss by **scope narrowing and coverage**, not
+> reasoning depth. On a 20-task SWE-bench Pro sample (one try per model), a one-shot Haiku 5.5 passed
+> 17 against Opus 5.5's 18 at about one tenth of the cost; the open questions there are the tasks where
+> Opus is unreliable and pass rates over repeats. **Next:** cheap verification (contracts before code, real-time deferral review),
+> long-horizon pipeline tasks, and traceability when work goes wrong. Full argument: the
+> [**whitepaper**](docs/whitepaper.md).
 > *Disclosure: the owner of this benchmark wrote Cadence.*
 
 | Arm (iteration 4) | Delivered | Blind quality | Major or critical defects per run | Crashes shipped | Time per task | Audit trail |
@@ -23,13 +33,17 @@ A reproducible benchmark of AI coding-workflow harnesses for Claude Code: [Caden
 
 | Read | For |
 |---|---|
+| [**Whitepaper**](docs/whitepaper.md) | The whole argument, iteration 4 to now: method, results, why cheap models miss, what a harness is for |
 | [**What a harness buys you**](docs/findings.md) | The conclusions: what we got from Cadence, what we did not, and what one-shotting gives |
 | [**20-minute talk track**](docs/talk.md) | Slides, numbers and speaker notes, with the questions to expect |
 | [**Next steps**](docs/next-steps.md) | The cheapest model that matches Opus with an audit trail: Claude Code, Cursor CLI and OpenAI arms |
 | [Iteration 4](docs/experiments/2026-10-12-iteration-4.md) · [Iteration 3](docs/experiments/2026-10-10-harness-vs-oneshot.md) | Full write-ups, data, confounds |
 | [How the rounds were run](docs/process.md) | The process end to end, what went wrong, and the clean-room check |
+| [Review value](docs/review-value.md) | Do review rounds raise new findings that turn out to be real defects? Counts per stage and per round |
 | [**Quality model**](docs/quality-model.md) | What "great code" means here: ISO/IEC 25010, measured by published tools and thresholds |
-| [Proposed task L3](docs/tasks/L3-open-data-bi-pipeline.md) | A harder task: DuckDB, dlt and dbt on public government data, ready for BI |
+| [Pilot](docs/experiments/2026-10-13-pilot.md) · [Calibration](calibration/README.md) | Cadence on Haiku 5.5; how tasks are chosen against the Opus one-shot; SWE-bench Pro sample |
+| [**Pipeline task family**](docs/tasks/pipeline-family.md) | Long-horizon tasks: one spec on three stacks (dlt and dbt; Arrow, Polars and DataFusion; Spark), a follow-up change, and a traceability audit |
+| [Harness arms](harnesses/) | Minimal harnesses used as arms: a review loop and a verification harness (contracts before code) |
 
 These rounds ran outside the Harbor live tier, so they are not [criteria v1](docs/criteria.md) results.
 
@@ -46,7 +60,7 @@ Each harness is installed the way its own README says, at a pinned commit, then 
 | Arm | Pinned commit | Installed with |
 |---|---|---|
 | `baseline` | none | nothing (control) |
-| `cadence` | `jtouley/cadence@812998f` (main) | `install.sh` |
+| `cadence` | `jtouley/cadence@e5c3a92` (main) | `install.sh` |
 | `superpowers` | `obra/superpowers@8ca22db` | `claude plugin marketplace add` + `claude plugin install` |
 | `spec-kit` | `github/spec-kit@b9e08bf` | `specify init --integration claude` |
 | `openspec` | `Fission-AI/OpenSpec@9111a76` | `openspec init --tools claude` |
@@ -60,11 +74,13 @@ documented command runs but the commit cannot drift. See [`frameworks.lock.json`
 
 ### Benchmark Results (October 2026)
 
-Tiers 1 and 2, measured on Linux with Claude Code 2.1.294. Source: [`results/REPORT.md`](results/REPORT.md).
+Tiers 1 and 2, measured on Linux with Claude Code 2.1.294, except the `cadence` row: it was
+measured on macOS with Claude Code 2.1.287 after the pin bump to `e5c3a92`. The cadence install
+bytes and probe verdicts reproduce on the merged main code. Source: [`results/REPORT.md`](results/REPORT.md).
 
 | Harness | Always-on tokens | Workflow tokens (lower–upper) | Hook probes meeting intent |
 |---|---|---|---|
-| `cadence` | 671 | 8,965 – 59,055 | **7/9** |
+| `cadence` | 671 | 9,078 – 62,141 | **7/9** |
 | `gsd-core` | 3,457 | 4,701 – 124,702 | 4/9 |
 | `superpowers` | 1,483 | 21,696 – 33,518 | 2/7 |
 | `spec-kit` | 291 | 15,889 | 2/9 |
@@ -74,7 +90,7 @@ Tiers 1 and 2, measured on Linux with Claude Code 2.1.294. Source: [`results/REP
 
 **Conclusion (tiers 1–2):** only Cadence's installed hooks block a forged approval, a self-certified verdict, a shell edit before plan approval and a stop mid-run; GSD Core blocks reading `.env` and overwriting the plan, which Cadence does not. That is the axis Cadence is designed for. The other harnesses never claimed to enforce, so this shows a different category, not a better one. Loading any harness's whole workflow costs cents. **The live tier has not run, so no criteria v1 outcome result exists yet.** Two exploratory outcome rounds ran outside it: see [Findings so far](#findings-so-far) and [`docs/live-tier.md`](docs/live-tier.md).
 
-**Criteria:** what counts as a harness being worth its cost, the neutral one-shot baseline, the measures and the pre-registered decision rule are in [`docs/criteria.md`](docs/criteria.md) (v1).
+**Criteria:** what counts as a harness being worth its cost, the neutral one-shot baseline, the measures and the pre-registered decision rule are in [`docs/criteria-v2.md`](docs/criteria-v2.md) (v2, for new run sets; [v1](docs/criteria.md) stays as history).
 
 ## Setup Requirements
 
@@ -131,7 +147,11 @@ Design, what Harbor does and does not support, and how to read the results: [`do
 
 ### CI
 
-`.github/workflows/verify.yml` runs `fetch`, `verify` and the tests on every push and uploads `results/`.
+`.github/workflows/verify.yml` runs on every push. It fetches every framework whose repo is public and checks
+its pinned sha, installs each of them twice and compares the trees, runs the tests and uploads `results/`.
+Frameworks in private repos (`PRIVATE_REPOS` in the workflow; today `jtouley/cadence`) are skipped with a
+warning, and then `verify` does not run in CI, because it needs every framework. Run
+`python -m cbench fetch && python -m cbench verify` locally with access to check every result byte for byte.
 `.github/workflows/live.yml` is manual-only, needs the `ANTHROPIC_API_KEY` repository secret, and refuses
 to start without a budget that covers the worst case.
 

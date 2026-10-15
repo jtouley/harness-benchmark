@@ -13,11 +13,14 @@ build: validate
 	$(DBT) build $(DBT_ARGS) --exclude tag:stream
 
 # Stream: consume for DURATION seconds into the lake (pipelines/stream.yml), then update the
-# incremental stream models.
+# incremental stream models. With no checkpoint the stream starts over at batch 1, so the models are
+# rebuilt in full: their incremental filters compare batch numbers kept from before the reset.
 stream: validate
-	$(ENGINE) run pipelines/stream.yml --duration $(DURATION)
-	mkdir -p out/marts
-	$(DBT) build $(DBT_ARGS) --select tag:stream
+	@fresh=$$(test -f lake/_checkpoints/stream.json || echo --full-refresh); \
+	set -x; \
+	$(ENGINE) run pipelines/stream.yml --duration $(DURATION) && \
+	mkdir -p out/marts && \
+	$(DBT) build $(DBT_ARGS) --select tag:stream $$fresh
 
 # Check every pipeline file against the schema; a problem is reported as file:line: problem.
 validate:

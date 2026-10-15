@@ -57,7 +57,10 @@ section is what this stack adds.
     replaced by an atomic rename. On start the engine deletes any file numbered above the checkpoint
     (a batch that never committed) and resumes from the saved id with `Last-Event-ID`. The server re-sends events on a resume; the staging model
     keeps the first landed copy of each `meta.id`, and the incremental fact only appends ids it does
-    not have.
+    not have. The batch number (`_batch`, the models' `load_id`) restarts at 1 when the checkpoint is
+    gone (a reset lake), so `make stream` then rebuilds the stream models in full (`--full-refresh`):
+    their incremental filters compare batch numbers, and a warehouse kept from before the reset would
+    otherwise skip the new windows.
 18. **Frames that are not JSON** go to `lake/recentchange_rejects/` with their raw text; the consumer
     keeps going.
 19. **Edits per wiki (check 5)** count every edit consumed, late ones included (`mart_wiki_edits`,
@@ -72,8 +75,9 @@ section is what this stack adds.
     over named inputs); sink `parquet` into `lake/<table>/`. A new kind is one function and one schema
     entry. Run one file with `uv run python -m engine run pipelines/<file>.yml` (`--duration` for a stream).
 21. **Validation.** `engine/pipeline.schema.yml` (JSON Schema 2020-12) checks each file's shape; the
-    engine then checks that every name a step reads is made by an earlier step and that a lake table is
-    written once. Every problem is printed as `<file>:<line>: <problem>`, exit code 2, before anything
+    engine then checks that every name a step reads is made by an earlier step, that a lake table is
+    written once, and that each sink of a stream pipeline reads the stream (a sink fed only by a file
+    source would append the same rows on every micro-batch). Every problem is printed as `<file>:<line>: <problem>`, exit code 2, before anything
     runs. `make build` and `make stream` validate every file under `pipelines/` first.
 22. **Which engine does what.** Polars types the USAspending text (money to `DECIMAL(18,2)`, dates)
     and pulls the event id out of each stream frame; DataFusion SQL types the Census estimate of each

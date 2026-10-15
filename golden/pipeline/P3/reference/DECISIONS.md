@@ -98,7 +98,9 @@ section is what this stack adds.
 
 26. `make build` replaces every batch table in the lake and rebuilds every batch model, so a second
     run leaves the same lake and the same marts. `make build` builds only the batch models; `make
-    stream` builds only the stream models (dbt tag `stream`). Staging models are tables, not views, so
+    stream` builds only the stream models (dbt tag `stream`); when the query has no checkpoint
+    before the run (a reset lake), it rebuilds them in full, because the window mart's incremental
+    filter compares batch numbers, which start over with a new checkpoint. Staging models are tables, not views, so
     Spark reads and types the lake once per run, not once per test; dbt runs four threads on its one
     Spark session.
 27. **Publishing.** Every mart is a table in the warehouse; a post-hook copies it to

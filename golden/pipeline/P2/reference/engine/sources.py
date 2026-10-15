@@ -9,7 +9,6 @@ A new kind of source is one function here and one entry in SOURCES (and in the s
 
 from __future__ import annotations
 
-import csv
 import io
 import json
 import time
@@ -29,12 +28,14 @@ from . import sse
 
 
 def _csv_as_text(data: bytes, encoding: str) -> pa.Table:
-    header = data.split(b"\n", 1)[0].decode(encoding).lstrip("﻿")
-    names = next(csv.reader(io.StringIO(header)), [])
+    read = pacsv.ReadOptions(encoding=encoding)
+    parse = pacsv.ParseOptions(newlines_in_values=True)  # quoted text (header names too) may span lines
+    with pacsv.open_csv(io.BytesIO(data), read_options=read, parse_options=parse) as reader:
+        names = reader.schema.names  # the header as Arrow itself parses it
     return pacsv.read_csv(
         io.BytesIO(data),
-        read_options=pacsv.ReadOptions(encoding=encoding),
-        parse_options=pacsv.ParseOptions(newlines_in_values=True),  # quoted text may span lines
+        read_options=read,
+        parse_options=parse,
         convert_options=pacsv.ConvertOptions(column_types={n: pa.string() for n in names},
                                              strings_can_be_null=True),
     )

@@ -34,6 +34,7 @@ class ReplayState:
         self._fired: set[int] = set()
         self._lock = threading.Lock()
         self.connections = 0
+        self.served = -1  # the highest position sent on any connection
 
     def should_close_after(self, pos: int) -> bool:
         """True once per scheduled disconnect position (F1), for the server's lifetime."""
@@ -87,6 +88,7 @@ def make_handler(state: ReplayState):
                     time.sleep(delay)
                 data = "".join(f"data: {line}\n" for line in d.data.split("\n"))
                 self._write(f"event: message\nid: {plan.sse_id(pos)}\n{data}\n")
+                state.served = max(state.served, pos)
                 if state.should_close_after(pos):
                     print(f"replay: closing after position {pos} (scheduled)", file=sys.stderr, flush=True)
                     return
@@ -99,10 +101,13 @@ def make_handler(state: ReplayState):
 
 def serve(capture: Path, seed: int, port: int, speed: float, host: str = "127.0.0.1",
           keepalive: float = 5.0) -> ThreadingHTTPServer:
-    """Build the schedule and return a server bound to (host, port); call serve_forever() on it."""
+    """Build the schedule and return a server bound to (host, port); call serve_forever() on it.
+    `server.state` is its ReplayState (connections made, highest position served)."""
     plan = sched.build(sched.load_capture(capture), seed)
-    server = ThreadingHTTPServer((host, port), make_handler(ReplayState(plan, speed, keepalive)))
+    state = ReplayState(plan, speed, keepalive)
+    server = ThreadingHTTPServer((host, port), make_handler(state))
     server.daemon_threads = True
+    server.state = state
     return server
 
 

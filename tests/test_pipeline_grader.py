@@ -16,7 +16,7 @@ import duckdb
 import pytest
 import yaml
 
-from pipetask import grade
+from pipetask import grade, oracle
 
 KEY_PATH = Path(__file__).resolve().parents[1] / "golden" / "pipeline" / "key" / "answer_key.json"
 
@@ -51,7 +51,8 @@ def write_mart(repo: Path, name: str, columns: str, rows: list[tuple]) -> None:
     if rows:
         marks = ", ".join("?" * len(rows[0]))
         con.executemany(f"insert into t values ({marks})", rows)
-    con.execute(f"copy t to '{(folder / 'data.parquet').as_posix()}' (format parquet)")
+    path = (folder / "data.parquet").as_posix().replace("'", "''")
+    con.execute(f"copy t to '{path}' (format parquet)")
 
 
 def write_candidate(repo: Path, key: dict, ans: dict, oracle_map=SQL_MAP, agency_by_name=True,
@@ -184,3 +185,56 @@ def test_months_normalize(value, expected):
 ])
 def test_states_normalize(value, expected):
     assert grade.state_fips(value) == expected
+
+
+# ------------------------------------------------------------------- the map's SQL sees only out/marts/
+
+
+def _reads_the_key(glob: str) -> dict:
+    src = f"read_json_objects('{glob}')"
+    return {"checks": {
+        3: {"sql": f"select cast(json_extract_string(json, '$.batch.checks.3.answer') as bigint) as n from {src}"},
+        7: {"sql": f"select cast(json_extract_string(json, '$.stream.checks.7.answer') as bigint) as n from {src}"},
+    }}
+
+
+@pytest.mark.parametrize("where", ["outside the repo", "inside the repo"])
+def test_the_map_sql_cannot_read_a_file_outside_out_marts(key, tmp_path, where):
+    repo = tmp_path / "repo"
+    (repo / "out" / "marts").mkdir(parents=True)
+    keydir = tmp_path / "tmpkey" if where == "outside the repo" else repo / "notes"
+    keydir.mkdir()
+    (keydir / "answer_key.json").write_text(json.dumps(key))
+    (repo / "oracle_map.yml").write_text(yaml.safe_dump(_reads_the_key(f"{keydir.parent.as_posix()}/*/answer_key.json")))
+    result = grade.grade(repo, key)
+    assert not result["checks"]["3"]["pass"] and not result["checks"]["7"]["pass"]
+
+
+def test_the_map_sql_cannot_turn_file_access_back_on(key, tmp_path):
+    con = oracle.connect(write_candidate(tmp_path, key, answers(key)))
+    assert con.sql('select count(*) from "agency_totals"').fetchone()[0] == 4
+    for setting in ("enable_external_access = true", "allowed_directories = ['/']", "lock_configuration = false"):
+        with pytest.raises(duckdb.Error):
+            con.execute(f"set {setting}")
+
+
+@pytest.mark.parametrize("link", ["out/marts/key.json", "out/marts"])
+def test_a_symlink_under_out_marts_fails_every_check(key, tmp_path, link):
+    repo = write_candidate(tmp_path / "repo", key, answers(key))
+    (tmp_path / "answer_key.json").write_text(json.dumps(key))
+    if link == "out/marts":
+        (repo / "out" / "marts").rename(tmp_path / "elsewhere")
+        (repo / "out" / "marts").symlink_to(tmp_path / "elsewhere")
+    else:
+        (repo / link).symlink_to(tmp_path / "answer_key.json")
+    result = grade.grade(repo, key)
+    assert result["passed"] == 0 and "symbolic link" in result["checks"]["1"]["error"]
+
+
+@pytest.mark.parametrize("name", ["it's", 'say "hi"', "x'); select 1; --"])
+def test_a_mart_folder_name_is_a_name_not_sql(tmp_path, name):
+    repo = tmp_path / "repo"
+    write_mart(repo, name, "n bigint", [(42,)])
+    con = oracle.connect(repo)
+    quoted = name.replace('"', '""')
+    assert con.sql(f'select n from "{quoted}"').fetchall() == [(42,)]
