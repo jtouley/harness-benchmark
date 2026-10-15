@@ -1,4 +1,4 @@
-"""docs/criteria-v2.md pins: load-bearing constants and wording (PR #20 review R1-R8, N2-N4, O1, NEW-1-NEW-6).
+"""docs/criteria-v2.md pins: load-bearing constants and wording (PR #20 review R1-R8, N2-N4, O1, NEW-1-NEW-8, N-8).
 
 Like tests/test_criteria.py does for v1, each test reads the document as committed and fails when a
 decision input changes without a deliberate edit here.
@@ -6,6 +6,7 @@ decision input changes without a deliberate edit here.
 
 from __future__ import annotations
 
+import itertools
 import random
 import re
 from pathlib import Path
@@ -96,27 +97,26 @@ def test_non_clean_verdicts_split_by_cause_with_a_rerun_cap():
     gate = _flat(_section("### 5.2 Clean-room gating"))
     assert "at most **2 reruns per cell**" in gate
     assert 'reported as **"unassessable"**' in gate
-    assert "**Agent contamination:**" in gate
+    assert "**Every `contaminated` verdict** counts against the arm" in gate
     assert "**attempted run that is not delivered** (§8.1). It is not run again." in gate
 
 
-def test_host_loaded_instruction_files_are_a_setup_fault():
-    """NEW-1: clean_room_check.py counts host-loaded files as contacts; v2 reruns those, capped."""
+def test_host_loaded_instruction_files_are_allowlisted_not_excused():
+    """NEW-7 (b): no setup-fault exception for host-loaded files; stage 0 allowlists them instead."""
     gate = _flat(_section("### 5.2 Clean-room gating"))
-    assert (
-        "**Setup faults** are infrastructure errors: `exposed`, `unassessable`, and a `contaminated` "
-        "verdict whose only causes are instruction files that the host loaded into the session"
-    ) in gate
-    assert "**Agent contamination:** a `contaminated` verdict with any cause from the agent's own actions" in gate
-    check = (ROOT / "scripts" / "clean_room_check.py").read_text(encoding="utf-8")
-    assert "def _loaded_files(" in check  # the carve-out names a real contact source
+    assert "**Setup faults** are infrastructure errors: `exposed` and `unassessable`." in gate
+    assert "There is no exception for instruction files that the host loads" in gate
+    assert "stage 0 adds **each arm's host-loaded instruction paths**" in gate
+    assert "to its `--allow-path`" in gate
+    assert "whose only causes are instruction files" not in gate
 
 
 def test_stage_zero_requires_a_clean_smoke_run_per_arm():
     """NEW-1: stage 0 needs a `clean` verdict with the run-set allowlists, not only a skill listing."""
     gate = _flat(_section("### 5.2 Clean-room gating"))
-    assert "each arm runs one smoke run in the Harbor container" in gate
+    assert "Each arm then runs one smoke run in the Harbor container" in gate
     assert "The arm is admitted only when that run gets a **`clean` verdict**." in gate
+    assert "The clean smoke run proves that the allowlists cover the setup" in gate
     assert "Stage-0 transcript check" not in V2
 
 
@@ -243,3 +243,74 @@ def test_every_relative_link_and_anchor_resolves():
         assert dest.exists(), target
         if anchor:
             assert anchor in _github_slugs(dest.read_text(encoding="utf-8")), target
+
+
+# NEW-8: the best arm is chosen against the current leader (§8.5 step 2).
+# Each measure: (name, higher_is_better). Witness data from the PR #20 re-review (cycle.py).
+_MEASURES = [("follow_up", True), ("edit_radius", False)]
+_CYCLE = {
+    "A": {"follow_up": [1.0, 1, 1, 1, 1], "edit_radius": [40.0, 41, 39, 40, 40]},
+    "B": {"follow_up": [1.0, 1, 1, 1, 0], "edit_radius": [25.0, 26, 24, 25, 25]},
+    "C": {"follow_up": [1.0, 1, 0, 0, 0], "edit_radius": [10.0, 11, 9, 10, 10]},
+}
+
+
+def _mean(xs: list[float]) -> float:
+    return sum(xs) / len(xs)
+
+
+def _tie(a: list[float], b: list[float]) -> bool:
+    lo, hi = _bootstrap(a, b)
+    return lo <= 0 <= hi
+
+
+def _best_arm(arms: dict, order: list[str]) -> str:
+    """§8.5 step 2 as written: keep the leader and its ties, measure by measure."""
+    kept = list(order)
+    leader = kept[0]
+    for name, higher in _MEASURES:
+        sign = 1 if higher else -1
+        leader = max(kept, key=lambda arm: sign * _mean(arms[arm][name]))
+        kept = [arm for arm in kept if arm == leader or _tie(arms[arm][name], arms[leader][name])]
+        if len(kept) == 1:
+            return kept[0]
+    return leader
+
+
+def _pairwise_winner(arms: dict, x: str, y: str) -> str:
+    """The old rule: the first measure that does not tie decides between two arms."""
+    for name, higher in _MEASURES:
+        if not _tie(arms[x][name], arms[y][name]):
+            better = _mean(arms[x][name]) > _mean(arms[y][name])
+            return x if better == higher else y
+    return x
+
+
+def test_pairwise_lexicographic_order_cycles_on_the_witness():
+    """NEW-8 witness: with interval ties, the pairwise order is A < B < C < A."""
+    assert _pairwise_winner(_CYCLE, "A", "B") == "B"
+    assert _pairwise_winner(_CYCLE, "B", "C") == "C"
+    assert _pairwise_winner(_CYCLE, "A", "C") == "A"
+
+
+def test_best_arm_against_the_leader_is_unique_on_the_witness():
+    """NEW-8: the leader rule gives one best arm, whatever order the arms are listed in."""
+    results = {_best_arm(_CYCLE, list(order)) for order in itertools.permutations(_CYCLE)}
+    assert results == {"B"}
+
+
+def test_best_arm_rule_wording():
+    answer = _flat(_section("### 8.5 The answer"))
+    assert "The **best arm** is chosen **step by step against the current leader**" in answer
+    assert "keep the leader and every kept arm that ties with the leader, and drop the others" in answer
+    assert "lexicographic" not in answer
+    assert "the best arm is chosen step by step against the current leader" in _flat(
+        _section("## 11. Open before the first v2 run set")
+    )
+
+
+def test_incomplete_arm_is_listed_beside_the_answer():
+    """N-8: an arm with an incomplete B or C result does not leave §8.5 silently."""
+    answer = _flat(_section("### 8.5 The answer"))
+    assert 'It is listed beside the answer as "incomplete".' in answer
+    assert 'If it could still change the answer, the answer is "incomplete"' in answer

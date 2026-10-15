@@ -336,22 +336,22 @@ A run counts only if it saw and used nothing but its own arm's tools [CR]:
 - [`scripts/clean_room_check.py`](../scripts/clean_room_check.py) reads the run's transcripts, nested
   agents included. A run is graded only when the check returns `clean` [CR] [OD].
 - The other verdicts are split by their cause (proposed, owner to confirm in §11) [CR] [v2]:
-  - **Setup faults** are infrastructure errors: `exposed`, `unassessable`, and a `contaminated` verdict
-    whose only causes are instruction files that the host loaded into the session (CLAUDE.md, AGENTS.md,
-    memory; the check's loaded-file contacts, not a tool call or a search by the agent). The run is not
-    graded and not counted as a failure. It is run again, at most **2 reruns per cell** in the run set.
+  - **Setup faults** are infrastructure errors: `exposed` and `unassessable`. The run is not graded and
+    not counted as a failure. It is run again, at most **2 reruns per cell** in the run set.
     Infrastructure losses under §5.3 (for example a container-runtime failure) share the same 2 reruns. A
     cell that has used its 2 reruns and still has **fewer than 5 graded runs** is reported as
     **"unassessable"**, and that cell is short of n = 5 (§8.1) [WP] [v2].
-  - **Agent contamination:** a `contaminated` verdict with any cause from the agent's own actions (a call
-    to a disallowed skill or agent, or a read, write or search outside the allowed paths) is an
-    **attempted run that is not delivered** (§8.1). It is not run again. It is also tallied separately
-    per arm [v2].
-- **Stage-0 smoke run.** Before the run set, each arm runs one smoke run in the Harbor container, with its
-  allowlists (`--allow`, `--allow-path`) as they will be used in the run set. The arm is admitted only when
-  that run gets a **`clean` verdict**. This catches a missing skill listing and an allowlist that leaves
-  out the harness's own skills or paths, which would otherwise give `unassessable` or `contaminated`
-  verdicts that are setup faults [CR] [v2].
+  - **Every `contaminated` verdict** counts against the arm: it is an **attempted run that is not
+    delivered** (§8.1). It is not run again. It is also tallied separately per arm. There is no
+    exception for instruction files that the host loads, because the check does not report them apart
+    from the agent's own contacts; stage 0 allowlists them instead [v2].
+- **Stage-0 smoke run.** Before the run set, stage 0 adds **each arm's host-loaded instruction paths**
+  (the CLAUDE.md, AGENTS.md and memory files that the host loads for that arm's setup) to its
+  `--allow-path`. Each arm then runs one smoke run in the Harbor container, with its allowlists
+  (`--allow`, `--allow-path`) as they will be used in the run set. The arm is admitted only when that run
+  gets a **`clean` verdict**. The clean smoke run proves that the allowlists cover the setup, so a later
+  `contaminated` verdict comes from the agent. It also catches a missing skill listing and an allowlist
+  that leaves out the harness's own skills or paths [CR] [v2].
 - The built-in skill list is pinned per Claude Code version [CR].
 
 ### 5.3 Caps and the run-set budget
@@ -432,8 +432,8 @@ For tasks with seeded ground truth (the pipeline family), each failed run is aud
   cells of that class (the Haiku one-shot for comparison A, the bar for comparisons B and C) at n = 5
   attempted runs. If one of those cells is short (the budget ran out, §5.3, or the cell is
   "unassessable", §5.2), H's result for that comparison is **"incomplete"**, and the per-cell results are
-  reported. A short cell of another arm does not block H's claim. The answer (§8.5) needs every arm
-  that matches the bar or goes beyond it to have complete cells [v2].
+  reported. A short cell of another arm does not block H's claim. §8.5 says how the answer treats an arm
+  whose result is "incomplete" [v2].
 
 ### 8.2 Comparison A: the harness effect (same model)
 
@@ -476,20 +476,31 @@ The answer is computed **per class**: arms that match the bar on the lift class 
 it on the beyond class are not pooled [v2]. Within a class, among the arms that match the bar (§8.3) or
 go beyond it (§8.4) [OC] [DR]:
 
-1. Rank on design (layer 3) in this **lexicographic order**: follow-up success (higher is better), then
+1. The design measures (layer 3) are taken in this **order**: follow-up success (higher is better), then
    edit radius (smaller is better), then the share of design-checklist items answered yes (higher is
-   better), then duplicated lines on new code (lower is better). A later measure breaks a tie on the
-   earlier ones only. Two arms **tie** on a measure when the 90% interval of their difference includes 0.
-   A measure that the class's tasks do not have is skipped (proposed, owner to confirm in §11) [OC] [v2].
-2. The **best arm** is the first arm in that order. The **top design tier** is the best arm, plus each arm
+   better), then duplicated lines on new code (lower is better). Two arms **tie** on a measure when the
+   90% interval of their difference includes 0. A measure that the class's tasks do not have is skipped
+   (proposed, owner to confirm in §11) [OC] [v2].
+2. The **best arm** is chosen **step by step against the current leader**, not by sorting arms pair by
+   pair (a tie is not transitive, so a pairwise sort can cycle). Start with every arm in the class. On
+   each measure in order, the **leader** is the kept arm with the best point estimate; keep the leader
+   and every kept arm that ties with the leader, and drop the others. When one arm is left, it is the
+   best arm. If more than one is left after the last measure, the best arm is the leader of the last
+   measure. Equal point estimates are broken by the next measure, then by the lower cost per
+   defect-free delivered run (proposed, owner to confirm in §11) [v2].
+3. The **top design tier** is the best arm, plus each arm
    that is not worse than the best arm beyond the noise of the run set on any measure. The test is
    **one-sided**: for each measure, take the 90% interval of (arm − best arm), oriented so that a positive
    value is worse for that measure; the arm stays in the tier when the **5th percentile of that interval
    is ≤ 0** for every measure. An arm that is better than the best arm on a later measure is never
    removed for it (proposed, owner to confirm in §11) [v2].
-3. Within the top design tier, rank on traceability (§7) [OC].
-4. **The answer is the cheapest arm in the top design tier**, by cost per defect-free delivered run
+4. Within the top design tier, rank on traceability (§7) [OC].
+5. **The answer is the cheapest arm in the top design tier**, by cost per defect-free delivered run
    (build + follow-up + repairs where the task has them). It is not the cheapest arm overall [OC].
+
+An arm whose comparison B or C result is "incomplete" (§8.1) is not in the steps above. It is listed
+beside the answer as "incomplete". If it could still change the answer, the answer is "incomplete"
+(proposed, owner to confirm in §11) [v2].
 
 The tool gate (layer 2) and auditability (M10) are reported beside the answer. They do not decide [QM]
 [DR]. If no arm matches, the answer is "none yet", and the harness case rests on auditability and
@@ -537,11 +548,11 @@ These items must be filled or confirmed by the owner, with a changelog entry, be
 3. **Proposed, owner to confirm** (from the PR #20 review):
    1. The calibration try count of 5 per arm and per task (§3.1), and the beyond threshold of at most 2 of
       5 (§3.2). The source [TS] names three tries.
-   2. The split of non-clean verdicts: setup faults (`exposed`, `unassessable`, and `contaminated` caused
-      only by host-loaded instruction files) are infrastructure errors with at most 2 reruns per cell,
-      shared with §5.3 infrastructure losses, then the cell is "unassessable"; agent-caused
-      `contaminated` is an attempted run that is not delivered (§5.2, §8.1). Also the stage-0 smoke run,
-      which must get a `clean` verdict for each arm (§5.2).
+   2. The split of non-clean verdicts: setup faults (`exposed`, `unassessable`) are infrastructure errors
+      with at most 2 reruns per cell, shared with §5.3 infrastructure losses, then the cell is
+      "unassessable"; every `contaminated` verdict is an attempted run that is not delivered (§5.2,
+      §8.1). Also the stage-0 smoke run: each arm's host-loaded instruction paths go into its
+      `--allow-path`, and the smoke run must get a `clean` verdict for each arm (§5.2).
    3. The budget stop: round-robin scheduling, and a result of "incomplete" when the arm's or its
       comparator's cell is short of n = 5 (§5.3, §8.1).
    4. A one-shot that hits the guard time cap is an attempted run that is not delivered, also tallied
@@ -549,9 +560,11 @@ These items must be filled or confirmed by the owner, with a changelog entry, be
    5. The deferral reviewer is a harness requirement, not benchmark infrastructure, so the Cadence arm is
       also gated on jtouley/cadence#68 (§2.1, §2.5).
    6. The direction of each difference (§8.1).
-   7. The top design tier: per class, with the lexicographic order follow-up success, edit radius,
-      checklist share, duplication; a tie is a 90% interval that includes 0; the tier test is one-sided,
-      in each measure's worse direction (§8.5).
+   7. The top design tier: per class, with the measure order follow-up success, edit radius, checklist
+      share, duplication; a tie is a 90% interval that includes 0; the best arm is chosen step by step
+      against the current leader; the tier test is one-sided, in each measure's worse direction; an arm
+      with an "incomplete" result is listed beside the answer, and the answer is "incomplete" if that
+      arm could still change it (§8.5).
 4. **Open, no proposal yet:** whether an arm over the 3% duplication gate leaves the top design tier or
    only ranks lower (§4.3, §8.5).
 5. Each other [v2] operational definition: the lift threshold (§3.2), the private-task hash (§3.4),
