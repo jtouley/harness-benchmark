@@ -116,7 +116,10 @@ def test_stage_zero_requires_a_clean_smoke_run_per_arm():
     gate = _flat(_section("### 5.2 Clean-room gating"))
     assert "Each arm then runs one smoke run in the Harbor container" in gate
     assert "The arm is admitted only when that run gets a **`clean` verdict**." in gate
-    assert "The clean smoke run proves that the allowlists cover the setup" in gate
+    assert "The clean smoke run checks that the allowlists cover the setup" in gate  # N-10
+    assert "`contaminated` verdict is treated as coming from the agent" in gate
+    assert "memory files if any" in gate
+    assert "proves" not in gate
     assert "Stage-0 transcript check" not in V2
 
 
@@ -213,8 +216,30 @@ def test_reviewer_picks_await_owner_confirmation():
 def test_tool_gate_coverage_is_new_code_lines_only():
     """N2: the gate is new-code line coverage; whole-package line and branch coverage is reported."""
     gate = _section("### 4.2 Layer 2: the tool gate")
-    assert "| New-code line coverage | ≥ 80% |" in gate
-    assert "| Line and branch coverage of the whole package | Reported, not gated |" in gate
+    assert "| New-code line coverage | ≥ 80% | `new_code_coverage_at_least_80` |" in gate
+    assert "| Line and branch coverage of the whole package | Reported, not gated | none |" in gate
+
+
+def test_every_gate_key_in_quality_metrics_has_a_row_in_the_tool_gate():
+    """NEW-9: each key of the `gate` dict in scripts/quality_metrics.py is a row of §4.2, and back."""
+    code = (ROOT / "scripts" / "quality_metrics.py").read_text(encoding="utf-8")
+    block = re.search(r'result\["gate"\] = \{(.*?)\n    \}', code, re.S).group(1)
+    keys = set(re.findall(r'^\s*"(\w+)":', block, re.M))
+    assert "new_code_duplication_at_most_3" in keys
+    gate = _section("### 4.2 Layer 2: the tool gate")
+    rows = set(re.findall(r"^\|[^|]*\|[^|]*\| `(\w+)` \|", gate, re.M))
+    assert rows == keys
+
+
+def test_duplication_is_gated_and_ranked_and_built_scripts_are_not_open():
+    """NEW-9: §4.2 gates duplication at 3%; §4.3 ranks it; §11 no longer lists built scripts."""
+    gate = _section("### 4.2 Layer 2: the tool gate")
+    assert "| Duplicated lines on new code (`jscpd`, §4.3) | ≤ 3% | `new_code_duplication_at_most_3` |" in gate
+    design = _flat(_section("### 4.3 Layer 3: design fit and the owner criteria"))
+    assert "Both a layer-2 gate condition (≤ 3%, §4.2) and a layer-3 ranking measure (§8.5)" in design
+    assert "`edit_radius.package` in `quality_metrics.py`" in design
+    open_items = _flat(_section("## 11. Open before the first v2 run set"))
+    assert "`jscpd` duplication, the import-graph coupling script, the edit radius" not in open_items
 
 
 def test_pass_one_is_the_beyond_decision_input():

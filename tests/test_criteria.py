@@ -42,18 +42,28 @@ def test_v1_caps_are_fixed_history():
     assert re.search(r"\*\*\$(\d+\.\d\d)\*\* for the Sonnet baseline", CRITERIA).group(1) == "3.00"
 
 
-def test_trial_caps_are_the_criteria_caps():
-    """criteria v1 §6 Caps match the code while the code carries v1 caps.
+def _v2_guard_cap_seconds() -> float | None:
+    """The one-shot guard time cap that criteria v2 §5.3 records, or None while it is not recorded."""
+    v2 = (ROOT / "docs" / "criteria-v2.md").read_text(encoding="utf-8")
+    m = re.search(r"One-shot guard time cap: \*\*(\d+) s\*\*", v2)
+    return float(m.group(1)) if m else None
 
-    criteria v2 §5.3 moves the code to v2 caps. Once cbench/harbor.py no longer carries the v1
-    timeout, this v1-only check stops; the v2 caps are pinned with that code change.
+
+def test_trial_caps_are_the_criteria_caps():
+    """criteria v1 §6 Caps match the code.
+
+    The live.sh dollar caps are always checked. The harbor timeout is checked against v1, and the
+    check is skipped only when the code carries the timeout that criteria v2 §5.3 records.
     """
     m = re.search(r"agent timeout of \*\*(\d+) s\*\*", CRITERIA)
     haiku = re.search(r"\*\*\$(\d+\.\d\d)\*\*\s+for Haiku arms", CRITERIA)
     base = re.search(r"\*\*\$(\d+\.\d\d)\*\* for the Sonnet baseline", CRITERIA)
     harbor = (ROOT / "cbench" / "harbor.py").read_text(encoding="utf-8")
     live = (ROOT / "scripts" / "live.sh").read_text(encoding="utf-8")
-    if f'agent_timeout="{float(m.group(1))}"' not in harbor:
-        pytest.skip("the code carries v2 caps (criteria v2 §5.3); v1 caps are history")
     assert f'haiku_cap="${{HAIKU_CAP_USD:-{haiku.group(1)}}}"' in live
     assert f'base_cap="${{BASELINE_CAP_USD:-{base.group(1)}}}"' in live
+    timeout = float(re.search(r'agent_timeout="([\d.]+)"', harbor).group(1))
+    v2_cap = _v2_guard_cap_seconds()
+    if v2_cap is not None and timeout == v2_cap and timeout != float(m.group(1)):
+        pytest.skip("the code carries the criteria v2 §5.3 timeout; the v1 timeout is history")
+    assert timeout == float(m.group(1))

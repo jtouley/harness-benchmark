@@ -218,17 +218,19 @@ over the threshold, or it was at or under the threshold in the baseline and is o
 `cognitive_newly_over_15` and `cyclomatic_newly_over_10`). A tool that fails leaves its measure
 unmeasured, and the gate then fails [QM].
 
-| Measure | Threshold | Source |
-|---|---|---|
-| New-code line coverage | ≥ 80% | [QM] (Sonar way gate) |
-| Line and branch coverage of the whole package | Reported, not gated | [QM] |
-| Functions that the change takes over cognitive complexity 15 | 0 | [QM] (SonarSource) |
-| Functions that the change takes over cyclomatic complexity 10 | 0 | [QM] (McCabe) |
-| New bug-class static findings | 0 | [QM] |
-| New type errors (mypy, `--check-untyped-defs`) | 0 | [QM] |
-| Test strength: the run's own tests against mutants of the reference solution | ≥ 80%, joins the gate when built | [QM] |
-| Mutation kill rate on the changed lines (M4) | Reported | [v1] [QM] |
-| Maintainability index; code smells per 100 new lines | Reported, not gated | [QM] |
+| Measure | Threshold | Gate key in `quality_metrics.py` | Source |
+|---|---|---|---|
+| The run's own tests pass | All pass, and at least one runs | `tests_pass` | [QM] |
+| New-code line coverage | ≥ 80% | `new_code_coverage_at_least_80` | [QM] (Sonar way gate) |
+| Line and branch coverage of the whole package | Reported, not gated | none | [QM] |
+| Functions that the change takes over cognitive complexity 15 | 0 | `no_function_newly_over_cognitive_15` | [QM] (SonarSource) |
+| Functions that the change takes over cyclomatic complexity 10 | 0 | `no_function_newly_over_cyclomatic_10` | [QM] (McCabe) |
+| New bug-class static findings | 0 | `no_new_bug_findings` | [QM] |
+| New type errors (mypy, `--check-untyped-defs`) | 0 | `no_new_type_errors` | [QM] |
+| Duplicated lines on new code (`jscpd`, §4.3) | ≤ 3% | `new_code_duplication_at_most_3` | [QM] (Sonar way gate) |
+| Test strength: the run's own tests against mutants of the reference solution | ≥ 80%, joins the gate when built | none yet | [QM] |
+| Mutation kill rate on the changed lines (M4) | Reported | none | [v1] [QM] |
+| Maintainability index; code smells per 100 new lines | Reported, not gated | none | [QM] |
 
 The tool gate is reported for every arm. It does not rank arms [QM].
 
@@ -236,9 +238,9 @@ The tool gate is reported for every arm. It does not rank arms [QM].
 
 | Part | Measure | How | Role | Source |
 |---|---|---|---|---|
-| DRY | **Duplicated lines on new code** | `jscpd`, minimum block 5 lines | Gate: ≤ 3%. Whether an arm over 3% leaves the top design tier or only ranks lower (§8.5) is open (§11) | [OC] |
-| SOLID: single responsibility, dependency inversion | **Module coupling**: efferent and afferent coupling and instability per module, from the import graph | An import-graph script per language | Reported, not gated | [OC] |
-| SOLID: open for extension | **Edit radius** of the follow-up: the existing files that the follow-up changes, and their changed lines | From the follow-up diff against the frozen base | Ranks design | [OC] [FU] |
+| DRY | **Duplicated lines on new code** | `jscpd`, minimum block 5 lines (`new_code_duplication` in `quality_metrics.py`) | Both a layer-2 gate condition (≤ 3%, §4.2) and a layer-3 ranking measure (§8.5). Whether an arm over 3% leaves the top design tier or only ranks lower (§8.5) is open (§11) | [OC] [QM] |
+| SOLID: single responsibility, dependency inversion | **Module coupling**: efferent and afferent coupling and instability per module, from the import graph | An import-graph reader per language (`module_coupling` in `quality_metrics.py`; Python is built) | Reported, not gated | [OC] |
+| SOLID: open for extension | **Edit radius** of the follow-up: the existing files that the follow-up changes, and their changed lines | From the follow-up diff against the frozen base (`edit_radius.package` in `quality_metrics.py`) | Ranks design | [OC] [FU] |
 | Extensible | **Follow-up success and cost**: the follow-up's hidden checks, its dollars and its wall time | §4.5 | Ranks design | [OC] [FU] |
 | Design checklist | Each item yes or no, with a file and line, by two blind reviewers | §6 | Ranks design | [QM] [OC] |
 | Traceable | **Audit scores**: diagnosis accuracy, origin accuracy, audit cost, repair cost | §7 | Ranks after design | [OC] [PF] |
@@ -346,11 +348,11 @@ A run counts only if it saw and used nothing but its own arm's tools [CR]:
     exception for instruction files that the host loads, because the check does not report them apart
     from the agent's own contacts; stage 0 allowlists them instead [v2].
 - **Stage-0 smoke run.** Before the run set, stage 0 adds **each arm's host-loaded instruction paths**
-  (the CLAUDE.md, AGENTS.md and memory files that the host loads for that arm's setup) to its
+  (the CLAUDE.md and AGENTS.md files, and memory files if any, that the host loads for that arm's setup) to its
   `--allow-path`. Each arm then runs one smoke run in the Harbor container, with its allowlists
   (`--allow`, `--allow-path`) as they will be used in the run set. The arm is admitted only when that run
-  gets a **`clean` verdict**. The clean smoke run proves that the allowlists cover the setup, so a later
-  `contaminated` verdict comes from the agent. It also catches a missing skill listing and an allowlist
+  gets a **`clean` verdict**. The clean smoke run checks that the allowlists cover the setup, and a later
+  `contaminated` verdict is treated as coming from the agent. It also catches a missing skill listing and an allowlist
   that leaves out the harness's own skills or paths [CR] [v2].
 - The built-in skill list is pinned per Claude Code version [CR].
 
@@ -571,8 +573,10 @@ These items must be filled or confirmed by the owner, with a changelog entry, be
    pass^k (§4.4), the dropped-part-of-request defect (§2.5), the third design reviewer (§6), the beyond
    rule (§8.4) and the scope of the §2.1 model rule (§2.1).
 6. The code that pins v1 caps changes to v2 (§5.3).
-7. Scripts for every measure that a run set reports (§4): test-confirmed defects, test strength,
-   `jscpd` duplication, the import-graph coupling script, the edit radius, the audit scores [QM] [OC].
+7. Scripts for every measure that a run set reports (§4) and that is not built yet: test-confirmed
+   defects, test strength, an import-graph reader for each non-Python stack in the run set, the audit
+   scores [QM] [OC]. (Duplication, Python coupling and the edit radius are built in
+   `scripts/quality_metrics.py`.)
 
 ## Changelog from v1
 
