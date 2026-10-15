@@ -5,6 +5,7 @@ if they fail forever, the trial is a timeout. Both would be scored as the model'
 """
 import json
 import os
+import socket
 import subprocess
 import time
 from pathlib import Path
@@ -78,6 +79,64 @@ def test_check_with_an_empty_label_line_is_still_run(tmp_path):
     assert "FAIL (unlabelled check)" in r.stdout
 
 
+SERVER = """
+import http.server, pathlib, sys
+ver = pathlib.Path(sys.argv[2]).read_text().strip()  # read once, at startup
+class H(http.server.BaseHTTPRequestHandler):
+    def do_GET(self):
+        self.send_response(200); self.end_headers(); self.wfile.write(ver.encode())
+    def log_message(self, *a):
+        pass
+http.server.HTTPServer(("127.0.0.1", int(sys.argv[1])), H).serve_forever()
+"""
+
+FETCH = (
+    'python3 -c "import sys,time,urllib.request\n'
+    "for _ in range(50):\n"
+    "    try: sys.exit(0 if urllib.request.urlopen('http://127.0.0.1:{port}').read()==b'{want}' else 1)\n"
+    '    except OSError: time.sleep(0.1)\n'
+    'sys.exit(2)"'
+)
+
+
+def free_port():
+    with socket.socket() as s:
+        s.bind(("127.0.0.1", 0))
+        return s.getsockname()[1]
+
+
+def port_is_free(port):
+    with socket.socket() as s:
+        return s.connect_ex(("127.0.0.1", port)) != 0
+
+
+def server_contract(tmp_path, port, want, setup_tail=""):
+    (tmp_path / "server.py").write_text(SERVER)
+    return (
+        f"Start the app\n```setup\npython3 {tmp_path}/server.py {port} {tmp_path}/ver &{setup_tail}\n```\n"
+        f"Serves version {want}\n```check\n{FETCH.format(port=port, want=want)}\n```\n"
+    )
+
+
+def test_setup_processes_are_stopped_so_the_next_run_sees_the_fix(tmp_path):
+    port = free_port()
+    contract = server_contract(tmp_path, port, want="2")
+    (tmp_path / "ver").write_text("1")
+    assert run_contract(tmp_path, contract).returncode == 1, "run 1 serves the old version"
+    (tmp_path / "ver").write_text("2")  # the agent's fix
+    r = run_contract(tmp_path, contract)
+    assert r.returncode == 0, "run 2 must reach a fresh server, not the one run 1 started: " + r.stdout
+    assert port_is_free(port), "the server setup started must be stopped when the run ends"
+
+
+def test_setup_processes_are_stopped_when_setup_fails(tmp_path):
+    port = free_port()
+    (tmp_path / "ver").write_text("1")
+    r = run_contract(tmp_path, server_contract(tmp_path, port, want="1", setup_tail="\nsleep 1; exit 3"))
+    assert "SETUP FAILED" in r.stdout
+    assert port_is_free(port), "an early exit must still stop what setup started"
+
+
 def test_missing_contract_file_fails(tmp_path):
     r = subprocess.run(["bash", str(RUNNER), str(tmp_path / "CONTRACT.md")], capture_output=True, text=True)
     assert r.returncode == 1
@@ -120,10 +179,20 @@ def test_gate_logs_a_missing_contract_as_its_own_outcome(tmp_path):
     assert "no CONTRACT.md" in log
 
 
-def test_gate_logs_when_the_cap_lets_the_session_end(tmp_path):
+def test_gate_at_the_cap_runs_and_logs_the_final_contract_state_then_allows_stop(tmp_path):
+    (tmp_path / "CONTRACT.md").write_text("Req 1 fails\n```check\nfalse\n```\n")
     (tmp_path / ".contract_attempts").write_text(str(CAP))
     assert gate(tmp_path) is None
-    assert "cap reached" in (tmp_path / ".contract_gate.log").read_text()
+    log = (tmp_path / ".contract_gate.log").read_text()
+    assert "cap reached" in log
+    assert "FAIL Req 1 fails" in log, "the grader needs the contract state at which the session ended"
+
+
+def test_gate_at_the_cap_without_a_contract_allows_stop_and_logs_it(tmp_path):
+    (tmp_path / ".contract_attempts").write_text(str(CAP))
+    assert gate(tmp_path) is None
+    log = (tmp_path / ".contract_gate.log").read_text()
+    assert "cap reached" in log and "no CONTRACT.md" in log
 
 
 # repository hygiene for calibration outputs
