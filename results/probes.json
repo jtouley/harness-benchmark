@@ -170,7 +170,7 @@
                   "hook": "guard_skill_gate.py",
                   "origin": "home/.claude/settings.json",
                   "stderr": "",
-                  "stdout": "{\"hookSpecificOutput\": {\"hookEventName\": \"PreToolUse\", \"permissionDecision\": \"deny\", \"permissionDecisionReason\": \"BLOCKED: gated path `<ROOT>/proj/src/app.py` requires entry invariant (prefixes=['src/', 'lib/', 'app/', 'packages/'])\\nACTION: python3 \\\"<CACHE>/src/cadence@812998f7a8f670f28cfd6dd358de",
+                  "stdout": "{\"hookSpecificOutput\": {\"hookEventName\": \"PreToolUse\", \"permissionDecision\": \"deny\", \"permissionDecisionReason\": \"BLOCKED: gated path `<ROOT>/proj/src/app.py` requires entry invariant (prefixes=['src/', 'lib/', 'app/', 'packages/'])\\nACTION: python3 \\\"<CACHE>/src/cadence@e5c3a9289eb28d6cdefc29844c70",
                   "verdict": "block",
                   "via": "permission-deny"
                 },
@@ -224,7 +224,7 @@
                   "hook": "guard_skill_gate.py",
                   "origin": "home/.claude/settings.json",
                   "stderr": "",
-                  "stdout": "{\"hookSpecificOutput\": {\"hookEventName\": \"PreToolUse\", \"permissionDecision\": \"deny\", \"permissionDecisionReason\": \"BLOCKED: gated path `src/app.py` requires entry invariant (prefixes=['src/', 'lib/', 'app/', 'packages/'])\\nACTION: python3 \\\"<CACHE>/src/cadence@812998f7a8f670f28cfd6dd358de8c655656fb23",
+                  "stdout": "{\"hookSpecificOutput\": {\"hookEventName\": \"PreToolUse\", \"permissionDecision\": \"deny\", \"permissionDecisionReason\": \"BLOCKED: gated path `src/app.py` requires entry invariant (prefixes=['src/', 'lib/', 'app/', 'packages/'])\\nACTION: python3 \\\"<CACHE>/src/cadence@e5c3a9289eb28d6cdefc29844c704674ec985001",
                   "verdict": "block",
                   "via": "permission-deny"
                 }
@@ -397,7 +397,7 @@
                   "hook": "guard_skill_gate.py",
                   "origin": "home/.cursor/hooks.json",
                   "stderr": "",
-                  "stdout": "{\"permission\": \"deny\", \"user_message\": \"BLOCKED: gated path `<ROOT>/proj/src/app.py` requires entry invariant (prefixes=['src/', 'lib/', 'app/', 'packages/'])\\nACTION: python3 \\\"<CACHE>/src/cadence@812998f7a8f670f28cfd6dd358de8c655656fb23/scripts/entry_invariant.py\\\" --phase execution\", \"agent_messa",
+                  "stdout": "{\"permission\": \"deny\", \"user_message\": \"BLOCKED: gated path `<ROOT>/proj/src/app.py` requires entry invariant (prefixes=['src/', 'lib/', 'app/', 'packages/'])\\nACTION: python3 \\\"<CACHE>/src/cadence@e5c3a9289eb28d6cdefc29844c704674ec985001/scripts/entry_invariant.py\\\" --phase execution\", \"agent_messa",
                   "verdict": "block",
                   "via": "permission-deny"
                 },
@@ -451,7 +451,7 @@
                   "hook": "guard_skill_gate.py",
                   "origin": "home/.cursor/hooks.json",
                   "stderr": "",
-                  "stdout": "{\"permission\": \"deny\", \"user_message\": \"BLOCKED: gated path `src/app.py` requires entry invariant (prefixes=['src/', 'lib/', 'app/', 'packages/'])\\nACTION: python3 \\\"<CACHE>/src/cadence@812998f7a8f670f28cfd6dd358de8c655656fb23/scripts/entry_invariant.py\\\" --phase execution\", \"agent_message\": \"BLOCKE",
+                  "stdout": "{\"permission\": \"deny\", \"user_message\": \"BLOCKED: gated path `src/app.py` requires entry invariant (prefixes=['src/', 'lib/', 'app/', 'packages/'])\\nACTION: python3 \\\"<CACHE>/src/cadence@e5c3a9289eb28d6cdefc29844c704674ec985001/scripts/entry_invariant.py\\\" --phase execution\", \"agent_message\": \"BLOCKE",
                   "verdict": "block",
                   "via": "permission-deny"
                 }
@@ -1304,7 +1304,7 @@
   },
   "provenance": {
     "canonical_root": "/tmp/cbench",
-    "lockfile_sha256": "9515e62a3f5d325135ca89728b45fb958245c6536fabf9ab3f178150c0b29e68",
+    "lockfile_sha256": "6cbe9b8e94ddf931201caf9f77023e7d69ba6340197f01918fd0a19db10e5055",
     "pricing_sha256": "7af66e689754689850c47229da79af75d229e3882a798826de3f50317f292139",
     "tokenizer": {
       "id": "anthropic==0.37.1:anthropic/tokenizer.json",

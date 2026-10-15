@@ -2,9 +2,12 @@
 __pycache__/
 .pytest_cache/
 
-# Private tasks (u21-interview brownfield, etc.): kept with the benchmark, never pushed (this repo is public)
+# Private tasks (third-party brownfield repositories): kept with the benchmark, never pushed (this repo is public)
 private/
-# Raw run directories and Harbor jobs: large and machine-local
+# Raw run directories, Harbor jobs and task checkouts from make_samples.sh: large and machine-local
+calibration/**/tasks/
+calibration/swebench-pro/sample20/
+calibration/swebench-pro/hard3/
 calibration/**/runs/
 calibration/**/jobs/
 # Trial outputs of runner/run_trial.sh: transcripts can hold anything the agent printed

@@ -11,12 +11,14 @@ stated next to the claim it limits.
 > ([criteria v1](criteria.md#disclosure)). That is why the main result below, which does not favor
 > Cadence, is stated first.
 
-> **Update, 14 October 2026.** Three newer results are summarized in
+> **Update, 14 October 2026.** Four newer results are summarized in
 > [Since iteration 4](#since-iteration-4) and argued in full in the [whitepaper](whitepaper.md):
 > Cadence on Haiku 5.5 delivered nothing in the pilot; on a real multi-cause bug the cheap one-shots
-> fix the main path and miss the second defect, and an independent review loop recovers it at about
-> the Opus one-shot's cost; and the cheap models miss by scope narrowing and coverage, not by
-> reasoning depth.
+> fix the main path and miss the second defect, and an independent review loop recovered it in 2/2 Haiku
+> and 1/1 Sonnet runs (a signal) at about the Opus one-shot's cost; the cheap models miss by scope narrowing and coverage, not by
+> reasoning depth; and on a 20-task SWE-bench Pro sample (one try per model), a one-shot Haiku 5.5
+> passed 17 against Opus 5.5's 18 at about one tenth of the cost, so those tasks are not lift candidates
+> for a harness.
 
 > **Short answer (iteration 4).** On small, precisely specified tasks, a harness did **not** show better code
 > than a strong model alone, and it took about 30 times longer. What it did show is
@@ -59,9 +61,9 @@ record the input, output and cache split, so they report tokens, not dollars.
 |---|---|---|
 | **Pilot** (T05, clean room, one run per arm) | The Opus one-shot delivered in 111 s for $0.40 (7/7 hidden tests, quality gate passed). Cadence on Haiku 5.5 hard-stopped at P6 after four plan updates ($1.13, 75 min); Cadence on Haiku with Opus reviews hard-stopped at P9 ($3.19, 27 min). A full harness on a weak orchestrator adds places to stop. Four Cadence defects filed (cadence#63–#66). | [pilot](experiments/2026-10-13-pilot.md) |
 | **Calibration rule** | Tasks are chosen by what the Opus one-shot does on them: a *lift* task (Opus reliable, cheap one-shots not) or a *beyond* task (Opus unreliable). Reliability is measured over repeats. | [next steps](next-steps.md#task-selection-calibrated-against-the-bar-owner-direction-2026-10-13) |
-| **B01**, a private multi-service bug (lift task) | Both defects fixed: Opus one-shot 10/10 ($1.29), Sonnet 1/5 ($0.39), Haiku 0/5 ($0.11). Review loop with an Opus reviewer: Haiku 2/2 ($1.15), Sonnet 1/1 ($1.24). Reliability recovered; no money saved. | [whitepaper §3.3](whitepaper.md#33-a-real-multi-cause-bug-b01-a-lift-task) |
-| **Why cheap models miss** | Haiku hit the second defect in 5/5 runs, diagnosed it, chose to "leave that out of this change and report it", and did not report it. Sonnet never exercised that path in 4/5. Haiku took more turns than Opus (166 against 90). | [whitepaper §3.4](whitepaper.md#34-why-the-cheap-models-miss) |
-| **SWE-bench Pro** (20 sampled tasks) | Opus one-shot 17/20; two tasks at 2 of 5 tries (beyond candidates). | [calibration](../calibration/README.md) |
+| **B01**, a private multi-service bug (lift task) | Both defects fixed: Opus one-shot 10/10 ($1.29), Sonnet 1/5 ($0.39), Haiku 0/5 ($0.11). Review loop with an Opus reviewer: Haiku 2/2 ($1.15), Sonnet 1/1 ($1.24). A signal that reliability can be recovered, not yet a reliability measure (pass^k needs k ≥ 3); two more runs were set aside as invalid (Docker down during the run). No money saved. | [whitepaper §3.3](whitepaper.md#33-a-real-multi-cause-bug-b01-a-lift-task) |
+| **Why cheap models miss** | Haiku hit the second defect in 5/5 runs and diagnosed it correctly once; in that run it chose to "leave that out of this change and report it", and did not report it. Sonnet never exercised that path in 4/5. Haiku took more turns than Opus (166 against 90). | [whitepaper §3.4](whitepaper.md#34-why-the-cheap-models-miss) |
+| **SWE-bench Pro** (20 sampled tasks, one try per model) | One-shots passed: Opus 5.5 18/20 ($5.79), Sonnet 5.5 18/20 ($2.57), Haiku 5.5 17/20 ($0.54). Haiku is within one task of Opus at about one tenth of the cost, so these tasks are not lift candidates for a harness. Two tasks passed only 2 of 5 Opus tries (beyond candidates). Limits: 20 tasks, one try per model, setup failures rerun (the model never ran in them). Open: the beyond tasks and reliability over repeats (pass^k), not single-pass rates. | [calibration](../calibration/README.md), [per task](../calibration/swebench-pro/round2.md) |
 
 ## What we got from Cadence
 
@@ -126,8 +128,10 @@ and Haiku on that task. It is not evidence for a harness.
   None used a skill, but the descriptions may have primed them. The next run set gates on
   [`clean_room_check.py`](../scripts/clean_room_check.py).
 - **Harder tasks.** Opus alone did these tasks in about 2 minutes. Tasks are now chosen by calibration
-  against the Opus one-shot, and the long-horizon set is the [pipeline family](tasks/pipeline-family.md)
-  (one spec on three stacks, with a follow-up change and a traceability audit).
+  against the Opus one-shot (class L and O tasks), and the long-horizon set is the
+  [pipeline family](tasks/pipeline-family.md) (one spec on three stacks, with a follow-up change and a
+  traceability audit; it supersedes L3). The harness also runs on cheap models, all cheap and with Opus as
+  reviewer only ([next steps](next-steps.md)).
 - **More runs and a second grader.** Each cell ran once. Apart from Haiku's results and the 2.0-point
   quality gap on multicurrency, every gap here is within single-run noise.
 - **Class L and O tasks.** If a harness does not reduce defects there, the case for it rests on

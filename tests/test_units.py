@@ -7,9 +7,14 @@ from decimal import Decimal
 
 import pytest
 
+from pathlib import Path
+
 from cbench import tokens
 from cbench.context import Hook, frontmatter, matches
 from cbench.hookrun import aggregate, classify
+from cbench.install import Sandbox, _sort_manifest_files, canonicalize_host_text, normalizer
+from cbench.lock import load_lock
+from cbench.probes import _clean
 from cbench.util import PRICING_PATH, canonical_json, load_json
 
 PRICING = load_json(PRICING_PATH)
@@ -81,6 +86,84 @@ def test_matcher_is_full_regex():
     assert matches(_hook(matcher=None), "Bash")
 
 
+def test_normalize_hides_macos_tmp_realpath_and_baked_node_path():
+    """Installed bytes must not depend on where /tmp resolves or where node lives.
+
+    macOS realpath(/tmp) is /private/tmp. GSD also bakes process.execPath into
+    hook commands. Both move footprint.json off the committed Linux result.
+    """
+    text = (
+        "@/private/tmp/cbench/gsd-core/proj/.claude/gsd-core/references/x.md\n"
+        '"$(for n in "/Users/a/.cache/cadence-bench/node-v22/bin/node" '
+        '"$(command -v node)" /usr/local/bin/node /usr/bin/node; do true; done)"'
+    )
+    out = normalizer(load_lock())(text)
+    assert "/private/tmp" not in out
+    assert "/tmp/cbench/gsd-core/" in out
+    assert "/Users/" not in out
+    assert "<NODE>" in out
+
+
+def test_probe_stderr_drops_bash_setlocale_warning():
+    """Homebrew bash warns when LC_ALL=C.UTF-8 is unset on macOS. Verdicts ignore stderr."""
+    sb = Sandbox(
+        root=Path("/tmp/cbench/cadence"),
+        home=Path("/tmp/cbench/cadence/home"),
+        proj=Path("/tmp/cbench/cadence/proj"),
+        src=None,
+        plugin_dirs=(),
+    )
+    raw = "bash: warning: setlocale: LC_ALL: cannot change locale (C.UTF-8): No such file or directory\n"
+    assert _clean(raw, sb, 200) == ""
+
+
+def test_canonicalize_rewrites_this_machines_cache_dir():
+    """Plugin metadata stores the checkout under the bench cache. Home differs per host."""
+    from cbench.util import cache_dir
+
+    baked = f'{{"path": "{cache_dir()}/src/superpowers@abc"}}'
+    out = canonicalize_host_text(baked)
+    assert str(cache_dir()) not in out
+    assert "<CACHE>/src/superpowers@abc" in out
+
+
+def test_sort_manifest_files_is_independent_of_directory_order():
+    raw = json.dumps(
+        {"integration": "claude", "files": {"b.md": "2", "a.md": "1"}},
+        indent=2,
+    ) + "\n"
+    once = _sort_manifest_files(raw)
+    twice = _sort_manifest_files(once)
+    assert once == twice
+    assert list(json.loads(once)["files"]) == ["a.md", "b.md"]
+
+
+def test_canonicalize_cache_dir_matches_only_at_a_path_boundary(monkeypatch, tmp_path):
+    """CBENCH_CACHE may be short (/cache). Text that merely contains it must not change."""
+    cache = tmp_path / "cache"
+    monkeypatch.setenv("CBENCH_CACHE", str(cache))
+    text = (
+        f"docs/specs/cache-api.md\n"
+        f"{cache}-api.md\n"
+        f'"installPath": "{cache}/src/superpowers@abc"\n'
+        f"{cache}\n"
+    )
+    out = canonicalize_host_text(text)
+    assert out == (
+        "docs/specs/cache-api.md\n"
+        f"{cache}-api.md\n"
+        '"installPath": "<CACHE>/src/superpowers@abc"\n'
+        "<CACHE>\n"
+    )
+
+
+def test_probe_evidence_keeps_text_that_only_starts_with_the_cache_dir(monkeypatch, tmp_path):
+    cache = tmp_path / "cache"
+    monkeypatch.setenv("CBENCH_CACHE", str(cache))
+    sb = Sandbox(root=Path("/tmp/cbench/x"), home=Path("/tmp/cbench/x/home"),
+                 proj=Path("/tmp/cbench/x/proj"), src=None, plugin_dirs=())
+    out = _clean(f"{cache}-api.md {cache}/src/a", sb, 500)
+    assert out == f"{cache}-api.md <CACHE>/src/a"
 def test_normalizer_hides_where_node_is_installed():
     """PR #6 review: GSD's hook command embeds the node path, which varies by machine."""
     from cbench.install import normalizer
@@ -90,3 +173,12 @@ def test_normalizer_hides_where_node_is_installed():
     assert norm('"/usr/local/bin/node" hooks/x.js') == '"<NODE>" hooks/x.js'
     assert norm("/opt/node22/bin/node hooks/x.js") == "<NODE> hooks/x.js"
     assert norm("npx node-gyp; /usr/bin/nodejs") == "npx node-gyp; /usr/bin/nodejs"
+
+
+def test_normalizer_hides_a_node_binary_that_lives_under_the_cache_dir(monkeypatch, tmp_path):
+    """The bench can install node under its own cache; the node rule must win over <CACHE>."""
+    cache = tmp_path / "cache"
+    monkeypatch.setenv("CBENCH_CACHE", str(cache))
+    norm = normalizer(load_lock())
+    assert norm(f'"{cache}/node-v22/bin/node" hooks/x.js') == '"<NODE>" hooks/x.js'
+    assert norm(f'"{cache}/src/superpowers@abc"') == '"<CACHE>/src/superpowers@abc"'

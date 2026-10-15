@@ -63,8 +63,12 @@ in the text an arm gets.
 > - `make stream DURATION=<seconds>` consumes the stream for that long and updates the stream tables.
 >   If the connection drops, the consumer resumes where it stopped. Stopping and starting the consumer
 >   must not count any event twice or lose one.
-> - Event time, not arrival time, places an edit in a window. An event that arrives more than 10 minutes
->   after its window ended is not added to that window; count it in a `late_events` table instead.
+> - Event time, not arrival time, places an edit in a window. Windows are 5 minutes long and start on
+>   the multiples of 5 minutes (UTC).
+> - Lateness is measured in stream time, not by a clock: an event is **late** when, at its first
+>   arrival, the highest event time among the events that arrived before it is more than 10 minutes
+>   after the end of its window. A late event is not added to its window; put it in a `late_events`
+>   table instead. The replay can run faster than real time, so a wall-clock reading of "late" is wrong.
 > - Money is in US dollars, summed exactly (no floating-point sums).
 > - Document the grain of each model. Test the keys of each model with dbt tests.
 >
@@ -74,8 +78,9 @@ in the text an arm gets.
 > 2. The ten counties with the highest FY2024 obligations per person.
 > 3. The number of awards with a net negative obligation in FY2024.
 > 4. For one month: county totals add up to state totals, and state totals add up to the source total.
-> 5. For the stream: edits and net bytes per wiki for the replayed hour, split human and bot.
-> 6. For the stream: the 5-minute windows with the most edits on `en.wikipedia.org`.
+> 5. For the stream: edits and net bytes per wiki for the replayed hour, split human and bot. Late
+>    events are included: this check counts every edit consumed, on time or late.
+> 6. For the stream: the 5-minute windows with the most edits on `en.wikipedia.org` (on-time edits only).
 > 7. For the stream: the count of late events.
 >
 > ### Amendment A (from the analysts, after the first review)
@@ -90,8 +95,16 @@ in the text an arm gets.
 
 - The amendment is part of the request on purpose: a plan made from the first part only uses the wrong
   denominator. It tests whether the plan follows later requirements (trap S1 in the catalog).
-- "Exactly once" under disconnects, event time windows and late data are stated as outcomes. How to get
-  there (offsets, `Last-Event-ID`, dedupe keys, watermarks) is the arm's design.
+- "Exactly once" under disconnects and event time windows are stated as outcomes, and late data as one
+  rule. How to get there (offsets, `Last-Event-ID`, dedupe keys, where the watermark is kept) is the
+  arm's design.
 - The replay server is part of the task, not the solution. It serves a fixed capture and injects
-  scheduled faults from a seed (the [catalog](pipeline-traps.md#stream-faults)). Grading uses fixed seeds;
-  development can use any seed.
+  scheduled faults from a seed (the [catalog](pipeline-traps.md#stream-faults-injected-by-the-replay-server-from-a-seed)).
+  Grading uses fixed seeds; development can use any seed.
+- The lateness rule is a watermark (the highest event time seen so far), so the late set depends only
+  on the capture and the seed, never on replay speed or runner load. The replay server sends the
+  captured event times unchanged and may replay faster than real time, so a graded `make stream` does
+  not cost an hour. "First arrival" settles F2's re-sent events: a re-sent copy keeps the lateness of
+  its first copy. The key must show that the late set is the same whether or not canary events (W1),
+  non-edit events and the invalid frame (F5) advance the watermark; where it is not the same, the key
+  accepts each reading.

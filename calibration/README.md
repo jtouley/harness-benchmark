@@ -8,7 +8,7 @@ This folder holds the calibration runs' scripts and summaries, and the minimal h
 | Path | What | Tracked |
 |---|---|---|
 | `swebench-pro/` | SWE-bench Pro (Harbor `scale-ai/swe-bench-pro`) calibration: sample lists, the round script, the results collector, `results.json` | yes |
-| `swebench-pro/jobs/`, `swebench-pro/tasks/` | Harbor job outputs and downloaded task definitions | no (machine-local, large) |
+| `swebench-pro/jobs/`, `swebench-pro/runs/`, `swebench-pro/tasks/`, `swebench-pro/sample20/`, `swebench-pro/hard3/` | Harbor job outputs, downloaded task definitions, and the sample directories `make_samples.sh` builds from the lists | no (machine-local, large) |
 | `../harnesses/reviewloop/` | Review loop: the session model works, an independent `reviewer` subagent (Opus) checks the running result, the session model fixes until it approves (max 3 reviews) | yes |
 | `../harnesses/reviewloop-sonnet-reviewer/` | The same, with the reviewer on Sonnet | yes |
 | `../harnesses/verifyloop/` | Verification harness: a `contract-writer` subagent writes an executable `CONTRACT.md` before any code; a Stop hook runs it and blocks the session from finishing while a check fails | yes |
@@ -17,19 +17,37 @@ This folder holds the calibration runs' scripts and summaries, and the minimal h
 Each harness is a Claude Code plugin, loaded for one session with `claude --plugin-dir <harness>`. Its
 instructions are generic: none names a task, its data or its traps ([prompt hygiene](../docs/tasks/pipeline-family.md#prompt-hygiene)).
 
-## SWE-bench Pro, so far (Opus 5.5 one-shot, Harbor, Claude Code in the task container)
+## SWE-bench Pro, so far (one-shot Claude Code, Harbor 0.24.0, Claude Code in the task container)
 
-- Round 1: 20 sampled Python tasks, one try each: 17 passed, 2 failed, 1 did not start (setup timeout).
-- Round 2: three more tries on the two failures and the one that did not start:
+- Round 1 (Opus 5.5): 20 sampled Python tasks, one try each: 17 passed, 2 failed, 1 did not start (setup timeout).
+- Repeats on the Opus misses:
+  (each count includes the round 1 try, or its retry when the round 1 try never started)
   - `ansible-d2f80991`: 2 of 5 passed (a **beyond** candidate: the bar is unreliable);
   - `openlibrary-30bc73a1`: 2 of 5 passed (a **beyond** candidate);
-  - `ansible-d9f18662`: 4 of 4 passed (the round 1 miss was infrastructure).
-- Round 2 also runs one Sonnet 5.5 and one Haiku 5.5 try on all 20, to find **lift** candidates (the bar
-  passes, a cheap one-shot does not).
-- Two earlier attempts of round 2 lost all or most of their trials to Docker Desktop failures (emulated x86 images on an
+  - `ansible-d9f18662`: 5 of 5 passed (the round 1 try died in setup; its retry passed).
+- Round 2: one Sonnet 5.5 and one Haiku 5.5 try on all 20, to look for **lift** candidates (the bar passes,
+  a cheap one-shot does not). Trials that died in container setup (the model never ran) were rerun once:
+  Haiku 10, Sonnet 4, Opus 1. Result, with the Opus round 1 try ([table per task](swebench-pro/round2.md)):
+
+  | Model (one try per task) | Passed | Cost (list prices) | Per task |
+  |---|---|---|---|
+  | Opus 5.5 | 18/20 | $5.79 | $0.290 |
+  | Sonnet 5.5 | 18/20 | $2.57 | $0.129 |
+  | Haiku 5.5 | 17/20 | $0.54 | $0.027 |
+
+  On this sample, a one-shot Haiku 5.5 is within one task of Opus 5.5 at about one tenth of the cost. Only
+  one task (`qutebrowser-9ed748ef`) passed on Opus and failed on both cheaper models, once each; that is
+  not enough to call it a lift task. So this sample has no clear lift candidates. What stays open is the
+  two beyond candidates and reliability over repeats (pass^k), which one try per model does not measure.
+- Limits: 20 tasks, one try per model, setup failures rerun. Two Opus tries hit the agent timeout; one of
+  them still passed the verifier and counts as a pass, the other counts as a fail. Cost is computed from
+  token counts at [`pricing.json`](../pricing.json) list prices, because Claude Code misprices Haiku 5.5.
+- Earlier attempts of round 2 lost all or most of their trials to Docker Desktop failures (emulated x86 images on an
   arm64 laptop); they are kept in `results.json` as `infra_error`, not as failures.
 
-Reproduce: `./swebench-pro/make_samples.sh`, then `./swebench-pro/round2.sh`, then `./swebench-pro/collect.py`.
+Reproduce: `./swebench-pro/make_samples.sh`, then `./swebench-pro/round2.sh`, then rerun each setup failure as job
+`<model>-sample20-retry` (a manual step; `round2.sh` does not do it), then `./swebench-pro/collect.py` (writes `results.json` from the machine-local `jobs/`), then `./swebench-pro/round2_summary.py` (merges the
+first tries with the setup retries into `round2.json` and `round2.md`).
 
 ## Known defects of this calibration (tracked as issues in this repository)
 
