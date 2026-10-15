@@ -18,10 +18,12 @@
 #
 # ANTHROPIC_API_KEY is read from this process's environment and written to the container's standard
 # input (a shell builtin, so it is in no process's arguments). It is not in the container's
-# configuration, the image, a file or a log.
+# configuration, the image, a file or a log. The agent holds it in its environment and can print it, so
+# after the outputs are copied every file in --out is scanned and each copy of the key is replaced by
+# [REDACTED:ANTHROPIC_API_KEY]. The scan reads the key from the environment and never prints it.
 set -euo pipefail
 
-usage() { sed -n '2,22p' "$0" | sed 's/^# \{0,1\}//'; }
+usage() { sed -n '2,23p' "$0" | sed 's/^# \{0,1\}//'; }
 die() { printf 'run_trial: %s\n' "$*" >&2; exit 2; }
 
 IMAGE="${HB_RUNNER_IMAGE:-harness-benchmark/runner:local}"
@@ -58,10 +60,45 @@ done
 if [ -e "$OUT" ] && [ -n "$(ls -A "$OUT")" ]; then die "--out exists and is not empty: $OUT"; fi
 mkdir -p "$OUT"
 
+# Replace the API key in every regular file under $OUT and print how many files held it. Symbolic links
+# are not followed (the agent made them; they can point at host files outside $OUT). Exit 1 if a file
+# cannot be scanned.
+redact_key() {
+  [ -n "${ANTHROPIC_API_KEY:-}" ] || { echo 0; return 0; }
+  python3 - "$OUT" <<'PY'
+import os, stat, sys
+key = os.environ["ANTHROPIC_API_KEY"].encode()
+mark = b"[REDACTED:ANTHROPIC_API_KEY]"
+redacted, failed = 0, False
+for root, _dirs, files in os.walk(sys.argv[1]):
+    for name in files:
+        path = os.path.join(root, name)
+        try:
+            mode = os.lstat(path).st_mode
+            if not stat.S_ISREG(mode):
+                continue
+            with open(path, "rb") as f:
+                data = f.read()
+            if key in data:
+                os.chmod(path, stat.S_IMODE(mode) | stat.S_IWUSR)
+                with open(path, "wb") as f:
+                    f.write(data.replace(key, mark))
+                redacted += 1
+        except OSError as e:
+            print(f"run_trial: cannot scan {path} for the API key: {e.strerror}", file=sys.stderr)
+            failed = True
+print(redacted)
+sys.exit(1 if failed else 0)
+PY
+}
+
 STAGE="$(mktemp -d)"
+REDACTED_FILES=""
 cleanup() {
   docker rm -f -v "$NAME" >/dev/null 2>&1 || true
   rm -rf "$STAGE"
+  # An interrupted trial still leaves runner.log in $OUT.
+  [ -n "$REDACTED_FILES" ] || redact_key >/dev/null || true
 }
 trap cleanup EXIT
 trap 'exit 130' INT TERM
@@ -96,11 +133,18 @@ t1=$(python3 -c 'import time; print(time.time())')
 rc=$(docker inspect --format '{{.State.ExitCode}}' "$NAME")
 
 docker cp -q "$NAME:/trial/out/." "$OUT/"
-python3 - "$t0" "$t1" "$rc" "$NAME" >"$OUT/host.json" <<'PY'
+if ! REDACTED_FILES=$(redact_key); then
+  REDACTED_FILES=failed
+  echo "run_trial: the outputs could not all be scanned for the API key; do not publish $OUT" >&2
+  exit 3
+fi
+[ "$REDACTED_FILES" = 0 ] || echo "run_trial: the API key was in $REDACTED_FILES output file(s); redacted" >&2
+python3 - "$t0" "$t1" "$rc" "$NAME" "$REDACTED_FILES" >"$OUT/host.json" <<'PY'
 import json, sys
 t0, t1 = float(sys.argv[1]), float(sys.argv[2])
 print(json.dumps({"container": sys.argv[4], "container_exit": int(sys.argv[3]),
-                  "container_seconds": round(t1 - t0, 1)}))
+                  "container_seconds": round(t1 - t0, 1),
+                  "api_key_redacted_files": int(sys.argv[5])}))
 PY
 echo "run_trial: $NAME exit $rc; outputs in $OUT" >&2
 exit "$rc"

@@ -9,6 +9,7 @@ from __future__ import annotations
 import hashlib
 import json
 import os
+import re
 import signal
 import subprocess
 import time
@@ -53,13 +54,104 @@ def test_bad_arguments_fail_before_docker_is_called(args, tmp_path):
     assert "docker-called" not in r.stderr
 
 
-def test_api_key_reaches_the_container_only_through_stdin():
-    """The key is never an argument (visible in `ps`) or container configuration (`docker inspect`)."""
-    lines = [ln for ln in RUN_TRIAL.read_text().splitlines()
-             if "ANTHROPIC_API_KEY" in ln and not ln.lstrip().startswith("#")]
-    assert lines == ["printf '%s\\n' \"${ANTHROPIC_API_KEY:-}\" | docker start --attach --interactive "
-                     "\"$NAME\" >\"$OUT/runner.log\" 2>&1 &"]
+KEY_VARIABLES = ("ANTHROPIC_API_KEY", "HB_API_KEY")
+# Shell builtins: their arguments are in no process's command line.
+KEY_SAFE_BUILTINS = {"read", "export", "unset", "[", "printf"}
+REDACTED = "[REDACTED:ANTHROPIC_API_KEY]"
+
+
+def key_commands(script: Path) -> list[str]:
+    """Simple commands of `script` that name a key variable (comments and here-documents skipped)."""
+    found, heredoc_end = [], None
+    for line in script.read_text().splitlines():
+        stripped = line.strip()
+        if heredoc_end is not None:
+            heredoc_end = None if stripped == heredoc_end else heredoc_end
+            continue
+        if stripped.startswith("#"):
+            continue
+        for segment in re.split(r"&&|\|\||;|\|", stripped):
+            segment = segment.strip().lstrip("( ").rstrip(") ")
+            if any(name in segment for name in KEY_VARIABLES):
+                found.append(segment)
+        if m := re.search(r"<<-?'?(\w+)'?", stripped):
+            heredoc_end = m.group(1)
+    return found
+
+
+def key_is_only_held_or_given_to_builtins(command: str) -> bool:
+    words = command.split()
+    while words and re.fullmatch(r"[A-Za-z_]\w*=\S*", words[0]):
+        name = words[0].split("=", 1)[0]
+        if any(k in words[0] for k in KEY_VARIABLES) and name not in KEY_VARIABLES:
+            return False  # the key is copied into another variable (an array, a list of arguments)
+        words = words[1:]
+    return not words or words[0] in KEY_SAFE_BUILTINS
+
+
+@pytest.mark.parametrize("script", ["run_trial.sh", "entrypoint.sh"])
+def test_api_key_is_never_a_process_argument(script):
+    """The key moves only through builtins and the key variables (never `ps`, never `docker inspect`)."""
+    commands = key_commands(RUNNER / script)
+    assert commands, "the script must handle the key"
+    assert [c for c in commands if not key_is_only_held_or_given_to_builtins(c)] == []
     assert "ANTHROPIC_API_KEY" not in (RUNNER / "Dockerfile").read_text()
+
+
+FAKE_DOCKER = r"""#!/usr/bin/env bash
+# Fake docker CLI: the trial "runs" at once; copying /trial/out produces outputs that hold the key.
+case "$1" in
+  create|exec|rm) exit 0 ;;
+  inspect) echo 0 ;;
+  start) cat >/dev/null; echo "[trial] agent phase done; waiting for the grader" ;;
+  cp)
+    src="${@: -2:1}" dst="${@: -1}"
+    case "$src" in *:/trial/out/.)
+      mkdir -p "$dst/claude-projects/p"
+      printf '{"text":"key is %s"}
+{"text":"clean"}
+' "$ANTHROPIC_API_KEY" >"$dst/transcript.jsonl"
+      printf '%s%s
+' "$ANTHROPIC_API_KEY" "$ANTHROPIC_API_KEY" >"$dst/claude-projects/p/s.jsonl"
+      chmod 0444 "$dst/claude-projects/p/s.jsonl"
+      echo nothing >"$dst/clean.txt"
+      ln -s "$HB_FAKE_OUTSIDE" "$dst/link" ;;
+    esac ;;
+esac
+"""
+
+
+def test_outputs_are_scanned_and_the_key_is_redacted_without_printing_it(tmp_path):
+    bin_dir = tmp_path / "bin"
+    bin_dir.mkdir()
+    (bin_dir / "docker").write_text(FAKE_DOCKER)
+    (bin_dir / "docker").chmod(0o755)
+    outside = tmp_path / "outside.txt"  # a host file outside --out: the scan must not follow links
+    outside.write_text(FAKE_KEY)
+    repo, prompt, grader, out = tmp_path / "repo", tmp_path / "prompt.txt", tmp_path / "g.sh", tmp_path / "out"
+    repo.mkdir()
+    prompt.write_text("p")
+    grader.write_text("#!/bin/sh\n")
+    grader.chmod(0o755)
+    env = {**os.environ, "PATH": f"{bin_dir}:{os.environ['PATH']}", "ANTHROPIC_API_KEY": FAKE_KEY,
+           "HB_FAKE_OUTSIDE": str(outside)}
+    r = sh(str(RUN_TRIAL), "--repo", str(repo), "--prompt", str(prompt), "--grader", str(grader),
+           "--out", str(out), "--name", "hb-fake", check=False, env=env)
+    assert r.returncode == 0, r.stderr.replace(FAKE_KEY, "<key>")
+    assert FAKE_KEY not in r.stdout + r.stderr
+    for f in out.rglob("*"):
+        if f.is_file() and not f.is_symlink():
+            assert FAKE_KEY not in f.read_text(), f.name
+    assert (out / "transcript.jsonl").read_text() == f'{{"text":"key is {REDACTED}"}}\n{{"text":"clean"}}\n'
+    assert (out / "claude-projects/p/s.jsonl").read_text() == REDACTED * 2 + "\n"
+    assert (out / "clean.txt").read_text() == "nothing\n"
+    assert outside.read_text() == FAKE_KEY
+    assert json.loads((out / "host.json").read_text())["api_key_redacted_files"] == 2
+
+
+def test_trial_outputs_are_not_tracked_by_git():
+    r = sh("git", "-C", str(ROOT), "check-ignore", "-q", "results/runs/t1/transcript.jsonl", check=False)
+    assert r.returncode == 0, "results/runs/ must be in .gitignore (the repository is public)"
 
 
 # --- with Docker ----------------------------------------------------------------------------------
@@ -169,12 +261,24 @@ def test_trial_runs_inside_one_container_and_leaves_only_its_outputs(image, tmp_
     # The grader saw the inner service, no agent process, no key, and the agent's commit.
     assert grade == {"inner_service_running": True, "inner_service_body": f"served-{tag}",
                      "agent_processes_left": 0, "grader_sees_api_key": False, "commits": 2}
+    # The agent's environment is the runner's list only; the container's own variables stay out.
+    assert "ANTHROPIC_API_KEY" in result["env_names"]
+    assert set(result["env_names"]) <= {
+        "PATH", "HOME", "USER", "TERM", "LANG", "DISABLE_AUTOUPDATER", "HB_OUTPUTS", "HB_MODEL",
+        "HB_PERMISSION_MODE", "ANTHROPIC_API_KEY", "PWD", "OLDPWD", "SHLVL", "_"}, result["env_names"]
     assert timing["agent_exit"] == 0 and timing["leftover_agent_processes_killed"] >= 1
+    assert timing["agent_processes_left_after_kill"] == 0
+    # agent_seconds is the agent's own run time: not the kill step, not the wait for the grader.
+    assert abs(timing["agent_seconds"] - result["stub_seconds"]) < 0.5, (timing, result["stub_seconds"])
     assert (out / "agent" / "summary.md").read_text() == "stub summary\n"
+    # The agent printed its key; the host outputs hold the redaction mark instead.
+    assert REDACTED in (out / "transcript.jsonl").read_text()
+    assert REDACTED in (out / "claude-projects" / "stub" / "session.jsonl").read_text()
+    assert json.loads((out / "host.json").read_text())["api_key_redacted_files"] >= 2
     # The key is in no output; the host repository is untouched.
     for f in out.rglob("*"):
         if f.is_file():
-            assert FAKE_KEY not in f.read_text(errors="replace"), f
+            assert FAKE_KEY not in f.read_text(errors="replace"), f.name
     assert not (repo / "answer.txt").exists()
 
     # Nothing is left: container, its volume, the inner service, the agent's process, host processes.

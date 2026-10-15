@@ -39,4 +39,6 @@ VOLUME /var/lib/docker
 
 COPY entrypoint.sh claude-agent.sh /opt/hb/
 RUN chmod 0755 /opt/hb/*.sh && mkdir -p /trial/repo /trial/out /trial/plugin
+# The repository is owned by `agent`; the grader runs git in it as root ("dubious ownership" otherwise).
+RUN git config --system --add safe.directory /trial/repo
 ENTRYPOINT ["/usr/bin/tini", "--", "/opt/hb/entrypoint.sh"]

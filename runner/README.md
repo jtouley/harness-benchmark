@@ -35,10 +35,16 @@ summary file should name that path.
 | `transcript.jsonl` | Claude Code's `stream-json` output |
 | `result.json` | the transcript's last `result` line (cost, usage, `duration_ms`) |
 | `grade.json`, `grade.stderr` | the grader's stdout and stderr |
-| `timing.json` | agent and grader seconds and exit codes, leftover agent processes killed |
-| `host.json` | container name, exit code, wall seconds |
+| `timing.json` | `agent_seconds` (start to agent exit), `postprocess_seconds` (kill step, result extraction, wait for the grader), `grader_seconds`; agent and grader exit codes; agent processes killed and left after the kill |
+| `host.json` | container name, exit code, wall seconds, `api_key_redacted_files` |
 | `agent/`, `claude-projects/` | files the agent wrote to `$HB_OUTPUTS`; Claude Code's session logs |
 | `runner.log`, `agent.stderr`, `dockerd.log` | logs |
+
+The container exits 0 once the grader has run, also when the agent timed out (`agent_exit` 124) or the
+grader failed. Read the result from `timing.json` and `grade.json`, not from the exit code of
+`run_trial.sh`. Its own exit codes: 2 (bad arguments), 3 (an output file could not be scanned for the
+API key), 90 (the inner daemon did not start), 91 (the grader was not delivered), 130 (interrupted).
+`results/runs/` is in `.gitignore`.
 
 ## What happens in a trial
 
@@ -47,15 +53,19 @@ summary file should name that path.
 2. `entrypoint.sh` starts the inner `dockerd`; its storage is the container's anonymous volume.
 3. The agent runs as user `agent` (in the `docker` group) under a timeout, with the key in its
    environment only.
-4. Every process of user `agent` is killed, so no worker the agent left can serve the grader. Containers
-   the agent started in the inner daemon stay up for the grader.
+4. Every process of user `agent` in the trial's own PID namespace is killed (repeated until none is
+   left), so no worker the agent left can serve the grader. Containers the agent started in the inner
+   daemon stay up for the grader, also when they run as uid 1000 (the uid of `agent`).
 5. `run_trial.sh` copies the grader in only now (the agent never sees it); it runs as root, without the key.
-6. `run_trial.sh` copies `/trial/out` to `--out`, then `docker rm -f -v`: the container, its volume, the
-   inner daemon and everything in it go.
+6. `run_trial.sh` copies `/trial/out` to `--out`, replaces each copy of the API key in those files with
+   `[REDACTED:ANTHROPIC_API_KEY]`, then `docker rm -f -v`: the container, its volume, the inner daemon
+   and everything in it go.
 
-The API key is never a process argument (it is written by a shell builtin), and it is not in the image,
-the container configuration (`docker inspect`), a file or a log. The agent itself can read it from its
-own environment, as on the host.
+The API key is never a process argument (shell builtins write it to the container's standard input and
+`export` it for the agent), and the runner does not put it in the image, the container configuration
+(`docker inspect`), a file or a log. The agent itself can read it from its own environment, as on the
+host, and can print it; the scan in step 6 redacts what it printed before the outputs are used. The scan
+reads the key from the environment and never prints it.
 
 ## Image
 
@@ -66,9 +76,11 @@ that runs the trials: arm64 on the Apple Silicon laptop, x86-64 on a cloud host.
 
 ## Tests
 
-`tests/test_runner.py`. Without Docker: argument checks, and that the key reaches the container only by
-standard input. With `HB_RUNNER_DOCKER_TESTS=1`: builds the image, then runs stub trials (no API call)
-whose agent starts a service in the inner daemon, leaves a background process, commits and holds; the
+`tests/test_runner.py`. Without Docker: argument checks; that both scripts give the key to builtins
+only; that the output scan redacts the key (a fake `docker` writes outputs that hold a fake key) and does
+not follow links; that `results/runs/` is ignored by git. With `HB_RUNNER_DOCKER_TESTS=1`: builds the image, then runs stub trials (no API call)
+whose agent starts a uid-1000 service in the inner daemon, leaves a background process, prints its
+(fake) key and a non-JSON line, commits and holds; the
 tests check the container while it runs and after it ends, and interrupt one trial. One more trial runs
 the real Claude Code agent with a plugin and no key: it loads the plugin and model, stops at login, and
 makes no API request.

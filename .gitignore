@@ -7,3 +7,5 @@ private/
 # Raw run directories and Harbor jobs: large and machine-local
 calibration/**/runs/
 calibration/**/jobs/
+# Trial outputs of runner/run_trial.sh: transcripts can hold anything the agent printed
+results/runs/
