@@ -1,0 +1,62 @@
+# Batch: the raw files in data/raw/ into the Parquet lake (make build). Every table is replaced on
+# each run, so a second run leaves the same lake. CSV columns land as text; the transforms type only
+# what the models need, from that text, with no float in between.
+pipeline: batch
+
+sources:
+  - name: usaspending_assistance_raw
+    type: file
+    format: csv
+    paths: ["data/raw/usaspending/FY2024_*_Assistance_Full_*.zip"]
+    source_file_column: source_file
+  - name: usaspending_contracts_raw
+    type: file
+    format: csv
+    paths: ["data/raw/usaspending/FY2024_*_Contracts_Full_*.zip"]
+    source_file_column: source_file
+  - name: census_co_est2024_raw
+    type: file
+    format: csv
+    paths: [data/raw/census/co-est2024-alldata.csv]
+    encoding: latin1   # the Census Bureau writes these files in Latin-1
+  - name: census_co_est2021_raw
+    type: file
+    format: csv
+    paths: [data/raw/census/co-est2021-alldata.csv]
+    encoding: latin1
+  - name: wikimedia_sitematrix
+    type: file
+    format: json
+    paths: [data/raw/sitematrix.json]
+    records: sitematrix
+
+transforms:
+  # Money as an exact decimal and dates as dates; codes stay text (leading zeros).
+  - name: usaspending_assistance
+    engine: polars
+    input: usaspending_assistance_raw
+    cast: {federal_action_obligation: "decimal(18,2)", action_date: date}
+  - name: usaspending_contracts
+    engine: polars
+    input: usaspending_contracts_raw
+    cast: {federal_action_obligation: "decimal(18,2)", action_date: date}
+  # The July 1 estimate each vintage is used for, as a whole number.
+  - name: census_co_est2024
+    engine: datafusion
+    inputs: [census_co_est2024_raw]
+    sql: >
+      select * exclude ("POPESTIMATE2024"), cast("POPESTIMATE2024" as bigint) as "POPESTIMATE2024"
+      from census_co_est2024_raw
+  - name: census_co_est2021
+    engine: datafusion
+    inputs: [census_co_est2021_raw]
+    sql: >
+      select * exclude ("POPESTIMATE2021"), cast("POPESTIMATE2021" as bigint) as "POPESTIMATE2021"
+      from census_co_est2021_raw
+
+sinks:
+  - {input: usaspending_assistance, table: usaspending_assistance, mode: replace}
+  - {input: usaspending_contracts, table: usaspending_contracts, mode: replace}
+  - {input: census_co_est2024, table: census_co_est2024, mode: replace}
+  - {input: census_co_est2021, table: census_co_est2021, mode: replace}
+  - {input: wikimedia_sitematrix, table: wikimedia_sitematrix, mode: replace}

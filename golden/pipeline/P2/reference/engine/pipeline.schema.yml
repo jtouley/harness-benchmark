@@ -1,0 +1,152 @@
+# JSON Schema (draft 2020-12) of a pipeline file under pipelines/. The engine checks every file
+# against it before it runs anything (engine/config.py), then checks that every name a step reads
+# is defined by an earlier step.
+$schema: https://json-schema.org/draft/2020-12/schema
+type: object
+additionalProperties: false
+required: [pipeline, sources, sinks]
+properties:
+  pipeline:
+    type: string
+    pattern: "^[a-z][a-z0-9_]*$"
+    description: The pipeline's name. It names the stream checkpoint; nothing else depends on it.
+  micro_batch:
+    type: object
+    additionalProperties: false
+    description: How a streaming source is cut into micro-batches. Only used with a stream source.
+    properties:
+      max_rows: {type: integer, minimum: 1}
+      max_seconds: {type: number, exclusiveMinimum: 0}
+  sources:
+    type: array
+    minItems: 1
+    items:
+      # the kind is checked first, so a wrong kind is reported on its own line
+      type: object
+      required: [type]
+      properties:
+        type: {enum: [file, sse]}
+      allOf:
+        - if: {properties: {type: {const: file}}}
+          then: {$ref: "#/$defs/file_source"}
+        - if: {properties: {type: {const: sse}}}
+          then: {$ref: "#/$defs/sse_source"}
+  transforms:
+    type: array
+    items:
+      type: object
+      required: [engine]
+      properties:
+        engine: {enum: [polars, datafusion]}
+      allOf:
+        - if: {properties: {engine: {const: polars}}}
+          then: {$ref: "#/$defs/polars_transform"}
+        - if: {properties: {engine: {const: datafusion}}}
+          then: {$ref: "#/$defs/datafusion_transform"}
+  sinks:
+    type: array
+    minItems: 1
+    items:
+      $ref: "#/$defs/parquet_sink"
+
+$defs:
+  name:
+    type: string
+    pattern: "^[a-z][a-z0-9_]*$"
+
+  file_source:
+    type: object
+    additionalProperties: false
+    required: [name, type, format, paths]
+    properties:
+      name: {$ref: "#/$defs/name"}
+      type: {const: file}
+      format: {enum: [csv, json]}
+      paths:
+        description: Glob patterns relative to the repository root. A .zip is read member by member.
+        type: array
+        minItems: 1
+        items: {type: string}
+      encoding: {type: string, default: utf8}
+      records:
+        type: string
+        description: "json only: dotted path to the records. An object gives one row per key (key, value), a list one row per item (value); values are JSON text."
+      source_file_column:
+        $ref: "#/$defs/name"
+        description: Adds a column with the file (and zip member) each row came from.
+
+  sse_source:
+    type: object
+    additionalProperties: false
+    required: [name, type, url]
+    properties:
+      name: {$ref: "#/$defs/name"}
+      type: {const: sse}
+      url: {type: string, description: "The endpoint; ${VAR:-default} reads an environment variable."}
+      rejects:
+        $ref: "#/$defs/name"
+        description: A table for frames whose data is not valid JSON (raw text kept). Without it they are dropped.
+
+  polars_transform:
+    type: object
+    additionalProperties: false
+    required: [name, engine, input]
+    properties:
+      name: {$ref: "#/$defs/name"}
+      engine: {const: polars}
+      input: {$ref: "#/$defs/name"}
+      filter: {type: string, description: A SQL boolean expression (polars.sql_expr); rows where it is not true are dropped.}
+      json_fields:
+        type: object
+        description: New text columns taken from a JSON text column by JSONPath.
+        additionalProperties: false
+        required: [column, fields]
+        properties:
+          column: {type: string}
+          fields:
+            type: object
+            minProperties: 1
+            additionalProperties: {type: string, pattern: "^\\$"}
+      with_columns:
+        type: object
+        description: New or replaced columns, each a SQL expression (polars.sql_expr).
+        additionalProperties: {type: string}
+      cast:
+        type: object
+        description: "Column name, or a ^regex$ over names, to a type: string, int64, int32, boolean, date, timestamp, decimal(p,s). Never a float."
+        additionalProperties:
+          type: string
+          pattern: "^(string|int64|int32|boolean|date|timestamp|decimal\\([0-9]+, ?[0-9]+\\))$"
+      rename:
+        type: object
+        additionalProperties: {type: string}
+      select:
+        type: array
+        items: {type: string}
+
+  datafusion_transform:
+    type: object
+    additionalProperties: false
+    required: [name, engine, inputs, sql]
+    properties:
+      name: {$ref: "#/$defs/name"}
+      engine: {const: datafusion}
+      inputs:
+        type: array
+        minItems: 1
+        items: {$ref: "#/$defs/name"}
+        description: Tables the SQL can read, each under its own name.
+      sql: {type: string}
+
+  parquet_sink:
+    type: object
+    additionalProperties: false
+    required: [input, table, mode]
+    properties:
+      input: {$ref: "#/$defs/name"}
+      table:
+        $ref: "#/$defs/name"
+        description: The lake table; it is written to lake/<table>/.
+      mode:
+        enum: [replace, append]
+        description: replace swaps the whole table in one step; append adds one file per micro-batch.
