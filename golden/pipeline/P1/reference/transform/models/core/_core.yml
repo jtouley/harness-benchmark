@@ -1,0 +1,39 @@
+version: 2
+
+models:
+  - name: dim_agency
+    description: "Grain: one awarding agency (toptier code)."
+    columns:
+      - name: agency_code
+        data_tests: [unique, not_null]
+  - name: dim_date
+    description: "Grain: one day of fiscal year 2024."
+    columns:
+      - name: date_day
+        data_tests: [unique, not_null]
+  - name: dim_place
+    description: "Grain: one place of performance: a county, a state's unknown county, or the unknown place."
+    columns:
+      - name: place_key
+        data_tests: [unique, not_null]
+  - name: fct_award_transactions
+    description: "Grain: one prime award transaction with an action date in FY2024."
+    columns:
+      - name: transaction_key
+        data_tests: [unique, not_null]
+      - name: place_key
+        data_tests:
+          - not_null
+          - relationships: {arguments: {to: ref('dim_place'), field: place_key}}
+      - name: agency_code
+        data_tests:
+          - not_null
+          - relationships: {arguments: {to: ref('dim_agency'), field: agency_code}}
+      - name: action_date
+        data_tests:
+          - relationships: {arguments: {to: ref('dim_date'), field: date_day}}
+  - name: fct_recentchange_events
+    description: "Grain: one change event (meta.id), canary events excluded."
+    columns:
+      - name: event_id
+        data_tests: [unique, not_null]

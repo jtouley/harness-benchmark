@@ -1,0 +1,33 @@
+# Each check the analysts run, answered from the published marts under out/marts/. Each mart is
+# queryable by its folder name.
+checks:
+  1:
+    question: FY2024 net obligations per awarding agency
+    sql: >
+      select agency_name, sum(net_obligations) as net_obligations
+      from mart_monthly_obligations group by agency_name
+  2:
+    question: The ten counties with the highest FY2024 obligations per person
+    sql: >
+      select county_fips, county_name, state_name, net_obligations, population, obligations_per_person
+      from mart_county_obligations
+      where county_fips is not null and obligations_per_person is not null
+      order by obligations_per_person desc limit 10
+  3:
+    question: The number of awards with a net negative obligation in FY2024
+    sql: select count(*) as awards from mart_award_obligations where net_obligations < 0
+  4:
+    question: For one month, county totals add up to state totals and state totals to the source total
+    table: mart_monthly_obligations
+    columns: [month_start, state_fips, county_fips, net_obligations]
+  5:
+    question: Edits and net bytes per wiki for the replayed hour, human and bot
+    sql: select wiki, actor_type, edits, net_bytes from mart_wiki_edits
+  6:
+    question: The 5-minute windows with the most edits on en.wikipedia.org
+    sql: >
+      select window_start, sum(edits) as edits from mart_edit_windows
+      where wiki = 'enwiki' group by window_start order by edits desc limit 5
+  7:
+    question: The count of late events
+    sql: select count(*) as late_events from late_events

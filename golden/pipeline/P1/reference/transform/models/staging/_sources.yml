@@ -1,0 +1,21 @@
+version: 2
+
+# The Parquet lake written by pipeline/batch.py and pipeline/stream.py. Paths are relative to the
+# repository root, where the Makefile runs dbt.
+sources:
+  - name: lake
+    meta:
+      external_location: "read_parquet('lake/{name}/*.parquet', union_by_name = true)"
+    tables:
+      - name: usaspending_assistance
+        description: USAspending prime award transactions, financial assistance. One row per transaction; every column as text.
+      - name: usaspending_contracts
+        description: USAspending prime award transactions, contracts. One row per transaction; every column as text.
+      - name: census_co_est2024
+        description: Census county population estimates, vintage 2024. One row per state or county; every column as text.
+      - name: census_co_est2021
+        description: Census county population estimates, vintage 2021. One row per state or county; every column as text.
+      - name: wikimedia_sitematrix
+        description: One row per Wikimedia site.
+      - name: recentchange_events
+        description: One row per received recentchange frame (re-sent frames included), with load metadata.
