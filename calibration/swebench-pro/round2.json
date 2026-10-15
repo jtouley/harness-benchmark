@@ -1,0 +1,439 @@
+{
+ "summary": {
+  "opus": {
+   "model": "Opus 5.5",
+   "tasks": 20,
+   "passed": 18,
+   "failed": 2,
+   "infra_unresolved": 0,
+   "retried_after_infra_error": 1,
+   "model_timeouts": 2,
+   "usd_total": 5.79,
+   "usd_per_task": 0.29
+  },
+  "sonnet": {
+   "model": "Sonnet 5.5",
+   "tasks": 20,
+   "passed": 18,
+   "failed": 2,
+   "infra_unresolved": 0,
+   "retried_after_infra_error": 4,
+   "model_timeouts": 1,
+   "usd_total": 2.57,
+   "usd_per_task": 0.129
+  },
+  "haiku": {
+   "model": "Haiku 5.5",
+   "tasks": 20,
+   "passed": 17,
+   "failed": 3,
+   "infra_unresolved": 0,
+   "retried_after_infra_error": 10,
+   "model_timeouts": 0,
+   "usd_total": 0.54,
+   "usd_per_task": 0.027
+  }
+ },
+ "per_task": {
+  "instance_qutebrowser__qutebrowser-9ed748effa8f3bcd804612d9291da017b514e12f-v363c8a7e5ccdf6968fc7ab84a2053ac78036691d": {
+   "opus": {
+    "reward": 1.0,
+    "exception": null,
+    "job": "opus-sample20-r1",
+    "usd": 0.234
+   },
+   "sonnet": {
+    "reward": 0.0,
+    "exception": null,
+    "job": "sonnet-sample20-r1",
+    "usd": 0.086
+   },
+   "haiku": {
+    "reward": 0.0,
+    "exception": null,
+    "job": "haiku-sample20-r1",
+    "usd": 0.017
+   }
+  },
+  "instance_internetarchive__openlibrary-09865f5fb549694d969f0a8e49b9d204ef1853ca-ve8c8d62a2b60610a3c4631f5f23ed866bada9818": {
+   "opus": {
+    "reward": 1.0,
+    "exception": null,
+    "job": "opus-sample20-r1",
+    "usd": 0.355
+   },
+   "sonnet": {
+    "reward": 1.0,
+    "exception": null,
+    "job": "sonnet-sample20-r1",
+    "usd": 0.112
+   },
+   "haiku": {
+    "reward": 1.0,
+    "exception": null,
+    "job": "haiku-sample20-retry",
+    "usd": 0.015
+   }
+  },
+  "instance_internetarchive__openlibrary-c12943be1db80cf1114bc267ddf4f9933aca9b28-v2c55207218fb8a0138425cbf7d9675272e240b90": {
+   "opus": {
+    "reward": 1.0,
+    "exception": null,
+    "job": "opus-sample20-r1",
+    "usd": 0.201
+   },
+   "sonnet": {
+    "reward": 1.0,
+    "exception": null,
+    "job": "sonnet-sample20-retry",
+    "usd": 0.09
+   },
+   "haiku": {
+    "reward": 1.0,
+    "exception": null,
+    "job": "haiku-sample20-r1",
+    "usd": 0.006
+   }
+  },
+  "instance_qutebrowser__qutebrowser-cc360cd4a34a126274c7b51f3b63afbaf3e05a02-v5fc38aaf22415ab0b70567368332beee7955b367": {
+   "opus": {
+    "reward": 1.0,
+    "exception": null,
+    "job": "opus-sample20-r1",
+    "usd": 0.153
+   },
+   "sonnet": {
+    "reward": 1.0,
+    "exception": null,
+    "job": "sonnet-sample20-retry",
+    "usd": 0.065
+   },
+   "haiku": {
+    "reward": 1.0,
+    "exception": null,
+    "job": "haiku-sample20-r1",
+    "usd": 0.006
+   }
+  },
+  "instance_ansible__ansible-984216f52e76b904e5b0fa0fb956ab4f1e0a7751-v1055803c3a812189a1133297f7f5468579283f86": {
+   "opus": {
+    "reward": 1.0,
+    "exception": null,
+    "job": "opus-sample20-r1",
+    "usd": 0.935
+   },
+   "sonnet": {
+    "reward": 1.0,
+    "exception": null,
+    "job": "sonnet-sample20-r1",
+    "usd": 0.38
+   },
+   "haiku": {
+    "reward": 1.0,
+    "exception": null,
+    "job": "haiku-sample20-retry",
+    "usd": 0.073
+   }
+  },
+  "instance_qutebrowser__qutebrowser-479aa075ac79dc975e2e949e188a328e95bf78ff-vc2f56a753b62a190ddb23cd330c257b9cf560d12": {
+   "opus": {
+    "reward": 1.0,
+    "exception": null,
+    "job": "opus-sample20-r1",
+    "usd": 0.149
+   },
+   "sonnet": {
+    "reward": 1.0,
+    "exception": null,
+    "job": "sonnet-sample20-r1",
+    "usd": 0.051
+   },
+   "haiku": {
+    "reward": 1.0,
+    "exception": null,
+    "job": "haiku-sample20-r1",
+    "usd": 0.006
+   }
+  },
+  "instance_ansible__ansible-5260527c4a71bfed99d803e687dd19619423b134-vba6da65a0f3baefda7a058ebbd0a8dcafb8512f5": {
+   "opus": {
+    "reward": 1.0,
+    "exception": null,
+    "job": "opus-sample20-r1",
+    "usd": 0.235
+   },
+   "sonnet": {
+    "reward": 1.0,
+    "exception": null,
+    "job": "sonnet-sample20-r1",
+    "usd": 0.117
+   },
+   "haiku": {
+    "reward": 1.0,
+    "exception": null,
+    "job": "haiku-sample20-retry",
+    "usd": 0.017
+   }
+  },
+  "instance_internetarchive__openlibrary-43f9e7e0d56a4f1d487533543c17040a029ac501-v0f5aece3601a5b4419f7ccec1dbda2071be28ee4": {
+   "opus": {
+    "reward": 1.0,
+    "exception": null,
+    "job": "opus-sample20-r1",
+    "usd": 0.142
+   },
+   "sonnet": {
+    "reward": 1.0,
+    "exception": null,
+    "job": "sonnet-sample20-r1",
+    "usd": 0.044
+   },
+   "haiku": {
+    "reward": 1.0,
+    "exception": null,
+    "job": "haiku-sample20-r1",
+    "usd": 0.01
+   }
+  },
+  "instance_ansible__ansible-748f534312f2073a25a87871f5bd05882891b8c4-v0f01c69f1e2528b935359cfe578530722bca2c59": {
+   "opus": {
+    "reward": 1.0,
+    "exception": null,
+    "job": "opus-sample20-r1",
+    "usd": 0.247
+   },
+   "sonnet": {
+    "reward": 1.0,
+    "exception": null,
+    "job": "sonnet-sample20-r1",
+    "usd": 0.066
+   },
+   "haiku": {
+    "reward": 1.0,
+    "exception": null,
+    "job": "haiku-sample20-retry",
+    "usd": 0.009
+   }
+  },
+  "instance_ansible__ansible-1b70260d5aa2f6c9782fd2b848e8d16566e50d85-vba6da65a0f3baefda7a058ebbd0a8dcafb8512f5": {
+   "opus": {
+    "reward": 1.0,
+    "exception": null,
+    "job": "opus-sample20-r1",
+    "usd": 0.224
+   },
+   "sonnet": {
+    "reward": 0.0,
+    "exception": "AgentTimeoutError",
+    "job": "sonnet-sample20-r1",
+    "usd": 0.06
+   },
+   "haiku": {
+    "reward": 1.0,
+    "exception": null,
+    "job": "haiku-sample20-retry",
+    "usd": 0.02
+   }
+  },
+  "instance_internetarchive__openlibrary-30bc73a1395fba2300087c7f307e54bb5372b60a-v76304ecdb3a5954fcf13feb710e8c40fcf24b73c": {
+   "opus": {
+    "reward": 0.0,
+    "exception": "AgentTimeoutError",
+    "job": "opus-sample20-r1",
+    "usd": 0.315
+   },
+   "sonnet": {
+    "reward": 1.0,
+    "exception": null,
+    "job": "sonnet-sample20-r1",
+    "usd": 0.306
+   },
+   "haiku": {
+    "reward": 0.0,
+    "exception": null,
+    "job": "haiku-sample20-r1",
+    "usd": 0.083
+   }
+  },
+  "instance_ansible__ansible-a20a52701402a12f91396549df04ac55809f68e9-v1055803c3a812189a1133297f7f5468579283f86": {
+   "opus": {
+    "reward": 1.0,
+    "exception": null,
+    "job": "opus-sample20-r1",
+    "usd": 0.15
+   },
+   "sonnet": {
+    "reward": 1.0,
+    "exception": null,
+    "job": "sonnet-sample20-r1",
+    "usd": 0.058
+   },
+   "haiku": {
+    "reward": 1.0,
+    "exception": null,
+    "job": "haiku-sample20-retry",
+    "usd": 0.008
+   }
+  },
+  "instance_internetarchive__openlibrary-58999808a17a26b387f8237860a7a524d1e2d262-v08d8e8889ec945ab821fb156c04c7d2e2810debb": {
+   "opus": {
+    "reward": 1.0,
+    "exception": null,
+    "job": "opus-sample20-r1",
+    "usd": 0.183
+   },
+   "sonnet": {
+    "reward": 1.0,
+    "exception": null,
+    "job": "sonnet-sample20-retry",
+    "usd": 0.065
+   },
+   "haiku": {
+    "reward": 1.0,
+    "exception": null,
+    "job": "haiku-sample20-r1",
+    "usd": 0.005
+   }
+  },
+  "instance_ansible__ansible-c1f2df47538b884a43320f53e787197793b105e8-v906c969b551b346ef54a2c0b41e04f632b7b73c2": {
+   "opus": {
+    "reward": 1.0,
+    "exception": null,
+    "job": "opus-sample20-r1",
+    "usd": 0.42
+   },
+   "sonnet": {
+    "reward": 1.0,
+    "exception": null,
+    "job": "sonnet-sample20-r1",
+    "usd": 0.178
+   },
+   "haiku": {
+    "reward": 0.0,
+    "exception": null,
+    "job": "haiku-sample20-retry",
+    "usd": 0.036
+   }
+  },
+  "instance_internetarchive__openlibrary-0dc5b20fa186f9714f8a838178597e69f549d026-v2d9a6c849c60ed19fd0858ce9e40b7cc8e097e59": {
+   "opus": {
+    "reward": 1.0,
+    "exception": null,
+    "job": "opus-sample20-r1",
+    "usd": 0.237
+   },
+   "sonnet": {
+    "reward": 1.0,
+    "exception": null,
+    "job": "sonnet-sample20-r1",
+    "usd": 0.196
+   },
+   "haiku": {
+    "reward": 1.0,
+    "exception": null,
+    "job": "haiku-sample20-r1",
+    "usd": 0.023
+   }
+  },
+  "instance_qutebrowser__qutebrowser-99029144b5109bb1b2a53964a7c129e009980cd9-va0fd88aac89cde702ec1ba84877234da33adce8a": {
+   "opus": {
+    "reward": 1.0,
+    "exception": null,
+    "job": "opus-sample20-r1",
+    "usd": 0.315
+   },
+   "sonnet": {
+    "reward": 1.0,
+    "exception": null,
+    "job": "sonnet-sample20-r1",
+    "usd": 0.098
+   },
+   "haiku": {
+    "reward": 1.0,
+    "exception": null,
+    "job": "haiku-sample20-r1",
+    "usd": 0.018
+   }
+  },
+  "instance_qutebrowser__qutebrowser-e64622cd2df5b521342cf4a62e0d4cb8f8c9ae5a-v363c8a7e5ccdf6968fc7ab84a2053ac78036691d": {
+   "opus": {
+    "reward": 1.0,
+    "exception": null,
+    "job": "opus-sample20-r1",
+    "usd": 0.131
+   },
+   "sonnet": {
+    "reward": 1.0,
+    "exception": null,
+    "job": "sonnet-sample20-retry",
+    "usd": 0.053
+   },
+   "haiku": {
+    "reward": 1.0,
+    "exception": null,
+    "job": "haiku-sample20-r1",
+    "usd": 0.005
+   }
+  },
+  "instance_ansible__ansible-d9f1866249756efc264b00ff7497e92c11a9885f-v0f01c69f1e2528b935359cfe578530722bca2c59": {
+   "opus": {
+    "reward": 1.0,
+    "exception": null,
+    "job": "opus-sample20-retry",
+    "usd": 0.144
+   },
+   "sonnet": {
+    "reward": 1.0,
+    "exception": null,
+    "job": "sonnet-sample20-r1",
+    "usd": 0.076
+   },
+   "haiku": {
+    "reward": 1.0,
+    "exception": null,
+    "job": "haiku-sample20-retry",
+    "usd": 0.016
+   }
+  },
+  "instance_ansible__ansible-42355d181a11b51ebfc56f6f4b3d9c74e01cb13b-v1055803c3a812189a1133297f7f5468579283f86": {
+   "opus": {
+    "reward": 1.0,
+    "exception": "AgentTimeoutError",
+    "job": "opus-sample20-r1",
+    "usd": 0.194
+   },
+   "sonnet": {
+    "reward": 1.0,
+    "exception": null,
+    "job": "sonnet-sample20-r1",
+    "usd": 0.232
+   },
+   "haiku": {
+    "reward": 1.0,
+    "exception": null,
+    "job": "haiku-sample20-retry",
+    "usd": 0.074
+   }
+  },
+  "instance_ansible__ansible-d2f80991180337e2be23d6883064a67dcbaeb662-vba6da65a0f3baefda7a058ebbd0a8dcafb8512f5": {
+   "opus": {
+    "reward": 0.0,
+    "exception": null,
+    "job": "opus-sample20-r1",
+    "usd": 0.827
+   },
+   "sonnet": {
+    "reward": 1.0,
+    "exception": null,
+    "job": "sonnet-sample20-r1",
+    "usd": 0.239
+   },
+   "haiku": {
+    "reward": 1.0,
+    "exception": null,
+    "job": "haiku-sample20-retry",
+    "usd": 0.087
+   }
+  }
+ }
+}

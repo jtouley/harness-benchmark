@@ -1,0 +1,8 @@
+{
+  "name": "reviewloop",
+  "version": "0.1.0",
+  "description": "Minimal harness: the session model does the work; an independent reviewer (pinned to Opus in agents/reviewer.md) checks it in the running system; the session fixes the findings until the reviewer approves.",
+  "skills": [
+    "./skills/review-loop"
+  ]
+}
