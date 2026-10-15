@@ -1,0 +1,84 @@
+version: 2
+
+# Every mart has an enforced contract (column names and types). Keys are checked with data tests:
+# Spark tables in parquet format enforce no constraints.
+
+models:
+  - name: mart_monthly_obligations
+    description: "Grain: one month x place x awarding agency, FY2024. Published to out/marts/mart_monthly_obligations/."
+    data_tests:
+      - unique_combination:
+          arguments: {columns: [month_start, place_key, agency_code]}
+    columns:
+      - {name: month_start, data_type: date, data_tests: [not_null]}
+      - {name: state_fips, data_type: string}
+      - {name: state_name, data_type: string}
+      - {name: county_fips, data_type: string}
+      - {name: county_name, data_type: string}
+      - {name: place_key, data_type: string, data_tests: [not_null]}
+      - {name: agency_code, data_type: string, data_tests: [not_null]}
+      - {name: agency_name, data_type: string}
+      - {name: net_obligations, data_type: "decimal(18,2)", data_tests: [not_null]}
+      - {name: population, data_type: bigint}
+      - {name: population_year, data_type: int}
+      - {name: obligations_per_person, data_type: "decimal(18,6)"}
+  - name: mart_county_obligations
+    description: "Grain: one place (county or unknown member), FY2024 total. Published to out/marts/mart_county_obligations/."
+    columns:
+      - {name: place_key, data_type: string, data_tests: [unique, not_null]}
+      - {name: state_fips, data_type: string}
+      - {name: state_name, data_type: string}
+      - {name: county_fips, data_type: string}
+      - {name: county_name, data_type: string}
+      - {name: net_obligations, data_type: "decimal(18,2)", data_tests: [not_null]}
+      - {name: population, data_type: bigint}
+      - {name: population_year, data_type: int}
+      - {name: obligations_per_person, data_type: "decimal(18,6)"}
+  - name: mart_award_obligations
+    description: "Grain: one award, its net obligation over FY2024. Published to out/marts/mart_award_obligations/."
+    columns:
+      - {name: award_key, data_type: string, data_tests: [unique, not_null]}
+      - {name: award_category, data_type: string}
+      - {name: agency_code, data_type: string}
+      - {name: agency_name, data_type: string}
+      - {name: transactions, data_type: bigint}
+      - {name: net_obligations, data_type: "decimal(18,2)", data_tests: [not_null]}
+  - name: mart_edit_windows
+    description: "Grain: one 5-minute event-time window x wiki x namespace x actor type; on-time edits. Partitioned by window_epoch (window_start in Unix seconds). Published to out/marts/mart_edit_windows/."
+    data_tests:
+      - unique_combination:
+          arguments: {columns: [window_start, wiki, namespace, actor_type]}
+    columns:
+      - {name: window_start, data_type: timestamp_ntz, data_tests: [not_null]}
+      - {name: wiki, data_type: string, data_tests: [not_null]}
+      - {name: namespace, data_type: int}
+      - {name: actor_type, data_type: string, data_tests: [not_null]}
+      - {name: window_end, data_type: timestamp_ntz}
+      - {name: edits, data_type: bigint}
+      - {name: net_bytes, data_type: bigint}
+      - {name: last_load_id, data_type: bigint}
+      - {name: window_epoch, data_type: bigint}
+  - name: mart_wiki_edits
+    description: "Grain: one wiki x actor type; all edits consumed, late ones included. Published to out/marts/mart_wiki_edits/."
+    data_tests:
+      - unique_combination:
+          arguments: {columns: [wiki, actor_type]}
+    columns:
+      - {name: wiki, data_type: string, data_tests: [not_null]}
+      - {name: actor_type, data_type: string, data_tests: [not_null]}
+      - {name: edits, data_type: bigint}
+      - {name: net_bytes, data_type: bigint}
+      - {name: late_edits, data_type: bigint}
+  - name: late_events
+    description: "Grain: one edit that arrived more than 10 minutes after its window ended. Published to out/marts/late_events/."
+    columns:
+      - {name: event_id, data_type: string, data_tests: [unique, not_null]}
+      - {name: wiki, data_type: string}
+      - {name: namespace, data_type: int}
+      - {name: actor_type, data_type: string}
+      - {name: event_time, data_type: timestamp_ntz}
+      - {name: window_start, data_type: timestamp_ntz}
+      - {name: net_bytes, data_type: bigint}
+      - {name: arrival_seq, data_type: bigint}
+      - {name: watermark_before, data_type: bigint}
+      - {name: stream_time_at_arrival, data_type: timestamp_ntz}

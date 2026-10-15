@@ -3,7 +3,8 @@
 Inputs, replay server, answer key, grader and reference solutions for the
 [pipeline family](../../docs/tasks/pipeline-family.md) (P1, P2, P3; issue #11). Increment 1 built
 the shared inputs, the key, the grader and the P1 reference; increment 2 adds the P2 skeleton, prompt
-and reference, graded by the same grader against the same key. P3 has no skeleton or reference yet.
+and reference; increment 3 the P3 skeleton, prompt, reference and toolchain image. All three are graded
+by the same grader against the same key.
 
 **Nothing in this folder goes into a trial except `<task>/skeleton/` and `data/raw/`**, which
 `pipetask/assemble.py` copies into the starting repository. The task prompt is passed separately.
@@ -18,11 +19,14 @@ The capture, the replay server code, the key, the grader, the references and thi
 | `pipetask/schedule.py`, `pipetask/replay.py` | Replay server and its seeded fault schedule (F1 to F5) | Runs as a service (`replay.pyz`), its files unreadable to the agent |
 | `pipetask/key.py`, `key/answer_key.json` | Answer key and the wrong answer of each single trap, computed independently of any reference | No (inside `grader.pyz`, copied in after the agent) |
 | `pipetask/oracle.py`, `pipetask/grade.py`, `pipetask/trial.py` | Grader: resets the repo to its committed tree (`git clean -ffdx`, then `out/` and `lake/` removed), runs `make build` twice and `make stream` twice against the replay, checks the seven answers. The map's SQL can read only `out/marts/` (DuckDB `allowed_directories`, external access off, settings locked). Reward 0 when a second build changes an output, no `make stream` run exits 0, or no run read the grading replay up to the end of the late batch (the stream answers do not depend on the seed, so marts left from development would match). The reset covers the repository only: state kept under `$HOME`, such as dlt's default `~/.dlt/pipelines/`, survives it, so the runner should give the grader's `make` a fresh `HOME` | No (inside `grader.pyz`) |
-| `pipetask/prompt.py`, `P1/prompt.md`, `P2/prompt.md` | Each prompt, word for word from the specs (shared request plus the task's stack section) | Passed as the prompt |
+| `pipetask/prompt.py`, `P1/prompt.md`, `P2/prompt.md`, `P3/prompt.md` | Each prompt, word for word from the specs (shared request plus the task's stack section) | Passed as the prompt |
 | `P1/skeleton/` | `Makefile` (both targets fail), `pyproject.toml` and `uv.lock` (pinned dlt, dbt-core, dbt-duckdb, duckdb), empty dbt project with `profiles.yml` | Copied into the repo |
 | `P1/reference/` | The P1 reference solution (dlt, DuckDB, dbt-duckdb, Parquet lake), an overlay on the skeleton | **Never** |
 | `P2/skeleton/` | The same layout as P1's, pinning pyarrow, polars, datafusion, dbt-core, dbt-duckdb, duckdb | Copied into the repo |
 | `P2/reference/` | The P2 reference solution: a YAML-driven engine (`engine/`, schema in `engine/pipeline.schema.yml`) running `pipelines/batch.yml` and `pipelines/stream.yml` on Arrow, Polars and DataFusion into the Parquet lake, then dbt-duckdb (the P1 models, adapted to this lake's load metadata). An overlay on the skeleton; it adds `pyyaml` and `jsonschema` (already in the lock through dbt-core) as direct dependencies | **Never** |
+| `P3/skeleton/` | `Makefile` (both targets fail), `build.sbt` (Scala 2.13.18, Spark 3.5.9, ScalaTest 3.2.20) and `project/build.properties` (sbt 1.12.15), `requirements.txt` (dbt-core 1.11.6, dbt-spark 1.11.0, pyspark 3.5.9 and their whole closure, with hashes), empty dbt project with a dbt-spark `session` profile | Copied into the repo |
+| `P3/reference/` | The P3 reference solution: a Spark batch job (`pipeline.Batch`), and an SSE reader feeding Spark Structured Streaming through a spool (`pipeline.Stream`), into the Parquet lake; ScalaTest suites; dbt-spark models (the P1 models in Spark SQL). An overlay on the skeleton | **Never** |
+| `P3/image/` | The P3 toolchain image (`Dockerfile`: JDK 17, Python 3.12, sbt, both base images pinned by digest) and `trial.sh`, which runs a P3 trial inside it | No (the image is the trial's environment) |
 | `pipetask/bundle.py` | Builds `replay.pyz` and `grader.pyz`, the two files a trial container needs | — |
 
 ## Commands
@@ -38,6 +42,8 @@ python3 -m pipetask.replay --capture data/capture/recentchange.jsonl.gz --seed 0
 # grade a delivered repository: build twice, stream twice, check
 uv run --project ../.. python -m pipetask.trial --repo /tmp/p1-repo \
     --key key/answer_key.json --capture data/capture/recentchange.jsonl.gz
+# P3 runs in its toolchain container (needs only docker): assemble, build, stream, grade
+golden/pipeline/P3/image/trial.sh /tmp/p3-out --with-reference --scalatest   # -> /tmp/p3-out/result.json
 # the reference, end to end (P1 or P2)
 python3 -m pipetask.assemble P1 --out /tmp/p1-ref --with-reference
 uv run --project ../.. python -m pipetask.trial --repo /tmp/p1-ref \
@@ -48,13 +54,19 @@ uv run --project ../.. python -m pipetask.key --raw data/raw \
 uv run --project ../.. python -m pipetask.manifest
 ```
 
-The full reference trials are also tests (both tasks, plus P2's generality, validation and crash
-recovery checks): `HB_PIPELINE_REFERENCE=1 uv run --frozen --python 3.12 --with tokenizers python -m pytest tests/test_pipeline_reference.py`.
+The full reference trials are also tests (all three tasks, plus P2's generality, validation and crash
+recovery checks, and P3's ScalaTest suites; P3 needs docker): `HB_PIPELINE_REFERENCE=1 uv run --frozen --python 3.12 --with tokenizers python -m pytest tests/test_pipeline_reference.py`.
 
 Measured on the test laptop (Apple Silicon, uv cache warm): the P2 reference's first `make build`
 takes 16.5 s (most of it the virtual environment), the second 3.5 s; the full trial (two builds, two
 stream runs of 30 s and 90 s, grading) 152 s. Result: 7 of 7 checks, reward 1.0, no output changed
 by the second build.
+
+Measured for P3 the same way, in its container on the test laptop (Docker Desktop, 8 CPUs, with other
+containers running beside it; download caches warm in the `hb-p3-cache` volume): the first `make build`
+takes 147 s (about 60 s of it the virtual environment), the second 85 s; the two stream runs 129 s
+and 210 s; the whole trial, with the image build and the ScalaTest suites, 11 min. Result: 7 of 7
+checks, reward 1.0, no output changed by the second build. Expect less on the x86-64 runner.
 
 ## A trial on the isolated runner
 
@@ -173,3 +185,55 @@ Gaps in the P2 page that the reference had to fill; the shared spec and the prom
    `mart_edit_windows` skip new windows, since its incremental filter is `load_id > max(last_load_id)`.
    The reference's `make stream` therefore runs dbt with `--full-refresh` whenever no checkpoint exists
    before the run. The grader resets both folders together, so a trial never meets this.
+
+## P3 stack traps on the pinned versions
+
+Checked with Spark 3.5.9 (pyspark 3.5.9, the same Spark as `build.sbt`) on the frozen data:
+
+| Trap | Reproduced | Evidence |
+|---|---|---|
+| K1 | Yes | `inferSchema` reads the Census `STATE` and `COUNTY` as `int`, so `STATE || COUNTY` gives `11` for `01001`. (The USAspending county code stays a string.) The reference infers no CSV type |
+| K2 | By design | The SSE reader commits frames and its position in one atomic rename to a spool, and Structured Streaming lands the spool with its own checkpoint; F6 (two `make stream` runs) exercises the resume, and `StreamSpec` re-lands a batch |
+| K3 | Yes | A 5-minute window aggregation with a 10-minute watermark, run three times on one checkpoint, silently drops a row that arrives after the watermark passed its window (2 counted of 3). The reference builds the windows in dbt and routes late events to `late_events` |
+| K4 | No | Spark types the decimal quotient as `decimal(38,22)`: no null and no lost cents; a `double` quotient gives the same top ten to the cent (as for A2 and B8). The grader cannot name it; it stays a design-review point |
+| K5 | Semantics only | A full outer join on a key with a null on both sides keeps the two null rows apart (3 rows, 1 matched). Whether check 4 fails depends on the arm's model; the reference never joins on a null key |
+| K6 | Yes | A second `write.parquet` with the default `SaveMode` fails with `PATH_ALREADY_EXISTS`; `append` doubles the rows. The reference overwrites every lake table and publishes with `insert overwrite directory` |
+
+Other facts of the pinned stack the reference met (not traps, as they fail loudly): the Hive metastore
+rejects a `timestamp_ntz` partition column; `x not in (select ...)` plans a nested-loop join (minutes
+instead of seconds on the event fact); pip builds pyspark 3.5.9 from a 318 MB source archive, so the
+first build depends on a warm pip cache for its time.
+
+## Open points of increment 3 (for the owner)
+
+Gaps in the P3 page that the reference had to fill; the shared spec and the prompts are unchanged.
+
+1. **"The same local Spark".** dbt-spark's `session` method runs pyspark's Spark, which is built for
+   Scala 2.12; the Scala 2.13 ingestion runs Spark's 2.13 build in its own JVM. The reference pins the
+   same Spark version on both sides (3.5.9) and they share only the lake. Whether one JVM was meant is
+   not said; it is not practical with dbt-spark.
+2. **No skeleton section**, as for P2. The P3 skeleton has `build.sbt` (Scala 2.13.18, Spark 3.5.9,
+   ScalaTest 3.2.20, and the JDK 17 module options Spark needs in a forked JVM), `project/build.properties`
+   (sbt 1.12.15), `requirements.txt` (the full closure, hashed), a dbt-spark `session` profile with its
+   warehouse and Derby metastore under `out/`, and the failing `Makefile`. The page names neither the
+   JDK, the sbt version nor how the dbt environment is installed (the reference: a `.venv` from
+   `requirements.txt`). Scala 2.13.8, Spark's own, cannot be used: ScalaTest 3.2.20 brings a newer
+   `scala-library` and sbt refuses an older compiler.
+3. **Where the toolchain comes from.** The trial image must hold JDK 17, sbt and Python 3.12 with
+   `venv` (`P3/image/Dockerfile` is that layer). The first build downloads Spark and the Scala
+   compiler (coursier) and pyspark (pip), so a trial needs network access or a pre-warmed cache in the
+   image. Which one, and whether a warm cache counts against the agent's loop cost, is an owner
+   decision.
+4. **K4 does not reproduce** on the frozen data (table above). The page says such a trap is removed.
+5. **K5 assumes an outer join** that the shared architecture leaves to dbt, where it applies to any
+   stack; as A3 for P2.
+6. **The grader read timestamps with a time zone through pytz**, which it does not install, so a mart
+   with Spark's `TIMESTAMP` written as an instant (Parquet `isAdjustedToUTC`, DuckDB `TIMESTAMPTZ`)
+   failed check 6 with an import error. `pipetask/oracle.py` now reads such columns as UTC timestamps
+   (`test_window_starts_with_a_time_zone_are_read_as_utc`). The reference writes `timestamp_ntz`.
+7. **The batch number restarts with the checkpoint**, as for P2 (point 7 above): `make stream` in the
+   P3 reference rebuilds the stream models in full when `lake/_checkpoints/recentchange/query/` is
+   missing before the run.
+8. **Time caps.** The stream runs are well inside the grader's `DURATION + 300` s on the laptop (129 s
+   and 210 s), but a cold cache adds minutes to the first build; `--grader-timeout 900` may be short
+   for P3 on a cold runner.

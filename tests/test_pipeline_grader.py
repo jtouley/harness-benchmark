@@ -91,6 +91,21 @@ def test_codes_for_agencies_and_integer_county_codes_are_read_too(key, tmp_path)
     assert result["checks"]["1"]["pass"] and result["checks"]["2"]["pass"]
 
 
+def test_window_starts_with_a_time_zone_are_read_as_utc(key, tmp_path):
+    repo = write_candidate(tmp_path, key, answers(key))
+    windows = repo / "out" / "marts" / "windows" / "data.parquet"
+    con = duckdb.connect()
+    con.execute("set TimeZone = 'America/New_York'")  # the instant, not the writer's zone, must count
+    con.execute(f"copy (select wiki, timezone('UTC', window_start) as window_start, edits "
+                f"from read_parquet('{windows.as_posix()}')) to '{windows.as_posix()}.tz' (format parquet)")
+    assert con.execute(f"select typeof(window_start) from read_parquet('{windows.as_posix()}.tz')").fetchone() == (
+        "TIMESTAMP WITH TIME ZONE",)
+    windows.unlink()
+    windows.with_suffix(".parquet.tz").rename(windows)
+    result = grade.grade(repo, key)
+    assert result["checks"]["6"]["pass"], result["checks"]["6"]
+
+
 @pytest.mark.parametrize("oracle_map", [
     # a list in check order, plain strings
     [SQL_MAP["checks"][n]["sql"] if "sql" in SQL_MAP["checks"][n] else "monthly" for n in range(1, 8)],

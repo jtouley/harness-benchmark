@@ -1,0 +1,12 @@
+.venv/
+__pycache__/
+target/
+project/target/
+project/project/
+.bsp/
+metastore_db/
+derby.log
+spark-warehouse/
+transform/target/
+transform/logs/
+transform/dbt_packages/

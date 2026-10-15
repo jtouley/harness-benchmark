@@ -1,0 +1,27 @@
+version: 2
+
+models:
+  - name: stg_usaspending__transactions
+    description: "Grain: one prime award transaction (one source row), assistance and contracts together; typed."
+    columns:
+      - name: transaction_key
+        data_tests: [unique, not_null]
+      - name: award_key
+        data_tests: [not_null]
+      - name: obligation
+        data_tests: [not_null]
+  - name: stg_census__county_population
+    description: "Grain: one county (5-digit FIPS) with its July 1, 2024 estimate, or its latest earlier estimate."
+    columns:
+      - name: county_fips
+        data_tests: [unique, not_null]
+  - name: stg_census__states
+    description: "Grain: one state (2-digit FIPS)."
+    columns:
+      - name: state_fips
+        data_tests: [unique, not_null]
+  - name: stg_recentchange__events
+    description: "Grain: one change event (meta.id), first landed copy."
+    columns:
+      - name: event_id
+        data_tests: [unique, not_null]
