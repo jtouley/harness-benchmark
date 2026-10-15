@@ -1,7 +1,8 @@
 """The references pass the grader end to end (the proof that each task is solvable and the key right).
 
 Slow (a few minutes per task: a virtual environment, two builds, two stream runs against the replay
-server), so it runs only with HB_PIPELINE_REFERENCE=1. Needs make and uv on the PATH.
+server), so it runs only with HB_PIPELINE_REFERENCE=1. P1 and P2 need make and uv on the PATH. P3 runs
+entirely in its pinned toolchain container (golden/pipeline/P3/image/), so it needs only docker.
 
 P2 adds two checks of its engine (docs/tasks/P2-config-arrow-polars-datafusion.md): a pipeline file it
 has never seen runs with no code change (the generality check), and a broken file is reported with its
@@ -12,6 +13,7 @@ from __future__ import annotations
 
 import json
 import os
+import shutil
 import subprocess
 from pathlib import Path
 
@@ -129,3 +131,17 @@ def test_the_p2_stream_commit_drops_a_batch_that_never_committed(p2_repo):
     assert done.returncode == 0, done.stderr
     assert done.stdout.strip() == ("['0000000002.parquet', '0000000003.parquet.tmp'] "
                                    "(1, {'last_event_id': 'a', 'next_seq': 2}) ['0000000001.parquet']")
+
+
+@pytest.mark.skipif(shutil.which("docker") is None, reason="the P3 trial runs in docker")
+def test_the_p3_reference_passes_every_check_in_its_container(tmp_path):
+    """Build the toolchain image, run the ScalaTest suites, then the full trial, all in the container."""
+    done = subprocess.run([str(PIPELINE / "P3" / "image" / "trial.sh"), str(tmp_path), "--with-reference",
+                           "--scalatest"], capture_output=True, text=True, timeout=3600)
+    assert done.returncode == 0, done.stderr[-3000:]
+    assert "All tests passed." in (tmp_path / "logs" / "scalatest.log").read_text(encoding="utf-8")
+    result = json.loads((tmp_path / "result.json").read_text(encoding="utf-8"))
+    failed = {n: c for n, c in result["checks"].items() if not c["pass"]}
+    assert result["idempotent"], result["changed_by_second_build"]
+    assert failed == {}
+    assert result["reward"] == 1.0

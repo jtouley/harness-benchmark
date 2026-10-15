@@ -1,0 +1,26 @@
+name: open_data_pipeline
+version: "0.1.0"
+config-version: 2
+profile: open_data_pipeline
+
+model-paths: ["models"]
+test-paths: ["tests"]
+macro-paths: ["macros"]
+target-path: "target"
+clean-targets: ["target", "dbt_packages"]
+
+models:
+  open_data_pipeline:
+    +file_format: parquet
+    staging:
+      # Tables, not views: Spark would otherwise re-read and re-type the lake for every test and model.
+      +materialized: table
+    core:
+      +materialized: table
+    marts:
+      # Each mart is a table in the warehouse, copied to out/marts/<mart>/ as Parquet after every
+      # build of it (the publish post-hook), so anything downstream reads only out/marts/.
+      +materialized: table
+      +post-hook: ["{{ publish() }}"]
+      +contract:
+        enforced: true

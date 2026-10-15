@@ -1,0 +1,19 @@
+# dbt-spark's session method: dbt starts a local Spark (pyspark, Spark 3.5.9) in its own process.
+# Tables live in the warehouse folder, their catalog in an embedded Derby metastore; both under out/
+# and both paths relative to the repository root, where make runs dbt.
+open_data_pipeline:
+  target: dev
+  outputs:
+    dev:
+      type: spark
+      method: session
+      host: NA  # not used by the session method, required by the profile schema
+      schema: analytics
+      threads: 1
+      server_side_parameters:
+        spark.master: "local[*]"
+        spark.driver.memory: 4g
+        spark.ui.enabled: "false"
+        spark.sql.warehouse.dir: out/warehouse
+        spark.hadoop.javax.jdo.option.ConnectionURL: "jdbc:derby:;databaseName=out/metastore_db;create=true"
+        spark.driver.extraJavaOptions: "-Dderby.stream.error.file=out/derby.log"

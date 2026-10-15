@@ -1,0 +1,27 @@
+version: 2
+
+# The Parquet lake the Spark jobs write (pipeline.Batch, pipeline.Stream). Spark reads a folder as a
+# table with parquet.`<folder>`; paths are relative to the repository root, where make runs dbt.
+sources:
+  - name: lake
+    schema: parquet
+    quoting: {identifier: true}
+    tables:
+      - name: usaspending_assistance
+        identifier: lake/usaspending_assistance
+        description: USAspending prime award transactions, financial assistance. One row per transaction; every column as text, plus source_file.
+      - name: usaspending_contracts
+        identifier: lake/usaspending_contracts
+        description: USAspending prime award transactions, contracts. One row per transaction; every column as text, plus source_file.
+      - name: census_co_est2024
+        identifier: lake/census_co_est2024
+        description: Census county population estimates, vintage 2024. One row per state or county; every column as text.
+      - name: census_co_est2021
+        identifier: lake/census_co_est2021
+        description: Census county population estimates, vintage 2021. One row per state or county; every column as text.
+      - name: wikimedia_sitematrix
+        identifier: lake/wikimedia_sitematrix
+        description: One row per Wikimedia site.
+      - name: recentchange_events
+        identifier: lake/recentchange_events
+        description: One row per received recentchange frame (re-sent frames included), with load metadata (event_id, sse_id, arrival_seq, received_at, batch_id).
