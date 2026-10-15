@@ -5,6 +5,7 @@ from __future__ import annotations
 
 import json
 import subprocess
+import tomllib
 from pathlib import Path
 
 import pytest
@@ -12,7 +13,17 @@ import pytest
 from pipetask import assemble, manifest, prompt
 
 PIPELINE = Path(__file__).resolve().parents[1] / "golden" / "pipeline"
-TASKS_WITH_PROMPTS = ("P1",)
+TASKS = ("P1", "P2")
+# The stack each skeleton pins (docs/tasks/P1-*.md, docs/tasks/P2-*.md), plus the shared modeling layer.
+STACK_PINS = {
+    "P1": ("dlt[parquet]", "dbt-duckdb", "dbt-core", "duckdb"),
+    "P2": ("pyarrow", "polars", "datafusion", "dbt-duckdb", "dbt-core", "duckdb"),
+}
+
+
+def _files(folder: Path) -> set[str]:
+    return {p.relative_to(folder).as_posix() for p in folder.rglob("*")
+            if p.is_file() and "__pycache__" not in p.parts and ".venv" not in p.parts}
 
 
 def test_the_frozen_inputs_match_their_checksum_manifest():
@@ -24,12 +35,12 @@ def test_the_frozen_inputs_stay_small():
     assert total < 20 * 1024 * 1024, total
 
 
-@pytest.mark.parametrize("task", TASKS_WITH_PROMPTS)
+@pytest.mark.parametrize("task", TASKS)
 def test_the_prompt_is_the_spec_word_for_word(task):
     assert (PIPELINE / task / "prompt.md").read_text(encoding="utf-8") == prompt.prompt(task)
 
 
-@pytest.mark.parametrize("task", TASKS_WITH_PROMPTS)
+@pytest.mark.parametrize("task", TASKS)
 def test_the_prompt_carries_no_trap_or_answer_knowledge(task):
     text = (PIPELINE / task / "prompt.md").read_text(encoding="utf-8").lower()
     for hint in ("trap", "canary", "connecticut", "planning region", "leading zero", "last-event-id",
@@ -38,28 +49,46 @@ def test_the_prompt_carries_no_trap_or_answer_knowledge(task):
         assert hint not in text, hint
 
 
-def test_the_starting_repository_holds_only_the_skeleton_and_the_raw_data(tmp_path):
-    repo = assemble.assemble("P1", tmp_path / "repo", git=False)
-    files = {p.relative_to(repo).as_posix() for p in repo.rglob("*") if p.is_file()}
-    skeleton = {p.relative_to(PIPELINE / "P1" / "skeleton").as_posix()
-                for p in (PIPELINE / "P1" / "skeleton").rglob("*") if p.is_file()}
-    raw = {"data/raw/" + p.relative_to(PIPELINE / "data" / "raw").as_posix()
-           for p in (PIPELINE / "data" / "raw").rglob("*") if p.is_file()}
+@pytest.mark.parametrize("task", TASKS)
+def test_the_starting_repository_holds_only_the_skeleton_and_the_raw_data(task, tmp_path):
+    repo = assemble.assemble(task, tmp_path / "repo", git=False)
+    files = _files(repo)
+    skeleton = _files(PIPELINE / task / "skeleton")
+    raw = {"data/raw/" + f for f in _files(PIPELINE / "data" / "raw")}
     assert files == skeleton | raw
     hidden = ("capture", "answer_key", "pipetask", "reference", "oracle_map", "DECISIONS", "trap")
     assert not [f for f in files if any(h in f for h in hidden)]
+    # nothing the reference adds on top of the skeleton (its code, YAML, models) reaches the arm
+    reference_only = _files(PIPELINE / task / "reference") - skeleton
+    assert reference_only
+    assert not files & reference_only
 
 
-def test_the_untouched_skeleton_fails_both_targets(tmp_path):
-    repo = assemble.assemble("P1", tmp_path / "repo", git=False)
+@pytest.mark.parametrize("task", TASKS)
+def test_the_reference_is_an_overlay_on_the_skeleton(task, tmp_path):
+    repo = assemble.assemble(task, tmp_path / "repo", with_reference=True, git=False)
+    assert _files(PIPELINE / task / "reference") <= _files(repo)
+    assert (repo / "oracle_map.yml").exists() and (repo / "DECISIONS.md").exists()
+
+
+@pytest.mark.parametrize("task", TASKS)
+def test_the_untouched_skeleton_fails_both_targets(task, tmp_path):
+    repo = assemble.assemble(task, tmp_path / "repo", git=False)
     for target in ("build", "stream"):
         assert subprocess.run(["make", target], cwd=repo, capture_output=True).returncode != 0
 
 
-def test_the_skeleton_pins_its_stack():
-    pyproject = (PIPELINE / "P1" / "skeleton" / "pyproject.toml").read_text(encoding="utf-8")
-    for pin in ('"dlt[parquet]==', '"dbt-duckdb==', '"dbt-core==', '"duckdb=='):
-        assert pin in pyproject
-    assert (PIPELINE / "P1" / "skeleton" / "uv.lock").exists()
-    profiles = (PIPELINE / "P1" / "skeleton" / "transform" / "profiles.yml").read_text(encoding="utf-8")
+@pytest.mark.parametrize("task", TASKS)
+def test_the_skeleton_pins_its_stack_exactly(task):
+    skeleton = PIPELINE / task / "skeleton"
+    project = tomllib.loads((skeleton / "pyproject.toml").read_text(encoding="utf-8"))["project"]
+    deps = project["dependencies"]
+    assert all("==" in d for d in deps), deps
+    assert {d.split("==")[0] for d in deps} >= set(STACK_PINS[task])
+    assert project["requires-python"] == "==3.12.*"
+    lock = (skeleton / "uv.lock").read_text(encoding="utf-8")
+    for dep in deps:
+        name, version = dep.split("[")[0].split("==")[0], dep.split("==")[1]
+        assert f'name = "{name}"\nversion = "{version}"' in lock, dep
+    profiles = (skeleton / "transform" / "profiles.yml").read_text(encoding="utf-8")
     assert "out/warehouse.duckdb" in profiles
