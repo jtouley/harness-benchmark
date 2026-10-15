@@ -86,13 +86,24 @@ def read_tokens(path):
         out = {}
         for rec in reader:
             key = ((rec["stage"] or "").strip(), (rec["round"] or "").strip())
-            out[key] = out.get(key, 0) + int(float(rec["tokens"]))
+            try:
+                value = int(float(rec["tokens"]))
+            except (TypeError, ValueError):
+                raise ValueError(f"tokens CSV line {reader.line_num}: tokens is not a number") from None
+            out[key] = out.get(key, 0) + value
         return out
 
 
 def _add_cost(row, tokens):
+    """tokens None means the CSV has no row for it: the cost is unknown, never zero."""
     row["tokens"] = tokens
-    row["tokens_per_confirmed_defect"] = tokens / row["confirmed_defects"] if row["confirmed_defects"] else None
+    row["tokens_per_confirmed_defect"] = (tokens / row["confirmed_defects"]
+                                          if tokens is not None and row["confirmed_defects"] else None)
+
+
+def _stage_tokens(tokens, stage):
+    values = [v for (st, _), v in tokens.items() if st == stage]
+    return sum(values) if values else None
 
 
 def ledger_metrics(rows, tokens=None):
@@ -126,7 +137,7 @@ def ledger_metrics(rows, tokens=None):
     for s in stages.values():
         s["status"] = dict(s["status"])
         if tokens is not None:
-            _add_cost(s, sum(v for (st, _), v in tokens.items() if st == s["stage"]))
+            _add_cost(s, _stage_tokens(tokens, s["stage"]))
         out.append(s)
     finals = {}
     for r in rows:
@@ -145,9 +156,12 @@ HEADING = re.compile(r"^(#{1,6})\s+(.*)$")
 FINDING = re.compile(
     r"^\s*(?:#{2,4}\s+)?(?:[-*]\s+)?(?:(?P<num>\d+)\.\s+)?(?:\*\*)?\s*"
     r"(?:(?P<label>§?\d+\.\d+|[A-Z]{1,3}-?\d+|[A-Z](?=\.))\.?\s*)?(?:\*\*)?\s*(?:[—–-]+\s*)?"
-    r"(?:\[(?P<tag>[VLIU])\]\s*)?(?:\*\*)?\s*(?:[—–-]+\s*)?"
+    r"(?:`?\[(?P<tag>[VLIU])\]`?\s*)?(?:\*\*)?\s*(?:[—–-]+\s*)?"
     r"(?P<sev>(?i:critical|required|must-fix|should-fix|optional|nit|fyi))\b(?P<rest>.*)$")
-STATUS_LABEL = re.compile(r"(#\d+|§?\d+\.\d+|\b[A-Z]{1,3}-?\d+\b|^[A-Z](?=[\s.:]|$))")
+# A status item's id is read only from the start of its header, so "nit (see F1)" is not F1.
+STATUS_LABEL = re.compile(r"^(?:original\s+(?:issue\s+|required\s+)?)?"
+                          r"(#\d+|§?\d+\.\d+|[A-Z]{1,3}-?\d+\b|[A-Z](?=[\s.:]|$))", re.IGNORECASE)
+STATUS_MARK = re.compile(r"✅|⚠️|⚠|❌")
 LEVEL_WORDS = re.compile(r"\b(?:guardrail|patch|architecture)-level\b", re.IGNORECASE)
 
 # Sections whose numbered or bold lines are not findings raised in this round.
@@ -159,6 +173,18 @@ STATUS = ("previous issues", "status of", "status update")
 
 def _norm_label(label):
     return label.replace("§", "").replace("-", "") if label else None
+
+
+def status_label(header):
+    """The id at the start of a status item's header, normalized; None when it has none."""
+    m = STATUS_LABEL.match(header.strip())
+    return _norm_label(m.group(1)) if m else None
+
+
+def _resolved(text):
+    """The first status marker in the item decides: ✅ resolved, ⚠️ partial, ❌ open."""
+    m = STATUS_MARK.search(text)
+    return bool(m) and m.group(0) == "✅"
 
 
 def parse_finding_line(line):
@@ -238,15 +264,13 @@ def _parse_round(text):
             if level == 2:
                 sec = re.match(r"(\d+)\.\s", h.group(2))
                 section = sec.group(1) if sec else None
-        titles = [t for _, t in stack]
+        titles = [t for lv, t in stack if lv >= 2]  # the H1 is the report title, not a section
         in_status = any(k in t for t in titles for k in STATUS)
         excluded = in_status or any(k in t for t in titles for k in EXCLUDED)
         if in_status:
             if re.match(r"\s*(?:[-*]\s+)?\*\*", line):
                 header = re.sub(r"^\s*[-*]\s+", "", line).replace("*", "").strip()
-                lab = STATUS_LABEL.search(header)
-                status_items.append({"label": _norm_label(lab.group(1).lstrip("§")) if lab else None,
-                                     "header": header, "text": line})
+                status_items.append({"label": status_label(header), "header": header, "text": line})
             elif status_items and not h:
                 status_items[-1]["text"] += "\n" + line
             continue
@@ -291,7 +315,7 @@ def review_metrics(reports, tokens=None):
                     r["new"] += 1
             seen_titles.update(f["title"] for f in findings if f["title"])
             for it in items:
-                if "✅" not in it["text"]:
+                if not _resolved(it["text"]):
                     continue
                 r["resolved_confirmed"] += 1
                 # Credit the round that raised this label most recently, if it was blocking there.
@@ -311,23 +335,24 @@ def review_metrics(reports, tokens=None):
         for r in pr_rounds:
             r["kind"] = "new" if r["new"] else ("confirm-only" if r["resolved_confirmed"] or r["repeat"] else "empty")
             if tokens is not None:
-                _add_cost(r, tokens.get((f"PR#{pr}", str(r["round"])), 0))
+                _add_cost(r, tokens.get((f"PR#{pr}", str(r["round"]))))
         rounds.extend(pr_rounds)
     return {"rounds": rounds, "by_round": _by_round(rounds)}
 
 
 def _by_round(rounds):
-    """Totals by round index (0 = first review; 3 holds round 3 and later)."""
+    """Totals by round index (0 = first review; "3+" holds round 3 and later)."""
+    order = ["0", "1", "2", "3+"]
     out = {}
     for r in rounds:
-        key = str(min(r["round"], 3)) if r["round"] < 3 else "3+"
+        key = order[min(r["round"], 3)]
         agg = out.setdefault(key, {"round": key, "rounds": 0, "raised": 0, "blocking": 0, "new": 0,
                                    "confirmed_defects": 0, "fix_induced": 0, "confirm_only_rounds": 0})
         agg["rounds"] += 1
         for k in ("raised", "blocking", "new", "confirmed_defects", "fix_induced"):
             agg[k] += r[k]
         agg["confirm_only_rounds"] += r["kind"] == "confirm-only"
-    return [out[k] for k in sorted(out)]
+    return [out[k] for k in order if k in out]
 
 
 # --- Report -------------------------------------------------------------------------------
@@ -340,6 +365,12 @@ def _table(header, rows):
     return "\n".join(lines)
 
 
+def _cost_cells(row):
+    if row["tokens"] is None:
+        return ["unknown", "unknown"]
+    return [row["tokens"], row["tokens_per_confirmed_defect"] if row["tokens_per_confirmed_defect"] is not None else "-"]
+
+
 def render_markdown(result):
     parts = []
     ledger = result.get("ledger")
@@ -349,11 +380,12 @@ def render_markdown(result):
                 "repeat text", "fix-induced"] + (["tokens", "tokens / confirmed"] if cost else [])
         rows = [[s["stage"], s["raised"], s["blocking"], s["should_fix"], s["confirmed_defects"], s["new"],
                  s["repeat_id"], s["repeat_text"], s["fix_induced"]]
-                + ([s["tokens"], s["tokens_per_confirmed_defect"]] if cost else []) for s in ledger["stages"]]
+                + (_cost_cells(s) if cost else []) for s in ledger["stages"]]
         t = ledger["totals"]
         parts.append("## Findings ledger, per stage\n\n" + _table(head, rows)
                      + f"\n\nUnique ids: {t['raised']}; blocking: {t['blocking']}; "
-                       f"confirmed defects: {t['confirmed_defects']}.")
+                       f"confirmed defects: {t['confirmed_defects']}; "
+                       f"skipped rows: {ledger.get('skipped_rows', 0)}.")
     reviews = result.get("reviews")
     if reviews:
         cost = any("tokens" in r for r in reviews["rounds"])
@@ -362,7 +394,7 @@ def render_markdown(result):
             ["tokens", "tokens / confirmed"] if cost else [])
         rows = [[f"#{r['pr']}", r["round"], r["verdict"] or "-", r["raised"], r["blocking"], r["should_fix"],
                  r["new"], r["repeat"], r["fix_induced"], r["resolved_confirmed"], r["confirmed_defects"],
-                 r["kind"]] + ([r["tokens"], r["tokens_per_confirmed_defect"]] if cost else [])
+                 r["kind"]] + (_cost_cells(r) if cost else [])
                 for r in reviews["rounds"]]
         parts.append("## PR review rounds\n\n" + _table(head, rows))
         head = ["round", "rounds", "raised", "blocking", "new", "confirmed defects", "fix-induced",

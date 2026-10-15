@@ -320,7 +320,8 @@ def test_review_tokens_key_on_pr_and_round(tmp_path):
     r0, r1, r2 = rv.review_metrics(rv.read_reviews(d), rv.read_tokens(csv))["rounds"]
     assert (r0["tokens"], r0["tokens_per_confirmed_defect"]) == (8000, 4000.0)
     assert (r1["tokens"], r1["tokens_per_confirmed_defect"]) == (900, 900.0)
-    assert (r2["tokens"], r2["tokens_per_confirmed_defect"]) == (0, None)
+    # Round 2 has no CSV row: its cost is unknown, not zero.
+    assert (r2["tokens"], r2["tokens_per_confirmed_defect"]) == (None, None)
 
 
 # --- Report and CLI -----------------------------------------------------------------------
@@ -407,3 +408,116 @@ def test_section_qualified_references_resolve_to_the_numbered_item_of_that_secti
 """
     r0, r1 = _rounds(tmp_path, text, "PR_REVIEW_#3.md")
     assert (r0["raised"], r0["blocking"], r0["confirmed_defects"], r1["resolved_confirmed"]) == (2, 1, 1, 2)
+
+
+# --- Review fixes (PR #29) ----------------------------------------------------------------
+
+# Redacted real shape: a partly resolved blocking item, a nit whose header cites another id,
+# and a nit whose item holds a partial marker before a tick.
+PARTIAL = """# PR #3 review
+
+## 4. Architectural risks
+
+**F1 — [V] Required: placeholder one.**
+
+**F2 — [V] Nit: placeholder two.**
+
+## Update [2026-10-14 10:00]: Changes Since Last Review
+
+#### Previous issues: Status update
+
+**F1 — placeholder one (Required)**
+- ⚠️ **Partially resolved; the remainder is accepted.**
+
+**README nit** — ✅ resolved (see F1).
+
+**F2 — placeholder two**
+- ⚠️ Partly. (a) ✅ one part fixed. (b) ❌ the other is not.
+"""
+
+
+def test_a_partly_resolved_item_is_not_a_confirmed_defect(tmp_path):
+    r0, _ = _rounds(tmp_path, PARTIAL, "PR_REVIEW_#3.md")
+    assert r0["confirmed_defects"] == 0
+
+
+def test_the_first_status_marker_in_an_item_decides(tmp_path):
+    _, r1 = _rounds(tmp_path, PARTIAL, "PR_REVIEW_#3.md")
+    assert r1["resolved_confirmed"] == 1  # only the README nit item
+
+
+@pytest.mark.parametrize(
+    ("header", "label"),
+    [("README nit — ✅ resolved (see F1).", None),
+     ("Original Required #2: the claim", "#2"),
+     ("Original Issue #3: the claim", "#3"),
+     ("F-01 Critical (map SQL)", "F01"),
+     ("§4.1 / §9: T05 alert", "4.1"),
+     ("N1 [Should-fix] Server outlives the run", "N1"),
+     ("A ✅ Resolved (W1, W2).", "A"),
+     ("Earlier FYIs #12, #13", None)],
+)
+def test_a_status_item_id_is_read_only_from_the_start_of_its_header(header, label):
+    assert rv.status_label(header) == label
+
+
+def test_a_ledger_stage_missing_from_the_tokens_csv_has_unknown_cost(tmp_path):
+    rows = [_row("a", "test-benchmark-pr", status="verified"), _row("b", "pr-review-local", status="verified")]
+    csv = tmp_path / "tokens.csv"
+    csv.write_text("stage,round,tokens\npr-review-local,1,3000\n")
+    result = rv.ledger_metrics(rv.read_ledger(_ledger(tmp_path, rows)), rv.read_tokens(csv))
+    tb = _stage(result, "test-benchmark-pr")
+    assert (tb["tokens"], tb["tokens_per_confirmed_defect"]) == (None, None)
+    assert _stage(result, "pr-review-local")["tokens_per_confirmed_defect"] == 3000.0
+
+
+def test_a_review_round_with_confirmed_defects_but_no_tokens_row_has_unknown_cost(tmp_path):
+    d = tmp_path / "reviews"
+    d.mkdir()
+    (d / "PR_REVIEW_#7.md").write_text(REVIEW)
+    csv = tmp_path / "tokens.csv"
+    csv.write_text("stage,round,tokens\nPR#7,1,900\n")
+    r0 = rv.review_metrics(rv.read_reviews(d), rv.read_tokens(csv))["rounds"][0]
+    assert r0["confirmed_defects"] == 2
+    assert (r0["tokens"], r0["tokens_per_confirmed_defect"]) == (None, None)
+
+
+def test_unknown_cost_renders_as_unknown_in_markdown(tmp_path):
+    csv = tmp_path / "tokens.csv"
+    csv.write_text("stage,round,tokens\nother,1,5\n")
+    ledger = rv.ledger_metrics(rv.read_ledger(_ledger(tmp_path, [_row("a", "plan-review")])), rv.read_tokens(csv))
+    row = next(ln for ln in rv.render_markdown({"ledger": ledger}).splitlines() if ln.startswith("| plan-review |"))
+    assert row.endswith("| unknown | unknown |")
+
+
+def test_an_evidence_tag_in_backticks_opens_a_finding():
+    f = rv.parse_finding_line("- `[V]` **Nit**. findings.md L102 says one thing.")
+    assert f is not None and f["severity"] == "minor"
+
+
+@pytest.mark.parametrize("cell", ["", "abc"])
+def test_a_bad_tokens_cell_names_its_line(tmp_path, cell):
+    csv = tmp_path / "tokens.csv"
+    csv.write_text(f"stage,round,tokens\nplan-review,1,5\nplan-review,2,{cell}\n")
+    with pytest.raises(ValueError, match="line 3"):
+        rv.read_tokens(csv)
+
+
+def test_markdown_shows_the_skipped_ledger_rows(tmp_path):
+    path = tmp_path / "findings.jsonl"
+    path.write_text(json.dumps(_row("a", "plan-review")) + "\nnot json\n{}\n")
+    out = tmp_path / "out.md"
+    assert rv.main(["--findings", str(path), "--markdown", str(out)]) == 0
+    assert "skipped rows: 2" in out.read_text()
+
+
+def test_a_title_with_a_skipped_section_word_does_not_hide_the_round(tmp_path):
+    text = REVIEW.replace("# PR #7 review: something", "# PR #7 review: summary of dropped rows and the verdict")
+    r0 = _rounds(tmp_path, text)[0]
+    assert r0["raised"] == 4
+
+
+def test_by_round_buckets_keep_numeric_order():
+    rounds = [dict(rv._blank_round(1, i), kind="new") for i in (10, 0, 3, 2, 1)]
+    assert [a["round"] for a in rv._by_round(rounds)] == ["0", "1", "2", "3+"]
+    assert rv._by_round(rounds)[-1]["rounds"] == 2

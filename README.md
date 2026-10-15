@@ -39,6 +39,7 @@ A reproducible benchmark of AI coding-workflow harnesses for Claude Code: [Caden
 | [**Next steps**](docs/next-steps.md) | The cheapest model that matches Opus with an audit trail: Claude Code, Cursor CLI and OpenAI arms |
 | [Iteration 4](docs/experiments/2026-10-12-iteration-4.md) · [Iteration 3](docs/experiments/2026-10-10-harness-vs-oneshot.md) | Full write-ups, data, confounds |
 | [How the rounds were run](docs/process.md) | The process end to end, what went wrong, and the clean-room check |
+| [Review value](docs/review-value.md) | Do review rounds raise new findings that turn out to be real defects? Counts per stage and per round |
 | [**Quality model**](docs/quality-model.md) | What "great code" means here: ISO/IEC 25010, measured by published tools and thresholds |
 | [Pilot](docs/experiments/2026-10-13-pilot.md) · [Calibration](calibration/README.md) | Cadence on Haiku 5.5; how tasks are chosen against the Opus one-shot; SWE-bench Pro sample |
 | [**Pipeline task family**](docs/tasks/pipeline-family.md) | Long-horizon tasks: one spec on three stacks (dlt and dbt; Arrow, Polars and DataFusion; Spark), a follow-up change, and a traceability audit |
