@@ -41,10 +41,16 @@ class Frame:
     recv: float
 
     def id_timestamp(self) -> int:
-        for part in json.loads(self.id):
-            if "timestamp" in part:
-                return int(part["timestamp"])
-        raise ValueError(f"frame id has no timestamp: {self.id}")
+        """The Kafka timestamp of this event's own topic in the SSE id (the live service lists both
+        data centres' positions; the other entry is the last position seen there, often older)."""
+        stamps = {p.get("topic"): int(p["timestamp"]) for p in json.loads(self.id) if "timestamp" in p}
+        if not stamps:
+            raise ValueError(f"frame id has no timestamp: {self.id}")
+        try:
+            topic = (json.loads(self.data).get("meta") or {}).get("topic")
+        except ValueError:
+            topic = None
+        return stamps.get(topic, max(stamps.values()))
 
 
 @dataclass(frozen=True)
@@ -81,8 +87,8 @@ class Schedule:
             return 0
         try:
             parts = json.loads(last_event_id)
-            ts = next(int(p["timestamp"]) for p in parts if isinstance(p, dict) and "timestamp" in p)
-        except (ValueError, TypeError, StopIteration):
+            ts = max(int(p["timestamp"]) for p in parts if isinstance(p, dict) and "timestamp" in p)
+        except (ValueError, TypeError):
             return 0
         for pos, d in enumerate(self.positions):
             if d.id_ts >= ts:
@@ -122,9 +128,10 @@ def _shuffle_blocks(order: list[int], rng: random.Random, share: float = 0.3) ->
 def _pick_late_batch(frames: list[Frame], events: list[dict | None], rng: random.Random,
                      batch_size: int) -> tuple[int, list[int]]:
     """The window with the most en.wikipedia edits among the full windows that leave room for the
-    20-minute delay before the capture ends, and a sample of its edits."""
+    20-minute delay before the capture ends, and a sample of its en.wikipedia edits (so the held-back
+    batch moves that window's count, which check 6 reads)."""
     lo, hi = frames[0].id_timestamp() // 1000, frames[-1].id_timestamp() // 1000
-    first, last = lo + WINDOW_SECONDS, hi - 5 * WINDOW_SECONDS - 20 * 60
+    first, last = lo + WINDOW_SECONDS, hi - 2 * WINDOW_SECONDS - 20 * 60
     counts: dict[int, int] = {}
     for ev in events:
         if _is_countable_edit(ev) and ev.get("wiki") == "enwiki" and first <= ev["timestamp"] <= last:
@@ -136,8 +143,11 @@ def _pick_late_batch(frames: list[Frame], events: list[dict | None], rng: random
                 w = ev["timestamp"] - ev["timestamp"] % WINDOW_SECONDS
                 counts[w] = counts.get(w, 0) + 1
     window = max(sorted(counts), key=lambda w: counts[w])
-    members = [i for i, ev in enumerate(events)
-               if _is_countable_edit(ev) and window <= ev["timestamp"] < window + WINDOW_SECONDS]
+    members = [i for i, ev in enumerate(events) if _is_countable_edit(ev) and ev.get("wiki") == "enwiki"
+               and window <= ev["timestamp"] < window + WINDOW_SECONDS]
+    if not members:  # tests with other wikis only
+        members = [i for i, ev in enumerate(events)
+                   if _is_countable_edit(ev) and window <= ev["timestamp"] < window + WINDOW_SECONDS]
     batch = sorted(rng.sample(members, min(batch_size, len(members))))
     return window, batch
 

@@ -1,0 +1,89 @@
+{
+ "retrieved": "2026-10-14",
+ "files": [
+  {
+   "path": "capture/recentchange.jsonl.gz",
+   "sha256": "e7ec9d8701bf928943f24d539c8ef1ca384af188ea5e3154a7faf9a95f7ea752",
+   "bytes": 3823757,
+   "source": "https://stream.wikimedia.org/v2/stream/recentchange (one hour recorded live with snapshot/capture_stream.py, reduced with snapshot/freeze_capture.py)"
+  },
+  {
+   "path": "raw/census/README.md",
+   "sha256": "eda5ee6d80ac0c34dcb791dd055caae4eb710453f0277e24b05f4178a86bb78d",
+   "bytes": 614,
+   "source": "written for this task"
+  },
+  {
+   "path": "raw/census/co-est2021-alldata.csv",
+   "sha256": "684883133405a88edbd43156382ccd7771fe1d6608b7ea1b992cb28bb6d31c83",
+   "bytes": 645814,
+   "source": "https://www2.census.gov/programs-surveys/popest/datasets/2020-2021/counties/totals/co-est2021-alldata.csv"
+  },
+  {
+   "path": "raw/census/co-est2024-alldata.csv",
+   "sha256": "abcc8720d669e793bbfdcd440eeec37a78db3b452adbe4ccd1eadf7c72b522b9",
+   "bytes": 1769182,
+   "source": "https://www2.census.gov/programs-surveys/popest/datasets/2020-2024/counties/totals/co-est2024-alldata.csv"
+  },
+  {
+   "path": "raw/sitematrix.json",
+   "sha256": "8ce58139bc4acc79bc4315a5602353893d09e8ecfd3e9292378b41bfff1c9777",
+   "bytes": 148926,
+   "source": "https://meta.wikimedia.org/w/api.php?action=sitematrix&format=json&formatversion=2"
+  },
+  {
+   "path": "raw/usaspending/FY2024_417_Assistance_Full_20261006.zip",
+   "sha256": "d3c11be4cf34f78759671982338d059372547c1b073ca985ebe5b907b5e79a65",
+   "bytes": 563672,
+   "source": "https://files.usaspending.gov/award_data_archive/FY2024_417_Assistance_Full_20261006.zip"
+  },
+  {
+   "path": "raw/usaspending/FY2024_417_Contracts_Full_20261006.zip",
+   "sha256": "ede25122a519e2a2b6f6c8632916372615bb499f3613fcd44b6563da44361055",
+   "bytes": 17523,
+   "source": "https://files.usaspending.gov/award_data_archive/FY2024_417_Contracts_Full_20261006.zip"
+  },
+  {
+   "path": "raw/usaspending/FY2024_418_Assistance_Full_20261006.zip",
+   "sha256": "3c334b5012f8e80fa22ae2983e578028f4f5d2477a4baf317582028eb1afd0ff",
+   "bytes": 845703,
+   "source": "https://files.usaspending.gov/award_data_archive/FY2024_418_Assistance_Full_20261006.zip"
+  },
+  {
+   "path": "raw/usaspending/FY2024_418_Contracts_Full_20261006.zip",
+   "sha256": "d8cd5367653dd2dea0c038efb3b55fbf760e29d20cacea1922fb10d5af067276",
+   "bytes": 16740,
+   "source": "https://files.usaspending.gov/award_data_archive/FY2024_418_Contracts_Full_20261006.zip"
+  },
+  {
+   "path": "raw/usaspending/FY2024_474_Assistance_Full_20261006.zip",
+   "sha256": "bf7cea1cff5f876558a07fc45bcaeb32d07b1a9055f895933080d97d78ed39df",
+   "bytes": 614250,
+   "source": "https://files.usaspending.gov/award_data_archive/FY2024_474_Assistance_Full_20261006.zip"
+  },
+  {
+   "path": "raw/usaspending/FY2024_474_Contracts_Full_20261006.zip",
+   "sha256": "9eae51af6a18aba74ce924c81c6b98c1cfe7734251cf20a38c9029ca913dbc54",
+   "bytes": 39033,
+   "source": "https://files.usaspending.gov/award_data_archive/FY2024_474_Contracts_Full_20261006.zip"
+  },
+  {
+   "path": "raw/usaspending/FY2024_485_Assistance_Full_20261006.zip",
+   "sha256": "1e188afb7693d59882c21f8b481b40c42759b113633d97598930a5b31fc5e5a8",
+   "bytes": 817604,
+   "source": "https://files.usaspending.gov/award_data_archive/FY2024_485_Assistance_Full_20261006.zip"
+  },
+  {
+   "path": "raw/usaspending/FY2024_485_Contracts_Full_20261006.zip",
+   "sha256": "93f981f8b4b2db84cc630b13b4b9c691ebf7f552eff31b357c51a6788cdb554f",
+   "bytes": 73652,
+   "source": "https://files.usaspending.gov/award_data_archive/FY2024_485_Contracts_Full_20261006.zip"
+  },
+  {
+   "path": "raw/usaspending/README.md",
+   "sha256": "bc9e6b658189f87772c46cf5d6d0002da7da8f3d4617f810d60e664cd4adafae",
+   "bytes": 1139,
+   "source": "written for this task"
+  }
+ ]
+}
