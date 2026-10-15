@@ -46,7 +46,7 @@ Each harness is installed the way its own README says, at a pinned commit, then 
 | Arm | Pinned commit | Installed with |
 |---|---|---|
 | `baseline` | none | nothing (control) |
-| `cadence` | `jtouley/cadence@812998f` (main) | `install.sh` |
+| `cadence` | `jtouley/cadence@e5c3a92` (main) | `install.sh` |
 | `superpowers` | `obra/superpowers@8ca22db` | `claude plugin marketplace add` + `claude plugin install` |
 | `spec-kit` | `github/spec-kit@b9e08bf` | `specify init --integration claude` |
 | `openspec` | `Fission-AI/OpenSpec@9111a76` | `openspec init --tools claude` |
@@ -60,11 +60,13 @@ documented command runs but the commit cannot drift. See [`frameworks.lock.json`
 
 ### Benchmark Results (October 2026)
 
-Tiers 1 and 2, measured on Linux with Claude Code 2.1.294. Source: [`results/REPORT.md`](results/REPORT.md).
+Tiers 1 and 2, measured on Linux with Claude Code 2.1.294, except the `cadence` row: it was
+measured on macOS with Claude Code 2.1.287 after the pin bump to `e5c3a92`. The cadence install
+bytes and probe verdicts reproduce on the merged main code. Source: [`results/REPORT.md`](results/REPORT.md).
 
 | Harness | Always-on tokens | Workflow tokens (lower–upper) | Hook probes meeting intent |
 |---|---|---|---|
-| `cadence` | 671 | 8,965 – 59,055 | **7/9** |
+| `cadence` | 671 | 9,078 – 62,141 | **7/9** |
 | `gsd-core` | 3,457 | 4,701 – 124,702 | 4/9 |
 | `superpowers` | 1,483 | 21,696 – 33,518 | 2/7 |
 | `spec-kit` | 291 | 15,889 | 2/9 |
