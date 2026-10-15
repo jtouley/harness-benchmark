@@ -11,6 +11,7 @@ so a trial takes a few seconds. The full P1 reference trial is in test_pipeline_
 from __future__ import annotations
 
 import json
+import os
 import shutil
 import socket
 import subprocess
@@ -137,3 +138,60 @@ def test_an_occupied_port_gives_a_json_error_not_a_traceback(key, tmp_path, caps
                     "--logs", str(tmp_path / "logs")], key=key)
     result = json.loads(capsys.readouterr().out)
     assert result["reward"] == 0.0 and "port" in result["error"]
+
+
+# --- how the runner runs the candidate's make (golden/pipeline/README.md, runner wiring) -------------
+
+def test_make_gets_a_fresh_home_and_only_the_toolchain_environment(key, tmp_path, port, monkeypatch):
+    """State under $HOME (dlt's ~/.dlt/pipelines/) must not survive from development, and the grader's
+    own variables must not reach the candidate's make."""
+    seen = tmp_path / "seen"
+    seen.mkdir()
+    monkeypatch.setenv("HB_GRADER_ONLY_PROBE", "secret")
+    record = (f'test -z "$$(ls -A $$HOME)" -o -e $$HOME/.mine; echo $$HOME >> {seen}/homes; '
+              f'touch $$HOME/.mine; env | cut -d= -f1 | sort -u > {seen}/env')
+    repo = delivered(tmp_path, key, port, build=f"{record} && {COPY_MARTS}",
+                     stream=f"{record} && {READS}")
+    make_env = {"PATH": "/usr/local/bin:/usr/bin:/bin", "HB_TOOLCHAIN_PROBE": "1"}
+    result = trial.trial(repo, key, CAPTURE, seed=key["stream"]["seed"], port=port, speed=6000.0,
+                         durations=(1, 1), build_timeout=60, logs=tmp_path / "logs", make_env=make_env)
+    assert result["reward"] == 1.0, result
+    homes = set((seen / "homes").read_text().split())
+    assert len(homes) == 1  # one HOME for the whole grading run: its builds and stream runs share it
+    home = homes.pop()
+    assert home != str(Path.home()) and not Path(home).exists()  # fresh, and removed afterwards
+    names = set((seen / "env").read_text().split())
+    assert {"HOME", "PATH", "HB_TOOLCHAIN_PROBE"} <= names
+    assert "HB_GRADER_ONLY_PROBE" not in names
+    assert names <= {"HOME", "PATH", "HB_TOOLCHAIN_PROBE", "USER", "LOGNAME", "PWD", "OLDPWD", "SHLVL",
+                     "_", "MAKEFLAGS", "MAKELEVEL", "MFLAGS", "MAKE_TERMOUT", "MAKE_TERMERR", "MAKEOVERRIDES",
+                     "DURATION",  # set by make itself
+                     "MANPATH", "__CF_USER_TEXT_ENCODING"}, names  # added by macOS to every process
+
+
+def test_a_stream_run_is_killed_after_its_duration_plus_the_grace(key, tmp_path, port):
+    repo = delivered(tmp_path, key, port, stream="sleep 60")
+    result = trial.trial(repo, key, CAPTURE, seed=key["stream"]["seed"], port=port, speed=6000.0,
+                         durations=(1, 1), build_timeout=60, logs=tmp_path / "logs", stream_grace=2)
+    assert [s["exit"] for s in result["stream"]] == [-9, -9]
+    assert all(s["seconds"] < 10 for s in result["stream"])
+    assert result["reward"] == 0.0
+
+
+def test_make_user_needs_root(key, tmp_path, port):
+    if os.geteuid() == 0:
+        pytest.skip("runs as root")
+    result = trial.trial(delivered(tmp_path, key, port), key, CAPTURE, seed=key["stream"]["seed"],
+                         port=port, speed=6000.0, durations=(1, 1), build_timeout=60,
+                         logs=tmp_path / "logs", make_user="agent")
+    assert result["reward"] == 0.0 and "root" in result["error"]
+
+
+def test_make_env_file_reads_name_value_lines(tmp_path):
+    f = tmp_path / "toolchain.env"
+    f.write_text("# toolchain\nPATH=/opt/hb/bin:/usr/bin\n\nUV_OFFLINE=1\nSBT_OPTS=-Da=b -Dc=d\n")
+    assert trial.read_env_file(f) == {"PATH": "/opt/hb/bin:/usr/bin", "UV_OFFLINE": "1",
+                                      "SBT_OPTS": "-Da=b -Dc=d"}
+    f.write_text("not a variable\n")
+    with pytest.raises(ValueError):
+        trial.read_env_file(f)

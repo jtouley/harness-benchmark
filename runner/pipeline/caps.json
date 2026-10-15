@@ -1,0 +1,9 @@
+{
+ "note": "Caps of the pipeline trials. agent_timeout: the one-shot guard cap (criteria-v2 5.3), chosen for these first trials, owner may change. Per task: grader_timeout, build_timeout and stream_grace are the measured worst case of the reference trials through the runner plus 50% (`pipeline_trial.py caps`; owner default, owner may change). Until measured, the grader's own defaults apply.",
+ "agent_timeout": 7200,
+ "tasks": {
+  "P1": {"image": "harness-benchmark/runner-pipeline:py", "grader_timeout": 4800, "build_timeout": 1800, "stream_grace": 300},
+  "P2": {"image": "harness-benchmark/runner-pipeline:py", "grader_timeout": 4800, "build_timeout": 1800, "stream_grace": 300},
+  "P3": {"image": "harness-benchmark/runner-pipeline:p3", "grader_timeout": 4800, "build_timeout": 1800, "stream_grace": 300}
+ }
+}

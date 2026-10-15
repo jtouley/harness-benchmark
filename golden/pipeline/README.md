@@ -70,35 +70,62 @@ checks, reward 1.0, no output changed by the second build. Expect less on the x8
 
 ## A trial on the isolated runner
 
-The runner (`runner/`, PR #23) is not on `main` yet, so it is not wired. A trial will be:
+The runner (`runner/`) is wired for the three tasks. `scripts/pipeline_trial.py` assembles the
+starting repository, bundles `replay.pyz` and `grader.pyz`, and calls `runner/run_trial.sh` with the
+task's image and caps from `runner/pipeline/caps.json`:
 
 ```sh
-python3 -m pipetask.assemble P1 --out /tmp/p1-repo
-python3 -m pipetask.bundle --out /tmp/p1-dist          # replay.pyz, grader.pyz
-runner/run_trial.sh --repo /tmp/p1-repo --prompt golden/pipeline/P1/prompt.md \
-    --grader /tmp/p1-dist/grader.pyz --model <model> [--plugin-dir <arm>] --out results/runs/<trial>
+runner/pipeline/build.sh                     # the trial images: runner-pipeline:py (P1, P2), :p3
+python scripts/pipeline_trial.py run P1 --model claude-haiku-5-5 --out results/runs/pipeline/P1-haiku-1
+python scripts/pipeline_trial.py run P1 --mode reference --out results/runs/pipeline/P1-ref-1   # smoke
+python scripts/pipeline_trial.py run P1 --mode skeleton --out results/runs/pipeline/P1-skel-1   # control
+python scripts/pipeline_trial.py caps P1 results/runs/pipeline/P1-ref-*      # grader caps from references
+python scripts/pipeline_trial.py summary results/runs/pipeline/*              # the results table
 ```
 
-Three runner changes are needed for this family (left for the wiring step):
+How each runner change listed for this family is done:
 
-1. **The dev replay server.** Before the agent starts, the entrypoint copies `replay.pyz` to a
-   root-only path (mode 0700) and starts `python3 replay.pyz --seed <dev seed>` as root on port 8099,
-   so the arm can develop against `http://localhost:8099/v2/stream/recentchange`. The grading seed
-   (in the key) must differ from the dev seed. After the agent phase, the entrypoint stops it, so the
-   grader can serve the grading seed on the same port.
-2. **Time caps.** The grader runs `make build` twice and `make stream` twice (30 s and 90 s by default),
-   plus a dependency install. Its own caps are `--build-timeout` per build (default 1800 s) and
-   DURATION + 300 s per stream run, so its worst case is 2 × 1800 + 330 + 390 = 4,320 s. The runner's
-   `--grader-timeout` must be above that, or the grader must get a smaller `--build-timeout`; otherwise a
-   slow candidate is killed by the runner and leaves no JSON instead of being graded. The current
-   default, `--grader-timeout 900`, is below that worst case.
-   The agent cap for this task is an owner decision (the family is meant to exceed one session).
-3. **The candidate's `make` runs unprivileged.** The grader runs the delivered `make build` and
-   `make stream`. It reads the answer key from `grader.pyz` into memory and never writes it to disk,
-   but the archive itself holds the key. So the runner keeps `grader.pyz` (and the grader's temporary
-   directory) owned by root with mode 0700, and runs the candidate's `make` as the unprivileged agent
-   user, not as the grader's user. Until then, a Makefile written in the agent phase could read the
-   archive (PR #26 review, F-02).
+1. **The dev replay server.** `run_trial.sh --replay replay.pyz` copies it into `/opt/hb-replay/`
+   (root, mode 0700) before the container starts. The entrypoint starts it as root on
+   `localhost:8099` with `--replay-seed` (default 0; the grading seed in the key is 1), waits for the
+   port, and stops it after every agent process is killed, so the grader can serve the grading seed on
+   the same port. Its log is `replay-dev.log`.
+2. **Time caps.** The grader's caps are passed to it (`--build-timeout`, and `--stream-grace`, the time
+   a `make stream` run may take beyond its DURATION, default 300 s), and the runner's `--grader-timeout`
+   is above their sum. A grader killed at the runner's cap still leaves a `grade.json`:
+   `{"error": "the grader was killed at its cap of N s", "reward": 0.0}`. The values are in
+   `runner/pipeline/caps.json`, with the measurements they come from (below).
+3. **The candidate's `make` runs unprivileged.** `run_trial.sh` copies the grader into
+   `/opt/hb-grader/` (root, mode 0700), and the grader runs as root with
+   `--make-user agent --make-env-file /opt/hb/toolchain.env`: every `make` runs as the agent user
+   (`setpriv`), with exactly the image's toolchain variables and a fresh, empty HOME that its four runs
+   share and that is removed afterwards (state under `~/.dlt/` from development is gone). The grader's
+   temporary directory (the capture) is root's, mode 0700, and the key stays in its memory. While the
+   grader runs, the agent user has no network beyond loopback (`iptables` owner match), so the build
+   can use only the image's caches. `tests/test_runner.py` checks each point in a container.
+
+### Decisions for the runner (default, owner may change)
+
+From TASK-81; each is the owner's default for these first trials and may change.
+
+- **Toolchain: a cache pre-warmed in the trial image** (TASK-81 item 14). `runner/pipeline/Dockerfile`
+  builds the images from the three skeletons only: Python 3.12 and both uv locks (P1, P2) in the uv cache;
+  for P3 also JDK 17, sbt, the Spark/Scala/ScalaTest closure in the coursier and ivy caches, and the
+  dbt-spark closure (the files PyPI serves, so the hashes match) in a wheelhouse. No package index is
+  read during a trial: the toolchain sets `UV_OFFLINE`, `PIP_NO_INDEX`, `COURSIER_MODE=offline` and
+  `sbt.offline` for the agent and the grader, and the grader's `make` has no network at all. During the
+  agent's session the offline switches are variables, not a firewall (the agent needs the API).
+- **The warm cache does not count against the agent's loop cost.** The results report wall time with
+  and without the first `make build` of grading (the one that builds the environments from the cache).
+- **Cold-cache timeout** (TASK-81 item 17): the grader's caps are the measured worst case of the
+  reference trials through the runner plus 50% (`pipeline_trial.py caps`): `--grader-timeout` from
+  the whole grading run, `--build-timeout` from the slowest build, `--stream-grace` from the most a
+  stream run took past its DURATION. A candidate slower than the reference by more than that is cut off.
+- **The agent's guard cap** (criteria-v2 §5.3, not a TASK-81 item): 7,200 s for the one-shot trials,
+  chosen for these first trials.
+- The other TASK-81 questions (the oracle map shape, the readings the key accepts, the traps that do not
+  reproduce, the plaintext answers in the key, the P2 and P3 open points below, the §8.5 tier rule) are
+  out of scope for the runner and stay open.
 
 ## What the key fixes that the spec leaves open
 

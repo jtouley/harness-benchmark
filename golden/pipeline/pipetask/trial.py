@@ -13,6 +13,13 @@
    started once while the stream is still running (F6), and the scheduled faults F1 to F5 happen.
 4. The checks ([grade]).
 
+How the candidate's `make` runs (the runner passes these; golden/pipeline/README.md, runner wiring):
+`--make-env-file` gives it exactly the variables of that file (the trial image's toolchain) plus a
+fresh, empty HOME that all four runs share and that is removed afterwards, so state kept under HOME in
+development (dlt's `~/.dlt/pipelines/`) is not graded. `--make-user` runs it as that user (`setpriv`;
+the grader must run as root), so the build cannot read the grader's archive or temporary files.
+`--stream-grace` is how long a `make stream` run may take beyond its DURATION before it is killed.
+
 Prints one JSON object. `reward` is the share of the seven checks that pass, and 0 when a second build
 changed an output, no `make stream` run exited 0, or the consumer never read the grading stream up to
 the late batch (F4). The stream answers do not depend on the seed, so marts copied in from development
@@ -25,10 +32,13 @@ from __future__ import annotations
 import argparse
 import json
 import os
+import pwd
+import re
 import shutil
 import signal
 import subprocess
 import sys
+import tempfile
 import threading
 import time
 from pathlib import Path
@@ -41,10 +51,12 @@ from .oracle import sql_string
 OUTPUTS = ("out", "lake")  # the spec's output folders: removed even when committed
 
 
-def run(cmd: list[str], cwd: Path, timeout: float, log: Path) -> dict:
+def run(cmd: list[str], cwd: Path, timeout: float, log: Path, *, env: dict[str, str] | None = None,
+        prefix: tuple[str, ...] = ()) -> dict:
     t0 = time.monotonic()
     with log.open("w", encoding="utf-8") as fh:
-        proc = subprocess.Popen(cmd, cwd=cwd, stdout=fh, stderr=subprocess.STDOUT, start_new_session=True)
+        proc = subprocess.Popen([*prefix, *cmd], cwd=cwd, env=env, stdout=fh, stderr=subprocess.STDOUT,
+                                start_new_session=True)
         try:
             rc = proc.wait(timeout=timeout)
         except subprocess.TimeoutExpired:
@@ -52,6 +64,47 @@ def run(cmd: list[str], cwd: Path, timeout: float, log: Path) -> dict:
             rc = proc.wait()
             fh.write(f"\n[trial] killed after {timeout} s\n")
     return {"cmd": " ".join(cmd), "exit": rc, "seconds": round(time.monotonic() - t0, 1), "log": log.name}
+
+
+ENV_LINE = re.compile(r"([A-Za-z_][A-Za-z0-9_]*)=(.*)")
+
+
+def read_env_file(path: Path) -> dict[str, str]:
+    """NAME=VALUE lines (no quoting); blank lines and `#` comments are skipped."""
+    env = {}
+    for line in path.read_text(encoding="utf-8").splitlines():
+        if not line.strip() or line.lstrip().startswith("#"):
+            continue
+        m = ENV_LINE.fullmatch(line)
+        if not m:
+            raise ValueError(f"{path}: not a NAME=VALUE line: {line!r}")
+        env[m.group(1)] = m.group(2)
+    return env
+
+
+class MakeRunner:
+    """Runs the candidate's make: as `user` (root required), with `env` and a fresh HOME, or as the
+    grader does when both are None."""
+
+    def __init__(self, env: dict[str, str] | None, user: str | None):
+        self.user, self.home, self.env, self.prefix = user, None, None, ()
+        if env is None and user is None:
+            return
+        self.home = Path(tempfile.mkdtemp(prefix="hb-make-home-"))
+        name = user or pwd.getpwuid(os.getuid()).pw_name
+        self.env = {"PATH": "/usr/local/bin:/usr/bin:/bin", **(env or {}),
+                    "HOME": str(self.home), "USER": name, "LOGNAME": name}
+        if user:
+            entry = pwd.getpwnam(user)
+            os.chown(self.home, entry.pw_uid, entry.pw_gid)
+            self.prefix = ("setpriv", f"--reuid={user}", f"--regid={user}", "--init-groups")
+
+    def __call__(self, cmd: list[str], cwd: Path, timeout: float, log: Path) -> dict:
+        return run(cmd, cwd, timeout, log, env=self.env, prefix=self.prefix)
+
+    def close(self) -> None:
+        if self.home is not None:
+            shutil.rmtree(self.home, ignore_errors=True)
 
 
 def mart_digests(repo: Path) -> dict[str, str]:
@@ -91,15 +144,31 @@ def reward(result: dict) -> float:
 
 
 def trial(repo: Path, key: dict, capture: Path, *, seed: int, port: int, speed: float,
-          durations: tuple[int, int], build_timeout: float, logs: Path) -> dict:
-    result: dict = {"seed": seed, "durations": list(durations), "speed": speed}
+          durations: tuple[int, int], build_timeout: float, logs: Path, stream_grace: float = 300,
+          make_env: dict[str, str] | None = None, make_user: str | None = None) -> dict:
+    result: dict = {"seed": seed, "durations": list(durations), "speed": speed,
+                    "build_timeout": build_timeout, "stream_grace": stream_grace,
+                    "make_user": make_user, "make_fresh_home": make_env is not None or make_user is not None}
+    if make_user and os.geteuid() != 0:
+        return {**result, "error": "--make-user needs the grader to run as root", "reward": 0.0}
     error = reset(repo)
     if error:
         return {**result, "error": error, "reward": 0.0}
     logs.mkdir(parents=True, exist_ok=True)
-    first = run(["make", "build"], repo, build_timeout, logs / "build-1.log")
+    make = MakeRunner(make_env, make_user)
+    try:
+        return _trial(repo, key, capture, result, make, seed=seed, port=port, speed=speed,
+                      durations=durations, build_timeout=build_timeout, logs=logs, stream_grace=stream_grace)
+    finally:
+        make.close()
+
+
+def _trial(repo: Path, key: dict, capture: Path, result: dict, make: MakeRunner, *, seed: int, port: int,
+           speed: float, durations: tuple[int, int], build_timeout: float, logs: Path,
+           stream_grace: float) -> dict:
+    first = make(["make", "build"], repo, build_timeout, logs / "build-1.log")
     digests1 = mart_digests(repo)
-    second = run(["make", "build"], repo, build_timeout, logs / "build-2.log")
+    second = make(["make", "build"], repo, build_timeout, logs / "build-2.log")
     digests2 = mart_digests(repo)
     changed = sorted(k for k in set(digests1) | set(digests2) if digests1.get(k) != digests2.get(k))
     result["build"] = [first, second]
@@ -115,7 +184,7 @@ def trial(repo: Path, key: dict, capture: Path, *, seed: int, port: int, speed: 
     thread.start()
     try:
         result["stream"] = [
-            run(["make", "stream", f"DURATION={d}"], repo, d + 300, logs / f"stream-{i}.log")
+            make(["make", "stream", f"DURATION={d}"], repo, d + stream_grace, logs / f"stream-{i}.log")
             for i, d in enumerate(durations, 1)
         ]
     finally:
@@ -145,6 +214,11 @@ def main(argv: list[str] | None = None, key: dict | None = None) -> None:
     ap.add_argument("--durations", default="30,90", help="the two make stream DURATION values, seconds")
     ap.add_argument("--build-timeout", type=float, default=1800)
     ap.add_argument("--logs", type=Path, default=None)
+    ap.add_argument("--stream-grace", type=float, default=300,
+                    help="seconds a make stream run may take beyond its DURATION")
+    ap.add_argument("--make-env-file", type=Path, default=None,
+                    help="NAME=VALUE lines: the whole environment of make, plus a fresh HOME")
+    ap.add_argument("--make-user", default=None, help="run make as this user (the grader runs as root)")
     args = ap.parse_args(argv)
     if key is None:
         key = json.loads(args.key.read_text(encoding="utf-8"))
@@ -153,7 +227,9 @@ def main(argv: list[str] | None = None, key: dict | None = None) -> None:
     d1, d2 = (int(x) for x in args.durations.split(","))
     result = trial(args.repo.resolve(), key, args.capture.resolve(), seed=args.seed, port=args.port,
                    speed=args.speed, durations=(d1, d2), build_timeout=args.build_timeout,
-                   logs=(args.logs or args.repo / "_grade_logs").resolve())
+                   logs=(args.logs or args.repo / "_grade_logs").resolve(), stream_grace=args.stream_grace,
+                   make_env=read_env_file(args.make_env_file) if args.make_env_file else None,
+                   make_user=args.make_user)
     json.dump(result, sys.stdout, indent=1, sort_keys=True, default=str)
     print()
 
