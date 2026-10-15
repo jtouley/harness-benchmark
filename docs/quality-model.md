@@ -28,8 +28,7 @@ characteristics that a code change can affect, and how this benchmark measures e
 | Maintainability | Modularity, reusability | **Design fit**, judged against a checklist (below) | Reviewer judgment; no tool measures it |
 
 Line length (pycodestyle E501) is formatting, not quality, and the Sonar way gate does not use it, so
-it is left out. Duplication is not measured yet (no Python duplication tool in the pinned set); it is a
-known gap.
+it is left out. Duplication was not measured in iteration 4; the owner criteria below add it (`jscpd`).
 
 ## Stronger measures for the next run set
 
@@ -42,6 +41,32 @@ These measure "good design" and "good tests" by outcome, not by inspection:
 | **Escaped defects, test-confirmed** | The form M2 takes from the next run set on: a blind reviewer files a defect only with a reproduction test that fails on the trial's code and passes on the reference solution; count confirmed defects per trial, by severity | Faultlessness, with no human call needed for "confirmed" |
 | **Test strength** | Run each arm's own tests against mutants of the reference solution; report the kill rate | Testability: tests that catch real faults, on one fixed set of mutants for every arm |
 | **Pairwise judging, as a tie-breaker only** | Two or three LLM judges compare solutions A against B, each pair twice with positions swapped; report a win rate | Design preference, where the measures above tie |
+
+## Owner criteria (2026-10-14): DRY, SOLID, extensible, traceable, cheap
+
+The owner's success question for the long tasks: **which arm comes closest to a DRY, SOLID and
+extensible system, whose path we can understand, and at what cost.** Each part has a measure:
+
+| Part | Measure | How |
+|---|---|---|
+| DRY | **Duplicated lines on new code ≤ 3%** | `jscpd` (one tool for Python, SQL, Scala and YAML), minimum block 5 lines; the threshold is the Sonar way gate's duplication condition |
+| SOLID: single responsibility, dependency inversion | **Module coupling**: per module, efferent and afferent coupling and instability (Martin, *Agile Software Development*, 2002), from the import graph; plus the design checklist items below | An import-graph script per language; reported, not gated |
+| SOLID: open for extension | **Edit radius of the follow-up task**: the existing files (not new ones) the follow-up change has to modify, and their changed lines | From the follow-up diff. A small radius means the system was open for that extension |
+| Extensible | **Follow-up task success and cost**: the follow-up's hidden checks, and its dollars and wall time | Each long task has a follow-up (for the pipeline family: a new data mart and a dashboard). The same arm builds it on its own delivered code |
+| Traceable ("how we got there") | **Audit scores**: diagnosis accuracy, origin accuracy, audit cost, repair cost | The [audit protocol](tasks/pipeline-family.md#audit-protocol) |
+| Cheap | **Dollars for build + follow-up + repairs**, at list prices from token counts | `pricing.json`; Claude Code's own figure is not used for models it does not price |
+
+Design checklist additions, each yes or no with a file and line, by two blind reviewers:
+
+- Each module has one reason to change (sources, transforms, sinks, orchestration and configuration are
+  separate).
+- Sources and sinks sit behind one interface each; adding one does not edit the others.
+- Configuration, not code, holds what differs between pipelines where the spec asks for it (P2).
+- No logic is copied between the batch and the stream paths where one shared function fits.
+
+**Ranking.** Arms that pass the checks (layer 1) are ranked on design (duplication, checklist, edit
+radius), then on traceability. Cost is reported beside each, and the answer to "which is cheapest" is the
+cheapest arm in the top design tier, not the cheapest overall.
 
 ## How the parts combine
 

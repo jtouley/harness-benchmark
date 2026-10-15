@@ -38,7 +38,7 @@ the defects that reach the delivered code, and the evidence that the run leaves 
 - **The tasks must be harder.** On T04–T06, Opus alone finished in about 2 minutes with the top
   scores. Those tasks are too easy to show what a harness is for. The main run set uses class L and O
   tasks ([criteria §3](criteria.md#3-task-classes)), starting with the proposed
-  [L3 open-data BI pipeline](tasks/L3-open-data-bi-pipeline.md). T05 stays as a quick pilot only.
+  [pipeline task family](tasks/pipeline-family.md) (P1 to P3, which supersedes L3). T05 stays as a quick pilot only.
 - **Quality is measured by the published [quality model](quality-model.md)**, not by one grader's
   rubric, and every run must pass a clean-room check before it is graded: on Claude Code,
   [`clean_room_check.py`](process.md#clean-room); on other hosts, the check in stage 0, step 3.
@@ -197,7 +197,7 @@ progress. This changes criteria v1 §6 and is part of the next criteria version,
 |---|---|---|---|
 | 0. Prerequisites | See the list below | none | Each item has a test or a recorded check |
 | 1. Pilot | T05 (budgets: the only task where every one-shot shipped a crash) only, n = 1, every arm | ~13 runs | Drop an arm that cannot follow the Cadence procedure at all. Keep the rest. The pilot decides nothing else |
-| 2. Hard tasks | Tasks admitted as lift or beyond tasks (see "Task selection"): B01 (lift) and the other real-defect tasks first, then the [L3 open-data BI pipeline](tasks/L3-open-data-bi-pipeline.md) if calibration admits it. n = 5, the arms that passed the pilot, plus the Opus bar | ≤ 195 runs | The decision rule above, per task and per class |
+| 2. Hard tasks | Tasks admitted as lift or beyond tasks (see "Task selection"): B01 (lift) and the other real-defect tasks first, then the [pipeline family](tasks/pipeline-family.md) (one spec on three stacks, measured on audit and repair as well as checks) if calibration admits it. n = 5, the arms that passed the pilot, plus the Opus bar | ≤ 195 runs | The decision rule above, per task and per class |
 | 3. Easy tasks, for contrast | T04–T06, n = 5, the same arms | ≤ 195 runs | Tests H4: does the harness matter more on hard tasks |
 
 ## Prerequisites (stage 0)
