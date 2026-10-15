@@ -20,7 +20,8 @@ Over four rounds of measurement, the answer moved twice.
    independent review recovers it.** Opus alone fixed both defects of a brownfield bug in 10 runs of 10.
    Haiku alone fixed the main path in 5 of 5 and the second defect in 0 of 5. Sonnet fixed it in 1 of 5.
    A minimal review loop (the cheap model works, an independent reviewer checks the running system) fixed
-   both in all 3 valid runs, but at about the Opus one-shot's cost.
+   both in 2 of 2 Haiku runs and 1 of 1 Sonnet run, at about the Opus one-shot's cost. That is a signal,
+   not yet a reliability measure.
 4. **Why the cheap models miss is specific and fixable.** Haiku saw the second defect in every run,
    diagnosed it correctly once, then decided to "leave that out of this change and report it" and never
    reported it. Sonnet mostly never exercised that path. The gap is scope judgment and coverage, not
@@ -77,9 +78,10 @@ Three feature tasks on a 300-line Python ledger (T04–T06), one run per cell, o
 | Arm | Delivered | Blind quality | Crashes shipped | Time per task |
 |---|---|---|---|---|
 | Opus 5.5 one-shot | 3 of 3 | 8.00 | 2 | 2 min |
+| ship-feature (Opus) | 2 of 3 | 7.88 (2 tasks) | 0 | 42 min |
 | Cadence (Opus) | 3 of 3 | 7.33 | 0 | 63 min |
 | Sonnet 5.5 one-shot | 3 of 3 | 7.08 | 2 | 2 min |
-| Haiku 4.5 one-shot | 1 of 3 | 3.50 | 2 | 4 min |
+| Haiku 4.5 one-shot | 1 of 3 | 3.50 (1 task) | 2 | 4 min |
 
 No quality gain from the harness. What it did give: no crash in delivered code, an audit trail with
 hash-attested reviews by separate agents, completion or a recorded stop, and hooks the model cannot skip.
@@ -117,9 +119,11 @@ scores are.
 
 All runs were regraded with an isolated grader after a contamination incident (§5); no grade changed.
 
-**Reading.** The independent review closes the reliability gap, in 3 of 3 valid runs. It does not save
-money. The reviewer must run and exercise the stack to check the work, and that costs about as much as
-Opus doing the task.
+**Reading.** An Opus review loop fixed both defects in 2 of 2 Haiku runs and 1 of 1 Sonnet run, where the
+cheap one-shots fixed both in 0 of 5 and 1 of 5. That is a signal, not yet a reliability measure (pass^k
+needs k ≥ 3). Two further review-loop runs were set aside as invalid (Docker went down during the run);
+they are not in the table (§5). It does not save money. The reviewer must run and exercise the stack to
+check the work, and that costs about as much as Opus doing the task.
 
 ### 3.4 Why the cheap models miss
 
@@ -177,7 +181,7 @@ Pass/fail per task, and the script that merges the runs: [`round2.md`](../calibr
 
 | Holds up | Does not |
 |---|---|
-| Independent verification of the running result (it recovered every cheap-model miss in B01) | A long planning pipeline on a weak orchestrator (more places to stop) |
+| Independent verification of the running result (a signal: it recovered the cheap-model miss in 2/2 Haiku and 1/1 Sonnet B01 runs) | A long planning pipeline on a weak orchestrator (more places to stop) |
 | An audit trail with attested authorship (it makes failures diagnosable in minutes) | Review by a strong model as the verification step, if the goal is cost |
 | Enforcement the model cannot skip (gates, stop hooks) | Review as a stand-in for executable checks |
 | Holding scope: a dropped part of the request is a defect | Deferral checks that look only at form (a ticket, a label) |
@@ -190,10 +194,13 @@ peer of its stage (cadence#66); deferrals are judged in real time (cadence#68).
 
 - **Small samples.** Iteration 4 and the pilot are one run per cell. B01 has 5–10 runs per one-shot arm
   and 1–2 per review-loop arm. Only the largest gaps are outside noise.
+- **Invalid runs set aside.** Two further review-loop runs were set aside as invalid (Docker went down
+  during the run). They are not counted in either review-loop arm, so the 2/2 and 1/1 cells are the valid
+  runs only.
 - **Contamination incident.** The B01 runs ran agents on the host. Workers they started outlived their
   runs and shared a message broker with later runs and the grader. All runs were regraded with an isolated
-  grader (a private broker database, stray processes killed); no grade changed. From now on each trial runs
-  in its own container ([harness-benchmark#10](https://github.com/jtouley/harness-benchmark/issues/10)).
+  grader (a private broker database, stray processes killed); no grade changed. Future trials will each run
+  in their own container ([harness-benchmark#10](https://github.com/jtouley/harness-benchmark/issues/10), open).
 - **Infrastructure losses.** Emulated x86 containers crashed the test laptop's Docker three times; the
   affected trials are recorded as infrastructure errors, not failures, and were rerun.
 - **One task per class so far.** B01 is one bug; SWE-bench Pro is one benchmark's sample of 20, with one

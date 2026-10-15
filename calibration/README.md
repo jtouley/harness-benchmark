@@ -8,7 +8,7 @@ This folder holds the calibration runs' scripts and summaries, and the minimal h
 | Path | What | Tracked |
 |---|---|---|
 | `swebench-pro/` | SWE-bench Pro (Harbor `scale-ai/swe-bench-pro`) calibration: sample lists, the round script, the results collector, `results.json` | yes |
-| `swebench-pro/jobs/`, `swebench-pro/tasks/` | Harbor job outputs and downloaded task definitions | no (machine-local, large) |
+| `swebench-pro/jobs/`, `swebench-pro/runs/`, `swebench-pro/tasks/`, `swebench-pro/sample20/`, `swebench-pro/hard3/` | Harbor job outputs, downloaded task definitions, and the sample directories `make_samples.sh` builds from the lists | no (machine-local, large) |
 | `../harnesses/reviewloop/` | Review loop: the session model works, an independent `reviewer` subagent (Opus) checks the running result, the session model fixes until it approves (max 3 reviews) | yes |
 | `../harnesses/reviewloop-sonnet-reviewer/` | The same, with the reviewer on Sonnet | yes |
 | `../harnesses/verifyloop/` | Verification harness: a `contract-writer` subagent writes an executable `CONTRACT.md` before any code; a Stop hook runs it and blocks the session from finishing while a check fails | yes |
@@ -21,9 +21,10 @@ instructions are generic: none names a task, its data or its traps ([prompt hygi
 
 - Round 1 (Opus 5.5): 20 sampled Python tasks, one try each: 17 passed, 2 failed, 1 did not start (setup timeout).
 - Repeats on the Opus misses:
+  (each count includes the round 1 try, or its retry when the round 1 try never started)
   - `ansible-d2f80991`: 2 of 5 passed (a **beyond** candidate: the bar is unreliable);
   - `openlibrary-30bc73a1`: 2 of 5 passed (a **beyond** candidate);
-  - `ansible-d9f18662`: 4 of 4 passed (the round 1 miss was infrastructure).
+  - `ansible-d9f18662`: 5 of 5 passed (the round 1 try died in setup; its retry passed).
 - Round 2: one Sonnet 5.5 and one Haiku 5.5 try on all 20, to look for **lift** candidates (the bar passes,
   a cheap one-shot does not). Trials that died in container setup (the model never ran) were rerun once:
   Haiku 10, Sonnet 4, Opus 1. Result, with the Opus round 1 try ([table per task](swebench-pro/round2.md)):
