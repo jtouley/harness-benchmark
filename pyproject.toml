@@ -2,7 +2,7 @@
 name = "harness-benchmark"
 version = "0.1.0"
 description = "Reproducible benchmark of AI coding-workflow harnesses for Claude Code."
-requires-python = ">=3.11"
+requires-python = ">=3.11,<3.14"
 # Exact pins: the tokenizer asset is hash-checked at load time, and uv.lock pins the rest.
 dependencies = [
   "anthropic==0.37.1",

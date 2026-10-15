@@ -128,8 +128,10 @@ and Haiku on that task. It is not evidence for a harness.
   None used a skill, but the descriptions may have primed them. The next run set gates on
   [`clean_room_check.py`](../scripts/clean_room_check.py).
 - **Harder tasks.** Opus alone did these tasks in about 2 minutes. Tasks are now chosen by calibration
-  against the Opus one-shot, and the long-horizon set is the [pipeline family](tasks/pipeline-family.md)
-  (one spec on three stacks, with a follow-up change and a traceability audit).
+  against the Opus one-shot (class L and O tasks), and the long-horizon set is the
+  [pipeline family](tasks/pipeline-family.md) (one spec on three stacks, with a follow-up change and a
+  traceability audit; it supersedes L3). The harness also runs on cheap models, all cheap and with Opus as
+  reviewer only ([next steps](next-steps.md)).
 - **More runs and a second grader.** Each cell ran once. Apart from Haiku's results and the 2.0-point
   quality gap on multicurrency, every gap here is within single-run noise.
 - **Class L and O tasks.** If a harness does not reduce defects there, the case for it rests on
