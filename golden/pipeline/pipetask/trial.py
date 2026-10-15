@@ -14,7 +14,9 @@
 4. The checks ([grade]).
 
 Prints one JSON object. `reward` is the share of the seven checks that pass, and 0 when a second build
-changed an output or no `make stream` run exited 0. A trial that cannot run (no git checkout, the port
+changed an output, no `make stream` run exited 0, or the consumer never read the grading stream up to
+the late batch (F4). The stream answers do not depend on the seed, so marts copied in from development
+would otherwise score without any consumer. A trial that cannot run (no git checkout, the port
 taken) prints `{"error": ..., "reward": 0.0}`.
 """
 
@@ -120,7 +122,12 @@ def trial(repo: Path, key: dict, capture: Path, *, seed: int, port: int, speed: 
         server.shutdown()
         server.server_close()
 
-    result["stream_ok"] = any(s["exit"] == 0 for s in result["stream"])
+    state = server.state
+    result["stream_connections"] = state.connections
+    result["stream_positions_served"] = state.served + 1
+    result["stream_positions_needed"] = state.plan.late_insert_at + len(state.plan.late_batch)
+    result["stream_ok"] = (any(s["exit"] == 0 for s in result["stream"]) and state.connections > 0
+                           and result["stream_positions_served"] >= result["stream_positions_needed"])
     result.update(grade.grade(repo, key))
     result["reward"] = reward(result)
     return result
