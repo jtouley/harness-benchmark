@@ -133,7 +133,11 @@ Design, what Harbor does and does not support, and how to read the results: [`do
 
 ### CI
 
-`.github/workflows/verify.yml` runs `fetch`, `verify` and the tests on every push and uploads `results/`.
+`.github/workflows/verify.yml` runs on every push. It fetches every framework whose repo is public and checks
+its pinned sha, installs each of them twice and compares the trees, runs the tests and uploads `results/`.
+Frameworks in private repos (`PRIVATE_REPOS` in the workflow; today `jtouley/cadence`) are skipped with a
+warning, and then `verify` does not run in CI, because it needs every framework. Run
+`python -m cbench fetch && python -m cbench verify` locally with access to check every result byte for byte.
 `.github/workflows/live.yml` is manual-only, needs the `ANTHROPIC_API_KEY` repository secret, and refuses
 to start without a budget that covers the worst case.
 

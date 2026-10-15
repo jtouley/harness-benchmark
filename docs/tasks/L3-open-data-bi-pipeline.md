@@ -1,5 +1,7 @@
 # Proposed task L3: an open-data BI pipeline (DuckDB, dlt, dbt)
 
+> **Superseded (2026-10-14)** by the [pipeline family](pipeline-family.md): one [shared spec](pipeline-spec.md) on three stacks ([P1](P1-duckdb-dlt-dbt.md), [P2](P2-config-arrow-polars-datafusion.md), [P3](P3-scala-spark.md)). Its traps are B1–B7 in the [trap catalog](pipeline-traps.md). This page is kept for history.
+
 Status: **proposed** (2026-10-12). It is not a golden task yet. It enters a run set only after it is
 committed under `golden/tasks/` with a reference solution and a hidden oracle, and after the untouched
 repository fails that oracle ([criteria §3](../criteria.md#3-task-classes)).
