@@ -42,7 +42,7 @@ The three stacks answer the same seven checks from the same inputs, so they must
 3. **Against itself.** `make build` twice and `make stream` stopped and started give the same outputs
    (traps B7, F6).
 
-## Audit protocol {#audit-protocol}
+## Audit protocol
 
 This is the measure the family exists for.
 

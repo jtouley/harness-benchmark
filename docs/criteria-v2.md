@@ -1,7 +1,7 @@
 # Benchmark criteria (v2)
 
-Status: **pre-registered** for the next run set. These criteria are fixed before the outcome runs that
-they judge. A change to them is a new version with a changelog entry. Results are reported against the
+Status: **draft**. It becomes pre-registered for the next run set when every item in §11 is closed.
+Once pre-registered, these criteria are fixed before the outcome runs that they judge. A change to them is a new version with a changelog entry. Results are reported against the
 version that was in force when the runs started. Results that come out against a harness are reported
 the same way as results that come out for it. [Criteria v1](criteria.md) stays as history. Runs that
 started under v1 are reported against v1.
@@ -56,11 +56,12 @@ extensible system, whose path we can understand, and at what cost** [OC] [PF].
 | Sonnet one-shot | Sonnet 5.5 | Sonnet alone | Context: a mid-price model alone | [PF] |
 | Review loop | Haiku 5.5 works, Haiku 5.5 reviews | The cheap model works; an independent reviewer subagent checks the running result; the cheap model fixes | Harness arm | [PF] |
 | Verification harness | Haiku 5.5 | A contract writer writes executable checks before any code; a stop gate runs them and blocks the end of the session while one fails; no model reviewer | Harness arm | [PF] [WP] |
-| Cadence, all Haiku | Haiku 5.5 | Full Cadence with `peer_models: {"default": "haiku"}`, after jtouley/cadence#63–#66 are fixed | Harness arm | [PF] |
+| Cadence, all Haiku | Haiku 5.5 | Full Cadence with `peer_models: {"default": "haiku"}`, after jtouley/cadence#63–#66 and jtouley/cadence#68 (deferral review, §2.5) are fixed | Harness arm | [PF] [v2] |
 
 **Haiku-only harness arms.** Every harness arm runs on Haiku 5.5, reviews included, unless the arm says
-otherwise. A harness may spend many tokens if each token is cheap [PF] [OD]. Opus never orchestrates a
-harness run and never runs a harness arm [OD].
+otherwise. A harness may spend many tokens if each token is cheap [PF] [OD]. No arm in §2.1 runs Opus 5.5 or
+Sonnet 5.5 inside a harness; the §2.2 arms are the only exceptions [v2]. Opus never orchestrates a Cadence
+run [OD].
 
 ### 2.2 Named comparison arms
 
@@ -75,7 +76,9 @@ The 2026-10-12 design also named Cadence with Opus reviews, Haiku 4.5, Cursor CL
 The 2026-10-14 arm list [PF] does not include them, so they are **not** in the v2 run set. A later
 version can add them with a changelog entry [v2].
 
-Sonnet 5.5 runs no harness arm [OD]. Each harness arm has a one-shot arm on the same model [v1].
+Sonnet 5.5 runs no Cadence arm [OD]. Sonnet 5.5 and Opus 5.5 work or review inside a harness only in the
+§2.2 review-loop arm, which is a minimal harness, not Cadence [OD] [v2]. Each harness arm has a one-shot
+arm on the same model [v1].
 
 ### 2.3 Neutral baseline prompt (rule)
 
@@ -115,12 +118,21 @@ Haiku 5.5 reviewer at the moment it is proposed [PF]:
 This rule comes from B01, where a cheap one-shot diagnosed a second defect, decided to leave it out, and
 then reported nothing [PF] [WP]. Cadence does not do this yet (jtouley/cadence#68) [PF].
 
+**Who provides the deferral reviewer** (proposed, owner to confirm in §11) [v2]: the deferral review is a
+harness requirement. Each harness arm provides it in its own installed harness. The benchmark does not
+inject a reviewer, so §2.4 rule 2 holds. The Cadence arm is therefore admitted only after
+jtouley/cadence#68 is fixed, as well as #63–#66 (§2.1).
+
 ## 3. Tasks and task classes
 
 ### 3.1 Calibration
 
 A task is "hard" only when the bar fails it, not when it looks hard [TS]. Every candidate task gets
 calibration tries before it is admitted [TS]:
+
+- **Try count.** Each calibration arm gets exactly **5 tries** per task, the same n as a run-set cell
+  (§4.4) and as the pipeline family (§3.3). The count is fixed before calibration and is not raised after
+  results are seen [PF] [v2]. (Proposed, owner to confirm in §11: the source [TS] names three tries.)
 
 - The Opus one-shot, and each cheap one-shot (Haiku 5.5, Sonnet 5.5), run on the task in a clean,
   isolated environment (§5) [TS] [PF].
@@ -140,9 +152,11 @@ of a claim is set by calibration [TC]:
 
 Operational thresholds [v2]:
 
-- **Beyond:** the Opus one-shot passes at most 1 of 3 calibration tries [TS].
-- **Lift:** the Opus one-shot passes 5 of 5 tries, and at least one cheap one-shot arm fails 1 or more of
-  its 5 tries [v2].
+Both thresholds are over the 5 calibration tries of §3.1.
+
+- **Beyond:** the Opus one-shot passes at most **2 of 5** calibration tries [TS] [v2].
+- **Lift:** the Opus one-shot passes **5 of 5** calibration tries, and at least one cheap one-shot arm fails
+  1 or more of its 5 calibration tries [v2].
 - A task that is in neither class is dropped, however large it looks [TS]. A task that the bar fails gets
   the harness arms; a task that the bar passes and every cheap one-shot also passes 5 of 5 does not [TS]
   [v2].
@@ -206,7 +220,8 @@ unmeasured, and the gate then fails [QM].
 
 | Measure | Threshold | Source |
 |---|---|---|
-| New-code line and branch coverage | ≥ 80% | [QM] (Sonar way gate) |
+| New-code line coverage | ≥ 80% | [QM] (Sonar way gate) |
+| Line and branch coverage of the whole package | Reported, not gated | [QM] |
 | Functions that the change takes over cognitive complexity 15 | 0 | [QM] (SonarSource) |
 | Functions that the change takes over cyclomatic complexity 10 | 0 | [QM] (McCabe) |
 | New bug-class static findings | 0 | [QM] |
@@ -221,7 +236,7 @@ The tool gate is reported for every arm. It does not rank arms [QM].
 
 | Part | Measure | How | Role | Source |
 |---|---|---|---|---|
-| DRY | **Duplicated lines on new code** | `jscpd`, minimum block 5 lines | Gate: ≤ 3% | [OC] |
+| DRY | **Duplicated lines on new code** | `jscpd`, minimum block 5 lines | Gate: ≤ 3%. Whether an arm over 3% leaves the top design tier or only ranks lower (§8.5) is open (§11) | [OC] |
 | SOLID: single responsibility, dependency inversion | **Module coupling**: efferent and afferent coupling and instability per module, from the import graph | An import-graph script per language | Reported, not gated | [OC] |
 | SOLID: open for extension | **Edit radius** of the follow-up: the existing files that the follow-up changes, and their changed lines | From the follow-up diff against the frozen base | Ranks design | [OC] [FU] |
 | Extensible | **Follow-up success and cost**: the follow-up's hidden checks, its dollars and its wall time | §4.5 | Ranks design | [OC] [FU] |
@@ -258,7 +273,7 @@ A one-shot that passes once says nothing about the next run. Reliability is meas
   test-confirmed critical or major defect [v2].
 - **What pass^k does.** pass^k selects tasks (§3.2) and describes each cell. It does not decide whether an
   arm matches the bar: that is the decision rule (§8.3), on M1 delivery and M2 defects. pass^k is reported
-  beside it [TC].
+  beside it [TC]. pass^1 is the pass rate that decides "beyond the bar" (§8.4) [v2].
 
 ### 4.5 Follow-up tasks
 
@@ -320,8 +335,17 @@ A run counts only if it saw and used nothing but its own arm's tools [CR]:
   memory [CR] [PRE].
 - [`scripts/clean_room_check.py`](../scripts/clean_room_check.py) reads the run's transcripts, nested
   agents included. A run is graded only when the check returns `clean` [CR] [OD].
-- A run with any other verdict (`exposed`, `contaminated`, `unassessable`) is not graded. It is recorded
-  with its verdict as an infrastructure error, not as a failure, and it is run again [CR] [WP] [v2].
+- The other verdicts are split by their cause (proposed, owner to confirm in §11) [CR] [v2]:
+  - **`exposed` or `unassessable`** (caused by the setup: the `HOME`, the container or the transcript
+    format) is an infrastructure error. The run is not graded and not counted as a failure. It is run
+    again, at most **2 reruns per cell** in the run set. A cell that has used its 2 reruns and still lacks a
+    `clean` run is reported as **"unassessable"**, and that cell is short of n = 5 (§8.1) [WP] [v2].
+  - **`contaminated`** (caused by an agent action: a disallowed skill, a write to host configuration or
+    instruction files, or a search outside the allowed paths) is an **attempted run that is not
+    delivered** (§8.1). It is not run again. It is also tallied separately per arm [v2].
+- **Stage-0 transcript check.** Before the run set, each arm runs once in the Harbor container, and the
+  check confirms that its transcript carries a skill listing. An arm whose transcript does not carry one
+  is not admitted until that is fixed, because every one of its runs would be `unassessable` [CR] [v2].
 - The built-in skill list is pinned per Claude Code version [CR].
 
 ### 5.3 Caps and the run-set budget
@@ -330,8 +354,9 @@ A run counts only if it saw and used nothing but its own arm's tools [CR]:
 |---|---|
 | **Harness arms have no per-trial time cap and no per-trial dollar cap. A harness run is never cut off** | [OD] [CAP] |
 | Spend is controlled by **one budget for the whole run set**. Its value is recorded in this section before the first run. When the budget is spent, the run set stops scheduling new trials. It never stops a trial in progress | [CAP] |
-| One-shot arms keep a generous time cap, only as a guard against a hung session. Its value is recorded in this section before the first run. A one-shot that hits it is reported separately, not mixed with other failures | [OD] |
-| A trial lost to the infrastructure (for example the container runtime fails) is recorded as an infrastructure error, not as a failure, and is run again | [WP] |
+| **Round-robin scheduling.** Run k of every cell starts before run k+1 of any cell, so a budget stop leaves every arm short by at most one run per cell, whatever its cost | [v2] |
+| One-shot arms keep a generous time cap, only as a guard against a hung session. Its value is recorded in this section before the first run. A one-shot that hits it is an **attempted run that is not delivered** (§8.1). It is also reported separately, not mixed with other failures | [OD] [v2] |
+| A trial lost to the infrastructure (for example the container runtime fails) is recorded as an infrastructure error, not as a failure, and is run again within the rerun cap of §5.2 | [WP] [v2] |
 
 Values, to be filled before the first v2 run set and then fixed:
 
@@ -382,13 +407,24 @@ For tasks with seeded ground truth (the pipeline family), each failed run is aud
 - **Units.** Every measure is per **attempted** run. A run that does not deliver (fails M1 or M8) counts as
   one critical defect for M2, and as one false success for M3 if it reports success. M3 is a per-run rate
   [v1].
-- **Attempted run.** A graded run (§5.2). Runs set aside as infrastructure errors are not attempted runs
-  [WP] [v2].
+- **Attempted run.** A graded run (§5.2), a `contaminated` run (§5.2) and a one-shot run that hits the
+  guard time cap (§5.3). A `contaminated` run and a guard-cap run are attempted runs that are not
+  delivered; each is also tallied separately. Runs set aside as infrastructure errors (§5.2, §5.3) are
+  not attempted runs [WP] [v2].
 - **Interval.** For a difference between two arms, resample runs with replacement within each (task, arm)
   cell, 10,000 times, seed 20261010. Report the 5th and 95th percentiles (a 90% percentile interval).
   Tasks are not resampled, so a claim covers the tasks run [v1].
+- **Direction of each difference.** The order of the subtraction is fixed per comparison [v1] [v2]:
+  - Comparison A (§8.2), defects: **mean(Haiku one-shot) − mean(H)**, as in v1. A positive value
+    favors H.
+  - Comparison B (§8.3), defects: **mean(H) − mean(bar)**. A positive value means H has more defects
+    than the bar; the margin applies to this value.
+  - Comparison C (§8.4), pass rate: **pass rate(H) − pass rate(bar)**. A positive value favors H.
 - **Claims per class.** A class claim needs at least **3 tasks** of that class. With fewer, the class
   result is "not enough tasks", and results are reported per task [v1].
+- **Complete cells.** A class claim also needs every cell of that class at n = 5 attempted runs. If a cell
+  is short (the budget ran out, §5.3, or the cell is "unassessable", §5.2), the class result is
+  **"incomplete"**, and the per-cell results are reported [v2].
 
 ### 8.2 Comparison A: the harness effect (same model)
 
@@ -396,7 +432,7 @@ Each harness arm H on Haiku 5.5 is compared with the Haiku one-shot on the same 
 **worth its cost** on a task class when all of these hold [v1]:
 
 1. **Fewer defects:** mean critical + major M2 per attempted run is lower than the one-shot's by at least
-   0.5, and the 90% interval of the difference is entirely above 0.
+   0.5, and the 90% interval of mean(Haiku one-shot) − mean(H) is entirely above 0.
 2. **No more false success:** H's M3 rate is not higher than the one-shot's, with a tolerance of 0.05.
 3. **Delivery is not worse:** H's M1 pass rate per attempted run is at least the one-shot's minus 10
    points.
@@ -410,8 +446,8 @@ If 1–3 do not all hold, the result is "not shown".
 A harness arm H **matches the bar** on a lift class when all of these hold [DR]:
 
 1. **Defects (non-inferiority):** H's mean critical + major M2 per attempted run is at most the Opus
-   one-shot's plus a margin of **0.25**, and the 90% interval of the difference stays under that margin
-   [DR]. When both arms have no defects the interval is [0, 0], which counts as "not worse"; the per-run
+   one-shot's plus a margin of **0.25**, and the 90% interval of mean(H) − mean(bar) stays under that
+   margin (its 95th percentile is below 0.25) [DR] [v2]. When both arms have no defects the interval is [0, 0], which counts as "not worse"; the per-run
    counts are reported beside it [DR].
 2. **No more false success:** H's M3 rate is not higher than the bar's, with a tolerance of 0.05 [DR].
 3. **Delivery:** H's M1 pass rate per attempted run is at least the bar's minus 10 points [DR].
@@ -421,18 +457,24 @@ A harness arm H **matches the bar** on a lift class when all of these hold [DR]:
 
 A harness arm H **goes beyond the bar** on a beyond class when all of these hold [TC] [v2]:
 
-1. H's pass rate (§4.4) is higher than the bar's, and the 90% interval of the difference is entirely
-   above 0.
+1. H's pass rate (pass^1, §4.4) is higher than the bar's, and the 90% interval of
+   pass rate(H) − pass rate(bar) is entirely above 0.
 2. Conditions 1 and 2 of §8.3 hold.
 
 ### 8.5 The answer: cheapest in the top design tier
 
-Among the arms that match the bar (§8.3) or go beyond it (§8.4) [OC] [DR]:
+The answer is computed **per class**: arms that match the bar on the lift class and arms that go beyond
+it on the beyond class are not pooled [v2]. Within a class, among the arms that match the bar (§8.3) or
+go beyond it (§8.4) [OC] [DR]:
 
-1. Rank on design: duplication, the design checklist, edit radius and follow-up success (layer 3) [OC].
-2. The **top design tier** is the best arm, plus each arm whose design measures are not worse than the
-   best arm's beyond the noise of the run set (for each measure, the 90% interval of the difference with
-   the best arm includes 0) [v2].
+1. Rank on design (layer 3) in this **lexicographic order**: follow-up success (higher is better), then
+   edit radius (smaller is better), then the share of design-checklist items answered yes (higher is
+   better), then duplicated lines on new code (lower is better). A later measure breaks a tie on the
+   earlier ones only. A measure that the class's tasks do not have is skipped (proposed, owner to confirm
+   in §11) [OC] [v2].
+2. The **best arm** is the first arm in that order. The **top design tier** is the best arm, plus each arm
+   whose design measures are not worse than the best arm's beyond the noise of the run set (for each
+   measure, the 90% interval of the difference with the best arm includes 0) [v2].
 3. Within the top design tier, rank on traceability (§7) [OC].
 4. **The answer is the cheapest arm in the top design tier**, by cost per defect-free delivered run
    (build + follow-up + repairs where the task has them). It is not the cheapest arm overall [OC].
@@ -460,14 +502,16 @@ arm; and results that do not favor Cadence are stated first [v1] [WP].
   [WP] [TS].
 - **B01**, a private brownfield bug in a multi-service application: the Opus one-shot passed 10 of 10. The
   Haiku 5.5 and Sonnet 5.5 one-shots were not reliable (0 of 5 and 1 of 5 on the full grade). A review loop
-  with an independent reviewer passed in 3 of 3 valid runs, at about the bar's cost. B01 is a lift task
-  [TS] [WP]. A cheap one-shot dropped part of the request without reporting it; that gave the deferral
+  with an independent **Opus 5.5** reviewer (2 Haiku 5.5 runs, 1 Sonnet 5.5 run) passed in 3 of 3 valid
+  runs, at about the bar's cost. These are interim, private runs. The v2 review-loop arm uses a Haiku 5.5
+  reviewer, which these runs did not test. B01 is a lift task [TS] [WP]. A cheap one-shot dropped part of the request without reporting it; that gave the deferral
   review rule (§2.5) [PF].
 - **Contamination incident:** processes left running by agents on the host shared state with later runs
   and the grader. All runs were regraded with an isolated grader and no grade changed. That gave the full
   isolation rule (§5.1) [WP] [#10].
 - **SWE-bench Pro** (20 Python tasks): the Opus one-shot passed 17 on the first try; two tasks passed only
-  2 of 5 tries. Beyond candidates, subject to §3.2 [WP].
+  2 of 5 tries. Under §3.2 (at most 2 of 5) they are beyond candidates, once they are calibrated in a
+  clean, isolated environment (§3.1) [WP] [v2].
 - **Clean room** (iteration 4, checked after the fact): all 9 one-shot runs were `exposed` to
   user-installed skills, and the harness runs were not assessable. That gave clean-room gating (§5.2)
   [CR].
@@ -478,11 +522,28 @@ These items must be filled or confirmed by the owner, with a changelog entry, be
 
 1. The run-set budget and the one-shot guard time cap (§5.3) [CAP] [OD].
 2. The non-inferiority margin of 0.25 (§8.3). It was proposed, not decided [DR].
-3. Each [v2] operational definition: the lift and beyond thresholds (§3.2), the private-task hash (§3.4),
-   pass^k (§4.4), the dropped-part-of-request defect (§2.5), non-clean runs as infrastructure errors
-   (§5.2, §8.1), the third design reviewer (§6), the beyond rule (§8.4) and the top design tier (§8.5).
-4. The code that pins v1 caps changes to v2 (§5.3).
-5. Scripts for every measure that a run set reports (§4): test-confirmed defects, test strength,
+3. **Proposed, owner to confirm** (from the PR #20 review):
+   1. The calibration try count of 5 per arm and per task (§3.1), and the beyond threshold of at most 2 of
+      5 (§3.2). The source [TS] names three tries.
+   2. The split of non-clean verdicts: `exposed` and `unassessable` are infrastructure errors with at most
+      2 reruns per cell, then the cell is "unassessable"; `contaminated` is an attempted run that is not
+      delivered (§5.2, §8.1). Also the stage-0 transcript check (§5.2).
+   3. The budget stop: round-robin scheduling, and a class result of "incomplete" when a cell is short of
+      n = 5 (§5.3, §8.1).
+   4. A one-shot that hits the guard time cap is an attempted run that is not delivered, also tallied
+      separately (§5.3, §8.1).
+   5. The deferral reviewer is a harness requirement, not benchmark infrastructure, so the Cadence arm is
+      also gated on jtouley/cadence#68 (§2.1, §2.5).
+   6. The direction of each difference (§8.1).
+   7. The top design tier: per class, with the lexicographic order follow-up success, edit radius,
+      checklist share, duplication (§8.5).
+4. **Open, no proposal yet:** whether an arm over the 3% duplication gate leaves the top design tier or
+   only ranks lower (§4.3, §8.5).
+5. Each other [v2] operational definition: the lift threshold (§3.2), the private-task hash (§3.4),
+   pass^k (§4.4), the dropped-part-of-request defect (§2.5), the third design reviewer (§6), the beyond
+   rule (§8.4) and the scope of the §2.1 model rule (§2.1).
+6. The code that pins v1 caps changes to v2 (§5.3).
+7. Scripts for every measure that a run set reports (§4): test-confirmed defects, test strength,
    `jscpd` duplication, the import-graph coupling script, the edit radius, the audit scores [QM] [OC].
 
 ## Changelog from v1
