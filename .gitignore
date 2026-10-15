@@ -10,3 +10,5 @@ calibration/swebench-pro/sample20/
 calibration/swebench-pro/hard3/
 calibration/**/runs/
 calibration/**/jobs/
+# Trial outputs of runner/run_trial.sh: transcripts can hold anything the agent printed
+results/runs/
