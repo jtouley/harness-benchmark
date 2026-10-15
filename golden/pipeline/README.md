@@ -140,8 +140,8 @@ built. Checked with pyarrow 26.0.0, polars 2.0.0 and datafusion 55.0.0 on the fr
 | A1 | Yes | `polars.read_csv` and `pyarrow.csv.read_csv` both infer `STATE` and `COUNTY` of the Census file as Int64 (`01` becomes `1`). The reference reads every CSV column as text |
 | A2 | No | Casting `federal_action_obligation` to Float64 and summing gives the same cents as the decimal sum, per agency and per month and county (as for B8). The grader cannot name it; it stays a design-review point |
 | A3 | Yes | An inner join on a key with a NULL on both sides drops that row in Polars (default `join`) and in DataFusion SQL. The reference never joins on a NULL key: transactions without a county get an unknown member of the place dimension |
-| A4 | By design | The engine writes a micro-batch's files, then replaces the checkpoint by an atomic rename, and on start deletes files above the checkpoint. `test_the_p2_stream_commit_drops_a_batch_that_never_committed` simulates the crash; F6 (two `make stream` runs) exercises the resume |
-| A5 | Not graded yet | The generality check is not in `pipetask/trial.py` (open point 1 below). `test_the_p2_engine_runs_a_pipeline_it_has_never_seen` runs it against the reference |
+| A4 | By design | The engine writes a micro-batch's files, then replaces the checkpoint by an atomic rename, and on start deletes files above the checkpoint. `test_the_p2_stream_commit_drops_a_batch_that_never_committed` simulates the crash; `test_the_p2_stream_resumes_after_a_crash_between_data_and_checkpoint` crashes `run_stream` itself between the two and restarts it; F6 (two `make stream` runs) exercises the resume |
+| A5 | Not graded yet | The generality check is not in `pipetask/trial.py` (open point 1 below). `test_the_p2_engine_runs_a_pipeline_it_has_never_seen` (batch) and `test_the_p2_engine_runs_a_stream_pipeline_it_has_never_seen` (stream, a static CSV joined to each micro-batch) run it against the reference |
 
 Polars 2.0 removed the cast from text to `Date` (`str.to_date` replaces it). An arm that writes
 `cast(pl.Date)` gets an error at once, not a wrong answer, so it is not a trap.
@@ -167,3 +167,9 @@ Gaps in the P2 page that the reference had to fill; the shared spec and the prom
 6. **"Commits the position in the same step as the data"** is exact only for one sink. With two (the
    events and the frames that are not JSON) the reference commits files then a checkpoint, and deletes
    uncommitted files on start. The page does not say whether that, or one sink per stream, is meant.
+7. **The stream's batch number restarts when the lake is reset.** P2's `load_id` is the engine's
+   micro-batch number (`_batch`), not a load id that grows over time as dlt's does in P1. Deleting
+   `lake/` (or only `lake/_checkpoints/`) while keeping `out/warehouse.duckdb` would make
+   `mart_edit_windows` skip new windows, since its incremental filter is `load_id > max(last_load_id)`.
+   The reference's `make stream` therefore runs dbt with `--full-refresh` whenever no checkpoint exists
+   before the run. The grader resets both folders together, so a trial never meets this.
