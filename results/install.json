@@ -25,12 +25,12 @@
     "cadence": {
       "deterministic": true,
       "first": {
-        "files": 608,
-        "tree_sha256": "b724b51fff6ce628024aae1d0fe1f216d3790addc21280b20154395f253e29f2"
+        "files": 650,
+        "tree_sha256": "c59a68491e742dceafce8adccf4da995cb00bccd01cfa180c16b895e594235db"
       },
       "second": {
-        "files": 608,
-        "tree_sha256": "b724b51fff6ce628024aae1d0fe1f216d3790addc21280b20154395f253e29f2"
+        "files": 650,
+        "tree_sha256": "c59a68491e742dceafce8adccf4da995cb00bccd01cfa180c16b895e594235db"
       }
     },
     "gsd-core": {
@@ -59,28 +59,28 @@
       "deterministic": true,
       "first": {
         "files": 31,
-        "tree_sha256": "986473a732ecf479aca73caf160d1d8e51025b338224a7d60e4865ce8cabf428"
+        "tree_sha256": "8651091eec107732cf57a6ac3651614685d9eb33188bda432c05687e352187c4"
       },
       "second": {
         "files": 31,
-        "tree_sha256": "986473a732ecf479aca73caf160d1d8e51025b338224a7d60e4865ce8cabf428"
+        "tree_sha256": "8651091eec107732cf57a6ac3651614685d9eb33188bda432c05687e352187c4"
       }
     },
     "superpowers": {
       "deterministic": true,
       "first": {
         "files": 233,
-        "tree_sha256": "26c0d0a68bb6b30869cd9afc4d18b52e28639f76828ddfad059ebe71255eb57f"
+        "tree_sha256": "5492fc2a20d95a5668f2c99a40f909b6c909ebaddf6cee51bb479e04f8f96c32"
       },
       "second": {
         "files": 233,
-        "tree_sha256": "26c0d0a68bb6b30869cd9afc4d18b52e28639f76828ddfad059ebe71255eb57f"
+        "tree_sha256": "5492fc2a20d95a5668f2c99a40f909b6c909ebaddf6cee51bb479e04f8f96c32"
       }
     }
   },
   "provenance": {
     "canonical_root": "/tmp/cbench",
-    "lockfile_sha256": "9515e62a3f5d325135ca89728b45fb958245c6536fabf9ab3f178150c0b29e68",
+    "lockfile_sha256": "6cbe9b8e94ddf931201caf9f77023e7d69ba6340197f01918fd0a19db10e5055",
     "pricing_sha256": "7af66e689754689850c47229da79af75d229e3882a798826de3f50317f292139",
     "tokenizer": {
       "id": "anthropic==0.37.1:anthropic/tokenizer.json",
