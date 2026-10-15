@@ -1,0 +1,7 @@
+open_data_pipeline:
+  target: dev
+  outputs:
+    dev:
+      type: duckdb
+      path: out/warehouse.duckdb
+      threads: 4

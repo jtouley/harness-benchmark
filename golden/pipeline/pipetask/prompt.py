@@ -1,0 +1,41 @@
+"""The task prompt, taken word for word from the specs.
+
+    python -m pipetask.prompt P1 > golden/pipeline/P1/prompt.md
+
+The prompt is the shared request (the quoted block under "The request" in docs/tasks/pipeline-spec.md)
+followed by the task's stack section (the quoted block under "Stack section" in the task's page), with
+the quote markers removed and nothing added. A test checks that the committed prompt files still equal
+this, so a prompt cannot drift from the spec or gain a hint.
+"""
+
+from __future__ import annotations
+
+import sys
+from pathlib import Path
+
+DOCS = Path(__file__).resolve().parents[3] / "docs" / "tasks"
+TASK_PAGES = {"P1": "P1-duckdb-dlt-dbt.md", "P2": "P2-config-arrow-polars-datafusion.md", "P3": "P3-scala-spark.md"}
+
+
+def quoted_block(markdown: str, heading_prefix: str) -> str:
+    """The first block of `>` lines after the heading that starts with heading_prefix."""
+    lines = markdown.splitlines()
+    start = next(i for i, line in enumerate(lines) if line.startswith(heading_prefix))
+    block, inside = [], False
+    for line in lines[start + 1:]:
+        if line.startswith(">"):
+            inside = True
+            block.append(line[2:] if line.startswith("> ") else line[1:])
+        elif inside:
+            break
+    return "\n".join(block).strip() + "\n"
+
+
+def prompt(task: str) -> str:
+    request = quoted_block((DOCS / "pipeline-spec.md").read_text(encoding="utf-8"), "## The request")
+    stack = quoted_block((DOCS / TASK_PAGES[task]).read_text(encoding="utf-8"), "## Stack section")
+    return request + "\n" + stack
+
+
+if __name__ == "__main__":
+    sys.stdout.write(prompt(sys.argv[1]))
