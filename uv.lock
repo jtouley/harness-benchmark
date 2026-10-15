@@ -286,19 +286,27 @@ version = "0.1.0"
 source = { virtual = "." }
 dependencies = [
     { name = "anthropic" },
-    { name = "duckdb" },
     { name = "pytest" },
-    { name = "pyyaml" },
     { name = "tokenizers" },
+]
+
+[package.dev-dependencies]
+pipeline = [
+    { name = "duckdb" },
+    { name = "pyyaml" },
 ]
 
 [package.metadata]
 requires-dist = [
     { name = "anthropic", specifier = "==0.37.1" },
-    { name = "duckdb", specifier = "==1.5.6" },
     { name = "pytest", specifier = "==8.3.4" },
-    { name = "pyyaml", specifier = "==6.0.3" },
     { name = "tokenizers", specifier = "==0.20.3" },
+]
+
+[package.metadata.requires-dev]
+pipeline = [
+    { name = "duckdb", specifier = "==1.5.6" },
+    { name = "pyyaml", specifier = "==6.0.3" },
 ]
 
 [[package]]

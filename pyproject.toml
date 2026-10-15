@@ -8,13 +8,19 @@ dependencies = [
   "anthropic==0.37.1",
   "tokenizers==0.20.3",
   "pytest==8.3.4",
-  # The pipeline task family's answer key and grader (golden/pipeline/pipetask).
+]
+
+[dependency-groups]
+# The pipeline task family's builder code: answer key, grader and their tests (golden/pipeline/pipetask).
+# Installed by default so `uv run pytest` covers it; `uv sync --no-group pipeline` leaves it out.
+pipeline = [
   "duckdb==1.5.6",
   "pyyaml==6.0.3",
 ]
 
 [tool.uv]
 package = false
+default-groups = ["pipeline"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

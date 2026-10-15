@@ -4,7 +4,8 @@
     python -m pipetask.manifest --check  # exit 1 when a file differs from it
 
 Each entry: the path under data/, its sha256 and size, and where it came from. The answer key records
-the manifest's own sha256, so a key always names the exact inputs it was computed from.
+its own digest of the inputs (`raw_sha256`, over the per-file hashes under data/raw/, and
+`capture_sha256`), so a key always names the exact inputs it was computed from.
 """
 
 from __future__ import annotations
