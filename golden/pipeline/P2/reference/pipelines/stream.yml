@@ -1,0 +1,28 @@
+# Stream: the recentchange SSE stream into the lake in micro-batches (make stream DURATION=...).
+# Each frame lands as received (the event's JSON text) with its SSE id, its arrival number and its
+# arrival time; frames that are not JSON land in recentchange_rejects. A micro-batch and the
+# consumer's position commit together (engine/sinks.py), so a restart resumes after the last batch.
+pipeline: stream
+
+micro_batch:
+  max_rows: 5000
+  max_seconds: 5
+
+sources:
+  - name: recentchange_frames
+    type: sse
+    url: "${STREAM_URL:-http://localhost:8099/v2/stream/recentchange}"
+    rejects: recentchange_rejects
+
+transforms:
+  # The event's own id, the key the models deduplicate on (the server re-sends events on a resume).
+  - name: recentchange_events
+    engine: polars
+    input: recentchange_frames
+    json_fields:
+      column: event
+      fields: {event_id: "$.meta.id"}
+
+sinks:
+  - {input: recentchange_events, table: recentchange_events, mode: append}
+  - {input: recentchange_rejects, table: recentchange_rejects, mode: append}
