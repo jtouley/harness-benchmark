@@ -31,15 +31,15 @@ columns also brings type traps that a pandas-style solution does not see.
 
 ## Stack-specific traps
 
-Each of these is a claim about the pinned tool versions. It is verified when the reference solution is built (the trap is reproduced, then fixed); a trap that does not reproduce is removed.
+Each of these is a claim about the pinned tool versions. It is verified when the reference solution is built (the trap is reproduced, then fixed); a trap that does not reproduce is removed. **Same as** names the catalog trap it repeats at this layer; the two are one [equivalence set](pipeline-traps.md#equivalent-traps) for diagnosis.
 
-| Id | Trap | Shallow behavior | Detected by |
-|---|---|---|---|
-| A1 | Polars and Arrow infer `county_fips` as an integer from a CSV | Loses leading zeros (same effect as B3, at a different layer) | Check 2 |
-| A2 | Arrow `decimal128` survives Parquet, but a Polars cast to `Float64` in one transform silently ends exact money | Totals drift by cents | Checks 1, 4 |
-| A3 | Equality joins never match `NULL` keys (DataFusion SQL always, Polars by default) | Facts with no county drop out of the inner join to the place dimension, so the unknown-county member is lost | Check 4 |
-| A4 | Committing the stream position before writing the batch | Loses events on a crash (F6) | Check 5 |
-| A5 | The YAML is not general: the engine branches on the pipeline name | Fails the generality check | Generality check |
+| Id | Trap | Shallow behavior | Detected by | Cause class | Same as |
+|---|---|---|---|---|---|
+| A1 | Polars and Arrow infer `county_fips` as an integer from a CSV | Loses leading zeros (same effect as B3, at a different layer) | Check 2 | data-semantics | B3 |
+| A2 | Arrow `decimal128` survives Parquet, but a Polars cast to `Float64` in one transform silently ends exact money | Totals drift by cents | Checks 1, 4 | numeric | B8 |
+| A3 | Equality joins never match `NULL` keys (DataFusion SQL always, Polars by default) | Facts with no county drop out of the inner join to the place dimension, so the unknown-county member is lost | Check 4 | data-semantics | B5 |
+| A4 | Committing the stream position before writing the batch | Loses events on a crash (F6) | Check 5 | idempotence | F6 |
+| A5 | The YAML is not general: the engine branches on the pipeline name | Fails the generality check | Generality check | spec-reading | — |
 
 ## Extra check: generality
 

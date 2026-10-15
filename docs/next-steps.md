@@ -38,7 +38,7 @@ the defects that reach the delivered code, and the evidence that the run leaves 
 - **The tasks must be harder.** On T04–T06, Opus alone finished in about 2 minutes with the top
   scores. Those tasks are too easy to show what a harness is for. The main run set uses class L and O
   tasks ([criteria §3](criteria.md#3-task-classes)), starting with the proposed
-  [L3 open-data BI pipeline](tasks/L3-open-data-bi-pipeline.md). T05 stays as a quick pilot only.
+  [pipeline task family](tasks/pipeline-family.md) (P1 to P3, which supersedes L3). T05 stays as a quick pilot only.
 - **Quality is measured by the published [quality model](quality-model.md)**, not by one grader's
   rubric, and every run must pass a clean-room check before it is graded: on Claude Code,
   [`clean_room_check.py`](process.md#clean-room); on other hosts, the check in stage 0, step 3.

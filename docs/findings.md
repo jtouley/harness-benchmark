@@ -107,7 +107,7 @@ and Haiku on that task. It is not evidence for a harness.
   None used a skill, but the descriptions may have primed them. The next run set gates on
   [`clean_room_check.py`](../scripts/clean_room_check.py).
 - **Harder tasks.** Opus alone did these tasks in about 2 minutes. The next run set uses class L and O
-  tasks, starting with the [L3 open-data BI pipeline](tasks/L3-open-data-bi-pipeline.md), and runs the
+  tasks, starting with the [pipeline task family](tasks/pipeline-family.md) (which supersedes L3), and runs the
   harness on cheap models, all cheap and with Opus as reviewer only ([next steps](next-steps.md)).
 - **More runs and a second grader.** Each cell ran once. Apart from Haiku's results and the 2.0-point
   quality gap on multicurrency, every gap here is within single-run noise.
