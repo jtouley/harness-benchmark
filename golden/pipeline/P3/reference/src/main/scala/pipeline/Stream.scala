@@ -26,7 +26,8 @@ import org.apache.spark.sql.{DataFrame, SaveMode, SparkSession}
   * Each landed row is the event exactly as received (`event`, the JSON text) plus load metadata:
   * `event_id` (meta.id), `sse_id`, `arrival_seq` (arrival order across restarts), `received_at` and the
   * `batch_id` partition. The server re-sends some events on a resume; the dbt staging model keeps the
-  * first copy of each event. Frames that are not valid JSON go to recentchange_rejects.
+  * first copy of each event. Frames that are not valid JSON, or have no meta.id, go to
+  * recentchange_rejects.
   *
   *   sbt "runMain pipeline.Stream 60"      (seconds to consume)
   */
@@ -103,14 +104,16 @@ object Stream {
 
   private val isJson = udf((text: String) => Json.valid(text))
 
-  /** Split spooled frames into landed events and rejects (frames that are not valid JSON). */
+  /** Split spooled frames into landed events and rejects: frames that are not valid JSON, or are JSON
+    * with no `meta.id` (`{}`, a bare number, an empty data line), which no event key can identify.
+    */
   def split(frames: DataFrame): (DataFrame, DataFrame) = {
     val typed = frames
       .withColumn("received_at", timestamp_millis(col("received_at_ms")))
-      .withColumn("valid", isJson(col("data")))
+      .withColumn("event_id", get_json_object(col("data"), "$.meta.id"))
+      .withColumn("valid", isJson(col("data")) && col("event_id").isNotNull)
     val events = typed.filter(col("valid")).select(
-      col("data").as("event"),
-      get_json_object(col("data"), "$.meta.id").as("event_id"),
+      col("data").as("event"), col("event_id"),
       col("sse_id"), col("arrival_seq"), col("received_at"))
     val rejects = typed.filter(!col("valid")).select(
       col("data").as("raw"), col("sse_id"), col("arrival_seq"), col("received_at"))

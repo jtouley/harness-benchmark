@@ -56,8 +56,8 @@ section is what this stack adds.
 17. **Exactly once.** See the Spark section (items 21 and 22). The server re-sends events on a resume;
     the staging model keeps the first landed copy of each `meta.id`, and the incremental fact only
     appends ids it does not have.
-18. **Frames that are not JSON** go to `lake/recentchange_rejects/` with their raw text; the consumer
-    keeps going.
+18. **Frames that are not JSON**, or are JSON with no `meta.id` (no event can be keyed by them), go to
+    `lake/recentchange_rejects/` with their raw text; the consumer keeps going.
 19. **Edits per wiki (check 5)** count every edit consumed, late ones included (`mart_wiki_edits`,
     with a `late_edits` column). The 5-minute windows (check 6) count on-time edits only.
 

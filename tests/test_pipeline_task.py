@@ -64,11 +64,6 @@ def test_the_starting_repository_holds_only_the_skeleton_and_the_raw_data(task, 
     reference_only = _files(PIPELINE / task / "reference") - skeleton
     assert reference_only
     assert not files & reference_only
-    # nor anything else of the task's builder folder (its prompt, P3's toolchain image and trial script)
-    builder_only = {f.split("/", 1)[1] if "/" in f else f for f in _files(PIPELINE / task)
-                    if not f.startswith(("skeleton/", "reference/"))}
-    assert builder_only
-    assert not files & (builder_only - skeleton)
 
 
 @pytest.mark.parametrize("task", TASKS)

@@ -4,7 +4,7 @@
 #
 #   docker build -t hb-pipeline-p3 golden/pipeline/P3/image
 #
-# JDK 17 (Temurin 17.0.20.1+1), Python 3.12.15, sbt 1.12.15. Scala 2.13.8 and Spark 3.5.9 are pinned
+# JDK 17 (Temurin 17.0.20.1+1), Python 3.12.15, sbt 1.12.15. Scala 2.13.18 and Spark 3.5.9 are pinned
 # by the task's build.sbt and fetched by sbt; pyspark 3.5.9, dbt-core and dbt-spark by its
 # requirements.txt. The grader's own dependencies (duckdb, pyyaml) sit apart in /opt/grader, outside
 # the project's environment.
