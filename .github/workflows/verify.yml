@@ -16,36 +16,37 @@ jobs:
           node-version: 22
       - uses: astral-sh/setup-uv@v5
       - run: npm install -g @anthropic-ai/claude-code@2.1.294
-      # A pinned framework in a private repo (jtouley/cadence) cannot be fetched with no
-      # credentials. verify recomputes every result from every framework, so it cannot run
-      # on a partial set: skip fetch and verify with a warning, and run them locally instead.
-      # GitHub answers "Repository not found" when the checkout token cannot see a private repo.
-      # Any other fetch failure (network, bad sha) still fails the job.
-      - name: Check that every pinned framework can be fetched without credentials
+      # Repos in PRIVATE_REPOS cannot be fetched with no credentials (no secret is configured).
+      # Their frameworks are skipped with a warning. Every other framework (baseline included)
+      # is fetched by name, and `cbench fetch` checks out its pinned sha and checks it
+      # (cbench/lock.py), so a bad sha or an unreachable unlisted repo fails the job.
+      # `cbench verify` recomputes results from all frameworks, so it runs only when none is skipped.
+      - name: Split pinned frameworks into fetchable and private
         id: access
         env:
-          GIT_TERMINAL_PROMPT: "0"
+          PRIVATE_REPOS: https://github.com/jtouley/cadence
         run: |
-          private=""
-          for repo in $(jq -r '.frameworks[].repo // empty' frameworks.lock.json); do
-            if ! out=$(git ls-remote --exit-code "$repo" HEAD 2>&1); then
-              case "$out" in
-                *"could not read Username"*|*"Authentication failed"*|*"Repository not found"*) private="$private $repo" ;;
-                *) echo "$out"; echo "::error::cannot reach $repo"; exit 1 ;;
-              esac
-            fi
+          public="" private=""
+          for name in $(jq -r '.frameworks | keys_unsorted[]' frameworks.lock.json); do
+            repo=$(jq -r --arg n "$name" '.frameworks[$n].repo // ""' frameworks.lock.json)
+            case " $PRIVATE_REPOS " in
+              *" $repo "*) private="$private $name" ;;
+              *) public="$public $name" ;;
+            esac
           done
+          [ -n "$public" ] || { echo "::error::no public framework found in frameworks.lock.json"; exit 1; }
+          echo "public=${public# }" >> "$GITHUB_OUTPUT"
+          echo "private=${private# }" >> "$GITHUB_OUTPUT"
           if [ -n "$private" ]; then
-            echo "::warning title=fetch and verify skipped::these pinned repos need credentials:$private. Run 'python -m cbench fetch && python -m cbench verify' locally with access."
-            echo "fetchable=false" >> "$GITHUB_OUTPUT"
-          else
-            echo "fetchable=true" >> "$GITHUB_OUTPUT"
+            echo "::warning title=private frameworks skipped::${private# } (in PRIVATE_REPOS) not fetched, install-checked or verified in CI. Run 'python -m cbench fetch && python -m cbench verify' locally with access."
           fi
-      - name: Fetch pinned frameworks
-        if: steps.access.outputs.fetchable == 'true'
-        run: uv run --frozen --with tokenizers python -m cbench fetch
+      - name: Fetch pinned frameworks (checks each pinned sha)
+        run: uv run --frozen --with tokenizers python -m cbench fetch ${{ steps.access.outputs.public }}
+      - name: Install every fetchable framework twice and compare the trees
+        if: steps.access.outputs.private != ''
+        run: uv run --frozen --with tokenizers python -m cbench install-check ${{ steps.access.outputs.public }}
       - name: Verify every committed result byte for byte
-        if: steps.access.outputs.fetchable == 'true'
+        if: steps.access.outputs.private == ''
         run: uv run --frozen --with tokenizers python -m cbench verify
       - name: Unit and pipeline tests
         run: uv run --frozen --with tokenizers python -m pytest -q

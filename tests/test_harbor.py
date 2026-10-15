@@ -61,16 +61,20 @@ def test_collect_reads_harbor_results(tmp_path):
 
 def test_agent_hook_matches_harbor():
     """The subclass keys on a command Harbor builds; if a Harbor upgrade changes it, fail here."""
+    import importlib.metadata
     import inspect
     import sys
 
     import pytest
 
     # The repo's own harbor/ folder (no __init__.py) imports as a namespace package named
-    # harbor, so importorskip("harbor") passes without the package; skip on the real module.
-    ClaudeCode = pytest.importorskip(
-        "harbor.agents.installed.claude_code", reason="harbor is only needed for the live tier"
-    ).ClaudeCode
+    # harbor, so skip on the installed distribution, then import normally: if a Harbor
+    # upgrade moves the module, the import fails here instead of skipping.
+    try:
+        importlib.metadata.version("harbor")
+    except importlib.metadata.PackageNotFoundError:
+        pytest.skip("harbor is only needed for the live tier")
+    from harbor.agents.installed.claude_code import ClaudeCode
 
     sys.path.insert(0, str(harbor.HARBOR_DIR / "agents"))
     try:
