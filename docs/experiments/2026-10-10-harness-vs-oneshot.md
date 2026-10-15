@@ -110,6 +110,9 @@ Execute this task:
 
 ## Confounds and limits (read before citing)
 
+- **The one-shot baselines could see the user-level skill list** (the same host as iteration 4, where a
+  transcript check found that no one-shot used a skill). This round's transcripts were not checked. See
+  [the clean room](../process.md#clean-room).
 - **"One-shot" means one tool-using agent, not one completion.** Each baseline was a Claude
   Code subagent that could read the repo, edit, and run tests in a loop (Sonnet 6–10 tool calls,
   Haiku 57–62). It had no plan, reviewers or gates. A single completion without tools was not tested.

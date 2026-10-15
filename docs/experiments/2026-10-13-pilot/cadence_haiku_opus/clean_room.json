@@ -1,0 +1,51 @@
+{
+  "transcripts": 14,
+  "records": 1361,
+  "saw_listing": true,
+  "listed": [
+    "cadence:asd-ste100",
+    "cadence:cadence",
+    "cadence:commit-push-pr",
+    "cadence:de-adversarial-reviewer",
+    "cadence:plan-create",
+    "cadence:plan-review",
+    "cadence:plan-update",
+    "cadence:pr-review-local",
+    "cadence:pr-review-update",
+    "cadence:read-memories",
+    "cadence:spec-driven",
+    "cadence:test-benchmark",
+    "cadence:vibe-test",
+    "claude-api",
+    "code-review",
+    "dataviz",
+    "fewer-permission-prompts",
+    "init",
+    "keybindings-help",
+    "loop",
+    "plugin-authoring",
+    "run",
+    "security-review",
+    "simplify",
+    "update-config",
+    "workflow-authoring"
+  ],
+  "skill_calls": [
+    "cadence:de-adversarial-reviewer",
+    "cadence:de-adversarial-reviewer",
+    "cadence:test-benchmark"
+  ],
+  "contacts": [
+    "$C/skills/plan-review/SKILL.md",
+    "/Users/jasontouleyrou/Projects/cadence-wt/cadence-workspace/pilot/cadence_haiku_opus/cadence/skills/vibe-test/SKILL.md",
+    "/Users/jasontouleyrou/Projects/cadence-wt/cadence-workspace/pilot/cadence_haiku_opus/repo/cadence/skills/test-benchmark/SKILL.md",
+    "/Users/jasontouleyrou/Projects/cadence-wt/cadence-workspace/pilot/cadence_haiku_opus/repo/skills/asd-ste100/SKILL.md"
+  ],
+  "unexpected_listed": [],
+  "unexpected_calls": [],
+  "unexpected_contacts": [
+    "$C/skills/plan-review/SKILL.md"
+  ],
+  "verdict": "contaminated",
+  "exit": 2
+}

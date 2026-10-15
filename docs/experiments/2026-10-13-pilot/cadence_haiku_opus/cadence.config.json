@@ -1,0 +1,29 @@
+{
+  "version": 1,
+  "enabled_packs": [],
+  "adapter": "github-issues",
+  "gated_prefixes": [
+    "src/",
+    "lib/",
+    "app/",
+    "packages/"
+  ],
+  "layer_map": {},
+  "org_terms": [],
+  "decision_index_required": true,
+  "subagent_hygiene": {
+    "mode": "shadow",
+    "rewrite_prompt": true,
+    "classifier": "none",
+    "classifier_threshold": 0.5,
+    "classifier_timeout": 10
+  },
+  "peer_models": {
+    "default": "haiku",
+    "plan-review": "opus",
+    "adversarial-review": "opus",
+    "test-benchmark-plan": "opus",
+    "pr-review-local": "opus",
+    "test-benchmark-pr": "opus"
+  }
+}
