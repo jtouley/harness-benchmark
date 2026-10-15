@@ -33,8 +33,13 @@ the follow-up cannot change the base score.
    previous month, so the change is empty, not zero).
 2. The UEI fallback count matches the key.
 3. Every base check still passes (no regression).
-4. Dashboard smoke test with Streamlit's `AppTest`: both pages render, each filter changes the shown
-   rows, and the app opens no file outside `out/marts/` (checked with an audit hook on `open`).
+4. Dashboard smoke test with Streamlit's `AppTest`, run in a sandbox: a fresh temporary directory that
+   holds only a copy of `out/marts/` and the app's own source (the Streamlit entry point and the
+   repository modules it imports). The lake, the raw data, the dbt project and its target, and
+   `out/warehouse.duckdb` are not there. Both pages must render, and each filter must change the shown
+   rows. An app that reads anything outside `out/marts/` fails here, because the file does not exist.
+   This works for files opened in native code (DuckDB, pyarrow), which a Python audit hook on `open`
+   does not see.
 5. Edit radius: the diff of the follow-up against the frozen base, split into new files and changed
    existing files.
 

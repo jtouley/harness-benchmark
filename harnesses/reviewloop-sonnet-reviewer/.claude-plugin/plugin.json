@@ -1,6 +1,8 @@
 {
   "name": "reviewloop",
   "version": "0.1.0",
-  "description": "Minimal harness: the session model does the work; an independent reviewer on a stronger model checks it in the running system; the session fixes the findings until the reviewer approves.",
-  "skills": ["./skills/review-loop"]
+  "description": "Minimal harness: the session model does the work; an independent reviewer (pinned to Sonnet in agents/reviewer.md) checks it in the running system; the session fixes the findings until the reviewer approves. Copy of harnesses/reviewloop that differs only in the reviewer model; both plugins are named reviewloop, so load one per arm.",
+  "skills": [
+    "./skills/review-loop"
+  ]
 }

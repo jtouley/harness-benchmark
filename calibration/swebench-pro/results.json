@@ -1,5 +1,395 @@
 [
  {
+  "job": "haiku-sample20-r1",
+  "task": "instance_ansible__ansible-1b70260d5aa2f6c9782fd2b848e8d16566e50d85-vba6da65a0f3baefda7a058ebbd0a8dcafb8512f5",
+  "reward": null,
+  "exception": "AgentSetupTimeoutError",
+  "harbor_cost_usd": null,
+  "usd_from_tokens": 0.0,
+  "tokens": {
+   "n_input_tokens": null,
+   "n_cache_tokens": null,
+   "n_output_tokens": null
+  }
+ },
+ {
+  "job": "haiku-sample20-r1",
+  "task": "instance_ansible__ansible-42355d181a11b51ebfc56f6f4b3d9c74e01cb13b-v1055803c3a812189a1133297f7f5468579283f86",
+  "reward": null,
+  "exception": "AgentSetupTimeoutError",
+  "harbor_cost_usd": null,
+  "usd_from_tokens": 0.0,
+  "tokens": {
+   "n_input_tokens": null,
+   "n_cache_tokens": null,
+   "n_output_tokens": null
+  }
+ },
+ {
+  "job": "haiku-sample20-r1",
+  "task": "instance_ansible__ansible-5260527c4a71bfed99d803e687dd19619423b134-vba6da65a0f3baefda7a058ebbd0a8dcafb8512f5",
+  "reward": null,
+  "exception": "AgentSetupTimeoutError",
+  "harbor_cost_usd": null,
+  "usd_from_tokens": 0.0,
+  "tokens": {
+   "n_input_tokens": null,
+   "n_cache_tokens": null,
+   "n_output_tokens": null
+  }
+ },
+ {
+  "job": "haiku-sample20-r1",
+  "task": "instance_ansible__ansible-748f534312f2073a25a87871f5bd05882891b8c4-v0f01c69f1e2528b935359cfe578530722bca2c59",
+  "reward": null,
+  "exception": "AgentSetupTimeoutError",
+  "harbor_cost_usd": null,
+  "usd_from_tokens": 0.0,
+  "tokens": {
+   "n_input_tokens": null,
+   "n_cache_tokens": null,
+   "n_output_tokens": null
+  }
+ },
+ {
+  "job": "haiku-sample20-r1",
+  "task": "instance_ansible__ansible-984216f52e76b904e5b0fa0fb956ab4f1e0a7751-v1055803c3a812189a1133297f7f5468579283f86",
+  "reward": null,
+  "exception": "AgentSetupTimeoutError",
+  "harbor_cost_usd": null,
+  "usd_from_tokens": 0.0,
+  "tokens": {
+   "n_input_tokens": null,
+   "n_cache_tokens": null,
+   "n_output_tokens": null
+  }
+ },
+ {
+  "job": "haiku-sample20-r1",
+  "task": "instance_ansible__ansible-a20a52701402a12f91396549df04ac55809f68e9-v1055803c3a812189a1133297f7f5468579283f86",
+  "reward": null,
+  "exception": "AgentSetupTimeoutError",
+  "harbor_cost_usd": null,
+  "usd_from_tokens": 0.0,
+  "tokens": {
+   "n_input_tokens": null,
+   "n_cache_tokens": null,
+   "n_output_tokens": null
+  }
+ },
+ {
+  "job": "haiku-sample20-r1",
+  "task": "instance_ansible__ansible-c1f2df47538b884a43320f53e787197793b105e8-v906c969b551b346ef54a2c0b41e04f632b7b73c2",
+  "reward": null,
+  "exception": "AgentSetupTimeoutError",
+  "harbor_cost_usd": null,
+  "usd_from_tokens": 0.0,
+  "tokens": {
+   "n_input_tokens": null,
+   "n_cache_tokens": null,
+   "n_output_tokens": null
+  }
+ },
+ {
+  "job": "haiku-sample20-r1",
+  "task": "instance_ansible__ansible-d2f80991180337e2be23d6883064a67dcbaeb662-vba6da65a0f3baefda7a058ebbd0a8dcafb8512f5",
+  "reward": null,
+  "exception": "AgentSetupTimeoutError",
+  "harbor_cost_usd": null,
+  "usd_from_tokens": 0.0,
+  "tokens": {
+   "n_input_tokens": null,
+   "n_cache_tokens": null,
+   "n_output_tokens": null
+  }
+ },
+ {
+  "job": "haiku-sample20-r1",
+  "task": "instance_ansible__ansible-d9f1866249756efc264b00ff7497e92c11a9885f-v0f01c69f1e2528b935359cfe578530722bca2c59",
+  "reward": null,
+  "exception": "AgentSetupTimeoutError",
+  "harbor_cost_usd": null,
+  "usd_from_tokens": 0.0,
+  "tokens": {
+   "n_input_tokens": null,
+   "n_cache_tokens": null,
+   "n_output_tokens": null
+  }
+ },
+ {
+  "job": "haiku-sample20-r1",
+  "task": "instance_internetarchive__openlibrary-09865f5fb549694d969f0a8e49b9d204ef1853ca-ve8c8d62a2b60610a3c4631f5f23ed866bada9818",
+  "reward": null,
+  "exception": "AgentSetupTimeoutError",
+  "harbor_cost_usd": null,
+  "usd_from_tokens": 0.0,
+  "tokens": {
+   "n_input_tokens": null,
+   "n_cache_tokens": null,
+   "n_output_tokens": null
+  }
+ },
+ {
+  "job": "haiku-sample20-r1",
+  "task": "instance_internetarchive__openlibrary-30bc73a1395fba2300087c7f307e54bb5372b60a-v76304ecdb3a5954fcf13feb710e8c40fcf24b73c",
+  "reward": 0.0,
+  "exception": null,
+  "harbor_cost_usd": 0.238596805,
+  "usd_from_tokens": 0.08308338,
+  "tokens": {
+   "n_input_tokens": 2805799,
+   "n_cache_tokens": 2681828,
+   "n_output_tokens": 87736
+  }
+ },
+ {
+  "job": "haiku-sample20-r1",
+  "task": "instance_internetarchive__openlibrary-c12943be1db80cf1114bc267ddf4f9933aca9b28-v2c55207218fb8a0138425cbf7d9675272e240b90",
+  "reward": 1.0,
+  "exception": null,
+  "harbor_cost_usd": 0.00623052,
+  "usd_from_tokens": 0.00584687,
+  "tokens": {
+   "n_input_tokens": 118533,
+   "n_cache_tokens": 103177,
+   "n_output_tokens": 6559
+  }
+ },
+ {
+  "job": "haiku-sample20-r1",
+  "task": "instance_internetarchive__openlibrary-58999808a17a26b387f8237860a7a524d1e2d262-v08d8e8889ec945ab821fb156c04c7d2e2810debb",
+  "reward": 1.0,
+  "exception": null,
+  "harbor_cost_usd": 0.0052673649999999995,
+  "usd_from_tokens": 0.00493129,
+  "tokens": {
+   "n_input_tokens": 111052,
+   "n_cache_tokens": 97599,
+   "n_output_tokens": 5220
+  }
+ },
+ {
+  "job": "haiku-sample20-r1",
+  "task": "instance_internetarchive__openlibrary-0dc5b20fa186f9714f8a838178597e69f549d026-v2d9a6c849c60ed19fd0858ce9e40b7cc8e097e59",
+  "reward": 1.0,
+  "exception": null,
+  "harbor_cost_usd": 0.024490365,
+  "usd_from_tokens": 0.02330309,
+  "tokens": {
+   "n_input_tokens": 832298,
+   "n_cache_tokens": 784769,
+   "n_output_tokens": 21405
+  }
+ },
+ {
+  "job": "haiku-sample20-r1",
+  "task": "instance_internetarchive__openlibrary-43f9e7e0d56a4f1d487533543c17040a029ac501-v0f5aece3601a5b4419f7ccec1dbda2071be28ee4",
+  "reward": 1.0,
+  "exception": null,
+  "harbor_cost_usd": 0.010419884999999999,
+  "usd_from_tokens": 0.00983356,
+  "tokens": {
+   "n_input_tokens": 390977,
+   "n_cache_tokens": 367496,
+   "n_output_tokens": 7621
+  }
+ },
+ {
+  "job": "haiku-sample20-r1",
+  "task": "instance_qutebrowser__qutebrowser-cc360cd4a34a126274c7b51f3b63afbaf3e05a02-v5fc38aaf22415ab0b70567368332beee7955b367",
+  "reward": 1.0,
+  "exception": null,
+  "harbor_cost_usd": 0.00649107,
+  "usd_from_tokens": 0.00615607,
+  "tokens": {
+   "n_input_tokens": 176213,
+   "n_cache_tokens": 162797,
+   "n_output_tokens": 6373
+  }
+ },
+ {
+  "job": "haiku-sample20-r1",
+  "task": "instance_qutebrowser__qutebrowser-99029144b5109bb1b2a53964a7c129e009980cd9-va0fd88aac89cde702ec1ba84877234da33adce8a",
+  "reward": 1.0,
+  "exception": null,
+  "harbor_cost_usd": 0.019493955,
+  "usd_from_tokens": 0.01838098,
+  "tokens": {
+   "n_input_tokens": 682039,
+   "n_cache_tokens": 637488,
+   "n_output_tokens": 15102
+  }
+ },
+ {
+  "job": "haiku-sample20-r1",
+  "task": "instance_qutebrowser__qutebrowser-479aa075ac79dc975e2e949e188a328e95bf78ff-vc2f56a753b62a190ddb23cd330c257b9cf560d12",
+  "reward": 1.0,
+  "exception": null,
+  "harbor_cost_usd": 0.006611344999999999,
+  "usd_from_tokens": 0.00622717,
+  "tokens": {
+   "n_input_tokens": 189820,
+   "n_cache_tokens": 174437,
+   "n_output_tokens": 5889
+  }
+ },
+ {
+  "job": "haiku-sample20-r1",
+  "task": "instance_qutebrowser__qutebrowser-e64622cd2df5b521342cf4a62e0d4cb8f8c9ae5a-v363c8a7e5ccdf6968fc7ab84a2053ac78036691d",
+  "reward": 1.0,
+  "exception": null,
+  "harbor_cost_usd": 0.005744249999999999,
+  "usd_from_tokens": 0.0054374,
+  "tokens": {
+   "n_input_tokens": 195412,
+   "n_cache_tokens": 183120,
+   "n_output_tokens": 4754
+  }
+ },
+ {
+  "job": "haiku-sample20-r1",
+  "task": "instance_qutebrowser__qutebrowser-9ed748effa8f3bcd804612d9291da017b514e12f-v363c8a7e5ccdf6968fc7ab84a2053ac78036691d",
+  "reward": 0.0,
+  "exception": null,
+  "harbor_cost_usd": 0.017798799999999997,
+  "usd_from_tokens": 0.01697985,
+  "tokens": {
+   "n_input_tokens": 426647,
+   "n_cache_tokens": 393865,
+   "n_output_tokens": 19526
+  }
+ },
+ {
+  "job": "haiku-sample20-retry",
+  "task": "instance_ansible__ansible-1b70260d5aa2f6c9782fd2b848e8d16566e50d85-vba6da65a0f3baefda7a058ebbd0a8dcafb8512f5",
+  "reward": 1.0,
+  "exception": null,
+  "harbor_cost_usd": 0.02143645,
+  "usd_from_tokens": 0.0203656,
+  "tokens": {
+   "n_input_tokens": 792376,
+   "n_cache_tokens": 749500,
+   "n_output_tokens": 17166
+  }
+ },
+ {
+  "job": "haiku-sample20-retry",
+  "task": "instance_ansible__ansible-42355d181a11b51ebfc56f6f4b3d9c74e01cb13b-v1055803c3a812189a1133297f7f5468579283f86",
+  "reward": 1.0,
+  "exception": null,
+  "harbor_cost_usd": 0.172867235,
+  "usd_from_tokens": 0.07398418,
+  "tokens": {
+   "n_input_tokens": 3347633,
+   "n_cache_tokens": 3236968,
+   "n_output_tokens": 61096
+  }
+ },
+ {
+  "job": "haiku-sample20-retry",
+  "task": "instance_ansible__ansible-5260527c4a71bfed99d803e687dd19619423b134-vba6da65a0f3baefda7a058ebbd0a8dcafb8512f5",
+  "reward": 1.0,
+  "exception": null,
+  "harbor_cost_usd": 0.018194685,
+  "usd_from_tokens": 0.01736961,
+  "tokens": {
+   "n_input_tokens": 779770,
+   "n_cache_tokens": 746721,
+   "n_output_tokens": 13195
+  }
+ },
+ {
+  "job": "haiku-sample20-retry",
+  "task": "instance_ansible__ansible-748f534312f2073a25a87871f5bd05882891b8c4-v0f01c69f1e2528b935359cfe578530722bca2c59",
+  "reward": 1.0,
+  "exception": null,
+  "harbor_cost_usd": 0.009429339999999998,
+  "usd_from_tokens": 0.00895979,
+  "tokens": {
+   "n_input_tokens": 301143,
+   "n_cache_tokens": 282339,
+   "n_output_tokens": 8512
+  }
+ },
+ {
+  "job": "haiku-sample20-retry",
+  "task": "instance_ansible__ansible-984216f52e76b904e5b0fa0fb956ab4f1e0a7751-v1055803c3a812189a1133297f7f5468579283f86",
+  "reward": 1.0,
+  "exception": null,
+  "harbor_cost_usd": 0.137994855,
+  "usd_from_tokens": 0.0726038,
+  "tokens": {
+   "n_input_tokens": 3457643,
+   "n_cache_tokens": 3353250,
+   "n_output_tokens": 57264
+  }
+ },
+ {
+  "job": "haiku-sample20-retry",
+  "task": "instance_ansible__ansible-a20a52701402a12f91396549df04ac55809f68e9-v1055803c3a812189a1133297f7f5468579283f86",
+  "reward": 1.0,
+  "exception": null,
+  "harbor_cost_usd": 0.00840101,
+  "usd_from_tokens": 0.00799816,
+  "tokens": {
+   "n_input_tokens": 241710,
+   "n_cache_tokens": 225576,
+   "n_output_tokens": 8258
+  }
+ },
+ {
+  "job": "haiku-sample20-retry",
+  "task": "instance_ansible__ansible-c1f2df47538b884a43320f53e787197793b105e8-v906c969b551b346ef54a2c0b41e04f632b7b73c2",
+  "reward": 0.0,
+  "exception": null,
+  "harbor_cost_usd": 0.03814465,
+  "usd_from_tokens": 0.03642405,
+  "tokens": {
+   "n_input_tokens": 979747,
+   "n_cache_tokens": 910885,
+   "n_output_tokens": 40858
+  }
+ },
+ {
+  "job": "haiku-sample20-retry",
+  "task": "instance_ansible__ansible-d2f80991180337e2be23d6883064a67dcbaeb662-vba6da65a0f3baefda7a058ebbd0a8dcafb8512f5",
+  "reward": 1.0,
+  "exception": null,
+  "harbor_cost_usd": 0.22174399499999997,
+  "usd_from_tokens": 0.08704753,
+  "tokens": {
+   "n_input_tokens": 4143590,
+   "n_cache_tokens": 4032233,
+   "n_output_tokens": 71179
+  }
+ },
+ {
+  "job": "haiku-sample20-retry",
+  "task": "instance_ansible__ansible-d9f1866249756efc264b00ff7497e92c11a9885f-v0f01c69f1e2528b935359cfe578530722bca2c59",
+  "reward": 1.0,
+  "exception": null,
+  "harbor_cost_usd": 0.017124485000000002,
+  "usd_from_tokens": 0.01625331,
+  "tokens": {
+   "n_input_tokens": 649752,
+   "n_cache_tokens": 614871,
+   "n_output_tokens": 13233
+  }
+ },
+ {
+  "job": "haiku-sample20-retry",
+  "task": "instance_internetarchive__openlibrary-09865f5fb549694d969f0a8e49b9d204ef1853ca-ve8c8d62a2b60610a3c4631f5f23ed866bada9818",
+  "reward": 1.0,
+  "exception": null,
+  "harbor_cost_usd": 0.015755425,
+  "usd_from_tokens": 0.01497075,
+  "tokens": {
+   "n_input_tokens": 297930,
+   "n_cache_tokens": 266525,
+   "n_output_tokens": 18330
+  }
+ },
+ {
   "job": "opus-hard3-r2",
   "task": "instance_ansible__ansible-d2f80991180337e2be23d6883064a67dcbaeb662-vba6da65a0f3baefda7a058ebbd0a8dcafb8512f5",
   "reward": 1.0,
@@ -624,6 +1014,19 @@
   }
  },
  {
+  "job": "opus-sample20-retry",
+  "task": "instance_ansible__ansible-d9f1866249756efc264b00ff7497e92c11a9885f-v0f01c69f1e2528b935359cfe578530722bca2c59",
+  "reward": 1.0,
+  "exception": null,
+  "harbor_cost_usd": 0.15871800000000003,
+  "usd_from_tokens": 0.144359,
+  "tokens": {
+   "n_input_tokens": 129846,
+   "n_cache_tokens": 115475,
+   "n_output_tokens": 3189
+  }
+ },
+ {
   "job": "oracle-ol92",
   "task": "instance_internetarchive__openlibrary-92db3454aeaa02f89b4cdbc3103f7e95c9759f92-v2c55207218fb8a0138425cbf7d9675272e240b90",
   "reward": 1.0,
@@ -634,6 +1037,318 @@
    "n_input_tokens": null,
    "n_cache_tokens": null,
    "n_output_tokens": null
+  }
+ },
+ {
+  "job": "sonnet-sample20-r1",
+  "task": "instance_ansible__ansible-1b70260d5aa2f6c9782fd2b848e8d16566e50d85-vba6da65a0f3baefda7a058ebbd0a8dcafb8512f5",
+  "reward": 0.0,
+  "exception": "AgentTimeoutError",
+  "harbor_cost_usd": 0.058079000000000006,
+  "usd_from_tokens": 0.059943,
+  "tokens": {
+   "n_input_tokens": 111320,
+   "n_cache_tokens": 95865,
+   "n_output_tokens": 986
+  }
+ },
+ {
+  "job": "sonnet-sample20-r1",
+  "task": "instance_ansible__ansible-42355d181a11b51ebfc56f6f4b3d9c74e01cb13b-v1055803c3a812189a1133297f7f5468579283f86",
+  "reward": 1.0,
+  "exception": null,
+  "harbor_cost_usd": 0.21953389999999998,
+  "usd_from_tokens": 0.2321858,
+  "tokens": {
+   "n_input_tokens": 326483,
+   "n_cache_tokens": 293139,
+   "n_output_tokens": 10687
+  }
+ },
+ {
+  "job": "sonnet-sample20-r1",
+  "task": "instance_ansible__ansible-5260527c4a71bfed99d803e687dd19619423b134-vba6da65a0f3baefda7a058ebbd0a8dcafb8512f5",
+  "reward": 1.0,
+  "exception": null,
+  "harbor_cost_usd": 0.1015915,
+  "usd_from_tokens": 0.116642,
+  "tokens": {
+   "n_input_tokens": 246641,
+   "n_cache_tokens": 230600,
+   "n_output_tokens": 3844
+  }
+ },
+ {
+  "job": "sonnet-sample20-r1",
+  "task": "instance_ansible__ansible-748f534312f2073a25a87871f5bd05882891b8c4-v0f01c69f1e2528b935359cfe578530722bca2c59",
+  "reward": 1.0,
+  "exception": null,
+  "harbor_cost_usd": 0.0644499,
+  "usd_from_tokens": 0.0658758,
+  "tokens": {
+   "n_input_tokens": 82763,
+   "n_cache_tokens": 71339,
+   "n_output_tokens": 2876
+  }
+ },
+ {
+  "job": "sonnet-sample20-r1",
+  "task": "instance_ansible__ansible-984216f52e76b904e5b0fa0fb956ab4f1e0a7751-v1055803c3a812189a1133297f7f5468579283f86",
+  "reward": 1.0,
+  "exception": null,
+  "harbor_cost_usd": 0.321178,
+  "usd_from_tokens": 0.379973,
+  "tokens": {
+   "n_input_tokens": 862182,
+   "n_cache_tokens": 816445,
+   "n_output_tokens": 12521
+  }
+ },
+ {
+  "job": "sonnet-sample20-r1",
+  "task": "instance_ansible__ansible-a20a52701402a12f91396549df04ac55809f68e9-v1055803c3a812189a1133297f7f5468579283f86",
+  "reward": 1.0,
+  "exception": null,
+  "harbor_cost_usd": 0.054223400000000005,
+  "usd_from_tokens": 0.0582328,
+  "tokens": {
+   "n_input_tokens": 99252,
+   "n_cache_tokens": 89384,
+   "n_output_tokens": 2062
+  }
+ },
+ {
+  "job": "sonnet-sample20-r1",
+  "task": "instance_ansible__ansible-c1f2df47538b884a43320f53e787197793b105e8-v906c969b551b346ef54a2c0b41e04f632b7b73c2",
+  "reward": 1.0,
+  "exception": null,
+  "harbor_cost_usd": 0.1686583,
+  "usd_from_tokens": 0.1775906,
+  "tokens": {
+   "n_input_tokens": 235681,
+   "n_cache_tokens": 211273,
+   "n_output_tokens": 8652
+  }
+ },
+ {
+  "job": "sonnet-sample20-r1",
+  "task": "instance_ansible__ansible-d2f80991180337e2be23d6883064a67dcbaeb662-vba6da65a0f3baefda7a058ebbd0a8dcafb8512f5",
+  "reward": 1.0,
+  "exception": null,
+  "harbor_cost_usd": 0.2134638,
+  "usd_from_tokens": 0.2385406,
+  "tokens": {
+   "n_input_tokens": 409598,
+   "n_cache_tokens": 383103,
+   "n_output_tokens": 10893
+  }
+ },
+ {
+  "job": "sonnet-sample20-r1",
+  "task": "instance_ansible__ansible-d9f1866249756efc264b00ff7497e92c11a9885f-v0f01c69f1e2528b935359cfe578530722bca2c59",
+  "reward": 1.0,
+  "exception": null,
+  "harbor_cost_usd": 0.0681973,
+  "usd_from_tokens": 0.0759076,
+  "tokens": {
+   "n_input_tokens": 146435,
+   "n_cache_tokens": 134868,
+   "n_output_tokens": 2580
+  }
+ },
+ {
+  "job": "sonnet-sample20-r1",
+  "task": "instance_internetarchive__openlibrary-c12943be1db80cf1114bc267ddf4f9933aca9b28-v2c55207218fb8a0138425cbf7d9675272e240b90",
+  "reward": null,
+  "exception": "AgentSetupTimeoutError",
+  "harbor_cost_usd": null,
+  "usd_from_tokens": 0.0,
+  "tokens": {
+   "n_input_tokens": null,
+   "n_cache_tokens": null,
+   "n_output_tokens": null
+  }
+ },
+ {
+  "job": "sonnet-sample20-r1",
+  "task": "instance_internetarchive__openlibrary-09865f5fb549694d969f0a8e49b9d204ef1853ca-ve8c8d62a2b60610a3c4631f5f23ed866bada9818",
+  "reward": 1.0,
+  "exception": null,
+  "harbor_cost_usd": 0.11112839999999999,
+  "usd_from_tokens": 0.1123958,
+  "tokens": {
+   "n_input_tokens": 119706,
+   "n_cache_tokens": 101859,
+   "n_output_tokens": 5633
+  }
+ },
+ {
+  "job": "sonnet-sample20-r1",
+  "task": "instance_internetarchive__openlibrary-43f9e7e0d56a4f1d487533543c17040a029ac501-v0f5aece3601a5b4419f7ccec1dbda2071be28ee4",
+  "reward": 1.0,
+  "exception": null,
+  "harbor_cost_usd": 0.0435823,
+  "usd_from_tokens": 0.0438566,
+  "tokens": {
+   "n_input_tokens": 57961,
+   "n_cache_tokens": 48753,
+   "n_output_tokens": 1569
+  }
+ },
+ {
+  "job": "sonnet-sample20-r1",
+  "task": "instance_internetarchive__openlibrary-58999808a17a26b387f8237860a7a524d1e2d262-v08d8e8889ec945ab821fb156c04c7d2e2810debb",
+  "reward": null,
+  "exception": "NetworkConnectionError",
+  "harbor_cost_usd": null,
+  "usd_from_tokens": 0.0,
+  "tokens": {
+   "n_input_tokens": null,
+   "n_cache_tokens": null,
+   "n_output_tokens": null
+  }
+ },
+ {
+  "job": "sonnet-sample20-r1",
+  "task": "instance_internetarchive__openlibrary-0dc5b20fa186f9714f8a838178597e69f549d026-v2d9a6c849c60ed19fd0858ce9e40b7cc8e097e59",
+  "reward": 1.0,
+  "exception": null,
+  "harbor_cost_usd": 0.1657687,
+  "usd_from_tokens": 0.1958014,
+  "tokens": {
+   "n_input_tokens": 446483,
+   "n_cache_tokens": 422097,
+   "n_output_tokens": 6261
+  }
+ },
+ {
+  "job": "sonnet-sample20-r1",
+  "task": "instance_internetarchive__openlibrary-30bc73a1395fba2300087c7f307e54bb5372b60a-v76304ecdb3a5954fcf13feb710e8c40fcf24b73c",
+  "reward": 1.0,
+  "exception": null,
+  "harbor_cost_usd": 0.29815259999999993,
+  "usd_from_tokens": 0.3061322,
+  "tokens": {
+   "n_input_tokens": 300068,
+   "n_cache_tokens": 263341,
+   "n_output_tokens": 18001
+  }
+ },
+ {
+  "job": "sonnet-sample20-r1",
+  "task": "instance_qutebrowser__qutebrowser-99029144b5109bb1b2a53964a7c129e009980cd9-va0fd88aac89cde702ec1ba84877234da33adce8a",
+  "reward": 1.0,
+  "exception": null,
+  "harbor_cost_usd": 0.09080189999999999,
+  "usd_from_tokens": 0.0981128,
+  "tokens": {
+   "n_input_tokens": 173029,
+   "n_cache_tokens": 156364,
+   "n_output_tokens": 3351
+  }
+ },
+ {
+  "job": "sonnet-sample20-r1",
+  "task": "instance_qutebrowser__qutebrowser-479aa075ac79dc975e2e949e188a328e95bf78ff-vc2f56a753b62a190ddb23cd330c257b9cf560d12",
+  "reward": 1.0,
+  "exception": null,
+  "harbor_cost_usd": 0.0476354,
+  "usd_from_tokens": 0.0511128,
+  "tokens": {
+   "n_input_tokens": 90380,
+   "n_cache_tokens": 81104,
+   "n_output_tokens": 1634
+  }
+ },
+ {
+  "job": "sonnet-sample20-r1",
+  "task": "instance_qutebrowser__qutebrowser-cc360cd4a34a126274c7b51f3b63afbaf3e05a02-v5fc38aaf22415ab0b70567368332beee7955b367",
+  "reward": null,
+  "exception": "AgentSetupTimeoutError",
+  "harbor_cost_usd": null,
+  "usd_from_tokens": 0.0,
+  "tokens": {
+   "n_input_tokens": null,
+   "n_cache_tokens": null,
+   "n_output_tokens": null
+  }
+ },
+ {
+  "job": "sonnet-sample20-r1",
+  "task": "instance_qutebrowser__qutebrowser-e64622cd2df5b521342cf4a62e0d4cb8f8c9ae5a-v363c8a7e5ccdf6968fc7ab84a2053ac78036691d",
+  "reward": null,
+  "exception": "AgentSetupTimeoutError",
+  "harbor_cost_usd": null,
+  "usd_from_tokens": 0.0,
+  "tokens": {
+   "n_input_tokens": null,
+   "n_cache_tokens": null,
+   "n_output_tokens": null
+  }
+ },
+ {
+  "job": "sonnet-sample20-r1",
+  "task": "instance_qutebrowser__qutebrowser-9ed748effa8f3bcd804612d9291da017b514e12f-v363c8a7e5ccdf6968fc7ab84a2053ac78036691d",
+  "reward": 0.0,
+  "exception": null,
+  "harbor_cost_usd": 0.078367,
+  "usd_from_tokens": 0.086043,
+  "tokens": {
+   "n_input_tokens": 152920,
+   "n_cache_tokens": 140215,
+   "n_output_tokens": 3259
+  }
+ },
+ {
+  "job": "sonnet-sample20-retry",
+  "task": "instance_internetarchive__openlibrary-c12943be1db80cf1114bc267ddf4f9933aca9b28-v2c55207218fb8a0138425cbf7d9675272e240b90",
+  "reward": 1.0,
+  "exception": null,
+  "harbor_cost_usd": 0.0776396,
+  "usd_from_tokens": 0.0896542,
+  "tokens": {
+   "n_input_tokens": 196922,
+   "n_cache_tokens": 184111,
+   "n_output_tokens": 2721
+  }
+ },
+ {
+  "job": "sonnet-sample20-retry",
+  "task": "instance_internetarchive__openlibrary-58999808a17a26b387f8237860a7a524d1e2d262-v08d8e8889ec945ab821fb156c04c7d2e2810debb",
+  "reward": 1.0,
+  "exception": null,
+  "harbor_cost_usd": 0.061862600000000004,
+  "usd_from_tokens": 0.0646672,
+  "tokens": {
+   "n_input_tokens": 101532,
+   "n_cache_tokens": 89276,
+   "n_output_tokens": 2230
+  }
+ },
+ {
+  "job": "sonnet-sample20-retry",
+  "task": "instance_qutebrowser__qutebrowser-cc360cd4a34a126274c7b51f3b63afbaf3e05a02-v5fc38aaf22415ab0b70567368332beee7955b367",
+  "reward": 1.0,
+  "exception": null,
+  "harbor_cost_usd": 0.05742950000000001,
+  "usd_from_tokens": 0.065272,
+  "tokens": {
+   "n_input_tokens": 133657,
+   "n_cache_tokens": 124440,
+   "n_output_tokens": 2195
+  }
+ },
+ {
+  "job": "sonnet-sample20-retry",
+  "task": "instance_qutebrowser__qutebrowser-e64622cd2df5b521342cf4a62e0d4cb8f8c9ae5a-v363c8a7e5ccdf6968fc7ab84a2053ac78036691d",
+  "reward": 1.0,
+  "exception": null,
+  "harbor_cost_usd": 0.0480957,
+  "usd_from_tokens": 0.0528024,
+  "tokens": {
+   "n_input_tokens": 91735,
+   "n_cache_tokens": 84282,
+   "n_output_tokens": 2104
   }
  }
 ]

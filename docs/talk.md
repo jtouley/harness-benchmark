@@ -123,8 +123,8 @@ second defect.
 
 **Notes:** B01 is a lift task: the bar is reliable, the cheap models are not. The code belongs to a third
 party, so we publish the scores only. After a contamination incident (processes from earlier runs
-outlived them), all runs were regraded with an isolated grader. No grade changed. From now on, each trial
-runs in its own container.
+outlived them), all runs were regraded with an isolated grader. No grade changed. Future trials will each
+run in their own container (harness-benchmark#10, open).
 
 ## 8. Why the cheap models miss (10:00–12:00)
 
@@ -154,8 +154,8 @@ fails.
 
 ## 9. The review loop: reliability back, no money saved (12:00–13:30)
 
-**Headline:** An independent reviewer that checks the running system recovers every miss. It costs about
-as much as Opus alone.
+**Headline:** An independent reviewer that checks the running system recovered the miss in every valid
+run so far (2 Haiku, 1 Sonnet). It costs about as much as Opus alone.
 
 **Show:** a minimal harness: the cheap model works, an Opus subagent reviews in the running system, the
 cheap model fixes.
@@ -166,20 +166,32 @@ cheap model fixes.
 | Haiku 5.5 + Opus review loop | 2/2 | $1.15 |
 | Sonnet 5.5 + Opus review loop | 1/1 | $1.24 |
 
-**Notes:** All 3 valid runs fixed both defects. The reviewer must run and exercise the stack to check the
-work, and that costs about as much as Opus doing the task. So the review loop closes the reliability gap,
-but it does not save money. The samples are 1–2 runs per arm. The open question: can the check itself be
+**Notes:** Both Haiku runs and the one Sonnet run fixed both defects. Two more runs were set aside as
+invalid (Docker went down during the run). That is a signal, not yet a reliability measure. The reviewer
+must run and exercise the stack to check the work, and that costs about as much as Opus doing the task.
+So the review loop is a signal that the reliability gap can be closed, but it does not save money. The samples are 1–2 runs per arm. The open question: can the check itself be
 cheap?
 
-## 10. SWE-bench Pro: where the bar is unreliable (13:30–14:15)
+## 10. SWE-bench Pro: the cheap one-shot is close, the bar is unreliable (13:30–14:15)
 
-**Headline:** On a published hard set, the strong model is not always reliable.
+**Headline:** On a published sample, Haiku alone is within one task of Opus at a tenth of the cost. The
+open question is the tasks where Opus itself is unreliable.
 
-**Show:** 20 Python tasks drawn at random, Claude Code in each task's container (Harbor). The Opus 5.5
-one-shot passed 17. Two tasks passed only 2 of 5 tries.
+**Show:** 20 Python tasks drawn at random, Claude Code in each task's container (Harbor), one one-shot try
+per model:
 
-**Notes:** Those two are beyond candidates. A harness that raises their pass rate does something that the
-strong model alone cannot do reliably. This is one benchmark and one sample of 20.
+| Model | Passed | Cost |
+|---|---|---|
+| Opus 5.5 | 18/20 | $5.79 |
+| Sonnet 5.5 | 18/20 | $2.57 |
+| Haiku 5.5 | 17/20 | $0.54 |
+
+Two tasks passed only 2 of 5 Opus tries.
+
+**Notes:** These tasks are not lift candidates: a cheap model alone gets nearly all of them, so a harness
+has little to add on them. The two unreliable tasks are beyond candidates: a harness that raises their pass
+rate does something the strong model alone cannot do reliably. Limits: 20 tasks, one try per model, and
+trials that died in container setup were rerun. One try is a pass rate, not reliability (pass^k).
 
 ## 11. What this means for building a harness (14:15–15:30)
 
@@ -249,8 +261,8 @@ run, traceability when a long task goes wrong, and design quality under a follow
 | "Why did full Cadence fail on Haiku?" | Two Cadence defects: a review stage with no cycle limit, and a gate that depends on the orchestrator recording its own delegations. Both are filed (cadence#63, #64). The pilot is n = 1. |
 | "Isn't Haiku just not smart enough?" | The transcripts say no. Haiku took more turns than Opus (166 against 90), hit the second defect in 5 of 5 runs, and diagnosed it once. It chose to leave it out. A harness can check that scope decision. |
 | "What is B01? Can I see it?" | A private brownfield bug in a multi-service application with stacked faults. The code belongs to a third party, so we publish only its scores and the grader design. |
-| "The review loop costs as much as Opus. Why use it?" | It closed the reliability gap. The cost is the open question. The next arms try cheap checks: a Haiku reviewer, and executable contracts with a stop gate. If none matches the bar, the harness is a governance tool, not a cost tool. |
-| "What about the contamination incident?" | Processes from earlier B01 runs outlived them. Every run was regraded with an isolated grader; no grade changed. Each trial now runs in its own container. |
-| "Why SWE-bench Pro?" | For comparison with outside numbers, filtered by the same calibration rule. Two of 20 tasks are beyond candidates. |
+| "The review loop costs as much as Opus. Why use it?" | In 3 valid runs (2 Haiku, 1 Sonnet) it closed the reliability gap: a signal, not yet a rate. The cost is the open question. The next arms try cheap checks: a Haiku reviewer, and executable contracts with a stop gate. If none matches the bar, the harness is a governance tool, not a cost tool. |
+| "What about the contamination incident?" | Processes from earlier B01 runs outlived them. Every run was regraded with an isolated grader; no grade changed. Future trials will each run in their own container (harness-benchmark#10, open). |
+| "Why SWE-bench Pro?" | For comparison with outside numbers, filtered by the same calibration rule. On our sample of 20, Haiku alone passed 17 and Opus 18, so it has no clear lift tasks; two tasks are beyond candidates. |
 | "Could a one-shot just be asked to write a plan and tests?" | It could. That is a harness in a prompt, with no independent check and no enforcement. The baseline does not allow it, so the comparison stays fair. |
 | "What about the bugs in your own harness?" | They are real, and part of the result: cadence#56 and #57 in iteration 4, cadence#63–#66 from the pilot. The harness is software, and it needs the review it gives. |

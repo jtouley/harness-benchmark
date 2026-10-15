@@ -35,10 +35,17 @@ The three stacks answer the same seven checks from the same inputs, so they must
 
 1. **Against the answer key.** Each check's answer, rounded (money to whole cents, counts exact), is
    compared to the hashed key from the reference solution.
-2. **Against each other.** For each pair of delivered solutions, the fact tables are compared on the
-   shared grain: row count, sum of net obligations, and the set of keys (county FIPS, wiki, window
-   start). Differential testing finds disagreements that a single key cannot, and a disagreement names
-   the table where two interpretations split.
+2. **Against each other.** For each pair of delivered solutions, the same tables are compared, each on
+   its own grain:
+   - the spending fact (one award transaction): row count, sum of net obligations, and the set of
+     county FIPS codes;
+   - the edit fact (one change event): row count, net bytes, and the set of event ids (`meta.id`);
+   - the window mart: the set of keys (wiki, namespace, actor type, window start) and the edit count
+     per key;
+   - `late_events`: the set of event ids.
+
+   Differential testing finds disagreements that a single key cannot, and a disagreement names the
+   table where two interpretations split.
 3. **Against itself.** `make build` twice and `make stream` stopped and started give the same outputs
    (traps B7, F6).
 
@@ -62,7 +69,8 @@ This is the measure the family exists for.
    3. What is the cheapest fix point (the file or artifact to change)?
    4. How much of the delivered work must be redone (a list of tables or phases)?
 4. **Scores.**
-   - Diagnosis accuracy: the cause matches the grader's trap id (questions 1 and 3).
+   - Diagnosis accuracy: the cause matches the grader's trap id, or any id in its
+     [equivalence set](pipeline-traps.md#equivalent-traps) (questions 1 and 3).
    - Origin accuracy: question 2 matches the human adjudication.
    - Audit cost: the auditor's wall time and tokens.
    - Repair cost: an arm-matched repair agent fixes the run from the auditor's answer; its time, tokens and
@@ -145,7 +153,11 @@ that starts and collects trials.
      matrix;
    - each catalog fact checked against them.
 2. The replay server: serves the capture as SSE, honours `Last-Event-ID`, and injects faults F1 to F6 from
-   a seed. Tests prove each fault occurs at its scheduled point.
+   a seed. Tests prove each fault occurs at its scheduled point, and also that:
+   - every event of F4's batch is late under the spec's rule (at its first arrival, the highest event
+     time before it is more than 10 minutes past its window's end), and no other event is;
+   - after an F2 reconnect, the re-sent events have the same timestamp as the `Last-Event-ID`;
+   - the capture contains canary events (W1).
 3. One reference solution per stack, each passing every check twice and agreeing with the other two.
 4. The answer key, and the single-trap wrong answers for the diagnosis step.
 5. Calibration ([rule](../next-steps.md#task-selection-calibrated-against-the-bar-owner-direction-2026-10-13)):

@@ -20,11 +20,16 @@ Over four rounds of measurement, the answer moved twice.
    independent review recovers it.** Opus alone fixed both defects of a brownfield bug in 10 runs of 10.
    Haiku alone fixed the main path in 5 of 5 and the second defect in 0 of 5. Sonnet fixed it in 1 of 5.
    A minimal review loop (the cheap model works, an independent reviewer checks the running system) fixed
-   both in all 3 valid runs, but at about the Opus one-shot's cost.
+   both in 2 of 2 Haiku runs and 1 of 1 Sonnet run, at about the Opus one-shot's cost. That is a signal,
+   not yet a reliability measure.
 4. **Why the cheap models miss is specific and fixable.** Haiku saw the second defect in every run,
    diagnosed it correctly once, then decided to "leave that out of this change and report it" and never
    reported it. Sonnet mostly never exercised that path. The gap is scope judgment and coverage, not
    reasoning depth. Haiku took more turns than Opus.
+5. **On a published benchmark sample, the cheap one-shot is close to the strong one.** On 20 SWE-bench Pro
+   tasks, one try per model, Opus 5.5 passed 18, Sonnet 5.5 18 and Haiku 5.5 17, and Haiku cost about one
+   tenth of Opus. Those tasks leave a harness little to lift. Two tasks passed only 2 of 5 Opus tries; they,
+   and reliability over repeats, are the open questions there.
 
 Our current position: **a harness earns its cost by verification and by holding scope, not by
 ceremony.** A planning pipeline on a weak model mostly adds places to stop. An independent check of the
@@ -73,9 +78,10 @@ Three feature tasks on a 300-line Python ledger (T04–T06), one run per cell, o
 | Arm | Delivered | Blind quality | Crashes shipped | Time per task |
 |---|---|---|---|---|
 | Opus 5.5 one-shot | 3 of 3 | 8.00 | 2 | 2 min |
+| ship-feature (Opus) | 2 of 3 | 7.88 (2 tasks) | 0 | 42 min |
 | Cadence (Opus) | 3 of 3 | 7.33 | 0 | 63 min |
 | Sonnet 5.5 one-shot | 3 of 3 | 7.08 | 2 | 2 min |
-| Haiku 4.5 one-shot | 1 of 3 | 3.50 | 2 | 4 min |
+| Haiku 4.5 one-shot | 1 of 3 | 3.50 (1 task) | 2 | 4 min |
 
 No quality gain from the harness. What it did give: no crash in delivered code, an audit trail with
 hash-attested reviews by separate agents, completion or a recorded stop, and hooks the model cannot skip.
@@ -113,9 +119,11 @@ scores are.
 
 All runs were regraded with an isolated grader after a contamination incident (§5); no grade changed.
 
-**Reading.** The independent review closes the reliability gap, in 3 of 3 valid runs. It does not save
-money. The reviewer must run and exercise the stack to check the work, and that costs about as much as
-Opus doing the task.
+**Reading.** An Opus review loop fixed both defects in 2 of 2 Haiku runs and 1 of 1 Sonnet run, where the
+cheap one-shots fixed both in 0 of 5 and 1 of 5. That is a signal, not yet a reliability measure (pass^k
+needs k ≥ 3). Two further review-loop runs were set aside as invalid (Docker went down during the run);
+they are not in the table (§5). It does not save money. The reviewer must run and exercise the stack to
+check the work, and that costs about as much as Opus doing the task.
 
 ### 3.4 Why the cheap models miss
 
@@ -148,16 +156,32 @@ This points to two harness mechanisms that need no strong model:
 
 ### 3.5 A published benchmark: where the bar is unreliable
 
-SWE-bench Pro (Harbor, Claude Code in each task's container), 20 Python tasks drawn at random
-([calibration](../calibration/README.md)): the Opus 5.5 one-shot passed 17. Two tasks passed only 2 of 5
-tries. Those are beyond candidates: a harness that raises their pass rate does something the strong model
-alone cannot do reliably.
+SWE-bench Pro (Harbor 0.24.0, Claude Code in each task's container), 20 Python tasks drawn at random
+([calibration](../calibration/README.md)), one one-shot try per model:
+
+| Model | Passed | Cost (list prices) | Per task |
+|---|---|---|---|
+| Opus 5.5 | 18/20 | $5.79 | $0.290 |
+| Sonnet 5.5 | 18/20 | $2.57 | $0.129 |
+| Haiku 5.5 | 17/20 | $0.54 | $0.027 |
+
+Pass/fail per task, and the script that merges the runs: [`round2.md`](../calibration/swebench-pro/round2.md).
+
+- **Haiku 5.5 alone is within one task of Opus 5.5, at about one tenth of the cost.** Only one task passed
+  on Opus and failed on both cheaper models, each once; one try does not make it a lift task. So this
+  sample is not where a harness can show lift: a cheap model alone already gets nearly all of it.
+- **Where the bar is unreliable.** Two tasks passed only 2 of 5 Opus tries. Those are beyond candidates: a
+  harness that raises their pass rate does something the strong model alone cannot do reliably.
+- **What one try does not show.** A single pass rate says nothing about the next run. The open measure is
+  reliability over repeats (pass^k) on the beyond tasks and on the tasks the models split on.
+- **Limits.** 20 tasks; one try per model; 15 trials (Haiku 10, Sonnet 4, Opus 1) died in container setup
+  before the model ran and were rerun once; they are not counted as fails. Cost is computed from token counts at list prices, because Claude Code misprices Haiku 5.5.
 
 ## 4. What this means for building a harness
 
 | Holds up | Does not |
 |---|---|
-| Independent verification of the running result (it recovered every cheap-model miss in B01) | A long planning pipeline on a weak orchestrator (more places to stop) |
+| Independent verification of the running result (a signal: it recovered the cheap-model miss in 2/2 Haiku and 1/1 Sonnet B01 runs) | A long planning pipeline on a weak orchestrator (more places to stop) |
 | An audit trail with attested authorship (it makes failures diagnosable in minutes) | Review by a strong model as the verification step, if the goal is cost |
 | Enforcement the model cannot skip (gates, stop hooks) | Review as a stand-in for executable checks |
 | Holding scope: a dropped part of the request is a defect | Deferral checks that look only at form (a ticket, a label) |
@@ -170,13 +194,17 @@ peer of its stage (cadence#66); deferrals are judged in real time (cadence#68).
 
 - **Small samples.** Iteration 4 and the pilot are one run per cell. B01 has 5–10 runs per one-shot arm
   and 1–2 per review-loop arm. Only the largest gaps are outside noise.
+- **Invalid runs set aside.** Two further review-loop runs were set aside as invalid (Docker went down
+  during the run). They are not counted in either review-loop arm, so the 2/2 and 1/1 cells are the valid
+  runs only.
 - **Contamination incident.** The B01 runs ran agents on the host. Workers they started outlived their
   runs and shared a message broker with later runs and the grader. All runs were regraded with an isolated
-  grader (a private broker database, stray processes killed); no grade changed. From now on each trial runs
-  in its own container ([harness-benchmark#10](https://github.com/jtouley/harness-benchmark/issues/10)).
+  grader (a private broker database, stray processes killed); no grade changed. Future trials will each run
+  in their own container ([harness-benchmark#10](https://github.com/jtouley/harness-benchmark/issues/10), open).
 - **Infrastructure losses.** Emulated x86 containers crashed the test laptop's Docker three times; the
   affected trials are recorded as infrastructure errors, not failures, and were rerun.
-- **One task per class so far.** B01 is one bug; SWE-bench Pro is one benchmark's sample of 20.
+- **One task per class so far.** B01 is one bug; SWE-bench Pro is one benchmark's sample of 20, with one
+  try per model.
 - **Author bias.** Mitigated by pre-registration, blind grading, and stating the unfavorable results first.
 
 ## 6. What comes next
