@@ -212,17 +212,7 @@ def _sort_manifest_files(text: str) -> str:
 def fingerprint(sb: Sandbox, lock: Lock) -> dict:
     """Tree hash of the installed sandbox after declared normalization."""
     norm = normalizer(lock)
-    # Claude Code writes these on Linux and omits them under CI=1 on macOS.
-    # The stamp next to policy-limits.json is already lockfile-ignored because
-    # its name changes every run; the two siblings are the same class of file.
     ignored = [re.compile(r) for r in lock.ignore]
-    ignored.extend(
-        re.compile(p)
-        for p in (
-            r"^home/\.claude/policy-limits\.json$",
-            r"^home/\.claude/remote-settings\.json$",
-        )
-    )
     rows = []
     for top in ("home", "proj"):
         for logical, real in iter_files(sb.root / top, top):
