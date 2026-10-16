@@ -241,3 +241,10 @@ def test_a_mart_folder_name_is_a_name_not_sql(tmp_path, name):
     con = oracle.connect(repo)
     quoted = name.replace('"', '""')
     assert con.sql(f'select n from "{quoted}"').fetchall() == [(42,)]
+
+
+def test_numbered_entries_at_the_top_level_win_over_a_stray_checks_key(key, tmp_path):
+    """`checks:` is unwrapped only when the top level has no numbered entries (PR #31 review)."""
+    oracle_map = {f"check_{n}": v for n, v in SQL_MAP["checks"].items()} | {"checks": ["all seven, above"]}
+    result = grade.grade(write_candidate(tmp_path, key, answers(key), oracle_map=oracle_map), key)
+    assert result["passed"] == 7, {n: c for n, c in result["checks"].items() if not c["pass"]}

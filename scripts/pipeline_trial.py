@@ -127,13 +127,16 @@ def summarize(run: Path, pricing: dict) -> dict:
         meta = {**meta, "model": src_meta.get("model")}
         timing = {**src_timing, "grader_seconds": timing.get("grader_seconds", 0)}
     cost, tokens = cost_and_tokens(result, pricing, meta.get("model"))
-    kind = outcome(run, result, timing)
+    kind = ("void" if meta.get("void") else "diagnostic" if meta.get("diagnostic")
+            else outcome(run, result, timing))
     builds = grade.get("build") or []
     first = builds[0]["seconds"] if builds else None
     wall = round(timing.get("agent_seconds", 0) + timing.get("grader_seconds", 0), 1) if timing else None
     reward = grade.get("reward", 0.0)
     return {
-        "run": run.name, "task": meta.get("task"), "mode": meta.get("mode", "agent"), "model": meta.get("model"),
+        "run": run.name, "run_path": str(run), "void": meta.get("void"), "superseded_by": None,
+        "diagnostic": meta.get("diagnostic"), "counted": kind not in ("void", "diagnostic"),
+        "task": meta.get("task"), "mode": meta.get("mode", "agent"), "model": meta.get("model"),
         "outcome": kind,
         "counts_as_model_failure": {"graded": reward < 1.0, "guard_cap": True}.get(kind, False),
         "reward": reward, "checks": f"{grade.get('passed', 0)}/{grade.get('total', 7)}",
@@ -145,6 +148,30 @@ def summarize(run: Path, pricing: dict) -> dict:
         "wall_seconds_without_first_build": round(wall - first, 1) if wall is not None and first is not None else wall,
         "agent_exit": timing.get("agent_exit"),
     }
+
+
+def summarize_all(runs: list[Path], pricing: dict) -> list[dict]:
+    """Rows for every run. A void run, and a run that a later regrade replaces, stay in the table with
+    `counted` false: neither is a result, and neither counts as a model failure."""
+    rows = [summarize(run, pricing) for run in runs]
+    by_path = {Path(r["run_path"]).resolve(): r for r in rows}
+    for run, row in zip(runs, rows):
+        meta = _load(run / "trial.json")
+        if meta.get("mode") == "regrade" and meta.get("regrade_of"):
+            src = Path(meta["regrade_of"])
+            src = src if src.is_absolute() else run.parent / src.name
+            original = by_path.get(src.resolve())
+            if original is not None:
+                original["superseded_by"] = row["run_path"]
+                original["counted"] = False
+    for row in rows:
+        if not row["counted"]:
+            row["counts_as_model_failure"] = False
+    return rows
+
+
+def counted_rows(rows: list[dict]) -> list[dict]:
+    return [r for r in rows if r["counted"]]
 
 
 # --- caps --------------------------------------------------------------------------------------------
@@ -164,9 +191,12 @@ def caps_from_measurements(grades: list[dict]) -> dict:
 # --- running ---------------------------------------------------------------------------------------
 
 def repo_from_saved(saved: Path, out: Path) -> Path:
-    """A git repository from a run's saved working tree (`repo/`), committed with its own .gitignore."""
+    """A git repository from a run's saved working tree (`repo/`), committed with its own .gitignore only
+    (not the host's global excludes). Not an exact reproduction: the saved tree has no .git, so a file the
+    agent committed although its .gitignore matches it is left out here."""
     shutil.copytree(saved, out, symlinks=True)
-    run = lambda *a: subprocess.run(["git", *a], cwd=out, check=True, capture_output=True)  # noqa: E731
+    run = lambda *a: subprocess.run(["git", "-c", "core.excludesFile=/dev/null", "-c", "core.fsmonitor=false",  # noqa: E731
+                                     "-c", "core.hooksPath=/dev/null", *a], cwd=out, check=True, capture_output=True)
     run("init", "-q", "-b", "main")
     run("add", "-A")
     run("-c", "user.name=harness-benchmark", "-c", "user.email=noreply@example.invalid",
@@ -222,13 +252,14 @@ def run_trial(task: str, out: Path, *, mode: str, model: str | None, plugin_dir:
 
 
 def table(rows: list[dict]) -> str:
-    head = ("| Run | Task | Model / mode | Outcome | Reward | Checks | Tokens in / cache write / cache read / out "
+    head = ("| Run | Task | Model / mode | Outcome | Counted | Reward | Checks | Tokens in / cache write / cache read / out "
             "| Cost (USD) | Agent s | Grader s | Wall s | Wall s w/o 1st build |")
-    lines = [head, "|" + "---|" * 12]
+    lines = [head, "|" + "---|" * 13]
     for r in rows:
         t = r["tokens"]
         lines.append(
-            f"| {r['run']} | {r['task']} | {r['model'] or r['mode']} | {r['outcome']} | {r['reward']} | {r['checks']} "
+            f"| {r['run']} | {r['task']} | {r['model'] or r['mode']} | {r['outcome']} | {'yes' if r['counted'] else 'no'} "
+            f"| {r['reward']} | {r['checks']} "
             f"| {t['input']:,} / {t['cache_write']:,} / {t['cache_read']:,} / {t['output']:,} | {r['cost_usd']} "
             f"| {r['agent_seconds']} | {r['grader_seconds']} | {r['wall_seconds']} "
             f"| {r['wall_seconds_without_first_build']} |")
@@ -249,11 +280,18 @@ def main(argv: list[str] | None = None) -> int:
     c = sub.add_parser("caps", help="set a task's grader caps from its reference trials")
     c.add_argument("task", choices=["P1", "P2", "P3"])
     c.add_argument("runs", type=Path, nargs="+")
+    v = sub.add_parser("void", help="mark a run void (lost to a harness defect, not a result)")
+    v.add_argument("run", type=Path)
+    v.add_argument("--reason", required=True)
     s = sub.add_parser("summary", help="the results table")
     s.add_argument("runs", type=Path, nargs="+")
     s.add_argument("--json", type=Path)
     args = ap.parse_args(argv)
 
+    if args.cmd == "void":
+        meta = _load(args.run / "trial.json")
+        (args.run / "trial.json").write_text(json.dumps({**meta, "void": args.reason}, indent=1) + "\n")
+        return 0
     caps = json.loads(CAPS.read_text(encoding="utf-8"))
     if args.cmd == "run":
         if args.mode == "agent" and not args.model:
@@ -276,7 +314,8 @@ def main(argv: list[str] | None = None) -> int:
         print(json.dumps(caps["tasks"][args.task], indent=1))
         return 0
     pricing = json.loads(PRICING.read_text(encoding="utf-8"))
-    rows = [summarize(run, pricing) for run in args.runs if (run / "timing.json").exists() or (run / "trial.json").exists()]
+    rows = summarize_all([run for run in args.runs if (run / "timing.json").exists() or (run / "trial.json").exists()],
+                         pricing)
     print(table(rows))
     if args.json:
         args.json.write_text(json.dumps(rows, indent=1) + "\n", encoding="utf-8")

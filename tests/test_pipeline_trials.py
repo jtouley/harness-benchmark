@@ -123,3 +123,45 @@ def test_a_regrade_repository_is_the_saved_working_tree_with_its_own_ignores(tmp
     repo = pt.repo_from_saved(saved, tmp_path / "repo")
     tracked = subprocess.run(["git", "ls-files"], cwd=repo, capture_output=True, text=True).stdout.split()
     assert tracked == [".gitignore", "pipeline/batch.py"]
+
+
+def test_void_and_superseded_rows_are_kept_but_not_counted(tmp_path):
+    """A void run (lost to a harness defect) and a run regraded later stay in the table, uncounted."""
+    void = write_run(tmp_path / "v", grade={"reward": 0.0}, meta={"void": "grader deleted uncommitted work"})
+    first = write_run(tmp_path / "f", grade={"reward": 0.0})
+    regrade = write_run(tmp_path / "r", grade={"reward": 1.0, "passed": 7},
+                        meta={"mode": "regrade", "regrade_of": str(first)})
+    rows = {r["run_path"]: r for r in pt.summarize_all([void, first, regrade], PRICING)}
+    v, f, r = rows[str(void)], rows[str(first)], rows[str(regrade)]
+    assert v["outcome"] == "void" and v["void"] == "grader deleted uncommitted work"
+    assert f["superseded_by"] == str(regrade)
+    assert not v["counted"] and not f["counted"] and r["counted"]
+    assert v["counts_as_model_failure"] is False and f["counts_as_model_failure"] is False
+    assert r["counts_as_model_failure"] is False  # reward 1.0
+    assert pt.counted_rows([v, f, r]) == [r]
+
+
+def test_void_marks_a_run_with_its_reason(tmp_path):
+    run = write_run(tmp_path, grade={"reward": 0.0})
+    pt.main(["void", str(run), "--reason", "stopped by the operator"])
+    assert json.loads((run / "trial.json").read_text())["void"] == "stopped by the operator"
+
+
+def test_a_diagnostic_regrade_is_shown_but_never_counted(tmp_path):
+    run = write_run(tmp_path, grade={"reward": 0.4286, "passed": 3},
+                    meta={"diagnostic": "the map was edited by the operator"})
+    row = pt.summarize_all([run], PRICING)[0]
+    assert row["outcome"] == "diagnostic" and not row["counted"] and row["counts_as_model_failure"] is False
+
+
+def test_a_regrade_repository_ignores_the_hosts_global_gitignore(tmp_path, monkeypatch):
+    excludes = tmp_path / "global-ignore"
+    excludes.write_text("*.py\n")
+    config = tmp_path / "gitconfig"
+    config.write_text(f"[core]\n\texcludesFile = {excludes}\n")
+    monkeypatch.setenv("GIT_CONFIG_GLOBAL", str(config))
+    saved = tmp_path / "run" / "repo"
+    saved.mkdir(parents=True)
+    (saved / "batch.py").write_text("print('x')\n")
+    repo = pt.repo_from_saved(saved, tmp_path / "repo")
+    assert subprocess.run(["git", "ls-files"], cwd=repo, capture_output=True, text=True).stdout.split() == ["batch.py"]
