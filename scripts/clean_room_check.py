@@ -53,6 +53,7 @@ usage: clean_room_check.py TRANSCRIPT [TRANSCRIPT ...] [--agents-dir DIR --agent
 from __future__ import annotations
 
 import argparse
+import itertools
 import json
 import posixpath
 import re
@@ -77,9 +78,11 @@ PATTERN_FIRST = {"grep", "egrep", "fgrep", "rg", "ag", "ack", "ugrep", "fd"}
 SCRIPT_FLAG = re.compile(r"-[a-zA-Z]*c[a-zA-Z]*")  # sh -c, bash -lc, zsh -ec
 FIND_GLOBAL = re.compile(r"-[HLP]|-O\d*")
 FIND_GLOBAL_VALUE = {"-D"}
-GIT_VALUE = {"-c", "--git-dir", "--work-tree", "--namespace", "--exec-path", "--config-env"}
+GIT_VALUE = {"-c", "--namespace", "--exec-path", "--config-env"}
+GIT_FOLDER = {"-C", "--git-dir", "--work-tree"}  # the repository that git grep reads
 # Per tool, the options that take the next word. A "pattern" option gives the pattern, so no
 # positional word is the pattern. A "files" option lists files, and then there is no pattern.
+# A "count" option takes the next word only when it is a number (ack and ag -C [NUM]).
 # A "folder" option names a folder. An option missing from a table takes no word, so its next
 # word is read as the pattern or a folder.
 _GREP = {"-A", "-B", "-C", "-m", "-d", "-D", "--context", "--before-context", "--after-context",
@@ -94,12 +97,10 @@ OPTION_KINDS: dict[str, dict[str, set[str]]] = {
                      "--max-columns", "--replace", "--sort", "--sortr", "--pre", "--pre-glob", "--engine",
                      "--path-separator", "--colors", "--ignore-file"},
            "pattern": _PATTERN, "files": {"--files"}},
-    "ag": {"value": {"-A", "-B", "-C", "-m", "-G", "--depth", "--ignore", "--context", "--max-count",
-                     "--file-search-regex"},
-           "pattern": {"-g"}},
-    "ack": {"value": {"-A", "-B", "-C", "-m", "--type", "--ignore-dir", "--ignore-file", "--context",
-                      "--max-count", "--output"},
-            "pattern": {"-g", "--match"}, "files": {"-f"}},
+    "ag": {"value": {"-A", "-B", "-m", "-G", "--depth", "--ignore", "--max-count", "--file-search-regex"},
+           "count": {"-C", "--context"}, "pattern": {"-g"}},
+    "ack": {"value": {"-A", "-B", "-m", "--type", "--ignore-dir", "--ignore-file", "--max-count", "--output"},
+            "count": {"-C", "--context"}, "pattern": {"-g", "--match"}, "files": {"-f"}},
     "fd": {"value": {"-e", "-E", "-t", "-d", "-x", "-X", "-S", "-j", "-c", "--extension", "--exclude", "--type",
                      "--max-depth", "--min-depth", "--exact-depth", "--exec", "--exec-batch", "--size",
                      "--threads", "--changed-within", "--changed-before", "--owner", "--max-results", "--color"},
@@ -107,7 +108,7 @@ OPTION_KINDS: dict[str, dict[str, set[str]]] = {
 }
 for _alias in ("egrep", "fgrep", "ugrep"):
     OPTION_KINDS[_alias] = OPTION_KINDS["grep"]
-TAKES_NEXT = {"value", "pattern", "folder"}
+TAKES_NEXT = {"value", "pattern", "folder", "count"}
 SEARCH_TOOLS = ("Grep", "Glob")
 LOADED_FILE = re.compile(r"Contents of (\S+?\.md)\b")
 AGENT_TOOLS = ("Task", "Agent")
@@ -222,8 +223,12 @@ def _command_locations(command: str, cwd: str | None) -> list[str]:
     return found
 
 
+# `\;`, `';'` and `";"` as a whole word end a find or fd -exec: they are an argument, not a separator.
+QUOTED_SEMICOLON = re.compile(r"(?<!\S)(?:\\;|';'|\";\")(?!\S)")
+
+
 def _shell_words(command: str) -> list[str]:
-    lexer = shlex.shlex(command, posix=True, punctuation_chars=PUNCTUATION)
+    lexer = shlex.shlex(QUOTED_SEMICOLON.sub("SEMICOLON", command), posix=True, punctuation_chars=PUNCTUATION)
     lexer.whitespace_split = True
     lexer.commenters = ""  # bash starts a comment only at a word start; counting a comment fails closed
     return list(lexer)
@@ -233,13 +238,17 @@ def _segments(words: list[str]):
     """Split at shell separators. A `sh -c` or `eval` script stays a word and is also returned to be read."""
     segment: list[str] = []
     scripts: list[str] = []
-    for i, word in enumerate(words):
+    awaiting = False  # bash reads the script from the first word after -c that is not an option
+    for word in words:
         if all(c in PUNCTUATION for c in word):
             yield segment, scripts
-            segment, scripts = [], []
+            segment, scripts, awaiting = [], [], False
             continue
-        if i and (SCRIPT_FLAG.fullmatch(words[i - 1]) or words[i - 1] == "eval") and " " in word:
-            scripts.append(word)
+        if awaiting and not word.startswith("-"):
+            scripts += [word] if " " in word else []
+            awaiting = False
+        elif SCRIPT_FLAG.fullmatch(word) or word == "eval":
+            awaiting = True
         segment.append(word)
     yield segment, scripts
 
@@ -277,21 +286,29 @@ def _find_folders(args: list[str]) -> list[str]:
 
 
 def _git_grep_folders(args: list[str]) -> list[str]:
-    """`git [-C dir] grep` reads the repository at dir, or at the current folder."""
-    folder = "."
-    skip = False
-    for i, arg in enumerate(args):
-        if skip:
-            skip = False
-        elif arg == "-C" and i + 1 < len(args):
-            folder, skip = args[i + 1], True
-        elif arg in GIT_VALUE:
-            skip = True
+    """`git grep` reads the repository that -C, --git-dir or --work-tree names, or the current folder."""
+    folders: list[str] = []
+    pending = None
+    for arg in _split_equals(args, GIT_FOLDER | GIT_VALUE):
+        if pending:
+            folders += [arg] if pending in GIT_FOLDER else []
+            pending = None
+        elif arg in GIT_FOLDER | GIT_VALUE:
+            pending = arg
         elif arg == "grep":
-            return [folder]
+            return folders or ["."]
         elif not arg.startswith("-"):
             return []
     return []
+
+
+def _split_equals(args: list[str], options: set[str]) -> list[str]:
+    """`--opt=value` as the two words `--opt value`, for the options named."""
+    words: list[str] = []
+    for arg in args:
+        option, has_value, value = arg.partition("=")
+        words += [option, value] if has_value and option in options else [arg]
+    return words
 
 
 def _pattern_first_folders(name: str, args: list[str]) -> list[str]:
@@ -313,6 +330,7 @@ def _parse_options(name: str, args: list[str]) -> tuple[set[str], set[str], list
     named: list[str] = []
     pending = None
     for arg in args:
+        pending = _still_pending(pending, arg)
         if pending:
             named += [arg] if pending == "folder" else []
             pending = None
@@ -325,6 +343,11 @@ def _parse_options(name: str, args: list[str]) -> tuple[set[str], set[str], list
             pending = kind if takes_next else None
             named += [attached] if kind == "folder" and attached else []
     return options, kinds, positional, named
+
+
+def _still_pending(pending: str | None, arg: str) -> str | None:
+    """A "count" option takes the word only if it is a number; otherwise the word is read as usual."""
+    return None if pending == "count" and not arg.isdigit() else pending
 
 
 def _option(name: str, arg: str) -> tuple[str | None, bool, str]:
@@ -346,7 +369,8 @@ def _kind(name: str, option: str) -> str | None:
 
 def _recursive(options: set[str], args: list[str]) -> bool:
     short = any(not o.startswith("--") and any(c in o[1:] for c in "rR") for o in options)
-    return short or bool(options & {"--recursive", "--dereference-recursive"}) or "recurse" in " ".join(args)
+    by_name = bool(options & {"--recursive", "--dereference-recursive"}) or "--directories=recurse" in args
+    return short or by_name or "-drecurse" in args or any(pair == ("-d", "recurse") for pair in itertools.pairwise(args))
 
 
 def _names_search(command: str) -> bool:

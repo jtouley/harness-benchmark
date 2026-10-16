@@ -363,11 +363,18 @@ SEARCH_OUTSIDE = [
     "fd --search-path /home/u SKILL", "fd --base-directory=/home/u SKILL", "rg --sort path TDD /home/u",
     "rg -uuu TDD /home/u", "rg -t py TDD /home/u", "grep -rn -A 3 TDD /home/u", "rg -g '*.md' TDD /home/u",
     "grep -rnA 3 TDD /home/u", "grep -rne TDD /home/u", "rg --max-depth=2 TDD /home/u",
+    # re-review of #33: optional values, words between -c and its script, git repository options
+    "ack -C TDD /home/u", "ack --context TDD /home/u", "ag -C TDD /home/u", "ag --context TDD /home/u",
+    "bash -c -- 'grep -rn TDD /home/u'", 'bash -c -- "cd /home/u && rg TDD"', "sh -c -e 'rg TDD /home/u'",
+    "git --git-dir /home/u/.git grep TDD", "git --work-tree /home/u grep TDD",
+    "git --git-dir=/home/u/.git grep TDD", "git --work-tree=/home/u grep TDD",
+    "fd -x cat {} \\; SKILL /home/u", "fd -x cat {} ';' SKILL /home/u",
 ]
 SEARCH_INSIDE = [
     "rg -t py TDD src", "grep -rn -A 3 TDD src", "fd -e py test src",
     "python3 -c \"import os  # don't\"", "grep -rn 'a#b' src",
-    "rg --stats '/api/' src", "grep -r -E 'a|b' src", "rg --no-config TDD src", "grep -rnA 3 TDD src",
+    "rg --stats '/api/' src", "grep -rnA 3 TDD src", "rg --no-config TDD src", "grep -r -E 'a|b' src",
+    "ack -C 2 TDD src", "ag --context=2 TDD src", "grep -n TDD recurse_notes.txt",
 ]
 
 
@@ -391,3 +398,14 @@ def test_an_internal_error_exits_with_a_code_that_is_not_a_verdict(tmp_path, mon
     monkeypatch.setattr(crc, "scan", lambda *a, **k: (_ for _ in ()).throw(RuntimeError("boom")))
     assert crc.main([str(t)]) == crc.EXIT_ERROR
     assert crc.EXIT_ERROR not in (0, 1, 2, 3)
+
+
+@pytest.mark.parametrize("tool,kind,option", [
+    (tool, kind, option) for tool, kinds in crc.OPTION_KINDS.items() for kind, names in kinds.items()
+    for option in sorted(names)])
+def test_every_option_in_the_tables_still_reads_the_folder_after_it(tool, kind, option):
+    """Each table entry, in front of a folder outside the allowlist: the folder is a contact."""
+    recursive = "-r " if tool in {"grep", "egrep", "fgrep"} else ""
+    words = {"value": f"{option} 3 TDD", "count": f"{option} TDD", "pattern": f"{option} TDD",
+             "files": option, "folder": f"{option} /home/u TDD"}[kind]
+    assert _outside(f"{tool} {recursive}{words} /home/u"), (tool, option)
