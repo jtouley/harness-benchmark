@@ -293,6 +293,13 @@ def test_reading_a_saved_tool_output_of_the_session_is_not_a_contact(tmp_path):
     "sh -c 'find / -name SKILL.md -exec cat {} +'",
     'bash -c "grep -rl TDD ~"',
     "egrep -r TDD /home/u",
+    "cd ~ && grep -rn TDD",
+    "cd ~ && rg TDD",
+    "locate SKILL.md",
+    "x=$(rg -l TDD ~)",
+    "grep -rn -e TDD /home/u",
+    "fd SKILL.md /",
+    "grep -rn 'open quote /home/u",
 ])
 def test_a_search_outside_the_allowed_folders_is_a_contact(tmp_path, command):
     """R7 on PR #8: a search names folders, and its pattern can name any file in them."""
@@ -312,6 +319,13 @@ def test_a_search_tool_over_a_folder_outside_the_allowed_ones_is_a_contact(tmp_p
     [("Grep", {"pattern": "budget", "path": f"{REPO}/ledgerlite"})],
     [("Bash", {"command": f'cd "{REPO}" && cat CLAUDE.md'})],
     [("Bash", {"command": "echo $HOME && ls ~"})],
+    # A search's pattern is text, not a folder (PR #9 review F).
+    [("Bash", {"command": "grep -rn '%.2f' ledgerlite/ ; echo $?"})],
+    [("Bash", {"command": "rg -n '/api/' src"})],
+    [("Bash", {"command": "grep -rn 'reviews/plan_' ."})],
+    [("Bash", {"command": "rg -n '\\.__name__' && awk '{print $2}' out.txt"})],
+    [("Bash", {"command": "grep -rn -e '~/notes' -e '$HOME' tests"})],
+    [("Bash", {"command": "find ledgerlite -path '*/x/*' -name '*.py'"})],
 ])
 def test_ordinary_work_inside_the_repo_stays_clean(tmp_path, calls):
     t = _transcript(tmp_path, _listing(*BUILTIN), *(_call(name, **inp) for name, inp in calls))
