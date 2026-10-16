@@ -157,7 +157,8 @@ def summarize_all(runs: list[Path], pricing: dict) -> list[dict]:
     by_path = {Path(r["run_path"]).resolve(): r for r in rows}
     for run, row in zip(runs, rows):
         meta = _load(run / "trial.json")
-        if meta.get("mode") == "regrade" and meta.get("regrade_of"):
+        # Only a counted regrade replaces its trial: a diagnostic or void one never removes a result.
+        if meta.get("mode") == "regrade" and meta.get("regrade_of") and row["counted"]:
             src = Path(meta["regrade_of"])
             src = src if src.is_absolute() else run.parent / src.name
             original = by_path.get(src.resolve())

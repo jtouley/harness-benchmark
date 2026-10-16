@@ -165,3 +165,15 @@ def test_a_regrade_repository_ignores_the_hosts_global_gitignore(tmp_path, monke
     (saved / "batch.py").write_text("print('x')\n")
     repo = pt.repo_from_saved(saved, tmp_path / "repo")
     assert subprocess.run(["git", "ls-files"], cwd=repo, capture_output=True, text=True).stdout.split() == ["batch.py"]
+
+
+@pytest.mark.parametrize("mark", [{"diagnostic": "the map was edited by the operator"},
+                                  {"void": "stopped by the operator"}])
+def test_a_regrade_that_is_not_counted_does_not_supersede_the_trial(tmp_path, mark):
+    trial_run = write_run(tmp_path / "t", grade={"reward": 0.0})
+    regrade = write_run(tmp_path / "r", grade={"reward": 1.0, "passed": 7},
+                        meta={"mode": "regrade", "regrade_of": str(trial_run), **mark})
+    rows = {r["run_path"]: r for r in pt.summarize_all([trial_run, regrade], PRICING)}
+    assert rows[str(trial_run)]["counted"] and rows[str(trial_run)]["superseded_by"] is None
+    assert not rows[str(regrade)]["counted"]
+    assert pt.counted_rows(list(rows.values())) == [rows[str(trial_run)]]

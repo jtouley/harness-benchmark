@@ -28,6 +28,9 @@ QUERY_KEYS = ("sql", "query", "view", "sql_view", "select")
 TABLE_KEYS = ("table", "model", "mart", "relation", "path", "source", "name")
 COLUMN_KEYS = ("column", "columns", "measure", "measures", "value", "values", "metric", "metrics", "field", "fields")
 CHECKS = tuple(str(n) for n in range(1, 8))
+# A top-level key that names a check (`1`, `check_1`, `q1`, `check1_net_obligations`), not just any key
+# with a digit (`v2`, `schema_v3`): only such keys stop the unwrap of a `checks:` key beside them.
+CHECK_KEY = re.compile(r"^(?:check|q|question)?[_\- ]?0*[1-7](?:\D|$)", re.IGNORECASE)
 
 
 class MapError(Exception):
@@ -54,7 +57,7 @@ def load_map(repo: Path) -> dict[str, object]:
         doc = yaml.safe_load(path.read_text(encoding="utf-8"))
     except yaml.YAMLError as exc:
         raise MapError(f"oracle_map.yml is not valid YAML: {exc}") from exc
-    numbered = isinstance(doc, dict) and any(_number(k) in CHECKS for k in doc)
+    numbered = isinstance(doc, dict) and any(CHECK_KEY.match(str(k)) for k in doc)
     wrapper = next((v for k, v in doc.items() if str(k).lower() == "checks" and isinstance(v, (dict, list))),
                    None) if isinstance(doc, dict) and not numbered else None
     if wrapper is not None:

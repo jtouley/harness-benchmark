@@ -392,7 +392,7 @@ def test_pipeline_trial_isolates_the_grader_from_the_candidates_make(pipeline_im
     assert not (out / "repo" / ".git").exists()
     # The core.fsmonitor hook the agent planted in .git/config never ran as root (nor at all).
     ran = out / "agent" / "fsmonitor-ran"
-    assert not ran.exists() or "root" not in ran.read_text().split(), ran.read_text()
+    assert not ran.exists(), ran.read_text()
 
 
 @docker_tests

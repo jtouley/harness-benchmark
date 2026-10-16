@@ -248,3 +248,10 @@ def test_numbered_entries_at_the_top_level_win_over_a_stray_checks_key(key, tmp_
     oracle_map = {f"check_{n}": v for n, v in SQL_MAP["checks"].items()} | {"checks": ["all seven, above"]}
     result = grade.grade(write_candidate(tmp_path, key, answers(key), oracle_map=oracle_map), key)
     assert result["passed"] == 7, {n: c for n, c in result["checks"].items() if not c["pass"]}
+
+
+@pytest.mark.parametrize("extra", [{"v2": True}, {"schema_v3": "x"}, {"version": 2}])
+def test_a_key_with_a_digit_that_is_not_a_check_does_not_stop_the_checks_unwrap(key, tmp_path, extra):
+    oracle_map = extra | {"checks": [{"id": n, **v} for n, v in SQL_MAP["checks"].items()]}
+    result = grade.grade(write_candidate(tmp_path, key, answers(key), oracle_map=oracle_map), key)
+    assert result["passed"] == 7, {n: c for n, c in result["checks"].items() if not c["pass"]}
