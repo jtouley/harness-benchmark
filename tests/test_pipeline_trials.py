@@ -8,6 +8,7 @@ calibration's hard3 summary.
 from __future__ import annotations
 
 import json
+import subprocess
 from decimal import Decimal
 from pathlib import Path
 
@@ -21,7 +22,7 @@ PRICING = json.loads((Path(__file__).resolve().parents[1] / "pricing.json").read
 def write_run(tmp_path: Path, *, result: dict | None = None, grade: dict | None = None,
               timing: dict | None = None, session: list[str] | None = None, meta: dict | None = None) -> Path:
     run = tmp_path / "run"
-    run.mkdir()
+    run.mkdir(parents=True)
     (run / "result.json").write_text(json.dumps(result if result is not None else {}))
     (run / "grade.json").write_text(json.dumps(grade or {"reward": 0.0}))
     (run / "timing.json").write_text(json.dumps({"agent_seconds": 100.0, "grader_seconds": 50.0,
@@ -95,3 +96,30 @@ def test_the_grading_deadline_is_the_measured_worst_case_plus_half():
     assert caps["grader_deadline"] == 180  # 1.5 x 120: the whole grading run
     assert caps["grader_timeout"] == 180 + pt.RUNNER_MARGIN  # the runner's backstop, above the deadline
     assert caps["measured"] == {"grader_seconds": [100.0, 120.0], "worst": 120.0}
+
+
+def test_a_regrade_keeps_the_original_sessions_cost_and_agent_time_and_its_own_grade(tmp_path):
+    usage = {"claude-opus-5-5": {"inputTokens": 1_000_000, "outputTokens": 0,
+                                 "cacheCreationInputTokens": 0, "cacheReadInputTokens": 0}}
+    original = write_run(tmp_path / "a", result={"modelUsage": usage}, grade={"reward": 0.0, "passed": 0},
+                         timing={"agent_seconds": 1000.0, "grader_seconds": 150.0},
+                         meta={"model": "claude-opus-5-5"})
+    regrade = write_run(tmp_path / "b", grade={"reward": 1.0, "passed": 7, "build": [{"seconds": 20.0}]},
+                        timing={"agent_seconds": 0.1, "grader_seconds": 160.0},
+                        meta={"mode": "regrade", "model": None, "regrade_of": str(original)})
+    row = pt.summarize(regrade, PRICING)
+    assert (row["reward"], row["checks"], row["mode"]) == (1.0, "7/7", "regrade")
+    assert row["model"] == "claude-opus-5-5" and row["cost_usd"] == "4.000000"
+    assert row["agent_seconds"] == 1000.0 and row["grader_seconds"] == 160.0 and row["wall_seconds"] == 1160.0
+
+
+def test_a_regrade_repository_is_the_saved_working_tree_with_its_own_ignores(tmp_path):
+    saved = tmp_path / "run" / "repo"
+    (saved / "pipeline").mkdir(parents=True)
+    (saved / "pipeline" / "batch.py").write_text("print('x')\n")
+    (saved / ".gitignore").write_text("state/\n")
+    (saved / "state").mkdir()
+    (saved / "state" / "pos.json").write_text("{}")
+    repo = pt.repo_from_saved(saved, tmp_path / "repo")
+    tracked = subprocess.run(["git", "ls-files"], cwd=repo, capture_output=True, text=True).stdout.split()
+    assert tracked == [".gitignore", "pipeline/batch.py"]

@@ -44,3 +44,50 @@ token counts at [`pricing.json`](../../pricing.json) list prices.
 A grading run includes two `make build` runs and two `make stream` runs of 30 s and 90 s
 (DURATION), so about 120 s of every deadline is the stream durations themselves. The values are in
 `runner/pipeline/caps.json`. The agent's guard cap is 7,200 s for every one-shot trial.
+
+## Step 3: one-shot trials on P1 (k = 1)
+
+Claude Code 2.1.287 headless (`claude -p`, permission mode `auto`), no plugin, the prompt word for
+word. Guard cap 7,200 s; no run reached it. Every row is graded by the grader as fixed in this change
+(the `-regrade` runs: the saved working tree, graded again in the same image and runner, no agent).
+
+| Run | Model | Reward | Checks (1-7) | Tokens in / cache write / cache read / out | Cost (list prices) | Turns | Agent s | Grading s | Wall s | Wall s without 1st build |
+|---|---|---|---|---|---|---|---|---|---|---|
+| P1-haiku-1 | claude-haiku-5-5 | 0.0 | 0/7 (0000000) | 8,918 / 383,667 / 10,625,494 / 289,178 | $0.30 | 165 | 1,882.6 | 151.4 | 2,034.0 | 2,019.1 |
+| P1-sonnet-1 | claude-sonnet-5-5 | 0.4286 | 3/7 (1010001) | 114 / 128,048 / 4,534,270 / 83,609 | $2.06 | 58 | 1,349.3 | 162.2 | 1,511.5 | 1,492.5 |
+| P1-opus-1 | claude-opus-5-5 | 0.8571 | 6/7 (1110111) | 192 / 208,595 / 12,125,930 / 117,748 | $5.82 | 120 | 1,689.1 | 158.4 | 1,847.5 | 1,833.1 |
+
+Every run built twice with no change to an output, and every consumer read the grading replay to the
+end (`stream_ok`). No API request stalled. Why each check failed:
+
+- **Haiku**: its `oracle_map.yml` answers six checks with SQL over `out/warehouse.duckdb` tables, which
+  the grader cannot see (the spec: "anything downstream reads only `out/marts/`"). Its one answer
+  over a published mart (check 2) is about 1,000 times too large per person (unexplained, no trap).
+- **Sonnet**: check 2 wrong per person (unexplained); checks 5 and 6 name trap **W2**; check 4 below.
+- **Opus**: check 4 below.
+- **Check 4 (Sonnet and Opus)**: both answer "for one month, county totals add up to state totals, and
+  state totals add up to the source total" with a reconciliation query (totals and a mismatch count, or
+  one row per state with `county_total = state_total`). The grader reads check 4 only from rows at
+  month, state and county grain (`no month column found`). Both readings fit the spec's wording;
+  which ones the key accepts is open (TASK-81 item 3), so the grade stands as is.
+
+Cost: Claude Code's own `total_cost_usd` is $9.86 for the Haiku run (it prices `claude-haiku-5-5`,
+which it does not recognise, far above list); the table uses token counts at `pricing.json` prices.
+
+Clean room (`scripts/clean_room_check.py`, with `/trial`, `/tmp` and `/dev` allowed): no skill outside
+the built-in list was shown or called, and no run touched a host configuration path. The verdict is
+still `contaminated` for all three, because shell variables (`$D`, `$P`: the virtual environment's
+package folders) and command tokens the check cannot resolve count as contacts. The stage-0 allowlist
+for this runner is open (criteria-v2 §5.2).
+
+### Harness defects found by these trials, and fixed
+
+1. **Uncommitted work was deleted before grading.** The first Haiku run (`P1-haiku-void`, 2,637 s,
+   $0.33 at list prices) built a working pipeline and never committed it (the prompt does not ask
+   for it). The grader's `git clean -ffdx` deleted every new file, so `make build` failed and it
+   scored 0. The run is void, not a model failure, and was run again. Fix: `--snapshot-worktree`.
+   A Sonnet run started under the same grader was stopped after about 6 minutes and is also void
+   (`P1-sonnet-aborted`; no transcript was kept).
+2. **`checks:` beside other top-level keys was not read.** Opus's map has a `marts:` index beside
+   `checks:`; the grader unwrapped `checks:` only when it was the only key, so it found no entry and
+   scored 0 (`P1-opus-1`, as first graded). Fixed in `pipetask/oracle.py`; regraded: 6/7.

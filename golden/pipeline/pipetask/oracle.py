@@ -4,7 +4,8 @@ The spec asks for "for each question in the Checks list, the table and column (o
 answers it" and fixes no format. So this reader accepts the shapes an engineer would write:
 
 - the seven entries as a mapping keyed by anything that contains the check number (`1`, `check_1`,
-  `q1`, `check1_net_obligations`), optionally under a top-level `checks:` key, or as a list in order;
+  `q1`, `check1_net_obligations`), or as a list in order; optionally under a top-level `checks:` key
+  (also beside other top-level keys, such as an index of the marts) or under a single top-level key;
 - each entry as a mapping with a query (`sql`, `query`, `view`, `sql_view`) or a table (`table`,
   `model`, `mart`, `relation`, `path`) plus optional column hints (`column`, `columns`, `measure`...),
   or as a plain string (a SQL statement, a table name, or `table.column`).
@@ -52,8 +53,12 @@ def load_map(repo: Path) -> dict[str, object]:
         doc = yaml.safe_load(path.read_text(encoding="utf-8"))
     except yaml.YAMLError as exc:
         raise MapError(f"oracle_map.yml is not valid YAML: {exc}") from exc
-    if isinstance(doc, dict) and len(doc) == 1 and isinstance(next(iter(doc.values())), (dict, list)):
-        doc = next(iter(doc.values()))  # e.g. {checks: {...}} or {oracle: [...]}
+    wrapper = next((v for k, v in doc.items() if str(k).lower() == "checks" and isinstance(v, (dict, list))),
+                   None) if isinstance(doc, dict) else None
+    if wrapper is not None:
+        doc = wrapper  # {checks: ...}, also beside other keys such as {marts: {...}, checks: [...]}
+    elif isinstance(doc, dict) and len(doc) == 1 and isinstance(next(iter(doc.values())), (dict, list)):
+        doc = next(iter(doc.values()))  # e.g. {oracle: [...]}
     if isinstance(doc, list):
         out = {}
         for i, item in enumerate(doc, 1):

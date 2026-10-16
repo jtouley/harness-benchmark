@@ -111,6 +111,9 @@ def test_window_starts_with_a_time_zone_are_read_as_utc(key, tmp_path):
     [SQL_MAP["checks"][n]["sql"] if "sql" in SQL_MAP["checks"][n] else "monthly" for n in range(1, 8)],
     # descriptive keys, a table and a column hint, an out/marts path
     {f"check_{n}_answer": v for n, v in SQL_MAP["checks"].items()} | {"check_4_answer": {"model": "out/marts/monthly", "column": "net"}},
+    # `checks:` beside other top-level keys (an index of the marts), as a list with ids (P1-opus-1)
+    {"marts": {"monthly": "out/marts/monthly/"},
+     "checks": [{"id": n, **v} for n, v in SQL_MAP["checks"].items()]},
 ])
 def test_other_map_shapes_are_read(key, tmp_path, oracle_map):
     result = grade.grade(write_candidate(tmp_path, key, answers(key), oracle_map=oracle_map), key)

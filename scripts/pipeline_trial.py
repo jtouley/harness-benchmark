@@ -5,6 +5,9 @@
     # the smoke trial (the reference, no agent) and the negative control (the skeleton, no agent)
     python scripts/pipeline_trial.py run P1 --mode reference --out results/runs/pipeline/P1-ref-1
     python scripts/pipeline_trial.py run P1 --mode skeleton --out results/runs/pipeline/P1-skel-1
+    # grade a run's saved working tree again (same image and runner, no agent), e.g. after a grader fix
+    python scripts/pipeline_trial.py run P1 --mode regrade --from results/runs/pipeline/P1-opus-1 \
+        --out results/runs/pipeline/P1-opus-1-regrade
     # set a task's grader caps from its reference trials: the measured worst case plus 50%
     python scripts/pipeline_trial.py caps P1 results/runs/pipeline/P1-ref-*
     # the results table (markdown) and its rows (JSON)
@@ -22,6 +25,7 @@ import json
 import math
 import os
 import re
+import shutil
 import subprocess
 import sys
 import tempfile
@@ -116,6 +120,12 @@ def outcome(run: Path, result: dict, timing: dict) -> str:
 def summarize(run: Path, pricing: dict) -> dict:
     meta, result = _load(run / "trial.json"), _load(run / "result.json")
     grade, timing = _load(run / "grade.json"), _load(run / "timing.json")
+    if meta.get("mode") == "regrade":  # the session is the original run's; the grade is this one's
+        src = Path(meta["regrade_of"])
+        src = src if src.is_absolute() else run.parent / src.name
+        src_meta, result, src_timing = _load(src / "trial.json"), _load(src / "result.json"), _load(src / "timing.json")
+        meta = {**meta, "model": src_meta.get("model")}
+        timing = {**src_timing, "grader_seconds": timing.get("grader_seconds", 0)}
     cost, tokens = cost_and_tokens(result, pricing, meta.get("model"))
     kind = outcome(run, result, timing)
     builds = grade.get("build") or []
@@ -151,17 +161,31 @@ def caps_from_measurements(grades: list[dict]) -> dict:
             "measured": {"grader_seconds": seconds, "worst": max(seconds)}}
 
 
-# --- running -----------------------------------------------------------------------------------------
+# --- running ---------------------------------------------------------------------------------------
+
+def repo_from_saved(saved: Path, out: Path) -> Path:
+    """A git repository from a run's saved working tree (`repo/`), committed with its own .gitignore."""
+    shutil.copytree(saved, out, symlinks=True)
+    run = lambda *a: subprocess.run(["git", *a], cwd=out, check=True, capture_output=True)  # noqa: E731
+    run("init", "-q", "-b", "main")
+    run("add", "-A")
+    run("-c", "user.name=harness-benchmark", "-c", "user.email=noreply@example.invalid",
+        "-c", "commit.gpgsign=false", "commit", "-q", "--no-verify", "-m", "the working tree the agent left")
+    return out
+
 
 def run_trial(task: str, out: Path, *, mode: str, model: str | None, plugin_dir: Path | None,
-              replay_seed: int, caps: dict) -> int:
+              replay_seed: int, caps: dict, regrade_of: Path | None = None) -> int:
     sys.path.insert(0, str(PIPELINE))
     from pipetask import assemble, bundle  # noqa: PLC0415 - builder code, hidden from arms
 
     task_caps = caps["tasks"][task]
     with tempfile.TemporaryDirectory(prefix=f"hb-{task}-") as tmp:
         tmp_path = Path(tmp)
-        repo = assemble.assemble(task, tmp_path / "repo", with_reference=mode == "reference")
+        if mode == "regrade":
+            repo = repo_from_saved(regrade_of / "repo", tmp_path / "repo")
+        else:
+            repo = assemble.assemble(task, tmp_path / "repo", with_reference=mode == "reference")
         dist = tmp_path / "dist"
         bundle.bundle(dist)
         cmd = [str(RUN_TRIAL), "--repo", str(repo), "--prompt", str(PIPELINE / task / "prompt.md"),
@@ -189,7 +213,7 @@ def run_trial(task: str, out: Path, *, mode: str, model: str | None, plugin_dir:
                 "arm": "one-shot" if mode == "agent" and not plugin_dir else (plugin_dir.name if plugin_dir else mode),
                 "image": task_caps["image"], "agent_timeout": caps["agent_timeout"],
                 "grader_timeout": task_caps["grader_timeout"], "grader_deadline": task_caps.get("grader_deadline"),
-                "replay_seed": replay_seed,
+                "replay_seed": replay_seed, "regrade_of": str(regrade_of) if regrade_of else None,
                 "started_at": datetime.now().astimezone().isoformat(timespec="seconds")}
         rc = subprocess.call(cmd, env=env)
     out.mkdir(parents=True, exist_ok=True)
@@ -217,7 +241,8 @@ def main(argv: list[str] | None = None) -> int:
     r = sub.add_parser("run", help="run one trial")
     r.add_argument("task", choices=["P1", "P2", "P3"])
     r.add_argument("--out", type=Path, required=True)
-    r.add_argument("--mode", choices=["agent", "reference", "skeleton"], default="agent")
+    r.add_argument("--mode", choices=["agent", "reference", "skeleton", "regrade"], default="agent")
+    r.add_argument("--from", dest="regrade_of", type=Path, help="regrade: the run whose repo/ is graded")
     r.add_argument("--model")
     r.add_argument("--plugin-dir", type=Path)
     r.add_argument("--replay-seed", type=int, default=0, help="the dev replay's seed (the grading seed is 1)")
@@ -233,8 +258,11 @@ def main(argv: list[str] | None = None) -> int:
     if args.cmd == "run":
         if args.mode == "agent" and not args.model:
             ap.error("--model is required for an agent trial")
+        if args.mode == "regrade" and not (args.regrade_of and (args.regrade_of / "repo").is_dir()):
+            ap.error("--mode regrade needs --from RUN with a repo/ folder")
         return run_trial(args.task, args.out, mode=args.mode, model=args.model, plugin_dir=args.plugin_dir,
-                         replay_seed=args.replay_seed, caps=caps)
+                         replay_seed=args.replay_seed, caps=caps,
+                         regrade_of=args.regrade_of.resolve() if args.regrade_of else None)
     if args.cmd == "caps":
         grades = [{**_load(run / "grade.json"), "grader_seconds": _load(run / "timing.json")["grader_seconds"]}
                   for run in args.runs]
