@@ -120,3 +120,59 @@ or called, no host configuration touched; `contaminated` only by 1 to 3 unresolv
   places it at the **place of performance** (trap B5 names that column). Sonnet's P1 answer has the
   same counties, with sums not divided by population. Whether recipient location is an accepted
   reading of "where did the money go" is open (TASK-81 item 3), so the grade stands.
+
+## Step 3: one-shot trials on P3 (k = 1)
+
+The same setup, with the P3 prompt (Scala 2.13 and Spark, dbt-spark) and the `runner-pipeline:p3` image.
+
+| Run | Model | Reward | Checks (1-7) | Tokens in / cache write / cache read / out | Cost (list prices) | Turns | Agent s | Grading s | Wall s | Wall s without 1st build |
+|---|---|---|---|---|---|---|---|---|---|---|
+| P3-haiku-1 | claude-haiku-5-5 | 0.0 | 0/7 (0000000) | 6,713 / 628,852 / 12,000,959 / 361,671 | $0.38 | 209 | 3,756.4 | 406.0 | 4,162.4 | 4,053.6 |
+| P3-sonnet-1 | claude-sonnet-5-5 | 0.7143 | 5/7 (1010111) | 158 / 363,739 / 8,177,864 / 113,443 | $3.68 | 78 | 2,171.2 | 393.3 | 2,564.5 | 2,468.7 |
+| P3-opus-1 | claude-opus-5-5 | 0.4286 | 3/7 (1010001) | 192 / 585,989 / 12,257,988 / 126,966 | $7.92 | 104 | 3,602.7 | 375.1 | 3,977.8 | 3,876.7 |
+
+Every run built twice with no change to an output (on the image's warm caches, offline), every
+consumer read the grading replay to the end, every grading run finished inside the P3 deadline (537 s),
+and no API request stalled. Clean room as before (no skill outside the built-in list, no host
+configuration; 1 to 9 unresolved tokens, and Haiku's one search of `/`, which inside the container holds
+no user-level configuration and cannot read the grader's directory).
+
+- **Haiku**: its map puts the path of a dbt view's file under `sql:` (`transform/models/checks/...sql`),
+  which the grader runs as SQL; the views it names are not published.
+- **Sonnet**: check 2 (the recipient-county reading, the same top ten as on P2) and check 4 (the
+  reconciliation reading, here two queries under one `sql:` mapping).
+- **Opus**: check 2 (the recipient-county reading; its summary says so: "a county view by place of
+  performance would leave most of the money unassigned"), check 4 (the reconciliation reading), check 5
+  (trap **W2**: it counts every change event, log and categorize included, as an edit, and says so),
+  and check 6 (unexplained).
+
+## All nine trials
+
+| Task | Model | Reward | Checks | Cost | Agent s | Wall s (w/o 1st build) |
+|---|---|---|---|---|---|---|
+| P1 | Haiku 5.5 | 0.0 | 0/7 | $0.30 | 1,882.6 | 2,034.0 (2,019.1) |
+| P1 | Sonnet 5.5 | 0.4286 | 3/7 | $2.06 | 1,349.3 | 1,511.5 (1,492.5) |
+| P1 | Opus 5.5 | 0.8571 | 6/7 | $5.82 | 1,689.1 | 1,847.5 (1,833.1) |
+| P2 | Haiku 5.5 | 0.0 | 0/7 | $0.28 | 1,596.9 | 1,751.8 (1,737.1) |
+| P2 | Sonnet 5.5 | 0.4286 | 3/7 | $4.56 | 1,716.2 | 1,873.5 (1,856.6) |
+| P2 | Opus 5.5 | 0.7143 | 5/7 | $7.84 | 2,465.2 | 2,620.6 (2,606.0) |
+| P3 | Haiku 5.5 | 0.0 | 0/7 | $0.38 | 3,756.4 | 4,162.4 (4,053.6) |
+| P3 | Sonnet 5.5 | 0.7143 | 5/7 | $3.68 | 2,171.2 | 2,564.5 (2,468.7) |
+| P3 | Opus 5.5 | 0.4286 | 3/7 | $7.92 | 3,602.7 | 3,977.8 (3,876.7) |
+
+Spend at list prices: $32.84 for the nine graded trials, plus $0.33 for the void Haiku run and an
+unrecorded six minutes of the aborted Sonnet run. No trial passed every check (reward 1.0), so at k = 1
+every cell fails the M1 bar; these runs say nothing yet about reliability. No API request stalled, and
+no run reached the guard cap. Every row is in `2026-10-15-pipeline-trials.json`.
+
+What decides most of the scores is not the pipelines: every delivered pipeline built twice with no
+change and consumed the stream exactly as the gates require. The checks failed on three open readings:
+
+1. **The oracle map's shape** (TASK-81 item 1). All three Haiku runs answered through dbt views in the
+   warehouse, or in shapes the grader does not read. Diagnostic only (not a result): with its P2 map
+   flattened (`answer:` lifted, the unpublished view names dropped) and nothing else changed, Haiku's P2
+   delivery scores 3/7 (checks 1, 6, 7; `P2-haiku-1-flatmap-regrade`).
+2. **Check 2: recipient county or place of performance** (TASK-81 item 3). Five of the six Sonnet and
+   Opus runs place the money at the recipient's county; the key uses the place of performance.
+3. **Check 4: rows or a reconciliation** (TASK-81 item 3). Every Sonnet and Opus run answers it with a
+   reconciliation query; the key reads rows at month, state and county grain.

@@ -99,7 +99,8 @@ makes no API request.
 
 ## Not yet done
 
-- No real Claude Code trial has run in the container (it costs API money); first run: B01.
+- Real Claude Code trials have run in the container on the pipeline tasks only
+  ([2026-10-15](../docs/experiments/2026-10-15-pipeline-trials.md)); B01 has not.
 - The inner daemon starts empty each trial, so every trial pulls the task's images (no cache or mirror).
 - Parallel trials on a remote x86-64 host (the account is an owner decision); the image has not been
   built on x86-64.
