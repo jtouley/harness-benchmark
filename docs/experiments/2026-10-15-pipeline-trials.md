@@ -91,3 +91,32 @@ for this runner is open (criteria-v2 §5.2).
 2. **`checks:` beside other top-level keys was not read.** Opus's map has a `marts:` index beside
    `checks:`; the grader unwrapped `checks:` only when it was the only key, so it found no entry and
    scored 0 (`P1-opus-1`, as first graded). Fixed in `pipetask/oracle.py`; regraded: 6/7.
+
+## Step 3: one-shot trials on P2 (k = 1)
+
+The same setup as P1, with the P2 prompt (Arrow, Polars, DataFusion, a YAML-driven engine) and image.
+
+| Run | Model | Reward | Checks (1-7) | Tokens in / cache write / cache read / out | Cost (list prices) | Turns | Agent s | Grading s | Wall s | Wall s without 1st build |
+|---|---|---|---|---|---|---|---|---|---|---|
+| P2-haiku-1 | claude-haiku-5-5 | 0.0 | 0/7 (0000000) | 5,336 / 365,025 / 9,747,836 / 268,868 | $0.28 | 128 | 1,596.9 | 154.9 | 1,751.8 | 1,737.1 |
+| P2-sonnet-1 | claude-sonnet-5-5 | 0.4286 | 3/7 (1010001) | 180 / 218,706 / 12,653,911 / 147,885 | $4.56 | 91 | 1,716.2 | 157.3 | 1,873.5 | 1,856.6 |
+| P2-opus-1 | claude-opus-5-5 | 0.7143 | 5/7 (1010111) | 194 / 260,542 / 14,223,536 / 184,616 | $7.84 | 103 | 2,465.2 | 155.4 | 2,620.6 | 2,606.0 |
+
+Again every run built twice with no change to an output, every consumer read the grading replay to
+the end, and no API request stalled. Clean room as for P1: no skill outside the built-in list shown
+or called, no host configuration touched; `contaminated` only by 1 to 3 unresolved shell tokens.
+
+- **Haiku**: every entry of its `oracle_map.yml` nests the answer one level down
+  (`answer: {view: chk_01_..., table: ..., columns: ...}`), a shape the grader does not read ("entry
+  names no table or query"), and its `view` names are dbt views in `out/warehouse.duckdb`, not
+  published marts. The map's shape is open (TASK-81 item 1), so the grade stands.
+- **Sonnet**: the same three failures as on P1: check 2 (below), check 4 (the reconciliation reading,
+  as on P1), checks 5 and 6 name trap **W2**.
+- **Opus**: check 2 (below) and check 4 (the reconciliation reading).
+- **Check 2 (Sonnet and Opus)**: the two runs give the same top ten, to the cent (21073 at 190.60
+  per person, then 46065, 12073, ...). Every county in it holds a state capital (Franklin KY, Hughes SD,
+  Leon FL, Thurston WA, Dauphin PA, Ingham MI, Sangamon IL, Cole MO, Lewis and Clark MT, Washington VT):
+  the money is placed at the **recipient's** county (state governments receive the grants). The key
+  places it at the **place of performance** (trap B5 names that column). Sonnet's P1 answer has the
+  same counties, with sums not divided by population. Whether recipient location is an accepted
+  reading of "where did the money go" is open (TASK-81 item 3), so the grade stands.
