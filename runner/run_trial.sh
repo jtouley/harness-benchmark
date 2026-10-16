@@ -6,12 +6,16 @@
 #   runner/run_trial.sh --repo DIR --prompt FILE --grader FILE --out DIR
 #                       [--model ID] [--plugin-dir DIR] [--suffix TEXT] [--permission-mode MODE]
 #                       [--agent-timeout SEC] [--grader-timeout SEC] [--image IMAGE] [--name NAME]
-#                       [--agent-cmd FILE]
+#                       [--agent-cmd FILE] [--replay FILE [--replay-seed N]] [--grader-arg ARG]...
 #
 #   --repo         task repository; copied into the container (the host copy is not changed)
 #   --prompt       task prompt; the arm's --suffix is appended after one space
-#   --grader       executable, copied in after the agent has finished and run as
-#                  `grader /trial/repo`; its stdout is grade.json
+#   --grader       executable, copied in after the agent has finished and run as root as
+#                  `grader /trial/repo [ARG...]` from a root-only directory; its stdout is grade.json
+#   --grader-arg   one more argument for the grader (repeatable)
+#   --replay       a dev service (replay.pyz) started as root before the agent from a root-only
+#                  directory, on localhost:8099 with --seed N (--replay-seed, default 0); stopped
+#                  before the grader runs
 #   --out          output directory on the host; must not exist or be empty
 #   --plugin-dir   the arm's Claude Code plugin (passed as `claude --plugin-dir`)
 #   --agent-cmd    replaces Claude Code with this script (tests only; it runs as the agent would)
@@ -23,12 +27,13 @@
 # [REDACTED:ANTHROPIC_API_KEY]. The scan reads the key from the environment and never prints it.
 set -euo pipefail
 
-usage() { sed -n '2,23p' "$0" | sed 's/^# \{0,1\}//'; }
+usage() { sed -n '2,28p' "$0" | sed 's/^# \{0,1\}//'; }
 die() { printf 'run_trial: %s\n' "$*" >&2; exit 2; }
 
 IMAGE="${HB_RUNNER_IMAGE:-harness-benchmark/runner:local}"
 MODEL=claude-opus-5-5 PLUGIN="" SUFFIX="" REPO="" PROMPT="" GRADER="" OUT="" AGENT_CMD=""
-PERMISSION_MODE=auto AGENT_TIMEOUT=3600 GRADER_TIMEOUT=900
+PERMISSION_MODE=auto AGENT_TIMEOUT=3600 GRADER_TIMEOUT=900 REPLAY="" REPLAY_SEED=0
+GRADER_ARGS=()
 NAME="hb-trial-$(date +%Y%m%d-%H%M%S)-$$"
 
 while [ $# -gt 0 ]; do
@@ -46,6 +51,9 @@ while [ $# -gt 0 ]; do
     --image) IMAGE="${2:?}"; shift 2 ;;
     --name) NAME="${2:?}"; shift 2 ;;
     --agent-cmd) AGENT_CMD="${2:?}"; shift 2 ;;
+    --replay) REPLAY="${2:?}"; shift 2 ;;
+    --replay-seed) REPLAY_SEED="${2:?}"; shift 2 ;;
+    --grader-arg) GRADER_ARGS+=("${2?}"); shift 2 ;;
     -h|--help) usage; exit 0 ;;
     *) usage >&2; die "unknown argument: $1" ;;
   esac
@@ -57,6 +65,8 @@ done
 [ -n "$OUT" ] || die "--out is required"
 [ -z "$PLUGIN" ] || [ -d "$PLUGIN" ] || die "--plugin-dir must be a directory"
 [ -z "$AGENT_CMD" ] || [ -f "$AGENT_CMD" ] || die "--agent-cmd must be a file"
+[ -z "$REPLAY" ] || [ -f "$REPLAY" ] || die "--replay must be a file"
+case "$REPLAY_SEED" in ''|*[!0-9]*) die "--replay-seed must be a number" ;; esac
 if [ -e "$OUT" ] && [ -n "$(ls -A "$OUT")" ]; then die "--out exists and is not empty: $OUT"; fi
 mkdir -p "$OUT"
 
@@ -104,14 +114,19 @@ trap cleanup EXIT
 trap 'exit 130' INT TERM
 
 { cat "$PROMPT"; [ -z "$SUFFIX" ] || printf ' %s' "$SUFFIX"; } >"$STAGE/prompt.txt"
+: >"$STAGE/grader-args"
+[ ${#GRADER_ARGS[@]} -eq 0 ] || printf '%s\n' "${GRADER_ARGS[@]}" >"$STAGE/grader-args"
 
 # The container has no bind mount and no published port: inputs go in and outputs come out by copy.
 docker create --name "$NAME" --label hb.runner=trial --privileged --interactive \
   -e HB_MODEL="$MODEL" -e HB_PERMISSION_MODE="$PERMISSION_MODE" \
-  -e HB_AGENT_TIMEOUT="$AGENT_TIMEOUT" -e HB_GRADER_TIMEOUT="$GRADER_TIMEOUT" \
+  -e HB_AGENT_TIMEOUT="$AGENT_TIMEOUT" -e HB_GRADER_TIMEOUT="$GRADER_TIMEOUT" -e HB_REPLAY_SEED="$REPLAY_SEED" \
   "$IMAGE" >/dev/null
 docker cp -q "$REPO/." "$NAME:/trial/repo"
 docker cp -q "$STAGE/prompt.txt" "$NAME:/trial/prompt.txt"
+docker cp -q "$STAGE/grader-args" "$NAME:/trial/grader-args"
+# Into a root-only directory (mode 0700 in the image): the agent can reach the service, not its files.
+[ -z "$REPLAY" ] || docker cp -q "$REPLAY" "$NAME:/opt/hb-replay/replay.pyz"
 [ -z "$PLUGIN" ] || docker cp -q "$PLUGIN/." "$NAME:/trial/plugin"
 [ -z "$AGENT_CMD" ] || docker cp -q "$AGENT_CMD" "$NAME:/trial/agent.sh"
 
@@ -122,7 +137,8 @@ attach=$!
 # The grader goes in only after every agent process is dead, so the agent cannot read it.
 while kill -0 "$attach" 2>/dev/null; do
   if grep -q 'waiting for the grader' "$OUT/runner.log"; then
-    docker cp -q "$GRADER" "$NAME:/trial/grader"
+    # Root-only directory: the candidate's make, run by the grader as the agent user, cannot read it.
+    docker cp -q "$GRADER" "$NAME:/opt/hb-grader/grader"
     docker exec "$NAME" touch /trial/grader-ready
     break
   fi

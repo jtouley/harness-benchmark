@@ -18,7 +18,7 @@ mkdir -p "$HOME/.claude/projects/stub"
 printf 'session %s\n' "${ANTHROPIC_API_KEY:-}" >"$HOME/.claude/projects/stub/session.jsonl"
 # Hold until the test releases the trial (it inspects the running container meanwhile).
 if [ -f HOLD ]; then for _ in $(seq 1 180); do [ -f /tmp/release ] && break; sleep 1; done; fi
-grader_visible=false; [ -e /trial/grader ] && grader_visible=true
+grader_visible=false; { [ -e /trial/grader ] || ls /opt/hb-grader >/dev/null 2>&1; } && grader_visible=true
 key_sha=$(printf '%s' "${ANTHROPIC_API_KEY:-}" | sha256sum | cut -d' ' -f1)
 env_names=$(compgen -e | sort | jq -Rsc 'split("\n") | map(select(. != ""))')
 echo '{"type":"system","subtype":"init"}'

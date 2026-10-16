@@ -40,7 +40,8 @@ def sh(*args: str, check: bool = True, **kw) -> subprocess.CompletedProcess:
 
 def test_help_documents_every_input():
     out = sh(str(RUN_TRIAL), "--help").stdout
-    for flag in ("--repo", "--prompt", "--grader", "--out", "--model", "--plugin-dir", "--suffix"):
+    for flag in ("--repo", "--prompt", "--grader", "--out", "--model", "--plugin-dir", "--suffix", "--replay",
+                 "--replay-seed", "--grader-arg"):
         assert flag in out
 
 
@@ -260,7 +261,8 @@ def test_trial_runs_inside_one_container_and_leaves_only_its_outputs(image, tmp_
     assert result["prompt_sha256"] == hashlib.sha256(b"Do the task. Be brief.").hexdigest()
     # The grader saw the inner service, no agent process, no key, and the agent's commit.
     assert grade == {"inner_service_running": True, "inner_service_body": f"served-{tag}",
-                     "agent_processes_left": 0, "grader_sees_api_key": False, "commits": 2}
+                     "agent_processes_left": 0, "grader_sees_api_key": False, "commits": 2,
+                     "root_git": "refused"}
     # The agent's environment is the runner's list only; the container's own variables stay out.
     assert "ANTHROPIC_API_KEY" in result["env_names"]
     assert set(result["env_names"]) <= {
@@ -330,3 +332,79 @@ def test_default_agent_starts_claude_code_with_the_arms_plugin_and_no_key(image,
     result = json.loads((out / "result.json").read_text())
     assert result["is_error"] is True and result["total_cost_usd"] == 0
     assert json.loads((out / "grade.json").read_text()) == {"graded": True}
+
+
+# --- the pipeline family's wiring (golden/pipeline/README.md, "A trial on the isolated runner") -------
+
+PIPELINE_IMAGE = os.environ.get("HB_PIPELINE_IMAGE", "harness-benchmark/runner-pipeline:py")
+# What the candidate's make can see while the grader runs it (written by `make build`).
+MAKE_PROBE = ("{ id -un; echo $$HOME; test -e $$HOME/.dlt && echo dev-state || echo no-dev-state; "
+              "cat /opt/hb-grader/grader >/dev/null 2>&1 && echo grader-readable || echo grader-unreadable; "
+              "find / -xdev -name answer_key.json 2>/dev/null | wc -l; "
+              "curl -s -m 5 -o /dev/null https://pypi.org/simple/ && echo net-open || echo net-blocked; "
+              "} > /trial/out/agent/make-probe.txt")
+
+
+@pytest.fixture(scope="module")
+def pipeline_image(image):
+    sh(str(RUNNER / "pipeline" / "build.sh"), "py", timeout=3600)
+    return PIPELINE_IMAGE
+
+
+@docker_tests
+def test_pipeline_trial_isolates_the_grader_from_the_candidates_make(pipeline_image, tmp_path):
+    """The dev replay serves the agent and is unreadable; the grader's make runs as the agent user with a
+    fresh HOME and no network, and cannot read the grader (which holds the key); the trial still scores."""
+    import sys
+    sys.path.insert(0, str(ROOT / "golden" / "pipeline"))
+    from pipetask import bundle
+    from test_pipeline_trial import COPY_MARTS, KEY_PATH, delivered
+
+    key = json.loads(KEY_PATH.read_text(encoding="utf-8"))
+    repo = delivered(tmp_path, key, 8099, build=f"{MAKE_PROBE} && {COPY_MARTS}")
+    dist = tmp_path / "dist"
+    bundle.bundle(dist)
+    prompt = tmp_path / "prompt.txt"
+    prompt.write_text("Build the pipeline.")
+    out = tmp_path / "out"
+    env = {k: v for k, v in os.environ.items() if k != "ANTHROPIC_API_KEY"}
+    args = [str(RUN_TRIAL), "--repo", str(repo), "--prompt", str(prompt), "--grader", str(dist / "grader.pyz"),
+            "--replay", str(dist / "replay.pyz"), "--agent-cmd", str(FIXTURES / "pipeline_stub_agent.sh"),
+            "--model", "stub-model", "--out", str(out), "--image", pipeline_image, "--grader-timeout", "600"]
+    for a in ("--make-user", "agent", "--make-env-file", "/opt/hb/toolchain.env", "--logs",
+              "/trial/out/grade-logs", "--speed", "6000", "--durations", "1,1", "--snapshot-worktree"):
+        args += ["--grader-arg", a]
+    sh(*args, env=env, timeout=1200)
+
+    agent = json.loads((out / "agent" / "agent-probe.json").read_text())
+    assert agent["dev_frames"] > 0 and agent["replay_readable"] is False
+    assert agent["uv_offline"] == "1" and agent["python3"].startswith("3.12.")
+    user, home, state, grader, keys, net = (out / "agent" / "make-probe.txt").read_text().split()
+    assert user == "agent" and home not in ("/home/agent", "/root") and state == "no-dev-state"
+    assert grader == "grader-unreadable" and keys == "0" and net == "net-blocked"
+    timing = json.loads((out / "timing.json").read_text())
+    assert timing["dev_replay"] is True and timing["agent_network_during_grading"] == "blocked"
+    grade = json.loads((out / "grade.json").read_text())
+    assert grade["make_user"] == "agent" and grade["make_fresh_home"] is True
+    assert grade["reward"] == 1.0, grade
+    # The stub agent wrote its probe file in the repository and never committed it: the snapshot took it.
+    assert grade["snapshot"]["files"] >= 1 and (out / "repo" / "agent-was-here.txt").exists()
+    assert not (out / "repo" / ".git").exists()
+    # The core.fsmonitor hook the agent planted in .git/config never ran as root (nor at all).
+    ran = out / "agent" / "fsmonitor-ran"
+    assert not ran.exists(), ran.read_text()
+
+
+@docker_tests
+def test_a_grader_killed_at_its_cap_still_leaves_a_json_grade(image, tmp_path):
+    repo, prompt = make_task(tmp_path, uuid.uuid4().hex[:12], hold=False)
+    grader = tmp_path / "slow.sh"
+    grader.write_text("#!/bin/sh\nsleep 600\n")
+    grader.chmod(0o755)
+    env = {k: v for k, v in os.environ.items() if k != "ANTHROPIC_API_KEY"}
+    out = tmp_path / "out"
+    sh(str(RUN_TRIAL), "--repo", str(repo), "--prompt", str(prompt), "--grader", str(grader),
+       "--agent-cmd", str(FIXTURES / "pipeline_stub_agent.sh"), "--model", "stub-model",
+       "--grader-timeout", "3", "--out", str(out), "--image", image, env=env, timeout=600)
+    grade = json.loads((out / "grade.json").read_text())
+    assert grade["reward"] == 0.0 and "cap of 3s" in grade["error"]

@@ -7,7 +7,8 @@ served=$(docker exec svc wget -qO- http://127.0.0.1:8080/index.html 2>/dev/null 
 # Agent processes in the trial's own PID namespace (not the uid-1000 service in the inner daemon).
 left=$(pgrep --ns $$ --nslist pid -u agent | wc -l)
 key=false; [ -n "${ANTHROPIC_API_KEY:-}" ] && key=true
-# No safe.directory override: the image must let root run git in the agent-owned repository.
-commits=$(git -C "$repo" rev-list --count HEAD)
-printf '{"inner_service_running": %s, "inner_service_body": "%s", "agent_processes_left": %d, "grader_sees_api_key": %s, "commits": %d}\n' \
-  "$running" "$served" "$left" "$key" "$commits"
+# git in the agent-owned repository runs as the agent: as root it would refuse (no safe.directory).
+commits=$(setpriv --reuid=agent --regid=agent --init-groups git -C "$repo" rev-list --count HEAD)
+root_git=refused; git -C "$repo" rev-list --count HEAD >/dev/null 2>&1 && root_git=allowed
+printf '{"inner_service_running": %s, "inner_service_body": "%s", "agent_processes_left": %d, "grader_sees_api_key": %s, "commits": %d, "root_git": "%s"}\n' \
+  "$running" "$served" "$left" "$key" "$commits" "$root_git"
