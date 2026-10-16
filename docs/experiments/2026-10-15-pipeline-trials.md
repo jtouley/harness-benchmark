@@ -62,7 +62,7 @@ end (`stream_ok`). No API request stalled. Why each check failed:
 
 - **Haiku**: its `oracle_map.yml` answers six checks with SQL over `out/warehouse.duckdb` tables, which
   the grader cannot see (the spec: "anything downstream reads only `out/marts/`"). Its one answer
-  over a published mart (check 2) is about 1,000 times too large per person (unexplained, no trap).
+  over a published mart (check 2) is over 2,000 times too large per person (unexplained, no trap).
 - **Sonnet**: check 2 wrong per person (unexplained); checks 5 and 6 name trap **W2**; check 4 below.
 - **Opus**: check 4 below.
 - **Check 4 (Sonnet and Opus)**: both answer "for one month, county totals add up to state totals, and
