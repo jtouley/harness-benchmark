@@ -302,7 +302,7 @@ def test_reading_a_saved_tool_output_of_the_session_is_not_a_contact(tmp_path):
     "grep -rn 'open quote /home/u",
 ])
 def test_a_search_outside_the_allowed_folders_is_a_contact(tmp_path, command):
-    """R7 on PR #8: a search names folders, and its pattern can name any file in them."""
+    """R7 on PR #8: a search reads every file under the folders it names."""
     t = _transcript(tmp_path, _listing(*BUILTIN), _call("Bash", command=command))
     assert _repo_verdict(t) == "contaminated"
 
@@ -349,3 +349,45 @@ def test_loaded_file_text_inside_a_tool_result_is_not_a_contact(tmp_path):
               "content": "Contents of /home/u/.claude/CLAUDE.md: see the docs"}]}}
     t = _transcript(tmp_path, _listing(*BUILTIN), result)
     assert _repo_verdict(t) == "clean"
+
+
+# PR #33 review: every option grammar a search tool has, in front of a folder outside the allowlist.
+SEARCH_OUTSIDE = [
+    "grep -r -E 'TDD|plan' /home/u", "grep -rn -x TDD /home/u", "grep -r -T TDD /home/u",
+    "rg -S TDD /home/u", "rg -x TDD /home/u", "ack -f /home/u",
+    "find -L /home/u -name x", "find -H /home/u -name x", "find -D tree /home/u", "find -O2 /home/u",
+    "cd /home/u && git -c core.pager=cat grep TDD",
+    'bash -lc "grep -rn TDD /home/u"', "rg x#y /home/u",
+    'bash -c "echo it\'s ok; grep -rn TDD /home/u"', 'sh -c "cd /home/u && grep -rn TDD"',
+    "rg -c 'foo bar' /home/u", "ack -g SKILL /home/u", "ag -g SKILL /home/u",
+    "fd --search-path /home/u SKILL", "fd --base-directory=/home/u SKILL", "rg --sort path TDD /home/u",
+    "rg -uuu TDD /home/u", "rg -t py TDD /home/u", "grep -rn -A 3 TDD /home/u", "rg -g '*.md' TDD /home/u",
+    "grep -rnA 3 TDD /home/u", "grep -rne TDD /home/u", "rg --max-depth=2 TDD /home/u",
+]
+SEARCH_INSIDE = [
+    "rg -t py TDD src", "grep -rn -A 3 TDD src", "fd -e py test src",
+    "python3 -c \"import os  # don't\"", "grep -rn 'a#b' src",
+    "rg --stats '/api/' src", "grep -r -E 'a|b' src", "rg --no-config TDD src", "grep -rnA 3 TDD src",
+]
+
+
+def _outside(command):
+    return [c for c in crc._command_locations(command, REPO) if not crc.path_allowed(c, [REPO])]
+
+
+@pytest.mark.parametrize("command", SEARCH_OUTSIDE)
+def test_each_option_grammar_still_counts_the_folder_searched(command):
+    assert _outside(command)
+
+
+@pytest.mark.parametrize("command", SEARCH_INSIDE)
+def test_options_and_patterns_inside_the_repo_are_not_contacts(command):
+    assert _outside(command) == []
+
+
+def test_an_internal_error_exits_with_a_code_that_is_not_a_verdict(tmp_path, monkeypatch):
+    """Exit 1 means exposed. A crash must not be read as a softer verdict than contaminated."""
+    t = _transcript(tmp_path, _listing(*BUILTIN), _call("Bash", command="ls"))
+    monkeypatch.setattr(crc, "scan", lambda *a, **k: (_ for _ in ()).throw(RuntimeError("boom")))
+    assert crc.main([str(t)]) == crc.EXIT_ERROR
+    assert crc.EXIT_ERROR not in (0, 1, 2, 3)
