@@ -754,7 +754,7 @@
   "pricing_as_of": "2026-10-08",
   "provenance": {
     "canonical_root": "/tmp/cbench",
-    "lockfile_sha256": "6cbe9b8e94ddf931201caf9f77023e7d69ba6340197f01918fd0a19db10e5055",
+    "lockfile_sha256": "24356f84dbf1684b78efe304f248d1800507b7628431190be1f756781246d2b6",
     "pricing_sha256": "7af66e689754689850c47229da79af75d229e3882a798826de3f50317f292139",
     "tokenizer": {
       "id": "anthropic==0.37.1:anthropic/tokenizer.json",
