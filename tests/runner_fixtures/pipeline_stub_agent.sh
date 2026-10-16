@@ -9,4 +9,8 @@ printf '{"dev_frames": %d, "replay_readable": %s, "uv_offline": "%s", "python3":
   "$frames" "$replay_readable" "${UV_OFFLINE:-}" "$(python3 -c 'import sys; print(sys.version.split()[0])')" \
   >"$HB_OUTPUTS/agent-probe.json"
 echo "uncommitted" >agent-was-here.txt
+# A hostile repository config: git run by root in this repository would run this hook as root.
+printf '#!/bin/sh\nid -un >> %s/fsmonitor-ran\nexit 1\n' "$HB_OUTPUTS" >.git/fsmon.sh
+chmod 0755 .git/fsmon.sh
+git config core.fsmonitor "$PWD/.git/fsmon.sh"
 echo '{"type":"result","subtype":"success","is_error":false}'

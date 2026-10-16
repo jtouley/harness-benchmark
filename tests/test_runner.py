@@ -261,7 +261,8 @@ def test_trial_runs_inside_one_container_and_leaves_only_its_outputs(image, tmp_
     assert result["prompt_sha256"] == hashlib.sha256(b"Do the task. Be brief.").hexdigest()
     # The grader saw the inner service, no agent process, no key, and the agent's commit.
     assert grade == {"inner_service_running": True, "inner_service_body": f"served-{tag}",
-                     "agent_processes_left": 0, "grader_sees_api_key": False, "commits": 2}
+                     "agent_processes_left": 0, "grader_sees_api_key": False, "commits": 2,
+                     "root_git": "refused"}
     # The agent's environment is the runner's list only; the container's own variables stay out.
     assert "ANTHROPIC_API_KEY" in result["env_names"]
     assert set(result["env_names"]) <= {
@@ -389,6 +390,9 @@ def test_pipeline_trial_isolates_the_grader_from_the_candidates_make(pipeline_im
     # The stub agent wrote its probe file in the repository and never committed it: the snapshot took it.
     assert grade["snapshot"]["files"] >= 1 and (out / "repo" / "agent-was-here.txt").exists()
     assert not (out / "repo" / ".git").exists()
+    # The core.fsmonitor hook the agent planted in .git/config never ran as root (nor at all).
+    ran = out / "agent" / "fsmonitor-ran"
+    assert not ran.exists() or "root" not in ran.read_text().split(), ran.read_text()
 
 
 @docker_tests

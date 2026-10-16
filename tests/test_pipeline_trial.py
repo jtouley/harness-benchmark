@@ -245,3 +245,53 @@ def test_without_the_snapshot_untracked_work_is_deleted_before_grading(key, tmp_
     (repo / "Makefile").write_text((repo / "Makefile").read_text().replace("fixture/", "work/"))
     result = run_trial(repo, key, tmp_path, port)
     assert "snapshot" not in result and not (repo / "work").exists() and result["reward"] == 0.0
+
+
+# --- git in the grader never runs candidate configuration (PR #31 review) -------------------------------
+
+def _plant_fsmonitor(repo: Path, marker: Path) -> None:
+    """A repository config whose fsmonitor hook records that it ran (as whom)."""
+    hook = repo / ".git" / "fsmon.sh"
+    hook.write_text(f"#!/bin/sh\nid -un >> {marker}\nexit 1\n")
+    hook.chmod(0o755)
+    _git(repo, "config", "core.fsmonitor", str(hook))
+
+
+def test_a_planted_fsmonitor_hook_never_runs_during_grading(key, tmp_path, port):
+    repo = delivered(tmp_path, key, port)
+    marker = tmp_path / "fsmonitor-ran"
+    _plant_fsmonitor(repo, marker)
+    (repo / "untracked.txt").write_text("x")
+    result = trial.trial(repo, key, CAPTURE, seed=key["stream"]["seed"], port=port, speed=6000.0,
+                         durations=(1, 1), build_timeout=60, logs=tmp_path / "logs", snapshot_worktree=True)
+    assert result["reward"] == 1.0, result
+    assert not marker.exists(), marker.read_text()
+
+
+def test_the_grader_runs_git_with_the_make_users_prefix(monkeypatch, tmp_path):
+    calls = []
+
+    class Done:
+        returncode, stdout, stderr = 0, "", ""
+
+    monkeypatch.setattr(trial.subprocess, "run", lambda cmd, **kw: calls.append(cmd) or Done())
+    prefix = ("setpriv", "--reuid=agent", "--regid=agent", "--init-groups")
+    trial.reset(tmp_path, prefix)
+    trial.snapshot(tmp_path, prefix)
+    assert calls and all(tuple(c[:4]) == prefix for c in calls), calls
+    assert all("core.fsmonitor=false" in c for c in calls), calls
+
+
+def test_snapshot_counts_file_names_with_spaces_once(key, tmp_path, port):
+    repo = delivered(tmp_path, key, port)
+    (repo / "a file with spaces.txt").write_text("x")
+    (repo / "b.txt").write_text("y")
+    assert trial.snapshot(repo)["files"] == 2
+
+
+def test_a_stale_index_lock_gives_a_clear_error(key, tmp_path, port):
+    repo = delivered(tmp_path, key, port)
+    (repo / ".git" / "index.lock").write_text("")
+    result = trial.trial(repo, key, CAPTURE, seed=key["stream"]["seed"], port=port, speed=6000.0,
+                         durations=(1, 1), build_timeout=60, logs=tmp_path / "logs", snapshot_worktree=True)
+    assert result["reward"] == 0.0 and "index.lock" in result["error"], result

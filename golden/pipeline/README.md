@@ -104,7 +104,10 @@ How each runner change listed for this family is done:
    share and that is removed afterwards (state under `~/.dlt/` from development is gone). The grader's
    temporary directory (the capture) is root's, mode 0700, and the key stays in its memory. While the
    grader runs, the agent user has no network beyond loopback (`iptables` owner match), so the build
-   can use only the image's caches. `tests/test_runner.py` checks each point in a container.
+   can use only the image's caches. The grader's own git commands (the snapshot and the reset) also run as
+the agent user, with `core.fsmonitor` and hooks turned off, so no configuration in the candidate's
+`.git/config` runs as root; the image has no `safe.directory` for the repository, so git run by root
+there refuses. `tests/test_runner.py` checks each point in a container.
 
 ### Decisions for the runner (default, owner may change)
 

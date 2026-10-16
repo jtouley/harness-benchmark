@@ -127,9 +127,25 @@ def mart_digests(repo: Path) -> dict[str, str]:
     return out
 
 
-def reset(repo: Path) -> str | None:
-    """Back to the committed tree, minus the output folders. An error message, or None."""
-    proc = subprocess.run(["git", "clean", "-ffdxq"], cwd=repo, capture_output=True, text=True)
+# Every git command the grader runs: candidate configuration (core.fsmonitor, hooks) must not run code.
+SAFE_GIT = ("git", "-c", "core.fsmonitor=false", "-c", "core.hooksPath=/dev/null", "-c", "core.untrackedCache=false")
+
+
+def _lock_error(repo: Path) -> str | None:
+    lock = repo / ".git" / "index.lock"
+    if lock.exists():
+        return (".git/index.lock exists (a git command in the agent's session did not finish), so git "
+                "cannot snapshot or reset the repository; it is not graded")
+    return None
+
+
+def reset(repo: Path, prefix: tuple[str, ...] = ()) -> str | None:
+    """Back to the committed tree, minus the output folders. An error message, or None.
+    `prefix` runs git as the repository's user (setpriv), never as the grader's root."""
+    error = _lock_error(repo)
+    if error:
+        return error
+    proc = subprocess.run([*prefix, *SAFE_GIT, "clean", "-ffdxq"], cwd=repo, capture_output=True, text=True)
     if proc.returncode != 0:
         return f"git clean failed, so outputs left from development could be graded: {proc.stderr.strip()}"
     for name in OUTPUTS:
@@ -143,18 +159,22 @@ def reset(repo: Path) -> str | None:
 
 def snapshot(repo: Path, prefix: tuple[str, ...] = ()) -> dict:
     """Commit the working tree as it is (ignored files left out). `prefix` runs git as the repo's user."""
-    ident = ["-c", "user.name=harness-benchmark", "-c", "user.email=noreply@example.invalid",
-             "-c", "commit.gpgsign=false", "-c", "core.hooksPath=/dev/null"]
-    add = subprocess.run([*prefix, "git", *ident, "add", "-A"], cwd=repo, capture_output=True, text=True)
+    error = _lock_error(repo)
+    if error:
+        return {"error": error}
+    git = [*prefix, *SAFE_GIT, "-c", "user.name=harness-benchmark", "-c", "user.email=noreply@example.invalid",
+           "-c", "commit.gpgsign=false"]
+    add = subprocess.run([*git, "add", "-A"], cwd=repo, capture_output=True, text=True)
     if add.returncode != 0:
         return {"error": f"git add failed: {add.stderr.strip()[-500:]}"}
-    files = subprocess.run([*prefix, "git", "diff", "--cached", "--name-only"], cwd=repo, capture_output=True,
-                           text=True).stdout.split()
-    commit = subprocess.run([*prefix, "git", *ident, "commit", "-q", "--allow-empty", "--no-verify", "-m",
+    names = subprocess.run([*git, "diff", "--cached", "--name-only", "-z"], cwd=repo, capture_output=True,
+                           text=True).stdout
+    files = [n for n in names.split("\0") if n]
+    commit = subprocess.run([*git, "commit", "-q", "--allow-empty", "--no-verify", "-m",
                              "trial: the working tree the agent left"], cwd=repo, capture_output=True, text=True)
     if commit.returncode != 0:
         return {"error": f"git commit failed: {commit.stderr.strip()[-500:]}"}
-    head = subprocess.run(["git", "rev-parse", "HEAD"], cwd=repo, capture_output=True, text=True).stdout.strip()
+    head = subprocess.run([*git, "rev-parse", "HEAD"], cwd=repo, capture_output=True, text=True).stdout.strip()
     return {"commit": head, "files": len(files)}
 
 
@@ -176,12 +196,13 @@ def trial(repo: Path, key: dict, capture: Path, *, seed: int, port: int, speed: 
                     "make_user": make_user, "make_fresh_home": make_env is not None or make_user is not None}
     if make_user and os.geteuid() != 0:
         return {**result, "error": "--make-user needs the grader to run as root", "reward": 0.0}
+    # git runs as the make user: as root it would run code from the candidate's .git/config.
+    as_user = ("setpriv", f"--reuid={make_user}", f"--regid={make_user}", "--init-groups") if make_user else ()
     if snapshot_worktree:
-        as_user = ("setpriv", f"--reuid={make_user}", f"--regid={make_user}", "--init-groups") if make_user else ()
         result["snapshot"] = snapshot(repo, as_user)
         if "error" in result["snapshot"]:
             return {**result, "error": result["snapshot"]["error"], "reward": 0.0}
-    error = reset(repo)
+    error = reset(repo, as_user)
     if error:
         return {**result, "error": error, "reward": 0.0}
     logs.mkdir(parents=True, exist_ok=True)
