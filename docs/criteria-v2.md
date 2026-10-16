@@ -518,7 +518,7 @@ arm; and results that do not favor Cadence are stated first [v1] [WP].
 ## 10. Evidence that shaped v2
 
 - **Iteration 4** (T04–T06, n = 1 per cell): Opus 5.5 alone scored 8.00 against 7.33 for Cadence on Opus,
-  in about 1/30 of the time. Cadence shipped no crash; each one-shot shipped two. Opus alone was the only
+  in about 1/30 of the time. Cadence shipped no crash; each one-shot shipped two (all six on one task, budgets, from three inputs). Opus alone was the only
   arm to pass the tool gate on every task. Cadence runs took 54–68 minutes, so v1's 1800 s cap would have
   scored every one as not delivered [WP] [OD] [QM].
 - **Pilot** (T05, n = 1 per arm): the Opus one-shot delivered in 111 s for $0.40. Cadence orchestrated by

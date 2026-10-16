@@ -33,7 +33,7 @@ instructions are generic: none names a task, its data or its traps ([prompt hygi
   |---|---|---|---|
   | Opus 5.5 | 18/20 | $5.79 | $0.290 |
   | Sonnet 5.5 | 18/20 | $2.57 | $0.129 |
-  | Haiku 5.5 | 17/20 | $0.54 | $0.027 |
+  | Haiku 5.5 | 17/20 | $0.54 (lower bound) | $0.027 |
 
   On this sample, a one-shot Haiku 5.5 is within one task of Opus 5.5 at about one tenth of the cost. Only
   one task (`qutebrowser-9ed748ef`) passed on Opus and failed on both cheaper models, once each; that is
@@ -42,6 +42,11 @@ instructions are generic: none names a task, its data or its traps ([prompt hygi
 - Limits: 20 tasks, one try per model, setup failures rerun. Two Opus tries hit the agent timeout; one of
   them still passed the verifier and counts as a pass, the other counts as a fail. Cost is computed from
   token counts at [`pricing.json`](../pricing.json) list prices, because Claude Code misprices Haiku 5.5.
+  `collect.py` prices each trial's total tokens at the base rate. Haiku 5.5 costs 5 times more for a
+  request above 100K prompt tokens, and Harbor keeps no per-request counts, so the Haiku 5.5 cost is a lower
+  bound. `collect.py` also prices cache writes as plain input (Harbor does not split them out), so every
+  model's cost is somewhat low. The planned fix is in
+  [next steps](../docs/next-steps.md#cost-accounting-price-each-request-at-its-own-tier-planned-2026-10-16).
 - Earlier attempts of round 2 lost all or most of their trials to Docker Desktop failures (emulated x86 images on an
   arm64 laptop); they are kept in `results.json` as `infra_error`, not as failures.
 
