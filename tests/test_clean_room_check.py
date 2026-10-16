@@ -293,9 +293,16 @@ def test_reading_a_saved_tool_output_of_the_session_is_not_a_contact(tmp_path):
     "sh -c 'find / -name SKILL.md -exec cat {} +'",
     'bash -c "grep -rl TDD ~"',
     "egrep -r TDD /home/u",
+    "cd ~ && grep -rn TDD",
+    "cd ~ && rg TDD",
+    "locate SKILL.md",
+    "x=$(rg -l TDD ~)",
+    "grep -rn -e TDD /home/u",
+    "fd SKILL.md /",
+    "grep -rn 'open quote /home/u",
 ])
 def test_a_search_outside_the_allowed_folders_is_a_contact(tmp_path, command):
-    """R7 on PR #8: a search names folders, and its pattern can name any file in them."""
+    """R7 on PR #8: a search reads every file under the folders it names."""
     t = _transcript(tmp_path, _listing(*BUILTIN), _call("Bash", command=command))
     assert _repo_verdict(t) == "contaminated"
 
@@ -312,6 +319,13 @@ def test_a_search_tool_over_a_folder_outside_the_allowed_ones_is_a_contact(tmp_p
     [("Grep", {"pattern": "budget", "path": f"{REPO}/ledgerlite"})],
     [("Bash", {"command": f'cd "{REPO}" && cat CLAUDE.md'})],
     [("Bash", {"command": "echo $HOME && ls ~"})],
+    # A search's pattern is text, not a folder (PR #9 review F).
+    [("Bash", {"command": "grep -rn '%.2f' ledgerlite/ ; echo $?"})],
+    [("Bash", {"command": "rg -n '/api/' src"})],
+    [("Bash", {"command": "grep -rn 'reviews/plan_' ."})],
+    [("Bash", {"command": "rg -n '\\.__name__' && awk '{print $2}' out.txt"})],
+    [("Bash", {"command": "grep -rn -e '~/notes' -e '$HOME' tests"})],
+    [("Bash", {"command": "find ledgerlite -path '*/x/*' -name '*.py'"})],
 ])
 def test_ordinary_work_inside_the_repo_stays_clean(tmp_path, calls):
     t = _transcript(tmp_path, _listing(*BUILTIN), *(_call(name, **inp) for name, inp in calls))
@@ -335,3 +349,85 @@ def test_loaded_file_text_inside_a_tool_result_is_not_a_contact(tmp_path):
               "content": "Contents of /home/u/.claude/CLAUDE.md: see the docs"}]}}
     t = _transcript(tmp_path, _listing(*BUILTIN), result)
     assert _repo_verdict(t) == "clean"
+
+
+# PR #33 review: every option grammar a search tool has, in front of a folder outside the allowlist.
+SEARCH_OUTSIDE = [
+    "grep -r -E 'TDD|plan' /home/u", "grep -rn -x TDD /home/u", "grep -r -T TDD /home/u",
+    "rg -S TDD /home/u", "rg -x TDD /home/u", "ack -f /home/u",
+    "find -L /home/u -name x", "find -H /home/u -name x", "find -D tree /home/u", "find -O2 /home/u",
+    "cd /home/u && git -c core.pager=cat grep TDD",
+    'bash -lc "grep -rn TDD /home/u"', "rg x#y /home/u",
+    'bash -c "echo it\'s ok; grep -rn TDD /home/u"', 'sh -c "cd /home/u && grep -rn TDD"',
+    "rg -c 'foo bar' /home/u", "ack -g SKILL /home/u", "ag -g SKILL /home/u",
+    "fd --search-path /home/u SKILL", "fd --base-directory=/home/u SKILL", "rg --sort path TDD /home/u",
+    "rg -uuu TDD /home/u", "rg -t py TDD /home/u", "grep -rn -A 3 TDD /home/u", "rg -g '*.md' TDD /home/u",
+    "grep -rnA 3 TDD /home/u", "grep -rne TDD /home/u", "rg --max-depth=2 TDD /home/u",
+    # re-review of #33: optional values, words between -c and its script, git repository options
+    "ack -C TDD /home/u", "ack --context TDD /home/u", "ag -C TDD /home/u", "ag --context TDD /home/u",
+    "bash -c -- 'grep -rn TDD /home/u'", 'bash -c -- "cd /home/u && rg TDD"', "sh -c -e 'rg TDD /home/u'",
+    "git --git-dir /home/u/.git grep TDD", "git --work-tree /home/u grep TDD",
+    "git --git-dir=/home/u/.git grep TDD", "git --work-tree=/home/u grep TDD",
+    "fd -x cat {} \\; SKILL /home/u", "fd -x cat {} ';' SKILL /home/u",
+    # second re-review of #33
+    "ack -A TDD /home/u", "ack -B TDD /home/u", "ag -A TDD /home/u", "ag -B TDD /home/u",
+    "ack --after-context TDD /home/u", "ack --before-context TDD /home/u",
+    "bash -c -o pipefail 'grep -rn TDD /home/u'", "bash -c -O extglob 'rg TDD /home/u'",
+    "zsh -c -o nonomatch 'rg TDD /home/u'", "bash -c +x 'grep -rn TDD /home/u'",
+    "grep --directories recurse TDD /home/u", "GIT_DIR=/home/u/.git git grep TDD",
+    "GIT_WORK_TREE=/home/u git grep TDD",
+]
+SEARCH_INSIDE = [
+    "rg -t py TDD src", "grep -rn -A 3 TDD src", "fd -e py test src",
+    "python3 -c \"import os  # don't\"", "grep -rn 'a#b' src",
+    "rg --stats '/api/' src", "grep -rnA 3 TDD src", "rg --no-config TDD src", "grep -r -E 'a|b' src",
+    "ack -C 2 TDD src", "ag --context=2 TDD src", "grep -n TDD recurse_notes.txt",
+    "ack -A 2 TDD src", "ag -B 2 TDD src", "ag --after 2 src",
+]
+
+
+def _outside(command):
+    return [c for c in crc._command_locations(command, REPO) if not crc.path_allowed(c, [REPO])]
+
+
+@pytest.mark.parametrize("command", SEARCH_OUTSIDE)
+def test_each_option_grammar_still_counts_the_folder_searched(command):
+    assert _outside(command)
+
+
+@pytest.mark.parametrize("command", SEARCH_INSIDE)
+def test_options_and_patterns_inside_the_repo_are_not_contacts(command):
+    assert _outside(command) == []
+
+
+def test_an_internal_error_exits_with_a_code_that_is_not_a_verdict(tmp_path, monkeypatch):
+    """Exit 1 means exposed. A crash must not be read as a softer verdict than contaminated."""
+    t = _transcript(tmp_path, _listing(*BUILTIN), _call("Bash", command="ls"))
+    monkeypatch.setattr(crc, "scan", lambda *a, **k: (_ for _ in ()).throw(RuntimeError("boom")))
+    assert crc.main([str(t)]) == crc.EXIT_ERROR
+    assert crc.EXIT_ERROR not in (0, 1, 2, 3)
+
+
+@pytest.mark.parametrize("tool,kind,option", [
+    (tool, kind, option) for tool, kinds in crc.OPTION_KINDS.items() for kind, names in kinds.items()
+    for option in sorted(names)])
+def test_every_option_in_the_tables_still_reads_the_folder_after_it(tool, kind, option):
+    """Each table entry, in front of a folder outside the allowlist: the folder is a contact."""
+    recursive = "-r " if tool in {"grep", "egrep", "fgrep"} else ""
+    words = {"value": f"{option} 3 TDD", "count": f"{option} TDD", "pattern": f"{option} TDD",
+             "files": option, "folder": f"{option} /home/u TDD"}[kind]
+    folder = "" if kind == "folder" else " /home/u"  # a folder option's value is the only folder
+    assert _outside(f"{tool} {recursive}{words}{folder}"), (tool, option)
+
+
+# Options whose value is optional: the next word is the value only when it is a number.
+# ack 3 lib/App/Ack/ConfigLoader.pm ('A|after-context:-1' etc., Getopt::Long optional integer);
+# ag src/options.c (case 'A', 'B', 'C': a word that is not a number is put back as the pattern).
+OPTIONAL_COUNT = {"ack": {"-A", "-B", "-C", "--after-context", "--before-context", "--context"},
+                  "ag": {"-A", "-B", "-C"}}
+
+
+@pytest.mark.parametrize("tool", sorted(OPTIONAL_COUNT))
+def test_options_with_an_optional_number_are_labelled_count(tool):
+    assert OPTIONAL_COUNT[tool] == crc.OPTION_KINDS[tool]["count"]
+    assert not OPTIONAL_COUNT[tool] & crc.OPTION_KINDS[tool]["value"]

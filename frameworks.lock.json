@@ -21,7 +21,9 @@
   "ignore": [
     "^home/\\.claude\\.json$",
     "^home/\\.claude/backups/",
-    "^home/\\.claude/policy-limits\\.json\\.stamp\\.json$"
+    "^home/\\.claude/policy-limits\\.json\\.stamp\\.json$",
+    "^home/\\.claude/policy-limits\\.json$",
+    "^home/\\.claude/remote-settings\\.json$"
   ],
   "frameworks": {
     "baseline": {

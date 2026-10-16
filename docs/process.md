@@ -89,6 +89,7 @@ including every nested agent the run spawned (found through `parentAgentId`), an
 | `exposed` | 1 | Skills or subagent types outside those lists were listed to the session, and none was used |
 | `contaminated` | 2 | Such a skill was called or such a subagent type spawned; or a tool touched a host config directory (`.claude`, `.cursor`, `.codex`, `.agents`) or an instruction file (`SKILL.md`, `CLAUDE.md`, `AGENTS.md`, `MEMORY.md`) outside the arm's allowed paths; or a search (`find`, `rg`, `grep -r`, `git grep`, the Grep and Glob tools and the like) ran over a folder outside them; or the host loaded such an instruction file into the session |
 | `unassessable` | 3 | No transcript records, or no skill listing at all: the check cannot tell what the run was offered |
+| (error) | 4 | The check itself failed. This is not a verdict: rerun or fix the check, and do not grade the run |
 
 Allowed paths are absolute folders. A path counts as inside one only after `..` is resolved. In a shell
 command that changes directory, a relative path resolves against the folder it changes to when that is

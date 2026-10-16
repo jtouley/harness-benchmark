@@ -124,3 +124,7 @@ def rmtree(path: Path) -> None:
 def git_init(path: Path, env: dict[str, str]) -> None:
     run(["git", "init", "-q", "-b", "main"], cwd=path, env=env)
     run(["git", "config", "commit.gpgsign", "false"], cwd=path, env=env)
+    # A background gc or maintenance run can still write into .git while
+    # restore copies the sandbox, and copytree then fails.
+    run(["git", "config", "gc.auto", "0"], cwd=path, env=env)
+    run(["git", "config", "maintenance.auto", "false"], cwd=path, env=env)

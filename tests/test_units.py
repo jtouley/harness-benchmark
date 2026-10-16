@@ -15,7 +15,7 @@ from cbench.hookrun import aggregate, classify
 from cbench.install import Sandbox, _sort_manifest_files, canonicalize_host_text, normalizer
 from cbench.lock import load_lock
 from cbench.probes import _clean
-from cbench.util import PRICING_PATH, canonical_json, load_json
+from cbench.util import PRICING_PATH, canonical_json, clean_env, git_init, load_json, run
 
 PRICING = load_json(PRICING_PATH)
 
@@ -182,3 +182,12 @@ def test_normalizer_hides_a_node_binary_that_lives_under_the_cache_dir(monkeypat
     norm = normalizer(load_lock())
     assert norm(f'"{cache}/node-v22/bin/node" hooks/x.js') == '"<NODE>" hooks/x.js'
     assert norm(f'"{cache}/src/superpowers@abc"') == '"<CACHE>/src/superpowers@abc"'
+
+
+def test_git_init_turns_off_background_maintenance(tmp_path):
+    """A background gc or maintenance run wrote into .git while restore copied the sandbox (#1 review)."""
+    env = clean_env(tmp_path)
+    git_init(tmp_path, env)
+    def get(key):
+        return run(["git", "config", "--get", key], cwd=tmp_path, env=env).stdout.strip()
+    assert (get("gc.auto"), get("maintenance.auto")) == ("0", "false")

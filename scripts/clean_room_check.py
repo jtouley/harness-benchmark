@@ -25,9 +25,9 @@ The check reads three things in every transcript:
   AGENTS, MEMORY .md); and every instruction file the host loads into the session
   (`instructions` attachments, "Contents of <path>" text in user or system messages);
   and every folder a search names (find, fd, rg, ag, ack, locate, grep -r, git grep, and
-  the Grep and Glob tools' path), since a search reads everything under it and its
-  pattern can name any file. Text that a tool writes (content, new_string) is not a
-  contact.
+  the Grep and Glob tools' path), since a search reads everything under it. A search's
+  pattern is text to match, not a folder. A search with no folder reads the current
+  folder. Text that a tool writes (content, new_string) is not a contact.
 
 Skills and agent types the host always lists (scripts/clean_room_builtin_skills.json)
 may appear in the listing of any arm. Calling a built-in skill needs `--allow` like any
@@ -43,7 +43,8 @@ listing, so it is unassessable.
 Verdicts (exit code): clean (0), exposed (1: skills outside the allowlist were listed,
 none used), contaminated (2: a skill outside the allowlist was called, or a location
 outside the allowed paths was touched), unassessable (3: no transcript records, or no
-skill listing at all, so the check cannot tell what the run was offered).
+skill listing at all, so the check cannot tell what the run was offered). An internal error
+exits 4, which is not a verdict.
 
 usage: clean_room_check.py TRANSCRIPT [TRANSCRIPT ...] [--agents-dir DIR --agent ID]
        [--allow SKILL ...] [--allow-path PATH ...] [--cwd DIR] [--json]
@@ -55,6 +56,7 @@ import argparse
 import json
 import posixpath
 import re
+import shlex
 import sys
 from pathlib import Path
 
@@ -68,9 +70,46 @@ LOCATION = re.compile(
 PATH_FIELDS = ("file_path", "path", "notebook_path")  # Grep's `pattern` is a regex, not a path
 TOKEN = re.compile(r"[^\s'\";|&<>()]+")
 CHANGES_DIR = re.compile(r"(?:^|[\s;&|(])(?:cd|pushd)(?:\s+([^\s;&|)]+)|(?=[\s;&|)]|$))")
-# A search reads every file under the folders it names, and its pattern can name any of them.
-SEARCH = re.compile(r"(?:^|[\s;&|(`'\"])(?:find|fd|rg|ag|ack|ugrep|locate|[ef]?grep\b[^;&|]*\s(?:-[a-zA-Z]*[rR][a-zA-Z]*|--recursive)"
-                    r"|git\b[^;&|]*\sgrep)(?=\s|$)")
+# A search reads every file under the folders it names. Only those folders are contacts: the
+# pattern is text to match, not a path (`'%.2f'`, `'/api/'` are patterns).
+PUNCTUATION = ";&|()`"
+PATTERN_FIRST = {"grep", "egrep", "fgrep", "rg", "ag", "ack", "ugrep", "fd"}
+SCRIPT_FLAG = re.compile(r"-[a-zA-Z]*c[a-zA-Z]*")  # sh -c, bash -lc, zsh -ec
+FIND_GLOBAL = re.compile(r"-[HLP]|-O\d*")
+FIND_GLOBAL_VALUE = {"-D"}
+GIT_VALUE = {"-c", "--namespace", "--exec-path", "--config-env"}
+GIT_FOLDER = {"-C", "--git-dir", "--work-tree"}  # the repository that git grep reads
+# Per tool, the options that take the next word. A "pattern" option gives the pattern, so no
+# positional word is the pattern. A "files" option lists files, and then there is no pattern.
+# A "count" option takes the next word only when it is a number (ack and ag -C [NUM]).
+# A "folder" option names a folder. An option missing from a table takes no word, so its next
+# word is read as the pattern or a folder.
+_GREP = {"-A", "-B", "-C", "-m", "-d", "-D", "--context", "--before-context", "--after-context",
+         "--max-count", "--directories", "--devices", "--include", "--exclude", "--exclude-dir",
+         "--label", "--binary-files"}
+_PATTERN = {"-e", "-f", "--regexp", "--file"}
+OPTION_KINDS: dict[str, dict[str, set[str]]] = {
+    "grep": {"value": _GREP, "pattern": _PATTERN},
+    "rg": {"value": {"-A", "-B", "-C", "-m", "-g", "-t", "-T", "-j", "-M", "-E", "-r", "--glob", "--iglob",
+                     "--type", "--type-not", "--type-add", "--max-count", "--max-depth", "--max-filesize",
+                     "--encoding", "--context", "--before-context", "--after-context", "--threads",
+                     "--max-columns", "--replace", "--sort", "--sortr", "--pre", "--pre-glob", "--engine",
+                     "--path-separator", "--colors", "--ignore-file"},
+           "pattern": _PATTERN, "files": {"--files"}},
+    # ag's long --after/--before/--context take a value only as `--opt=N` (optional_argument).
+    "ag": {"value": {"-m", "-G", "--depth", "--ignore", "--max-count", "--file-search-regex"},
+           "count": {"-A", "-B", "-C"}, "pattern": {"-g"}},
+    "ack": {"value": {"-m", "--type", "--ignore-dir", "--ignore-file", "--max-count", "--output"},
+            "count": {"-A", "-B", "-C", "--after-context", "--before-context", "--context"},
+            "pattern": {"-g", "--match"}, "files": {"-f"}},
+    "fd": {"value": {"-e", "-E", "-t", "-d", "-x", "-X", "-S", "-j", "-c", "--extension", "--exclude", "--type",
+                     "--max-depth", "--min-depth", "--exact-depth", "--exec", "--exec-batch", "--size",
+                     "--threads", "--changed-within", "--changed-before", "--owner", "--max-results", "--color"},
+           "folder": {"--search-path", "--base-directory"}},
+}
+for _alias in ("egrep", "fgrep", "ugrep"):
+    OPTION_KINDS[_alias] = OPTION_KINDS["grep"]
+TAKES_NEXT = {"value", "pattern", "folder", "count"}
 SEARCH_TOOLS = ("Grep", "Glob")
 LOADED_FILE = re.compile(r"Contents of (\S+?\.md)\b")
 AGENT_TOOLS = ("Task", "Agent")
@@ -174,12 +213,187 @@ def _command_locations(command: str, cwd: str | None) -> list[str]:
     base = _command_base(command, cwd)
     tokens = TOKEN.findall(command)
     found = [_resolve(t, base) for t in tokens if _is_location(t)]
-    if SEARCH.search(command):
-        found += [_resolve(t, base) for t in tokens if _is_folder_argument(t)]
+    try:
+        words = _shell_words(command)
+    except ValueError:  # an open quote: every word of a search that looks like a folder counts
+        return found + ([_resolve(t, base) for t in tokens if _looks_like_folder(t)] if _names_search(command) else [])
+    for segment, scripts in _segments(words):
+        found += [_resolve(folder, base) for folder in _segment_folders(segment)]
+        for script in scripts:  # the script of `sh -c` or `eval` has its own cd
+            found += _command_locations(script, base)
     return found
 
 
-def _is_folder_argument(token: str) -> bool:
+# `\;`, `';'` and `";"` as a whole word end a find or fd -exec: they are an argument, not a separator.
+QUOTED_SEMICOLON = re.compile(r"(?<!\S)(?:\\;|';'|\";\")(?!\S)")
+
+
+def _shell_words(command: str) -> list[str]:
+    lexer = shlex.shlex(QUOTED_SEMICOLON.sub("SEMICOLON", command), posix=True, punctuation_chars=PUNCTUATION)
+    lexer.whitespace_split = True
+    lexer.commenters = ""  # bash starts a comment only at a word start; counting a comment fails closed
+    return list(lexer)
+
+
+def _segments(words: list[str]):
+    """Split at shell separators. A `sh -c` or `eval` script stays a word and is also returned to be read.
+
+    After `-c` (or `eval`), every later word with a space is read as a script. Shell options with
+    values (`-o pipefail`, `+O extglob`) can come between, and reading one word too many can
+    only add contacts.
+    """
+    segment: list[str] = []
+    scripts: list[str] = []
+    after_flag = False
+    for word in words:
+        if all(c in PUNCTUATION for c in word):
+            yield segment, scripts
+            segment, scripts, after_flag = [], [], False
+            continue
+        if after_flag and " " in word:
+            scripts.append(word)
+        after_flag = after_flag or bool(SCRIPT_FLAG.fullmatch(word)) or word == "eval"
+        segment.append(word)
+    yield segment, scripts
+
+
+def _segment_folders(words: list[str]) -> list[str]:
+    """The folders that the search in one simple command reads. A search with no folder reads `.`;
+    `locate` reads an index of the whole file system (`/`)."""
+    for i, word in enumerate(words):
+        name = posixpath.basename(word)
+        if name == "git":
+            return _git_grep_folders(words[i + 1:], _git_env(words[:i]))
+        if name == "find":
+            return _find_folders(words[i + 1:])
+        if name == "locate":
+            return ["/"]
+        if name in PATTERN_FIRST:
+            return _pattern_first_folders(name, words[i + 1:])
+    return []
+
+
+def _find_folders(args: list[str]) -> list[str]:
+    """The paths of find come after its global options (-H, -L, -P, -D x, -O<n>) and before its expression."""
+    folders = []
+    skip = False
+    for arg in args:
+        if skip or FIND_GLOBAL.fullmatch(arg):
+            skip = False
+        elif arg in FIND_GLOBAL_VALUE:
+            skip = True
+        elif arg.startswith(("-", "!", "(")) and arg != "--":
+            break
+        elif arg != "--":
+            folders.append(arg)
+    return folders or ["."]
+
+
+def _git_env(words: list[str]) -> list[str]:
+    """GIT_DIR=... or GIT_WORK_TREE=... before git names the repository."""
+    return [w.split("=", 1)[1] for w in words if w.startswith(("GIT_DIR=", "GIT_WORK_TREE="))]
+
+
+def _git_grep_folders(args: list[str], env: list[str] | None = None) -> list[str]:
+    """`git grep` reads the repository that -C, --git-dir, --work-tree or the environment names, or `.`."""
+    folders: list[str] = list(env or [])
+    pending = None
+    for arg in _split_equals(args, GIT_FOLDER | GIT_VALUE):
+        if pending:
+            folders += [arg] if pending in GIT_FOLDER else []
+            pending = None
+        elif arg in GIT_FOLDER | GIT_VALUE:
+            pending = arg
+        elif arg == "grep":
+            return folders or ["."]
+        elif not arg.startswith("-"):
+            return []
+    return []
+
+
+def _split_equals(args: list[str], options: set[str]) -> list[str]:
+    """`--opt=value` as the two words `--opt value`, for the options named."""
+    words: list[str] = []
+    for arg in args:
+        option, has_value, value = arg.partition("=")
+        words += [option, value] if has_value and option in options else [arg]
+    return words
+
+
+def _pattern_first_folders(name: str, args: list[str]) -> list[str]:
+    head, tail = (args[:args.index("--")], args[args.index("--") + 1:]) if "--" in args else (args, [])
+    options, kinds, positional, named = _parse_options(name, head)
+    if name in {"grep", "egrep", "fgrep"} and not _recursive(options, head):
+        return []  # a plain grep reads only the files it names
+    positional += tail
+    if not kinds & {"pattern", "files"}:
+        positional = positional[1:]  # the first word is the pattern
+    return positional + named or ["."]
+
+
+def _parse_options(name: str, args: list[str]) -> tuple[set[str], set[str], list[str], list[str]]:
+    """Option words, the kinds of the options seen, the positional words, and the folders options name."""
+    options: set[str] = set()
+    kinds: set[str] = set()
+    positional: list[str] = []
+    named: list[str] = []
+    pending = None
+    for arg in args:
+        pending = _still_pending(pending, arg)
+        if pending:
+            named += [arg] if pending == "folder" else []
+            pending = None
+        elif arg == "-" or not arg.startswith("-"):
+            positional.append(arg)
+        else:
+            kind, takes_next, attached = _option(name, arg)
+            options.add(arg.split("=", 1)[0])
+            kinds.add(kind)
+            pending = kind if takes_next else None
+            named += [attached] if kind == "folder" and attached else []
+    return options, kinds, positional, named
+
+
+def _still_pending(pending: str | None, arg: str) -> str | None:
+    """A "count" option takes the word only if it is a number; otherwise the word is read as usual."""
+    return None if pending == "count" and not arg.isdigit() else pending
+
+
+def _option(name: str, arg: str) -> tuple[str | None, bool, str]:
+    """(kind, takes the next word, attached value) for one option word, `--opt=v` or a short cluster `-rnA3`."""
+    if arg.startswith("--"):
+        option, has_value, value = arg.partition("=")
+        kind = _kind(name, option)
+        return kind, kind in TAKES_NEXT and not has_value, value
+    for i, letter in enumerate(arg[1:], 1):
+        kind = _kind(name, "-" + letter)
+        if kind:
+            return kind, kind in TAKES_NEXT and i == len(arg) - 1, arg[i + 1:]
+    return None, False, ""
+
+
+def _kind(name: str, option: str) -> str | None:
+    return next((kind for kind, names in OPTION_KINDS[name].items() if option in names), None)
+
+
+def _recursive(options: set[str], args: list[str]) -> bool:
+    short = any(not o.startswith("--") and any(c in o[1:] for c in "rR") for o in options)
+    return short or bool(options & {"--recursive", "--dereference-recursive"}) or _directories_recurse(options, args)
+
+
+def _directories_recurse(options: set[str], args: list[str]) -> bool:
+    """grep -d recurse, -drecurse, --directories recurse, --directories=recurse."""
+    # zip, not itertools.pairwise: grade_arm.sh runs this script with the host python3 (3.9 on macOS).
+    pairs = set(zip(args, args[1:]))  # noqa: RUF007
+    named = {"-drecurse", "--directories=recurse"} & set(args)
+    return bool(named) or ("-d", "recurse") in pairs or ("--directories", "recurse") in pairs
+
+
+def _names_search(command: str) -> bool:
+    return bool(re.search(r"(?:^|[\s;&|(`'\"])(?:find|fd|rg|ag|ack|ugrep|locate|[ef]?grep|git)(?=\s|$)", command))
+
+
+def _looks_like_folder(token: str) -> bool:
     return not token.startswith("-") and (token.startswith(("/", "~", "$", ".")) or "/" in token)
 
 
@@ -326,6 +540,9 @@ def verdict(found: dict, allow: set[str], allow_paths: list[str]) -> dict:
             "unexpected_contacts": unexpected_contacts, "verdict": level, "exit": code}
 
 
+EXIT_ERROR = 4  # not a verdict: exit 1 means exposed, and a crash must not read as a softer verdict
+
+
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__.split("\n\n")[0])
     parser.add_argument("transcripts", type=Path, nargs="*")
@@ -338,6 +555,14 @@ def main(argv: list[str] | None = None) -> int:
     args = parser.parse_args(argv)
     if any(not p.startswith("/") for p in args.allow_path):
         parser.error("--allow-path must be absolute")
+    try:
+        return _check(args)
+    except Exception as error:  # noqa: BLE001 - any crash is reported as an error, never as a verdict
+        print(f"error: {type(error).__name__}: {error}", file=sys.stderr)
+        return EXIT_ERROR
+
+
+def _check(args: argparse.Namespace) -> int:
     paths = list(args.transcripts)
     for transcript in args.transcripts:
         paths += session_agents(transcript)

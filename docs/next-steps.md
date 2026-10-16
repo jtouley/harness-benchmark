@@ -1,6 +1,8 @@
 # Next steps: the cheapest model that matches Opus, with an audit trail
 
-Status: proposed design (October 2026). Nothing here has run yet. It follows from the
+Status: proposed design (October 2026). Only the [pilot](experiments/2026-10-13-pilot.md), the B01
+calibration and the first [pipeline one-shot trials](experiments/2026-10-15-pipeline-trials.md) have run.
+The main run set has not. It follows from the
 [findings so far](findings.md). It changes parts of criteria v1 (the caps, the comparison arm, the
 primary defect measure), so it must be written up as criteria v2 before the run set starts, and no
 result counts before that.
@@ -39,8 +41,9 @@ the defects that reach the delivered code, and the evidence that the run leaves 
   pennies the token count does not matter; dollars per defect-free delivered run does.
 - **The tasks must be harder.** On T04–T06, Opus alone finished in about 2 minutes with the top
   scores. Those tasks are too easy to show what a harness is for. The main run set uses class L and O
-  tasks ([criteria §3](criteria.md#3-task-classes)), starting with the proposed
-  [pipeline task family](tasks/pipeline-family.md) (P1 to P3, which supersedes L3). T05 stays as a quick pilot only.
+  tasks ([criteria §3](criteria.md#3-task-classes)): B01 and the other real-defect tasks first, then the
+  [pipeline task family](tasks/pipeline-family.md) (P1 to P3, which supersedes L3) if calibration admits it
+  (the order in [Plan](#plan), stage 2). T05 stays as a quick pilot only.
 - **Quality is measured by the published [quality model](quality-model.md)**, not by one grader's
   rubric, and every run must pass a clean-room check before it is graded: on Claude Code,
   [`clean_room_check.py`](process.md#clean-room); on other hosts, the check in stage 0, step 3.
