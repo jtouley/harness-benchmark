@@ -97,7 +97,7 @@ Reliability is measured over repeated runs (pass^k, k ≥ 3), not one pass: a on
 
 Reading: in 2 of 2 Haiku runs and 1 of 1 Sonnet run, an Opus review loop fixed both defects, where the cheap one-shots fixed both in 0 of 5 and 1 of 5. That is a signal, not yet a reliability measure (pass^k needs k ≥ 3). It does not save money. The reviewer must run the stack to check the work, and that costs about as much as Opus doing the task. The open cost question is whether a cheaper reviewer (Sonnet reviewing Haiku) keeps the reliability. Runs were cut short by repeated Docker Desktop failures on the test host; two runs were set aside as invalid (Docker down during the run); their arms are not recorded here.
 
-## Cost accounting: price each request at its own tier (planned, 2026-10-16)
+## Cost accounting: price each request at its own tier (in progress, 2026-10-16)
 
 Haiku 5.5 has two price tiers: $0.10 / $0.50 per million tokens for a prompt up to 100K tokens, and
 $0.50 / $2.50 above ([`pricing.json`](../pricing.json)). The tier is set per request. Every cost script
@@ -119,6 +119,18 @@ The fix, before the next run set:
    (input + cache read + cache write).
 3. **Fail loudly on aggregate-only data.** For a model with a tier, a cost from session totals is not
    reported as a number. The script stops, or reports the lower and upper bounds with that label.
+
+**Status (2026-10-16).** Steps 2 and 3 are built in [`cbench/cost.py`](../cbench/cost.py), with the
+second tier and the 1-hour cache-write prices in [`pricing_tiers.json`](../pricing_tiers.json)
+(`pricing.json` is unchanged, because its sha256 is part of the tier-1 and tier-2 results provenance). It
+reads one record per API response from Claude Code's stdout transcript and its session logs (subagents
+included), merges the lines of one response, prices each at its own tier, and checks the records against
+`result.json` totals. From totals alone, a model with a tier gets labelled bounds, never one number.
+[`scripts/pipeline_trial.py`](../scripts/pipeline_trial.py) uses it, so the next pipeline run set is
+priced per request (its runner already saves `transcript.jsonl` and `claude-projects/`). Not yet moved
+to it: the SWE-bench Pro collector and `cbench/report.py` (both need Harbor's per-request logs), and
+the pilot's `grade_arm.sh` (kept as the record of how the pilot was graded). The 2026-10-15 pipeline
+rows are not repriced yet: their run directories are not in this repository.
 
 Cadence's context budget (jtouley/cadence#96, PR #97) also writes the prompt size of each orchestrator
 call to `.context/attest/<run>.context.jsonl`. That gives per-request sizes for the orchestrator only,

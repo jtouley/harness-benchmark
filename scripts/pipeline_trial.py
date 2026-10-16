@@ -15,7 +15,8 @@
 
 The image per task and the caps are in runner/pipeline/caps.json. The API key comes from the
 environment, as run_trial.sh reads it; this script never prints it, and drops it for runs with no agent.
-Cost is computed from token counts at pricing.json list prices, per model in the session.
+Cost is computed per request from the session's transcripts, each request at its own price tier
+(cbench/cost.py); a run with only session totals gets labelled bounds for a model with a tier.
 """
 
 from __future__ import annotations
@@ -30,13 +31,16 @@ import subprocess
 import sys
 import tempfile
 from datetime import datetime
-from decimal import Decimal
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
+if str(ROOT) not in sys.path:
+    sys.path.insert(0, str(ROOT))
+
+from cbench import cost  # noqa: E402
+
 PIPELINE = ROOT / "golden" / "pipeline"
 CAPS = ROOT / "runner" / "pipeline" / "caps.json"
-PRICING = ROOT / "pricing.json"
 RUN_TRIAL = ROOT / "runner" / "run_trial.sh"
 NO_AGENT = "#!/usr/bin/env bash\n# No agent: the repository is graded as delivered.\nexit 0\n"
 
@@ -47,37 +51,29 @@ STALL_IDLE_SECONDS = 600  # a session silent this long before the guard cap ende
 
 # --- cost --------------------------------------------------------------------------------------------
 
-def _price(model: str, pricing: dict) -> dict:
-    models = pricing["models"]
-    name = re.sub(r"\[.*\]$", "", model)
-    for candidate in (name, re.sub(r"-\d{8}$", "", name)):
-        if candidate in models:
-            return models[candidate]
-    raise KeyError(f"no price for model {model!r} in pricing.json")
+def session_cost(run: Path, result: dict, prices: dict, model: str | None = None) -> dict:
+    """Each request at its own tier, from the stdout transcript and Claude Code's session logs, checked
+    against the session totals in result.json (``modelUsage``, or ``usage`` for ``model``)."""
+    usage = result.get("modelUsage") or None
+    if not usage and result.get("usage"):
+        u = result["usage"]
+        usage = {model or "unknown": {"inputTokens": u.get("input_tokens", 0),
+                                      "outputTokens": u.get("output_tokens", 0),
+                                      "cacheCreationInputTokens": u.get("cache_creation_input_tokens", 0),
+                                      "cacheReadInputTokens": u.get("cache_read_input_tokens", 0)}}
+    paths = [p for p in (run / "transcript.jsonl", run / "claude-projects") if p.exists()]
+    return cost.price_session(paths, prices, usage)
 
 
-def cost_and_tokens(result: dict, pricing: dict, model: str | None = None) -> tuple[Decimal, dict]:
-    """Cost at list prices and token totals, from Claude Code's per-model usage (or `usage` for `model`)."""
-    per_model = result.get("modelUsage")
-    if not per_model:
-        u = result.get("usage") or {}
-        if not u:
-            return Decimal(0), {"input": 0, "output": 0, "cache_write": 0, "cache_read": 0}
-        per_model = {model or "unknown": {"inputTokens": u.get("input_tokens", 0),
-                                          "outputTokens": u.get("output_tokens", 0),
-                                          "cacheCreationInputTokens": u.get("cache_creation_input_tokens", 0),
-                                          "cacheReadInputTokens": u.get("cache_read_input_tokens", 0)}}
-    total, tokens = Decimal(0), {"input": 0, "output": 0, "cache_write": 0, "cache_read": 0}
-    for name, u in per_model.items():
-        p = _price(name, pricing)
-        n = {"input": u.get("inputTokens", 0), "output": u.get("outputTokens", 0),
-             "cache_write": u.get("cacheCreationInputTokens", 0), "cache_read": u.get("cacheReadInputTokens", 0)}
-        for k in tokens:
-            tokens[k] += n[k]
-        total += (n["input"] * Decimal(p["input"]) + n["output"] * Decimal(p["output"])
-                  + n["cache_write"] * Decimal(p["cache_write_5m"]) + n["cache_read"] * Decimal(p["cache_read"])
-                  ) / Decimal(1_000_000)
-    return total, tokens
+def token_totals(c: dict) -> dict:
+    tokens = {"input": 0, "output": 0, "cache_write": 0, "cache_read": 0}
+    for m in c["by_model"].values():
+        t = m["tokens"]
+        tokens["input"] += t["input"]
+        tokens["output"] += t["output"]
+        tokens["cache_write"] += t["cache_write_5m"] + t["cache_write_1h"]
+        tokens["cache_read"] += t["cache_read"]
+    return tokens
 
 
 # --- one run -----------------------------------------------------------------------------------------
@@ -117,16 +113,18 @@ def outcome(run: Path, result: dict, timing: dict) -> str:
     return "graded"
 
 
-def summarize(run: Path, pricing: dict) -> dict:
+def summarize(run: Path, prices: dict) -> dict:
     meta, result = _load(run / "trial.json"), _load(run / "result.json")
     grade, timing = _load(run / "grade.json"), _load(run / "timing.json")
+    session = run
     if meta.get("mode") == "regrade":  # the session is the original run's; the grade is this one's
         src = Path(meta["regrade_of"])
         src = src if src.is_absolute() else run.parent / src.name
+        session = src
         src_meta, result, src_timing = _load(src / "trial.json"), _load(src / "result.json"), _load(src / "timing.json")
         meta = {**meta, "model": src_meta.get("model")}
         timing = {**src_timing, "grader_seconds": timing.get("grader_seconds", 0)}
-    cost, tokens = cost_and_tokens(result, pricing, meta.get("model"))
+    c = session_cost(session, result, prices, meta.get("model"))
     kind = ("void" if meta.get("void") else "diagnostic" if meta.get("diagnostic")
             else outcome(run, result, timing))
     builds = grade.get("build") or []
@@ -141,7 +139,8 @@ def summarize(run: Path, pricing: dict) -> dict:
         "counts_as_model_failure": {"graded": reward < 1.0, "guard_cap": True}.get(kind, False),
         "reward": reward, "checks": f"{grade.get('passed', 0)}/{grade.get('total', 7)}",
         "idempotent": grade.get("idempotent"), "stream_ok": grade.get("stream_ok"), "error": grade.get("error"),
-        "tokens": tokens, "cost_usd": format(cost.quantize(Decimal("0.000001")), "f"),
+        "tokens": token_totals(c), "cost_usd": c["usd"], "cost_usd_lower": c["usd_lower"],
+        "cost_usd_upper": c["usd_upper"], "cost_method": c["method"], "cost_label": c["label"],
         "num_turns": result.get("num_turns"),
         "agent_seconds": timing.get("agent_seconds"), "grader_seconds": timing.get("grader_seconds"),
         "first_build_seconds": first, "wall_seconds": wall,
@@ -150,10 +149,10 @@ def summarize(run: Path, pricing: dict) -> dict:
     }
 
 
-def summarize_all(runs: list[Path], pricing: dict) -> list[dict]:
+def summarize_all(runs: list[Path], prices: dict) -> list[dict]:
     """Rows for every run. A void run, and a run that a later regrade replaces, stay in the table with
     `counted` false: neither is a result, and neither counts as a model failure."""
-    rows = [summarize(run, pricing) for run in runs]
+    rows = [summarize(run, prices) for run in runs]
     by_path = {Path(r["run_path"]).resolve(): r for r in rows}
     for run, row in zip(runs, rows):
         meta = _load(run / "trial.json")
@@ -252,6 +251,14 @@ def run_trial(task: str, out: Path, *, mode: str, model: str | None, plugin_dir:
     return rc
 
 
+def _cost_cell(r: dict) -> str:
+    if r["cost_usd"] is not None:
+        return r["cost_usd"]
+    if r.get("cost_usd_lower") is not None:
+        return f"{r['cost_usd_lower']}–{r['cost_usd_upper']} (bounds)"
+    return "no price"
+
+
 def table(rows: list[dict]) -> str:
     head = ("| Run | Task | Model / mode | Outcome | Counted | Reward | Checks | Tokens in / cache write / cache read / out "
             "| Cost (USD) | Agent s | Grader s | Wall s | Wall s w/o 1st build |")
@@ -261,7 +268,7 @@ def table(rows: list[dict]) -> str:
         lines.append(
             f"| {r['run']} | {r['task']} | {r['model'] or r['mode']} | {r['outcome']} | {'yes' if r['counted'] else 'no'} "
             f"| {r['reward']} | {r['checks']} "
-            f"| {t['input']:,} / {t['cache_write']:,} / {t['cache_read']:,} / {t['output']:,} | {r['cost_usd']} "
+            f"| {t['input']:,} / {t['cache_write']:,} / {t['cache_read']:,} / {t['output']:,} | {_cost_cell(r)} "
             f"| {r['agent_seconds']} | {r['grader_seconds']} | {r['wall_seconds']} "
             f"| {r['wall_seconds_without_first_build']} |")
     return "\n".join(lines)
@@ -314,9 +321,8 @@ def main(argv: list[str] | None = None) -> int:
         CAPS.write_text(json.dumps(caps, indent=1) + "\n", encoding="utf-8")
         print(json.dumps(caps["tasks"][args.task], indent=1))
         return 0
-    pricing = json.loads(PRICING.read_text(encoding="utf-8"))
     rows = summarize_all([run for run in args.runs if (run / "timing.json").exists() or (run / "trial.json").exists()],
-                         pricing)
+                         cost.load_prices())
     print(table(rows))
     if args.json:
         args.json.write_text(json.dumps(rows, indent=1) + "\n", encoding="utf-8")

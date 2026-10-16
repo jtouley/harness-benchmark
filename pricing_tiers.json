@@ -1,0 +1,27 @@
+{
+  "schema": 1,
+  "currency": "USD",
+  "unit": "per_million_tokens",
+  "as_of": "2026-10-16",
+  "base": "pricing.json",
+  "source": "Adds to pricing.json what a per-request price needs; pricing.json itself is unchanged because its sha256 is part of the tier-1 and tier-2 results provenance. cache_write_1h is the 1-hour cache write at 2x the input price of the same tier. A tier applies to a whole request whose prompt tokens (input + cache read + cache write) are above above_prompt_tokens: Haiku 5.5 costs $0.50 / $2.50 above 100K prompt tokens (pricing.json source note); its cache prices in that tier are derived as in pricing.json (write 1.25x and 2x input, read 0.1x input).",
+  "models": {
+    "claude-opus-5-5": {"cache_write_1h": "8.00"},
+    "claude-sonnet-5-5": {"cache_write_1h": "4.00"},
+    "claude-haiku-4-5": {"cache_write_1h": "2.00"},
+    "claude-fable-5-1": {"cache_write_1h": "20.00"},
+    "claude-haiku-5-5": {
+      "cache_write_1h": "0.20",
+      "tiers": [
+        {
+          "above_prompt_tokens": 100000,
+          "input": "0.50",
+          "output": "2.50",
+          "cache_write_5m": "0.625",
+          "cache_write_1h": "1.00",
+          "cache_read": "0.05"
+        }
+      ]
+    }
+  }
+}

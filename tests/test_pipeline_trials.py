@@ -9,14 +9,14 @@ from __future__ import annotations
 
 import json
 import subprocess
-from decimal import Decimal
 from pathlib import Path
 
 import pytest
 
+from cbench import cost
 from scripts import pipeline_trial as pt
 
-PRICING = json.loads((Path(__file__).resolve().parents[1] / "pricing.json").read_text())
+PRICES = cost.load_prices()
 
 
 def write_run(tmp_path: Path, *, result: dict | None = None, grade: dict | None = None,
@@ -37,21 +37,40 @@ def write_run(tmp_path: Path, *, result: dict | None = None, grade: dict | None 
     return run
 
 
-def test_cost_is_priced_per_model_from_token_counts_not_from_claude_codes_figure():
+def test_cost_is_priced_per_model_from_token_counts_not_from_claude_codes_figure(tmp_path):
     usage = {"claude-sonnet-5-5": {"inputTokens": 1_000_000, "outputTokens": 100_000,
                                    "cacheCreationInputTokens": 200_000, "cacheReadInputTokens": 2_000_000,
                                    "costUSD": 999.0},
-             "claude-haiku-5-5[1m]": {"inputTokens": 1_000_000, "outputTokens": 0,
-                                      "cacheCreationInputTokens": 0, "cacheReadInputTokens": 0}}
-    cost, tokens = pt.cost_and_tokens({"modelUsage": usage}, PRICING)
-    # sonnet: 2.00 + 1.00 + 0.50 + 0.40 ; haiku: 0.10
-    assert cost == Decimal("4.00")
-    assert tokens == {"input": 2_000_000, "output": 100_000, "cache_write": 200_000, "cache_read": 2_000_000}
+             "claude-opus-5-5[1m]": {"inputTokens": 1_000_000, "outputTokens": 0,
+                                     "cacheCreationInputTokens": 0, "cacheReadInputTokens": 0}}
+    c = pt.session_cost(tmp_path, {"modelUsage": usage}, PRICES)
+    # sonnet: 2.00 + 1.00 + 0.50 + 0.40 ; opus: 4.00 (no tier: totals price exactly)
+    assert c["usd"] == "7.900000"
+    assert pt.token_totals(c) == {"input": 2_000_000, "output": 100_000, "cache_write": 200_000, "cache_read": 2_000_000}
 
 
-def test_a_model_without_a_price_is_an_error_not_a_zero():
-    with pytest.raises(KeyError):
-        pt.cost_and_tokens({"modelUsage": {"claude-unknown-9": {"inputTokens": 1}}}, PRICING)
+def test_a_model_without_a_price_is_an_error_not_a_zero(tmp_path):
+    with pytest.raises(cost.PricingError):
+        pt.session_cost(tmp_path, {"modelUsage": {"claude-unknown-9": {"inputTokens": 1}}}, PRICES)
+
+
+def test_a_tiered_model_with_only_session_totals_gets_bounds_not_a_price(tmp_path):
+    result = {"modelUsage": {"claude-haiku-5-5": {"inputTokens": 1_000_000, "outputTokens": 0,
+                                                  "cacheCreationInputTokens": 0, "cacheReadInputTokens": 0}}}
+    row = pt.summarize(write_run(tmp_path, result=result), PRICES)
+    assert row["cost_usd"] is None and (row["cost_usd_lower"], row["cost_usd_upper"]) == ("0.100000", "0.500000")
+    assert "(bounds)" in pt.table([row])
+
+
+def test_a_run_with_its_transcript_is_priced_per_request(tmp_path):
+    usage = {"input_tokens": 150_000, "output_tokens": 0, "cache_creation_input_tokens": 0, "cache_read_input_tokens": 0}
+    result = {"modelUsage": {"claude-haiku-5-5": {"inputTokens": 150_000, "outputTokens": 0,
+                                                  "cacheCreationInputTokens": 0, "cacheReadInputTokens": 0}}}
+    run = write_run(tmp_path, result=result)
+    (run / "transcript.jsonl").write_text(json.dumps(
+        {"type": "assistant", "message": {"id": "m1", "model": "claude-haiku-5-5", "usage": usage}}) + "\n")
+    row = pt.summarize(run, PRICES)
+    assert row["cost_method"] == "per_request" and row["cost_usd"] == "0.075000"  # 150K at the upper tier
 
 
 def test_a_graded_run_reports_reward_checks_and_wall_time_with_and_without_the_first_build(tmp_path):
@@ -60,33 +79,33 @@ def test_a_graded_run_reports_reward_checks_and_wall_time_with_and_without_the_f
     result = {"is_error": False, "subtype": "success", "num_turns": 12,
               "modelUsage": {"claude-haiku-5-5": {"inputTokens": 10, "outputTokens": 20,
                                                   "cacheCreationInputTokens": 0, "cacheReadInputTokens": 0}}}
-    row = pt.summarize(write_run(tmp_path, result=result, grade=grade), PRICING)
+    row = pt.summarize(write_run(tmp_path, result=result, grade=grade), PRICES)
     assert row["outcome"] == "graded"
     assert (row["reward"], row["checks"]) == (0.5714, "4/7")
     assert row["wall_seconds"] == 150.0 and row["wall_seconds_without_first_build"] == 110.0
     assert row["first_build_seconds"] == 40.0
-    assert row["cost_usd"] == "0.000011"
+    assert row["cost_usd"] is None and row["cost_usd_lower"] == "0.000011"  # Haiku 5.5 from totals: bounds
 
 
 @pytest.mark.parametrize("text", ["API Error: Request timed out.", "API Error: 529 overloaded_error",
                                   "API Error: Connection error."])
 def test_an_api_error_that_ends_the_session_is_a_stall_not_a_model_failure(tmp_path, text):
     row = pt.summarize(write_run(tmp_path, result={"is_error": True, "subtype": "success", "result": text}),
-                       PRICING)
+                       PRICES)
     assert row["outcome"] == "api_stall" and row["counts_as_model_failure"] is False
 
 
 def test_a_session_idle_long_before_the_guard_cap_is_a_stall(tmp_path):
     run = write_run(tmp_path, timing={"agent_exit": 124, "agent_seconds": 7200.0},
                     session=["2026-10-15T10:00:00.000Z", "2026-10-15T10:20:00.000Z"])
-    row = pt.summarize(run, PRICING)
+    row = pt.summarize(run, PRICES)
     assert row["outcome"] == "api_stall" and row["counts_as_model_failure"] is False
 
 
 def test_a_session_busy_until_the_guard_cap_is_a_guard_cap_run(tmp_path):
     run = write_run(tmp_path, timing={"agent_exit": 124, "agent_seconds": 7200.0},
                     session=["2026-10-15T10:00:00.000Z", "2026-10-15T11:58:00.000Z"])
-    row = pt.summarize(run, PRICING)
+    row = pt.summarize(run, PRICES)
     assert row["outcome"] == "guard_cap" and row["counts_as_model_failure"] is True
 
 
@@ -107,7 +126,7 @@ def test_a_regrade_keeps_the_original_sessions_cost_and_agent_time_and_its_own_g
     regrade = write_run(tmp_path / "b", grade={"reward": 1.0, "passed": 7, "build": [{"seconds": 20.0}]},
                         timing={"agent_seconds": 0.1, "grader_seconds": 160.0},
                         meta={"mode": "regrade", "model": None, "regrade_of": str(original)})
-    row = pt.summarize(regrade, PRICING)
+    row = pt.summarize(regrade, PRICES)
     assert (row["reward"], row["checks"], row["mode"]) == (1.0, "7/7", "regrade")
     assert row["model"] == "claude-opus-5-5" and row["cost_usd"] == "4.000000"
     assert row["agent_seconds"] == 1000.0 and row["grader_seconds"] == 160.0 and row["wall_seconds"] == 1160.0
@@ -131,7 +150,7 @@ def test_void_and_superseded_rows_are_kept_but_not_counted(tmp_path):
     first = write_run(tmp_path / "f", grade={"reward": 0.0})
     regrade = write_run(tmp_path / "r", grade={"reward": 1.0, "passed": 7},
                         meta={"mode": "regrade", "regrade_of": str(first)})
-    rows = {r["run_path"]: r for r in pt.summarize_all([void, first, regrade], PRICING)}
+    rows = {r["run_path"]: r for r in pt.summarize_all([void, first, regrade], PRICES)}
     v, f, r = rows[str(void)], rows[str(first)], rows[str(regrade)]
     assert v["outcome"] == "void" and v["void"] == "grader deleted uncommitted work"
     assert f["superseded_by"] == str(regrade)
@@ -150,7 +169,7 @@ def test_void_marks_a_run_with_its_reason(tmp_path):
 def test_a_diagnostic_regrade_is_shown_but_never_counted(tmp_path):
     run = write_run(tmp_path, grade={"reward": 0.4286, "passed": 3},
                     meta={"diagnostic": "the map was edited by the operator"})
-    row = pt.summarize_all([run], PRICING)[0]
+    row = pt.summarize_all([run], PRICES)[0]
     assert row["outcome"] == "diagnostic" and not row["counted"] and row["counts_as_model_failure"] is False
 
 
@@ -173,7 +192,7 @@ def test_a_regrade_that_is_not_counted_does_not_supersede_the_trial(tmp_path, ma
     trial_run = write_run(tmp_path / "t", grade={"reward": 0.0})
     regrade = write_run(tmp_path / "r", grade={"reward": 1.0, "passed": 7},
                         meta={"mode": "regrade", "regrade_of": str(trial_run), **mark})
-    rows = {r["run_path"]: r for r in pt.summarize_all([trial_run, regrade], PRICING)}
+    rows = {r["run_path"]: r for r in pt.summarize_all([trial_run, regrade], PRICES)}
     assert rows[str(trial_run)]["counted"] and rows[str(trial_run)]["superseded_by"] is None
     assert not rows[str(regrade)]["counted"]
     assert pt.counted_rows(list(rows.values())) == [rows[str(trial_run)]]
