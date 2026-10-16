@@ -369,12 +369,20 @@ SEARCH_OUTSIDE = [
     "git --git-dir /home/u/.git grep TDD", "git --work-tree /home/u grep TDD",
     "git --git-dir=/home/u/.git grep TDD", "git --work-tree=/home/u grep TDD",
     "fd -x cat {} \\; SKILL /home/u", "fd -x cat {} ';' SKILL /home/u",
+    # second re-review of #33
+    "ack -A TDD /home/u", "ack -B TDD /home/u", "ag -A TDD /home/u", "ag -B TDD /home/u",
+    "ack --after-context TDD /home/u", "ack --before-context TDD /home/u",
+    "bash -c -o pipefail 'grep -rn TDD /home/u'", "bash -c -O extglob 'rg TDD /home/u'",
+    "zsh -c -o nonomatch 'rg TDD /home/u'", "bash -c +x 'grep -rn TDD /home/u'",
+    "grep --directories recurse TDD /home/u", "GIT_DIR=/home/u/.git git grep TDD",
+    "GIT_WORK_TREE=/home/u git grep TDD",
 ]
 SEARCH_INSIDE = [
     "rg -t py TDD src", "grep -rn -A 3 TDD src", "fd -e py test src",
     "python3 -c \"import os  # don't\"", "grep -rn 'a#b' src",
     "rg --stats '/api/' src", "grep -rnA 3 TDD src", "rg --no-config TDD src", "grep -r -E 'a|b' src",
     "ack -C 2 TDD src", "ag --context=2 TDD src", "grep -n TDD recurse_notes.txt",
+    "ack -A 2 TDD src", "ag -B 2 TDD src", "ag --after 2 src",
 ]
 
 
@@ -408,4 +416,18 @@ def test_every_option_in_the_tables_still_reads_the_folder_after_it(tool, kind, 
     recursive = "-r " if tool in {"grep", "egrep", "fgrep"} else ""
     words = {"value": f"{option} 3 TDD", "count": f"{option} TDD", "pattern": f"{option} TDD",
              "files": option, "folder": f"{option} /home/u TDD"}[kind]
-    assert _outside(f"{tool} {recursive}{words} /home/u"), (tool, option)
+    folder = "" if kind == "folder" else " /home/u"  # a folder option's value is the only folder
+    assert _outside(f"{tool} {recursive}{words}{folder}"), (tool, option)
+
+
+# Options whose value is optional: the next word is the value only when it is a number.
+# ack 3 lib/App/Ack/ConfigLoader.pm ('A|after-context:-1' etc., Getopt::Long optional integer);
+# ag src/options.c (case 'A', 'B', 'C': a word that is not a number is put back as the pattern).
+OPTIONAL_COUNT = {"ack": {"-A", "-B", "-C", "--after-context", "--before-context", "--context"},
+                  "ag": {"-A", "-B", "-C"}}
+
+
+@pytest.mark.parametrize("tool", sorted(OPTIONAL_COUNT))
+def test_options_with_an_optional_number_are_labelled_count(tool):
+    assert OPTIONAL_COUNT[tool] == crc.OPTION_KINDS[tool]["count"]
+    assert not OPTIONAL_COUNT[tool] & crc.OPTION_KINDS[tool]["value"]

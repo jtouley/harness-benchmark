@@ -53,7 +53,6 @@ usage: clean_room_check.py TRANSCRIPT [TRANSCRIPT ...] [--agents-dir DIR --agent
 from __future__ import annotations
 
 import argparse
-import itertools
 import json
 import posixpath
 import re
@@ -97,10 +96,12 @@ OPTION_KINDS: dict[str, dict[str, set[str]]] = {
                      "--max-columns", "--replace", "--sort", "--sortr", "--pre", "--pre-glob", "--engine",
                      "--path-separator", "--colors", "--ignore-file"},
            "pattern": _PATTERN, "files": {"--files"}},
-    "ag": {"value": {"-A", "-B", "-m", "-G", "--depth", "--ignore", "--max-count", "--file-search-regex"},
-           "count": {"-C", "--context"}, "pattern": {"-g"}},
-    "ack": {"value": {"-A", "-B", "-m", "--type", "--ignore-dir", "--ignore-file", "--max-count", "--output"},
-            "count": {"-C", "--context"}, "pattern": {"-g", "--match"}, "files": {"-f"}},
+    # ag's long --after/--before/--context take a value only as `--opt=N` (optional_argument).
+    "ag": {"value": {"-m", "-G", "--depth", "--ignore", "--max-count", "--file-search-regex"},
+           "count": {"-A", "-B", "-C"}, "pattern": {"-g"}},
+    "ack": {"value": {"-m", "--type", "--ignore-dir", "--ignore-file", "--max-count", "--output"},
+            "count": {"-A", "-B", "-C", "--after-context", "--before-context", "--context"},
+            "pattern": {"-g", "--match"}, "files": {"-f"}},
     "fd": {"value": {"-e", "-E", "-t", "-d", "-x", "-X", "-S", "-j", "-c", "--extension", "--exclude", "--type",
                      "--max-depth", "--min-depth", "--exact-depth", "--exec", "--exec-batch", "--size",
                      "--threads", "--changed-within", "--changed-before", "--owner", "--max-results", "--color"},
@@ -235,20 +236,23 @@ def _shell_words(command: str) -> list[str]:
 
 
 def _segments(words: list[str]):
-    """Split at shell separators. A `sh -c` or `eval` script stays a word and is also returned to be read."""
+    """Split at shell separators. A `sh -c` or `eval` script stays a word and is also returned to be read.
+
+    After `-c` (or `eval`), every later word with a space is read as a script. Shell options with
+    values (`-o pipefail`, `+O extglob`) can come between, and reading one word too many can
+    only add contacts.
+    """
     segment: list[str] = []
     scripts: list[str] = []
-    awaiting = False  # bash reads the script from the first word after -c that is not an option
+    after_flag = False
     for word in words:
         if all(c in PUNCTUATION for c in word):
             yield segment, scripts
-            segment, scripts, awaiting = [], [], False
+            segment, scripts, after_flag = [], [], False
             continue
-        if awaiting and not word.startswith("-"):
-            scripts += [word] if " " in word else []
-            awaiting = False
-        elif SCRIPT_FLAG.fullmatch(word) or word == "eval":
-            awaiting = True
+        if after_flag and " " in word:
+            scripts.append(word)
+        after_flag = after_flag or bool(SCRIPT_FLAG.fullmatch(word)) or word == "eval"
         segment.append(word)
     yield segment, scripts
 
@@ -259,7 +263,7 @@ def _segment_folders(words: list[str]) -> list[str]:
     for i, word in enumerate(words):
         name = posixpath.basename(word)
         if name == "git":
-            return _git_grep_folders(words[i + 1:])
+            return _git_grep_folders(words[i + 1:], _git_env(words[:i]))
         if name == "find":
             return _find_folders(words[i + 1:])
         if name == "locate":
@@ -285,9 +289,14 @@ def _find_folders(args: list[str]) -> list[str]:
     return folders or ["."]
 
 
-def _git_grep_folders(args: list[str]) -> list[str]:
-    """`git grep` reads the repository that -C, --git-dir or --work-tree names, or the current folder."""
-    folders: list[str] = []
+def _git_env(words: list[str]) -> list[str]:
+    """GIT_DIR=... or GIT_WORK_TREE=... before git names the repository."""
+    return [w.split("=", 1)[1] for w in words if w.startswith(("GIT_DIR=", "GIT_WORK_TREE="))]
+
+
+def _git_grep_folders(args: list[str], env: list[str] | None = None) -> list[str]:
+    """`git grep` reads the repository that -C, --git-dir, --work-tree or the environment names, or `.`."""
+    folders: list[str] = list(env or [])
     pending = None
     for arg in _split_equals(args, GIT_FOLDER | GIT_VALUE):
         if pending:
@@ -369,8 +378,15 @@ def _kind(name: str, option: str) -> str | None:
 
 def _recursive(options: set[str], args: list[str]) -> bool:
     short = any(not o.startswith("--") and any(c in o[1:] for c in "rR") for o in options)
-    by_name = bool(options & {"--recursive", "--dereference-recursive"}) or "--directories=recurse" in args
-    return short or by_name or "-drecurse" in args or any(pair == ("-d", "recurse") for pair in itertools.pairwise(args))
+    return short or bool(options & {"--recursive", "--dereference-recursive"}) or _directories_recurse(options, args)
+
+
+def _directories_recurse(options: set[str], args: list[str]) -> bool:
+    """grep -d recurse, -drecurse, --directories recurse, --directories=recurse."""
+    # zip, not itertools.pairwise: grade_arm.sh runs this script with the host python3 (3.9 on macOS).
+    pairs = set(zip(args, args[1:]))  # noqa: RUF007
+    named = {"-drecurse", "--directories=recurse"} & set(args)
+    return bool(named) or ("-d", "recurse") in pairs or ("--directories", "recurse") in pairs
 
 
 def _names_search(command: str) -> bool:
