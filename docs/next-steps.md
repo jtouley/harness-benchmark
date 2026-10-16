@@ -21,7 +21,9 @@ the defects that reach the delivered code, and the evidence that the run leaves 
 - Per-token list prices differ by up to 40 times: Opus 5.5 $4 / $20 per million input / output
   tokens, Haiku 5.5 $0.10 / $0.50 ([`pricing.json`](../pricing.json)). Two conditions: the Haiku 5.5
   price holds for prompts up to 100K tokens ($0.50 / $2.50 above that, which a long harness session
-  can pass), and its cache prices are derived, not listed. Cache reads differ by 20 times.
+  can pass), and its cache prices are derived, not listed. Cache reads differ by 20 times. Above
+  100K prompt tokens the gap falls to 8 times. Both pilot Cadence orchestrators ended above that line
+  (111,736 and 156,578 prompt tokens at their last request; [pilot](experiments/2026-10-13-pilot.md#results)).
 - **Estimate (not a result):** Cadence on Opus used about 4 times the tokens of the Opus one-shot.
   If Cadence on Haiku 5.5 uses a similar number of tokens with a similar mix, and its prompts stay
   under 100K tokens, it costs between 1/10 and 1/5 of the Opus one-shot. A weaker model may need more
@@ -94,6 +96,33 @@ Reliability is measured over repeated runs (pass^k, k ≥ 3), not one pass: a on
 | Sonnet 5.5 + Opus review loop | 1/1 | 1/1 | $1.24 ($0.47 Sonnet, $0.77 Opus) | same |
 
 Reading: in 2 of 2 Haiku runs and 1 of 1 Sonnet run, an Opus review loop fixed both defects, where the cheap one-shots fixed both in 0 of 5 and 1 of 5. That is a signal, not yet a reliability measure (pass^k needs k ≥ 3). It does not save money. The reviewer must run the stack to check the work, and that costs about as much as Opus doing the task. The open cost question is whether a cheaper reviewer (Sonnet reviewing Haiku) keeps the reliability. Runs were cut short by repeated Docker Desktop failures on the test host; two runs were set aside as invalid (Docker down during the run); their arms are not recorded here.
+
+## Cost accounting: price each request at its own tier (planned, 2026-10-16)
+
+Haiku 5.5 has two price tiers: $0.10 / $0.50 per million tokens for a prompt up to 100K tokens, and
+$0.50 / $2.50 above ([`pricing.json`](../pricing.json)). The tier is set per request. Every cost script
+in this repository prices the session's total tokens at the base rate:
+
+| Where | What it does | Effect |
+|---|---|---|
+| Pilot [`grade_arm.sh`](experiments/2026-10-13-pilot/grade_arm.sh) | Prices `modelUsage` totals at the base rate | Haiku 5.5 costs ($1.13, $3.19) are lower bounds; both arms ended above 100K ([pilot](experiments/2026-10-13-pilot.md#results)) |
+| [`calibration/swebench-pro/collect.py`](../calibration/swebench-pro/collect.py) | Prices Harbor's per-trial totals at the base rate, and prices cache writes as plain input | Haiku 5.5 $0.54 is a lower bound; cache writes of every model are priced low |
+| B01 one-shot and review-loop costs (computed off-repo) | Base rate | Haiku 5.5 costs are lower bounds (see above) |
+| [`cbench/report.py`](../cbench/report.py) (live tier) | Reports Claude Code's own `total_cost_usd` | Wrong for Haiku 5.5 ([live tier](live-tier.md#known-issue-cost-for-haiku-55)) |
+
+The fix, before the next run set:
+
+1. **Save per-request records.** Each run saves its transcript (stream JSON), so each request's input,
+   cache read, cache write and output tokens are kept.
+2. **Price each request at its own tier, in one shared module.** The pilot scripts, the calibration
+   collector and the live-tier report all call it. A tier is chosen from the request's prompt tokens
+   (input + cache read + cache write).
+3. **Fail loudly on aggregate-only data.** For a model with a tier, a cost from session totals is not
+   reported as a number. The script stops, or reports the lower and upper bounds with that label.
+
+Cadence's context budget (jtouley/cadence#96, PR #97) also writes the prompt size of each orchestrator
+call to `.context/attest/<run>.context.jsonl`. That gives per-request sizes for the orchestrator only,
+not for its peers.
 
 ## Hypotheses
 

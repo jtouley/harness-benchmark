@@ -160,3 +160,33 @@ Reading:
 - The architecture-review stages raised 11 rows and no confirmed defect. 9 of the 11 are the
   same evidence filed again for each task (repeat text). Their 2 blocking rows are deferred.
 - 17 of the ledger's 20 blocking findings are confirmed.
+
+## Independent reviews of two Cadence PRs (16 October 2026)
+
+Process evidence, outside the benchmark runs. On 16 October 2026, two jtouley/cadence PRs were reviewed
+with `/pr-review-local` (R1) and `/pr-review-update` (R4). Each review round ran in a fresh subagent that
+had not written the code. Counted by hand from the review reports (`cadence/.context/prs/reviews/`, not
+committed), as of the rounds listed. Later rounds may change the counts.
+
+| PR | Round | Must-fix | What they were |
+|---|---|---|---|
+| #97 (lean peer returns, context budget) | R1 | 3 | The deny text named a resume command that fails. A subagent orchestrator was measured with the main session's transcript. Peer instructions still said to close with a full report, against the new rule. |
+| #97 | R4 | 1 | Subagent transcript rows carry the host's `isSidechain` key. The test fixtures had no such key, so a filter dropped every real row and the budget never measured a subagent orchestrator. |
+| #97 | R4, round 2 | 1 | A widened fence pattern accepted any text on the fence line, so hidden text skipped the length limit and the hand-back word check. |
+| #101 (R3 cognitive complexity) | R1 | 3 | Same-named functions collided in the ratchet. The TypeScript, JavaScript and Rust scanner failed open on real code (for example a React component with props). A git error read as "no change". |
+| #101 | R4 | 1 | A residual of the scanner class: a type literal after `&`, `\|` or `extends` was still read as the function body (found in 2 of 40 real TSX files). |
+
+Reading:
+
+- The first round found most must-fix items (6 of 9), as in the first results above. The later rounds were
+  not only confirmations: each found one more must-fix item.
+- Two must-fix items were introduced by fixes of reviewer nits: #97 R4 (the `isSidechain` filter came
+  from the fix of nit N4) and #97 R4 round 2 (the fence change came from the fix of nit N11).
+- Several came from test inputs written from the code, not from real host data or real files: #97 R1
+  (an assumed payload field) and R4 (the `isSidechain` rows), and #101 R1 and R4 (the scanner was tested
+  on hand-made one-line inputs; a corpus of real files found the misses).
+- Cadence issue jtouley/cadence#103 takes these as evidence for a rule: plans name the external contracts
+  they read, and the test stage owns fixtures and edge-case inputs.
+
+Limits: two PRs, one reviewer setup, counted by hand. The severity is the reviewer's own claim; the R4
+rounds confirm the earlier fixes, but no later round has checked the last must-fix of each PR yet.

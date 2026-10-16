@@ -11,6 +11,18 @@ stated next to the claim it limits.
 > ([criteria v1](criteria.md#disclosure)). That is why the main result below, which does not favor
 > Cadence, is stated first.
 
+> **Update, 16 October 2026: the thesis, checked against the data.** Harnesses do not make strong
+> models write better code. On well-specified tasks a one-shot matched the harness at about 1/30 of the
+> time. What a harness buys is verification and accountability: an independent review of the running
+> result recovered a bug that the cheap models missed (1 of 10 cheap one-shot runs fixed both B01 defects,
+> against 3 of 3 with an Opus review loop; Haiku and Sonnet pooled; Fisher exact test, one-sided,
+> p ≈ 0.014; small samples), and the first review round found most of the confirmed defects
+> ([review value](review-value.md)). A long planning pipeline did not help: on a cheap model it stalled
+> before it wrote code. Precise specs are why the one-shot did well; specs as executable contracts are
+> not tested yet. Also new: the Haiku 5.5 dollar figures below are lower bounds (see
+> [next steps](next-steps.md#cost-accounting-price-each-request-at-its-own-tier-planned-2026-10-16)), and
+> Cadence has changed since the pinned commit ([whitepaper §4.1](whitepaper.md#41-cadence-after-the-benchmarks-pin-status-16-october-2026)).
+
 > **Update, 14 October 2026.** Four newer results are summarized in
 > [Since iteration 4](#since-iteration-4) and argued in full in the [whitepaper](whitepaper.md):
 > Cadence on Haiku 5.5 delivered nothing in the pilot; on a real multi-cause bug the cheap one-shots
@@ -22,7 +34,8 @@ stated next to the claim it limits.
 
 > **Short answer (iteration 4).** On small, precisely specified tasks, a harness did **not** show better code
 > than a strong model alone, and it took about 30 times longer. What it did show is
-> narrower and concrete: **no crash reached its delivered code** (each one-shot shipped two),
+> narrower and concrete: **no crash reached its delivered code** (each one-shot shipped two; all six are
+> on one task, budgets, from three inputs),
 > **an audit trail a reviewer can check**, **completion on every task, or a recorded stop**, and
 > **rules the model cannot skip**. Whether a harness lets a much cheaper model match Opus is the
 > next experiment ([next steps](next-steps.md)), not a result.
@@ -59,11 +72,11 @@ record the input, output and cache split, so they report tokens, not dollars.
 
 | Round | Result | Evidence |
 |---|---|---|
-| **Pilot** (T05, clean room, one run per arm) | The Opus one-shot delivered in 111 s for $0.40 (7/7 hidden tests, quality gate passed). Cadence on Haiku 5.5 hard-stopped at P6 after four plan updates ($1.13, 75 min); Cadence on Haiku with Opus reviews hard-stopped at P9 ($3.19, 27 min). A full harness on a weak orchestrator adds places to stop. Four Cadence defects filed (cadence#63–#66). | [pilot](experiments/2026-10-13-pilot.md) |
+| **Pilot** (T05, clean room, one run per arm) | The Opus one-shot delivered in 111 s for $0.40 (7/7 hidden tests, quality gate passed). Cadence on Haiku 5.5 hard-stopped at P6 after four plan updates ($1.13, 75 min); Cadence on Haiku with Opus reviews hard-stopped at P9 ($3.19, 27 min). Both costs are lower bounds (up to $5.66 and $4.50): each orchestrator ended above 100K prompt tokens, where Haiku 5.5 costs 5 times more. A full harness on a weak orchestrator adds places to stop. Four Cadence defects filed (cadence#63–#66); #63 and #64 are fixed, #65 and #66 are open. | [pilot](experiments/2026-10-13-pilot.md) |
 | **Calibration rule** | Tasks are chosen by what the Opus one-shot does on them: a *lift* task (Opus reliable, cheap one-shots not) or a *beyond* task (Opus unreliable). Reliability is measured over repeats. | [next steps](next-steps.md#task-selection-calibrated-against-the-bar-owner-direction-2026-10-13) |
-| **B01**, a private multi-service bug (lift task) | Both defects fixed: Opus one-shot 10/10 ($1.29), Sonnet 1/5 ($0.39), Haiku 0/5 ($0.11). Review loop with an Opus reviewer: Haiku 2/2 ($1.15), Sonnet 1/1 ($1.24). A signal that reliability can be recovered, not yet a reliability measure (pass^k needs k ≥ 3); two more runs were set aside as invalid (Docker down during the run). No money saved. | [whitepaper §3.3](whitepaper.md#33-a-real-multi-cause-bug-b01-a-lift-task) |
+| **B01**, a private multi-service bug (lift task) | Both defects fixed: Opus one-shot 10/10 ($1.29), Sonnet 1/5 ($0.39), Haiku 0/5 ($0.11). Review loop with an Opus reviewer: Haiku 2/2 ($1.15), Sonnet 1/1 ($1.24). Haiku 5.5 costs are lower bounds (base price only). A signal that reliability can be recovered, not yet a reliability measure (pass^k needs k ≥ 3); two more runs were set aside as invalid (Docker down during the run). No money saved. | [whitepaper §3.3](whitepaper.md#33-a-real-multi-cause-bug-b01-a-lift-task) |
 | **Why cheap models miss** | Haiku hit the second defect in 5/5 runs and diagnosed it correctly once; in that run it chose to "leave that out of this change and report it", and did not report it. Sonnet never exercised that path in 4/5. Haiku took more turns than Opus (166 against 90). | [whitepaper §3.4](whitepaper.md#34-why-the-cheap-models-miss) |
-| **SWE-bench Pro** (20 sampled tasks, one try per model) | One-shots passed: Opus 5.5 18/20 ($5.79), Sonnet 5.5 18/20 ($2.57), Haiku 5.5 17/20 ($0.54). Haiku is within one task of Opus at about one tenth of the cost, so these tasks are not lift candidates for a harness. Two tasks passed only 2 of 5 Opus tries (beyond candidates). Limits: 20 tasks, one try per model, setup failures rerun (the model never ran in them). Open: the beyond tasks and reliability over repeats (pass^k), not single-pass rates. | [calibration](../calibration/README.md), [per task](../calibration/swebench-pro/round2.md) |
+| **SWE-bench Pro** (20 sampled tasks, one try per model) | One-shots passed: Opus 5.5 18/20 ($5.79), Sonnet 5.5 18/20 ($2.57), Haiku 5.5 17/20 ($0.54, a lower bound). Haiku is within one task of Opus at about one tenth of the cost (at most about half, if every Haiku request were above 100K), so these tasks are not lift candidates for a harness. Two tasks passed only 2 of 5 Opus tries (beyond candidates). Limits: 20 tasks, one try per model, setup failures rerun (the model never ran in them). Open: the beyond tasks and reliability over repeats (pass^k), not single-pass rates. | [calibration](../calibration/README.md), [per task](../calibration/swebench-pro/round2.md) |
 
 ## What we got from Cadence
 
@@ -74,6 +87,10 @@ record the input, output and cache split, so they report tokens, not dollars.
 | **An audit trail a reviewer can check without trusting the model.** Per run: a plan, a spec check, a plan review, an adversarial review, two test scorecards, a PR review, and a findings ledger. 12–23 attestation rows per run record the hash of each review file and the agent that wrote it (8–12 different peer agents per run). The hook denies a review write by the orchestrator, so the implementer cannot be its own reviewer. 16 gate records per run. | [`auditability.json`](experiments/2026-10-12-iteration-4/auditability.json), [`cadence_attest/`](experiments/2026-10-12-iteration-4/cadence_attest/) | The attestation is a Claude Code feature. On Cursor and other hosts the trail has no agent ids ([next steps](next-steps.md#what-differs-by-host-read-before-comparing-hosts)). |
 | **It finished every task, or it stopped and said why.** 3 of 3 delivered in both rounds (iteration 4 after cadence#57). 10/10 process checks on both reruns. When a Cadence defect (cadence#56) broke two runs, both stopped with a recorded reason, and neither reported success. | [iteration 4](experiments/2026-10-12-iteration-4.md#results) | ship-feature, the other harness, failed to deliver 1 of 3 tasks in each round. |
 | **Rules the model cannot skip.** Cadence's installed hooks block a forged approval, a self-certified verdict, a shell edit before plan approval and a stop mid-run: 7 of 9 probes. A one-shot session enforces none of these. | [README tier-2 table](../README.md#benchmark-results-october-2026), [`results/probes.json`](../results/probes.json) | The probes test the hooks, not code quality. |
+
+More process evidence for review (16 October 2026, outside the benchmark): independent reviews of two
+Cadence PRs found 5 and 4 must-fix defects (as of the rounds read), and two of them were caused by fixes of
+earlier review nits ([review value](review-value.md#independent-reviews-of-two-cadence-prs-16-october-2026)).
 
 ## What we did not get from Cadence
 
@@ -103,7 +120,8 @@ record the input, output and cache split, so they report tokens, not dollars.
    models do not remove the need to check their work. A harness changes what a person checks: the
    evidence, not every line.
 2. **Prices differ by up to 40 times per token.** Opus 5.5 costs 40 times Haiku 5.5 for prompts up to
-   100K tokens. A harness spends extra tokens on purpose: planning, independent review, verification.
+   100K tokens, and 8 times above that. Harness orchestrators can run above 100K: both pilot Cadence
+   orchestrators ended there. A harness spends extra tokens on purpose: planning, independent review, verification.
    If those tokens let a cheap model reach Opus quality with an audit trail, the harness becomes the
    cheaper option. The first measurements ([since iteration 4](#since-iteration-4)) say: not the full
    Cadence pipeline on Haiku (it stopped before implementing), but an independent review of the running

@@ -42,6 +42,17 @@ Checked against Harbor 0.24.0's docs and source:
   `cost_usd` is the `total_cost_usd` Claude Code reports; Harbor falls back to a LiteLLM
   estimate. `python -m cbench harbor-collect` copies these into `results/live.json`.
 
+## Known issue: cost for Haiku 5.5
+
+`cbench/report.py` reports the `total_cost_usd` that Claude Code reports. Claude Code does not know the
+Haiku 5.5 price, so that figure is wrong for every Haiku 5.5 arm of this tier. In the pilot, Claude Code
+reported $39.28 for a run that costs $1.13 at list prices from its token counts
+([pilot `cost.json`](experiments/2026-10-13-pilot/cadence_haiku/cost.json)). The $1.13 is itself a lower
+bound, because Haiku 5.5 costs 5 times more for a prompt above 100K tokens, and Harbor records only totals
+per trial. No live-tier result exists yet, so no reported number is wrong today. Fix this before the first
+run: price each request at its own tier from saved per-request records
+([next steps](next-steps.md#cost-accounting-price-each-request-at-its-own-tier-planned-2026-10-16)).
+
 ## Run it
 
 Needs Docker, [uv](https://docs.astral.sh/uv/), and an Anthropic API key.

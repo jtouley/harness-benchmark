@@ -7,7 +7,7 @@ A reproducible benchmark of AI coding-workflow harnesses for Claude Code: [Caden
 > **Does a harness beat a strong model working alone?** Two exploratory rounds on three feature tasks
 > (T04–T06, one run per cell, one blind grader) found **no quality gain**: Opus 5.5 alone scored 8.00
 > out of 10 and Cadence on Opus 7.33, at about 1/30 of the time. Most of that gap is single-run noise.
-> **What the harness did show:** no crash reached its delivered code (each one-shot shipped two), an
+> **What the harness did show:** no crash reached its delivered code (each one-shot shipped two; all six on one task, budgets, from three inputs), an
 > audit trail a reviewer can check, completion on every task or a recorded stop, and rules the model
 > cannot skip.
 >
@@ -17,7 +17,7 @@ A reproducible benchmark of AI coding-workflow harnesses for Claude Code: [Caden
 > runs and 1/1 Sonnet run (a signal, not yet a reliability measure; two more runs were set aside as invalid),
 > at about the Opus one-shot's cost. The cheap models miss by **scope narrowing and coverage**, not
 > reasoning depth. On a 20-task SWE-bench Pro sample (one try per model), a one-shot Haiku 5.5 passed
-> 17 against Opus 5.5's 18 at about one tenth of the cost; the open questions there are the tasks where
+> 17 against Opus 5.5's 18 at about one tenth of the cost (a lower bound for Haiku); the open questions there are the tasks where
 > Opus is unreliable and pass rates over repeats. **Next:** cheap verification (contracts before code, real-time deferral review),
 > long-horizon pipeline tasks, and traceability when work goes wrong. Full argument: the
 > [**whitepaper**](docs/whitepaper.md).
@@ -77,6 +77,9 @@ documented command runs but the commit cannot drift. See [`frameworks.lock.json`
 Tiers 1 and 2, measured on Linux with Claude Code 2.1.294, except the `cadence` row: it was
 measured on macOS with Claude Code 2.1.287 after the pin bump to `e5c3a92`. The cadence install
 bytes and probe verdicts reproduce on the merged main code. Source: [`results/REPORT.md`](results/REPORT.md).
+These results stay measured at `e5c3a92`. Cadence main has changed since then (for example a P6 cycle
+limit, a hook that writes the delegation record, one-line peer returns and an R3 complexity check); see
+[whitepaper §4.1](docs/whitepaper.md#41-cadence-after-the-benchmarks-pin-status-16-october-2026). They are not rerun.
 
 | Harness | Always-on tokens | Workflow tokens (lower–upper) | Hook probes meeting intent |
 |---|---|---|---|
