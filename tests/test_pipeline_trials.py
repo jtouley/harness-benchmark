@@ -208,3 +208,22 @@ def test_a_cadence_arm_copies_cadence_with_peer_models_and_prefixes_the_prompt(t
     assert json.loads((arm / "cadence.config.json").read_text()) == {"enabled_packs": [], "peer_models": {"default": "haiku"}}
     prompt = pt.cadence_prompt("Build the pipeline.")
     assert prompt.startswith("/cadence:cadence Build the pipeline.") and "autonomously" in prompt
+
+
+def test_a_cadence_trial_gets_the_offline_ticket_on_its_branch_and_in_its_prompt(tmp_path):
+    """Config v2: A4 reads the branch; gh-1 there binds the fake ticket #1 with no tracker and no network."""
+    import subprocess
+    repo = tmp_path / "repo"
+    repo.mkdir()
+    git = lambda *a: subprocess.run(["git", *a], cwd=repo, check=True, capture_output=True, text=True)  # noqa: E731
+    git("init", "-q", "-b", "main")
+    (repo / "f").write_text("x")
+    git("add", "-A")
+    git("-c", "user.name=t", "-c", "user.email=t@example.invalid", "commit", "-q", "-m", "skeleton")
+    pt.cadence_branch(repo)
+    assert git("rev-parse", "--abbrev-ref", "HEAD").stdout.strip() == pt.CADENCE_BRANCH == "feat/gh-1-pipeline"
+    assert git("rev-parse", "HEAD").stdout == git("rev-parse", "main").stdout
+    prompt = pt.cadence_prompt("Build the pipeline.")
+    assert prompt.startswith("/cadence:cadence Build the pipeline.")
+    assert "Ticket: #1 (offline test ticket" in prompt and "do not look it up" in prompt
+

@@ -56,6 +56,32 @@ The two review-loop trials that had restarted at 11:44 were stopped at the owner
 Cadence first; they are set aside under `void-2026-10-17-preempted/` and are not results. The budget
 rises to **$90** for the 15 trials, recorded here before the first Cadence trial.
 
+## Cadence config v2: a fake offline ticket (owner, 2026-10-17, before the v2 trials)
+
+Config v1 (the pilot's form above) loaded Cadence and activated it in both first trials, but the A4 ticket
+gate cannot pass in the container: the adapter is `github-issues`, which needs a `#N` on the branch or task
+id, and the trial has no tracker. The pilot had no ticket either and recorded A4 as `TICKET_SKIPPED`
+(cadence#65). Under v1, `P2-haiku-cadence-haiku-1` stopped at A4 with a `credentials` hard stop after 916 s
+(no code, reward 0), and `P1-haiku-cadence-haiku-1` left the gated flow after A4 and wrote the pipeline
+without spec, plan or reviews. Both are harness-configuration effects, not model results:
+
+- `P2-haiku-cadence-haiku-1` is void, and `P1-haiku-cadence-haiku-opus-1` (stopped one minute into its agent
+  phase so that it would not run under v1) is void too. Both are under
+  `results/runs/pipeline/void-2026-10-17-cadence-config-v1/`.
+- `P1-haiku-cadence-haiku-1` ran to the end under v1. It is reported apart, labeled config v1, and never
+  mixed with v2 rows.
+
+**Config v2: fake offline ticket #1.** The adapter stays `github-issues` as in the pilot. Each Cadence trial
+starts on the branch `feat/gh-1-pipeline` (same commit as `main`), which A4 reads (`gh-1` gives task `cd-1`
+and ticket `#1`). The prompt also says `Ticket: #1 (offline test ticket; the tracker is not reachable, so do
+not look it up)`. `trial.json` records `cadence_config: v2`, the ticket and the branch. Check before the v2
+trials: in the `py` image with `--network none`, A1 (activation, task `cd-1`), A2, A3 and A4 passed, and
+`headless.py next` named A5. No Cadence step looks the ticket up; only the PR steps (E4) call `gh`, and the
+environment note says to skip them. This differs from the pilot, which had no ticket.
+
+The v2 trials (out dirs `*-v2`) run cadence-haiku and then cadence-haiku-opus on P1 to P3, under the same
+parallel limits, before the three other arms.
+
 ## Results
 
 Pending.

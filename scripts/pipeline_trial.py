@@ -219,9 +219,23 @@ def cadence_arm(src: Path, dest: Path, peer_models: dict) -> Path:
     return dest
 
 
+# Config v2 (2026-10-17): Cadence's A4 ticket gate needs a tracker id (github-issues adapter, `#N`). The trial
+# has no tracker, so config v1 (the pilot's form) stopped at A4. Each Cadence trial gets the fake offline ticket
+# #1: on the branch, which A4 reads (gh-1 -> task cd-1 -> #1), and in the prompt. Nothing looks it up.
+CADENCE_TICKET = "#1"
+CADENCE_BRANCH = "feat/gh-1-pipeline"
+CADENCE_TICKET_NOTE = (f"Ticket: {CADENCE_TICKET} (offline test ticket; the tracker is not reachable, so do not look "
+                       f"it up). The branch {CADENCE_BRANCH} is checked out for it.")
+
+
 def cadence_prompt(task_prompt: str) -> str:
-    """The task, started through the Cadence skill, with the pilot's environment note."""
-    return f"/cadence:cadence {task_prompt.strip()}\n\n{CADENCE_NOTE}\n"
+    """The task, started through the Cadence skill, with the offline ticket and the pilot's environment note."""
+    return f"/cadence:cadence {task_prompt.strip()}\n\n{CADENCE_TICKET_NOTE}\n\n{CADENCE_NOTE}\n"
+
+
+def cadence_branch(repo: Path) -> None:
+    """Check out the offline ticket's branch in the starting repository (same commit as main)."""
+    subprocess.run(["git", "checkout", "-q", "-b", CADENCE_BRANCH], cwd=repo, check=True, capture_output=True)
 
 
 def arm_name(mode: str, plugin_dir: Path | None, cadence: Path | None, peer_models: dict | None) -> str:
@@ -257,6 +271,7 @@ def run_trial(task: str, out: Path, *, mode: str, model: str | None, plugin_dir:
         prompt = PIPELINE / task / "prompt.md"
         if cadence is not None:
             plugin_dir = cadence_arm(cadence, tmp_path / "cadence", peer_models or {"default": "haiku"})
+            cadence_branch(repo)
             prompt = tmp_path / "prompt.md"
             prompt.write_text(cadence_prompt((PIPELINE / task / "prompt.md").read_text(encoding="utf-8")),
                               encoding="utf-8")
@@ -289,7 +304,8 @@ def run_trial(task: str, out: Path, *, mode: str, model: str | None, plugin_dir:
                 "started_at": datetime.now().astimezone().isoformat(timespec="seconds")}
         if cadence is not None:
             sha = subprocess.run(["git", "-C", str(cadence), "rev-parse", "HEAD"], capture_output=True, text=True)
-            meta |= {"cadence_sha": sha.stdout.strip() or None, "peer_models": peer_models or {"default": "haiku"}}
+            meta |= {"cadence_sha": sha.stdout.strip() or None, "peer_models": peer_models or {"default": "haiku"},
+                     "cadence_config": "v2", "ticket": CADENCE_TICKET, "branch": CADENCE_BRANCH}
         rc = subprocess.call(cmd, env=env)
     out.mkdir(parents=True, exist_ok=True)
     (out / "trial.json").write_text(json.dumps(meta, indent=1) + "\n")
