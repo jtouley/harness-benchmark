@@ -106,7 +106,10 @@ it is labeled "Cadence loaded, gates bypassed (prefix gap)" and reported apart.
 
 ## Results
 
-In progress. This section lists only finished, counted trials. Every row is in
+**Stopped at 13:13 local: the API account ran out of credit.** At 17:13:16Z to 17:13:17Z the two running
+trials ended with `Credit balance is too low` (Claude Code `api_error`). The next trial (P3 cadence-haiku) then
+failed on its first request, and scheduling stopped. Only one trial is a counted result. This section lists only
+finished, counted trials. Every row is in
 `2026-10-17-haiku-harness-pipeline.json`, and the void trials are there with `counted: false`. Cost is computed
 from token counts at `pricing.json` list prices. Haiku 5.5 is priced at its base tier, so above 100 K tokens per
 request the cost is a lower bound.
@@ -116,8 +119,8 @@ request the cost is a lower bound.
 | Task | Config | Checks | Reward | Cost | Agent s | Turns | Last stage reached | Stop reason |
 |---|---|---|---|---|---|---|---|---|
 | P1 | v2 (Cadence 13342c8) | 0/7 | 0.0 | $0.457 | 1,893.0 | 62 | P9 entry invariant not passed. A1 to A5, P1, P3, P4 and P6 passed; P7 (test benchmark of the plan) failed | Hard stop (`retries`) before any code; see below |
-| P2 | v2 | running | | | | | | |
-| P3 | v3 | not started | | | | | | |
+| P2 | v2 | lost (API credit) | | | | | E1 (implementation) | Set aside |
+| P3 | v3 | lost (API credit) | | | | | none | Set aside |
 
 **P1 (v2).** Cadence ran in the paceline: a spec, a vibe-test, a plan, plan reviews and an adversarial review.
 It stopped at the entry invariant (P9) and wrote no code, so the grader found no pipeline (no stream
@@ -139,9 +142,11 @@ a pass.
 
 | Task | Config | Checks | Reward | Cost | Agent s | Last stage reached | Stop reason |
 |---|---|---|---|---|---|---|---|
-| P1 | v3 | running | | | | | |
-| P2 | v3 | not started | | | | | |
-| P3 | v3 | not started | | | | | |
+| P1 | v3 | lost (API credit) | | | | P3/P4 plan-review loop | Set aside |
+| P2 | v3 | not run | | | | | |
+| P3 | v3 | not run | | | | | |
+
+The review loop, Sonnet-reviewer and verification-loop arms did not run.
 
 ### Set aside (not results)
 
@@ -150,18 +155,28 @@ a pass.
 | P2-haiku-cadence-haiku-1 | v1 | Hard stop at A4 (`credentials`, no ticket) after 916 s, no code |
 | P1-haiku-cadence-haiku-1 | v1 | A4 failed; it wrote the pipeline outside the paceline (no spec, plan or review), then hit the stop guard 3 times at A4, and the guard let the stop through at its refusal cap. Graded 2/7, reward 0. Kept for the postmortem, not a result |
 | P1-haiku-cadence-haiku-opus-1 | v1 | Stopped 1 min into its agent phase so that it would not run under v1 |
+| P2-haiku-cadence-haiku-1-v2 | v2 | API credit ran out at 17:13:17Z, after 3,432 s, in E1. It was a valid Cadence run up to then: the entry-invariant marker was written at 16:56:10Z, and its first code write (`pyproject.toml`) came at 16:57:00Z. 26 tests passed and a stream smoke run was done, but no `oracle_map.yml` existed yet. $0.744 |
+| P1-haiku-cadence-haiku-opus-1-v3 | v3 | API credit ran out at 17:13:16Z, after 1,963 s, still in the plan-review loop (A1 to A5 passed). No code written. $2.943 (Opus reviews) |
+| P3-haiku-cadence-haiku-1-v3 | v3 | API credit ran out before its first request (3 s), $0 |
 
-Spend so far, from token counts: $0.457 counted, plus $0.557 on the v1 trials that were set aside.
+The three credit-loss trials are under `results/runs/pipeline/void-2026-10-17-credit-exhausted/`. The runner now
+classifies `Credit balance is too low` as an API stall (`api_stall`, not a model failure), so a future run
+cannot count such a session as graded.
+
+Spend from token counts: $0.457 counted, plus $4.244 on the trials set aside ($0.557 under v1, $3.687 lost to
+the credit stop). Total $4.70 of the $90 budget. The budget did not stop the run set; the API account did.
 
 ### Comparison with the one-shot trials
 
 The one-shot rows of [pipeline trials](2026-10-15-pipeline-trials.md) are: Haiku 0/7 on P1, P2 and P3; Sonnet 3, 3
-and 5; Opus 6 (provisional), 5 and 3. So far, Cadence on Haiku matches the Haiku one-shot on P1 (0/7), for a
-different reason. The one-shot delivered a pipeline that answered against the spec. Cadence delivered no
+and 5; Opus 6 (provisional), 5 and 3. The one counted cell, P1 cadence-haiku, matches the Haiku one-shot (0/7), for a different reason. The one-shot delivered a pipeline that answered against the spec. Cadence delivered no
 pipeline, because its own gates held implementation.
+
+No other cell can be compared yet. The lost P2 run was the closest to a delivered Cadence pipeline: it passed the
+entry invariant and was implementing with passing tests when the credit ran out.
 
 ### Limits
 
-k = 1 per cell. Haiku costs are lower bounds above 100 K tokens per request. Cadence configs v1, v2 and v3 differ
+Only 1 of 15 planned cells has a result. k = 1 per cell. Haiku costs are lower bounds above 100 K tokens per request. Cadence configs v1, v2 and v3 differ
 (see above), and each row names its config.
 

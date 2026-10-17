@@ -71,7 +71,7 @@ def test_a_graded_run_reports_reward_checks_and_wall_time_with_and_without_the_f
 
 
 @pytest.mark.parametrize("text", ["API Error: Request timed out.", "API Error: 529 overloaded_error",
-                                  "API Error: Connection error."])
+                                  "API Error: Connection error.", "Credit balance is too low"])
 def test_an_api_error_that_ends_the_session_is_a_stall_not_a_model_failure(tmp_path, text):
     row = pt.summarize(write_run(tmp_path, result={"is_error": True, "subtype": "success", "result": text}),
                        PRICING)

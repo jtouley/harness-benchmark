@@ -40,7 +40,8 @@ PRICING = ROOT / "pricing.json"
 RUN_TRIAL = ROOT / "runner" / "run_trial.sh"
 NO_AGENT = "#!/usr/bin/env bash\n# No agent: the repository is graded as delivered.\nexit 0\n"
 
-API_ERROR = re.compile(r"API Error|Request timed out|overloaded|Connection error|ECONNRESET|socket hang up",
+API_ERROR = re.compile(r"API Error|Request timed out|overloaded|Connection error|ECONNRESET|socket hang up"
+                       r"|Credit balance is too low",
                        re.IGNORECASE)
 STALL_IDLE_SECONDS = 600  # a session silent this long before the guard cap ended it was stalled
 
