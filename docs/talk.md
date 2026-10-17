@@ -108,9 +108,9 @@ Known weaknesses:
 
 ## 4. The tests at a glance (2:55–3:15)
 
-**Headline:** Small tasks with a precise spec, real bug fixes, and long pipelines.
+**Headline:** Small tasks with a precise spec, real issues from open-source projects, and long pipelines.
 
-Size comes from the task class in the criteria. The table shows the strong model's own result next to it.
+Size describes the task: small with a precise spec, a real issue in one repository, or long with many parts. The table shows the strong model's own result next to it. Show this slide for a moment and leave it as a handout.
 
 | Test | What it asks | Size | Opus 5.5 alone | How it is graded | What was done |
 |---|---|---|---|---|---|
@@ -118,16 +118,16 @@ Size comes from the task class in the criteria. The table shows the strong model
 | T05 budgets (iteration 4) | Add monthly category budgets, a budget report and over-budget alerts. | Small, precise spec (class S) | 1 of 1 delivered, 7/7 hidden tests, 2 crashes shipped | 7 hidden tests and a blind grader | The same 5 arms ran once each. All passed 7/7. Each one-shot shipped two crashes, and the harnesses shipped none. Quality: Cadence 7.75, Opus 7.25. |
 | T06 audit and undo (iteration 4) | Log each ledger change and add `undo N` to revert the last N changes. | Small, precise spec (class S) | 1 of 1 delivered, 6/6 hidden tests | 6 hidden tests and a blind grader | The same 5 arms ran once each. Cadence, Opus and Sonnet passed 6/6. ship-feature got 0/6 and Haiku 5/6. Quality: Opus 8.00, Cadence 7.50. |
 | Pilot (T05, full Cadence on Haiku 5.5) | Do T05 again with the full Cadence procedure on a cheap model. | Small, precise spec (class S) | 1 of 1 delivered, 7/7 hidden tests, 111 s, $0.40 | 7 hidden tests, quality tools and a clean-room check | 3 arms ran once each. Cadence on Haiku stopped at P6 ($1.13, 75 min). Cadence on Haiku with Opus reviews stopped at P9 ($3.19, 27 min). Neither Cadence arm delivered code. |
-| SWE-bench Pro, 20-task sample | Fix a real issue in an open-source Python repository. | Real bug fix, one repo (no class assigned) | 18 of 20 | Verifier reward 1.0 (hidden tests) | Opus, Sonnet and Haiku 5.5 alone, one try per task. Opus 18/20 ($5.79), Sonnet 18/20 ($2.57), Haiku 17/20 ($0.54, a lower bound). The sample has no clear lift task. |
-| SWE-bench Pro hard 3 | Fix the 3 tasks that Opus missed or did not start in round 1. | Real bug fix, one repo (no class assigned) | 2/5, 2/5, 5/5 | Verifier reward 1.0 (hidden tests) | Opus alone, 5 tries per task. `ansible-d2f80991` 2/5, `openlibrary-30bc73a1` 2/5, `ansible-d9f18662` 5/5 (its round 1 try died in setup). |
+| SWE-bench Pro, 20-task sample | Fix a real issue in an open-source Python repository. | Real issue, one repository (no class assigned) | 18 of 20 | Verifier reward 1.0 (hidden tests) | Opus, Sonnet and Haiku 5.5 alone, one try per task. Opus 18/20 ($5.79), Sonnet 18/20 ($2.57), Haiku 17/20 ($0.54, a lower bound). The sample has no clear lift task. |
+| SWE-bench Pro hard 3 | Fix the 3 tasks that Opus missed or did not start in round 1. | Real issue, one repository (no class assigned) | 2/5, 2/5, 5/5 | Verifier reward 1.0 (hidden tests) | Opus alone, 5 tries per task. `ansible-d2f80991` 2/5, `openlibrary-30bc73a1` 2/5, `ansible-d9f18662` 5/5 (its round 1 try died in setup). |
 | B01 (private multi-cause bug) | Fix a real bug with several stacked faults across services. | Real bug across services | 10 of 10, both defects fixed | Product outcome in the running stack, two defects | One-shots: Opus 10 runs, Sonnet 5, Haiku 5. Sonnet fixed both defects 1/5 and Haiku 0/5. An Opus review loop fixed both in 3 of 3 runs (Haiku 2, Sonnet 1), at $1.15 and $1.24 against $1.29 for Opus. Interim: the runs are private. |
-| P1 DuckDB (pipeline family) | Build a batch and stream pipeline to Parquet marts with dlt and dbt-duckdb. | Long, many parts (class L) | 6/7 checks* | 7 checks against a hashed answer key | Opus, Sonnet and Haiku 5.5 alone, one try each. Opus 6/7 ($5.82), Sonnet 3/7, Haiku 0/7. Two check readings are open owner decisions. |
-| P2 DataFusion (pipeline family) | Build the same pipeline with a config-driven engine on Arrow, Polars and DataFusion. | Long, many parts (class L) | 5/7 checks | 7 checks against a hashed answer key | Opus, Sonnet and Haiku 5.5 alone, one try each. Opus 5/7 ($7.84), Sonnet 3/7, Haiku 0/7. |
-| P3 Spark (pipeline family) | Build the same pipeline with Scala 2.13 and Spark 3.5. | Long, many parts (class L) | 3/7 checks | 7 checks against a hashed answer key | Opus, Sonnet and Haiku 5.5 alone, one try each. Sonnet 5/7, Opus 3/7 ($7.92), Haiku 0/7. No model passed all 7 checks on P1 to P3. |
+| P1 DuckDB (pipeline family) | Build a batch and stream pipeline to Parquet marts with dlt and dbt-duckdb. | Long, many parts | 6/7 checks* | 7 checks against a hashed answer key | Opus, Sonnet and Haiku 5.5 alone, one try each. Opus 6/7 ($5.82), Sonnet 3/7, Haiku 0/7. Two check readings are open owner decisions. |
+| P2 DataFusion (pipeline family) | Build the same pipeline with a config-driven engine on Arrow, Polars and DataFusion. | Long, many parts | 5/7 checks | 7 checks against a hashed answer key | Opus, Sonnet and Haiku 5.5 alone, one try each. Opus 5/7 ($7.84), Sonnet 3/7, Haiku 0/7. |
+| P3 Spark (pipeline family) | Build the same pipeline with Scala 2.13 and Spark 3.5. | Long, many parts | 3/7 checks | 7 checks against a hashed answer key | Opus, Sonnet and Haiku 5.5 alone, one try each. Sonnet 5/7, Opus 3/7 ($7.92), Haiku 0/7. No model passed all 7 checks on P1 to P3. |
 | Tier 1: context footprint | Count the tokens that each harness adds to the context. | n/a | n/a | Pinned proxy tokenizer, deterministic | 6 harnesses and a baseline, no agent. Cadence adds 671 tokens to each request and 9,078 to 62,141 tokens to load its workflow. |
 | Tier 2: enforcement probes | Replay 10 actions and record which ones the hooks block. | n/a | n/a | Hook decision against the intent of each scenario | 8 harness and host rows. Cadence met the intent in 7 of 9 scenarios on Claude Code and on Cursor. The other harnesses met 2 to 4. |
 | Review value (PR review rounds) | Count the real defects that each PR review round finds. | n/a | n/a | Script count of blocking findings that a later round marks fixed | 18 review reports. The first round found 40 of the 51 defects that a later round marked fixed (78%). Rounds 3 and later raised 10 findings, none of them blocking. |
-| Cadence on its own repository | Count the must-fix findings that Cadence caught while it built itself. | n/a | n/a | Hand count of review and ledger records | 10 merged runs, 10 to 17 October. Cadence caught and closed 85 must-fix findings before merge, 62 (73%) of them before any code. Interim: the records are local. |
+| Cadence on its own repository | Count the must-fix findings that Cadence caught while it built itself. | n/a | n/a | Count from the local review and ledger records | 10 merged runs, 10 to 17 October. Cadence caught and closed 85 must-fix findings before merge, 62 (73%) of them before any code. Interim: the records are local. |
 
 \* Provisional: the operator fixed the grader after the Opus output came in.
 
@@ -593,7 +593,18 @@ run, traceability when a long task goes wrong, and design quality under a follow
 
 ## 18. Close (19:15–20:00)
 
-**Headline:** Where a harness earned its place, it was by verification, not by ceremony.
+**Headline:** Use one strong model for small, clear work. Use a harness when you must trust the result.
+
+**Show:** Try Cadence. We want beta testers.
+
+```text
+/plugin marketplace add jtouley/cadence
+/plugin install cadence@cadence
+```
+
+Start a new Claude Code session, run Cadence on a real change, and tell us what happened at
+https://github.com/jtouley/cadence/issues. All feedback is welcome, including where it fails. The
+benchmark is public at https://github.com/jtouley/harness-benchmark, and anyone can rerun it.
 
 **Notes:** One line and one fork, not a recap. Every gain we measured came from an independent check or a
 rule the model could not skip. Next: if a cheap check matches Opus alone on lift tasks, and carries the
