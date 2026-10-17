@@ -36,7 +36,7 @@ we checked the result without knowing which arm made it.
 own repository.
 
 **The question in the title:** today's strong models, Opus 5.5 among them, finish small work alone. So
-what is a harness for now? Section 13 answers it.
+what is a harness for now? Section 14 answers it.
 
 **Notes:** **Disclosure:** I wrote Cadence. That is why the rules were written down before the runs,
 why the graders were blind, and why the results against Cadence stay in the talk.
@@ -59,7 +59,36 @@ cheap model reach the strong model's result: on a model at 1/40 of the price (1/
 tokens), extra tokens are cheap.
 This talk tests both.
 
-## 3. Iteration 4: no crash shipped, no quality gain (2:30–4:00)
+## 3. How the grading works (2:30–3:15)
+
+**Headline:** Pass or fail comes from deterministic tests. Only the quality score uses an LLM grader.
+
+**Show:**
+
+| Kind | What it does |
+|---|---|
+| **Deterministic: small tasks** | Iterations 3 and 4 (T04–T06) run a hidden test suite on the delivered code. Each task has 6 or 7 hidden tests. `grade.py` also runs the process checks of the harness arms. |
+| **Deterministic: SWE-bench Pro** | Harbor's verifier runs the hidden tests of each task. A task passes at a reward of 1.0. |
+| **Deterministic: pipelines (P1–P3)** | `grader.pyz` runs as root from a folder that the agent cannot read. It runs 7 checks (4 batch, 3 stream) against a hashed answer key. It builds twice and gives 0 when the second build changes an output. It gives 0 when no run read the replayed stream to the end. Each reference solution scores 7/7, and each untouched skeleton scores 0. |
+| **Deterministic: footprint and enforcement** | The footprint tier counts tokens. The enforcement tier replays agent actions through each harness's installed hooks. `cbench verify` calculates each number again and compares it byte for byte. |
+| **LLM: blind quality score** | One Opus grader per task sees the code of every arm in an anonymous folder. It scores design, correctness, readability and tests from 1 to 10. It must reproduce each defect with a command. No command, no defect. |
+| **Rule: defect severity** | The authors set severity from the reproduced defects by a written rule. Major is a traceback or a breach of a sentence in the spec. An undelivered run counts as one critical defect. |
+| **LLM, planned: audit** | For the pipelines, a blind auditor gets the record of each failed run and must find where the run went wrong. |
+
+**Notes:** One rule covers a grader change after we see an arm's output. When the merged grader
+contract already accepts a shape and the code does not, we fix the grader and grade every affected run
+again. Any other reading stays as it is until the owner decides. One fix came after we saw the output of
+Opus on P1. So Opus's P1 score of 6/7 is provisional (section 12).
+
+Known weaknesses:
+
+- One grader per task.
+- One trial per cell in most rounds.
+- [Criteria v2](criteria-v2.md) asks for two independent reviewers, a script that runs each
+  reproduction again in a clean copy, and 5 runs per cell before a result counts.
+- B01's grading is private, so nobody else can check it.
+
+## 4. Iteration 4: no crash shipped, no quality gain (3:15–4:00)
 
 **Headline:** On small, precise tasks, the harness shipped no crash. Its code was not better than the
 model alone. It took about 30 times longer.
@@ -94,12 +123,12 @@ Add monthly category budgets to ledgerlite. `budget set CATEGORY LIMIT` sets a m
 Cadence is +2.0, −0.5 and +0.5. Only the first is outside single-run noise. So the honest line is "no
 gain shown", not "the harness made it worse".
 
-## 4. Iteration 4: what the harness bought (4:00–5:30)
+## 5. Iteration 4: what the harness bought (4:00–5:30)
 
 **Headline:** The harness shipped no crash and fewer serious defects. It closed every task or stopped
 with a reason. It left a record, and it enforced its rules. The price was about 30 times the wall time.
 
-**The task.** The same three `ledgerlite` tasks as section 3. The prompt of T05 is in section 3.
+**The task.** The same three `ledgerlite` tasks as section 4. The prompt of T05 is in section 4.
 
 **Show:** what the harness bought, measured.
 
@@ -127,7 +156,7 @@ major defects (1.00): the two crashes and the same double alert.
 **What it did not buy:**
 
 - **Speed or cost.** About 30 times the wall time and 4 times the tokens of a one-shot.
-- **Better code.** Blind quality did not improve: Opus alone 8.00, Cadence 7.33 (section 3).
+- **Better code.** Blind quality did not improve: Opus alone 8.00, Cadence 7.33 (section 4).
 - **Restraint.** The graders marked Cadence down for scope that the task did not ask for ("heavier than
   needed").
 - **Host independence.** User-level skills with the same names replaced Cadence's reviewers.
@@ -136,12 +165,12 @@ major defects (1.00): the two crashes and the same double alert.
 0.5. So the rule does not count "fewer defects than Opus" as shown. The crash count is the clearest
 signal. It comes from one task. Each cell ran once.
 
-## 5. The pilot: full Cadence on a cheap model delivered nothing, and said why (5:30–7:30)
+## 6. The pilot: full Cadence on a cheap model delivered nothing, and said why (5:30–7:30)
 
 **Headline:** We put the whole harness on Haiku 5.5. It stopped in its own process before it wrote any
 code. It did not claim success.
 
-**The task.** The pilot uses T05 (budgets) from iteration 4, with the same prompt (section 3). In
+**The task.** The pilot uses T05 (budgets) from iteration 4, with the same prompt (section 4). In
 iteration 4, each one-shot shipped a crash on this task. The pilot compares Cadence on Haiku 5.5 with an
 Opus 5.5 one-shot. The 7 hidden tests of iteration 4, the quality-model tools and a clean-room check
 grade each run.
@@ -164,7 +193,7 @@ record them. A full harness on a weak orchestrator adds places to stop. Both run
 it was never confidently wrong. We found four Cadence defects. Cadence fixed two, and work on the other two continues. This is n = 1. It shows a failure mode,
 not a rate.
 
-## 6. The calibration rule: choose tasks by what the bar does (7:30–8:30)
+## 7. The calibration rule: choose tasks by what the bar does (7:30–8:30)
 
 **Headline:** A task is hard only when the strong model fails it, not when it looks hard.
 
@@ -177,7 +206,7 @@ not a rate.
 **Notes:** Reliability is measured over repeats. A one-shot that passes once says nothing about the next
 run. T05 is out: the bar solves it in two minutes.
 
-## 7. B01: a real multi-cause bug (8:30–10:00)
+## 8. B01: a real multi-cause bug (8:30–10:00)
 
 **Headline:** Opus fixed it every time. The cheap models fixed the main path and missed the rest.
 
@@ -201,7 +230,7 @@ party, so we publish the scores only. After a contamination incident (processes 
 outlived them), all runs were regraded with an isolated grader. No grade changed. One container per trial
 has been in place since 15 October; these B01 runs ran before it.
 
-## 8. Why the cheap models miss (10:00–12:00)
+## 9. Why the cheap models miss (10:00–12:00)
 
 **Headline:** Not reasoning depth. Scope narrowing, and coverage.
 
@@ -228,12 +257,12 @@ Two harness mechanisms could fix both failures without a strong model, and neith
 code**: executable checks for every entry point the request covers, and the session cannot end while one
 fails.
 
-## 9. The review loop: reliability back, no money saved (12:00–13:30)
+## 10. The review loop: reliability back, no money saved (12:00–13:30)
 
 **Headline:** An independent reviewer that checks the running system recovered the miss in every valid
 run so far (2 Haiku, 1 Sonnet). It costs about as much as Opus alone.
 
-**The task.** The same B01 bug as section 7, with the same private prompt. The prompt is not public. A
+**The task.** The same B01 bug as section 8, with the same private prompt. The prompt is not public. A
 minimal harness runs it. The cheap model does the work. An independent Opus subagent then checks the
 result in the running stack. The cheap model fixes each problem that the reviewer finds. The loop ends
 when the reviewer approves, or after 3 reviews.
@@ -259,7 +288,7 @@ Process evidence from outside the benchmark points the same way: on 16 October, 
 two Cadence PRs found 5 and 4 must-fix defects; two of them came from fixes of earlier nits
 ([review value](review-value.md#independent-reviews-of-two-cadence-prs-16-october-2026)).
 
-## 10. SWE-bench Pro: the cheap one-shot is close, the bar is unreliable (13:30–14:15)
+## 11. SWE-bench Pro: the cheap one-shot is close, the bar is unreliable (13:30–14:15)
 
 **Headline:** On a published sample, Haiku alone is within one task of Opus at a tenth of the cost. The
 open question is the tasks where Opus itself is unreliable.
@@ -288,7 +317,7 @@ has little to add on them. The two unreliable tasks are beyond candidates: a har
 rate does something the strong model alone cannot do reliably. Limits: 20 tasks, one try per model, and
 trials that died in container setup were rerun. One try is a pass rate, not reliability (pass^k).
 
-## 11. The pipeline family: no one-shot passes long work, and harness runs are in progress (14:15–15:30)
+## 12. The pipeline family: no one-shot passes long work, and harness runs are in progress (14:15–15:30)
 
 **Headline:** On long-horizon pipelines, every one-shot failed at least one check, Opus included. At one try
 each, they are beyond candidates. Harness runs (Cadence on Haiku) are in progress. We will publish their
@@ -427,7 +456,7 @@ No run passed every check: 0 of 9. Each run took 25 to 70 minutes. The nine grad
   grading (now `--snapshot-worktree`), and it did not read a `checks:` key beside other top-level keys.
   The benchmark is software too.
 
-## 12. Cadence on its own repository: review caught what green tests missed (15:30–16:15)
+## 13. Cadence on its own repository: review caught what green tests missed (15:30–16:15)
 
 **Headline:** Outside the benchmark, independent review keeps catching what the model and its test
 suite pass.
@@ -455,7 +484,7 @@ closed 62 of the 85 items, not a check that ran again. There is no control group
 show that these bugs would have shipped without Cadence. They show that the stages found them. The same discipline runs on Cadence's own debt:
 Cadence's own complexity audit is being paid down in a set of refactors.
 
-## 13. What strong models change: a harness's job is proving the code, not writing it (16:15–17:30)
+## 14. What strong models change: a harness's job is proving the code, not writing it (16:15–17:30)
 
 **Headline:** With today's models, a harness's job is proving the code, not writing it. Where the model
 can write the code, what is left for a harness is checking it.
@@ -464,9 +493,9 @@ can write the code, what is left for a harness is checking it.
 
 | Work | Use | Evidence |
 |---|---|---|
-| Small, specified work | The model alone. On precisely specified tasks a harness added time, not quality; on SWE-bench Pro, even Haiku alone was close. | Sections 3, 10 |
-| Work someone must trust | A harness as verifier and record: independent review, enforced rules, a ledger. | Sections 4, 9, 12 |
-| Long work past the model | The open frontier: no one-shot passed every check, Opus included (two readings open). | Section 11 |
+| Small, specified work | The model alone. On precisely specified tasks a harness added time, not quality; on SWE-bench Pro, even Haiku alone was close. | Sections 4, 11 |
+| Work someone must trust | A harness as verifier and record: independent review, enforced rules, a ledger. | Sections 5, 10, 13 |
+| Long work past the model | The open frontier: no one-shot passed every check, Opus included (two readings open). | Section 12 |
 
 **Notes:** This is the answer to the title. Today's strong models finish small, well-specified work
 alone, so a harness is no longer what gets that code written. What the harness bought, every time it
@@ -475,16 +504,16 @@ specified (class S); that is the main limit on the first row. The third row is a
 is the next experiment. The first two rows are measured, mostly on one run per cell. We have no market
 data: this is about the harness's job, not its market share.
 
-## 14. What this means for building a harness (17:30–18:15)
+## 15. What this means for building a harness (17:30–18:15)
 
 **Headline:** Cut the ceremony. Test the scope gate.
 
-**Show:** what holds up is section 13; this is what to change.
+**Show:** what holds up is section 14; this is what to change.
 
 | Did not pay | Untested, next |
 |---|---|
 | A long planning pipeline on a weak orchestrator | Holding scope as a gate: a dropped part of the request is a defect |
-| A strong-model reviewer, if the goal is cost | Cheap verification: section 15 |
+| A strong-model reviewer, if the goal is cost | Cheap verification: section 16 |
 | Review as a stand-in for executable checks | |
 | Deferral checks that look only at form | |
 
@@ -496,7 +525,7 @@ returns and a context budget, and an R3 cognitive-complexity check for every lan
 `e5c3a92` ([whitepaper §4.1](whitepaper.md#41-cadence-after-the-benchmarks-pin-status-16-october-2026)). This agrees with Datadog's "harness-first"
 argument: verification, not review, is the bottleneck.
 
-## 15. What comes next (18:15–19:15)
+## 16. What comes next (18:15–19:15)
 
 **Headline:** Make the check cheap, give it long work, and measure what the record is worth when
 something breaks.
@@ -507,7 +536,7 @@ something breaks.
    no model reviewer); a review loop with a Haiku reviewer; full Cadence with all peers on Haiku, once its
    two open defects are fixed. In every harness arm, each deferral goes to an independent Haiku reviewer.
 2. **Harness arms on the pipeline family** ([tasks](tasks/pipeline-family.md)). The tasks, the
-   isolated runner and the one-shot baselines exist (section 11). Full Cadence on Haiku is in
+   isolated runner and the one-shot baselines exist (section 12). Full Cadence on Haiku is in
    progress. Next: the review loop and the verification harness on Haiku. Then each task's follow-up change
    (a new mart and a dashboard), built by the same arm on its own code. This is work that does not fit
    one session.
@@ -522,7 +551,7 @@ something breaks.
 prompt, word for word, with no hints and no knowledge of the traps. The measures: cost per defect-free
 run, traceability when a long task goes wrong, and design quality under a follow-up change.
 
-## 16. Close (19:15–20:00)
+## 17. Close (19:15–20:00)
 
 **Headline:** Where a harness earned its place, it was by verification, not by ceremony.
 
