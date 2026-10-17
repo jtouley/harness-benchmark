@@ -106,4 +106,62 @@ it is labeled "Cadence loaded, gates bypassed (prefix gap)" and reported apart.
 
 ## Results
 
-Pending.
+In progress. This section lists only finished, counted trials. Every row is in
+`2026-10-17-haiku-harness-pipeline.json`, and the void trials are there with `counted: false`. Cost is computed
+from token counts at `pricing.json` list prices. Haiku 5.5 is priced at its base tier, so above 100 K tokens per
+request the cost is a lower bound.
+
+### Cadence, all Haiku (cadence-haiku)
+
+| Task | Config | Checks | Reward | Cost | Agent s | Turns | Last stage reached | Stop reason |
+|---|---|---|---|---|---|---|---|---|
+| P1 | v2 (Cadence 13342c8) | 0/7 | 0.0 | $0.457 | 1,893.0 | 62 | P9 entry invariant not passed. A1 to A5, P1, P3, P4 and P6 passed; P7 (test benchmark of the plan) failed | Hard stop (`retries`) before any code; see below |
+| P2 | v2 | running | | | | | | |
+| P3 | v3 | not started | | | | | | |
+
+**P1 (v2).** Cadence ran in the paceline: a spec, a vibe-test, a plan, plan reviews and an adversarial review.
+It stopped at the entry invariant (P9) and wrote no code, so the grader found no pipeline (no stream
+consumed, not idempotent, 0 of 7). Marker check: the run wrote no code outside `.context/`, so no write came
+before the entry invariant. This counts as a Cadence result. Two things held P9 shut:
+
+1. **The plan-review count disagreed.** The cycle-1 plan-update peer ran the plan-review skill itself three
+   times in its own context, and the review file ended at "cycle 5 of 5". The gate counted 2 attested
+   cycles, so it asked for another review, and the next review peer refused because the file said the limit
+   was reached. Filed as jtouley/cadence#144.
+2. **P7 failed.** The test benchmark of the plan returned FAIL with 7 must-fix findings (known-answer checks,
+   exact decimal money, the Connecticut and unknown-geography rules, late rows, stream exit rules,
+   malformed events, crash injection points). The plan-update peer applied none of them.
+
+The orchestrator then recorded a `retries` hard stop with these two reasons. It did not edit the count to force
+a pass.
+
+### Cadence, Haiku with Opus reviews (cadence-haiku-opus)
+
+| Task | Config | Checks | Reward | Cost | Agent s | Last stage reached | Stop reason |
+|---|---|---|---|---|---|---|---|
+| P1 | v3 | running | | | | | |
+| P2 | v3 | not started | | | | | |
+| P3 | v3 | not started | | | | | |
+
+### Set aside (not results)
+
+| Run | Config | Why |
+|---|---|---|
+| P2-haiku-cadence-haiku-1 | v1 | Hard stop at A4 (`credentials`, no ticket) after 916 s, no code |
+| P1-haiku-cadence-haiku-1 | v1 | A4 failed; it wrote the pipeline outside the paceline (no spec, plan or review), then hit the stop guard 3 times at A4, and the guard let the stop through at its refusal cap. Graded 2/7, reward 0. Kept for the postmortem, not a result |
+| P1-haiku-cadence-haiku-opus-1 | v1 | Stopped 1 min into its agent phase so that it would not run under v1 |
+
+Spend so far, from token counts: $0.457 counted, plus $0.557 on the v1 trials that were set aside.
+
+### Comparison with the one-shot trials
+
+The one-shot rows of [pipeline trials](2026-10-15-pipeline-trials.md) are: Haiku 0/7 on P1, P2 and P3; Sonnet 3, 3
+and 5; Opus 6 (provisional), 5 and 3. So far, Cadence on Haiku matches the Haiku one-shot on P1 (0/7), for a
+different reason. The one-shot delivered a pipeline that answered against the spec. Cadence delivered no
+pipeline, because its own gates held implementation.
+
+### Limits
+
+k = 1 per cell. Haiku costs are lower bounds above 100 K tokens per request. Cadence configs v1, v2 and v3 differ
+(see above), and each row names its config.
+
