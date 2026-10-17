@@ -38,6 +38,16 @@ own repository.
 **The question in the title:** today's strong models, Opus 5.5 among them, finish small work alone. So
 what is a harness for now? Section 14 answers it.
 
+**Dark coding: no human in the loop.** A human starts each run. After that, agents do the work.
+- **Benchmark runs.** Each run gets one prompt. The prompt says: "Nobody will answer questions: work
+  autonomously to the end." No human answers, approves or fixes anything during a run. The graders run
+  after the agent stops.
+- **Cadence on its own repository.** Agents wrote the plans, reviewed them, wrote the code, reviewed the
+  pull requests, fixed the findings and merged. Separate agents did the reviews. The owner started the
+  runs and set the rules, for example "merge once the reviews pass".
+- **The few human decisions are on the record.** Examples: to restart Docker after a crash, and to give
+  the trial runs a test ticket number. The talk names each one where it matters.
+
 **Notes:** **Disclosure:** I wrote Cadence. That is why the rules were written down before the runs,
 why the graders were blind, and why the results against Cadence stay in the talk.
 
