@@ -39,6 +39,23 @@ do not count as model failures.
 Lesson for this host (16 GB, Docker VM 15.6 GB, other stacks running): five pipeline trials at once,
 one of them Spark, crashed the VM. The plan's limit (two `py` trials, P3 alone) stays the limit.
 
+## Run set, revised before the next trial (owner, 2026-10-17)
+
+The owner's priority is Cadence itself on Haiku. Two Cadence arms go first, in the pilot's form
+(`docs/experiments/2026-10-13-pilot/run_arm.sh`): a copy of Cadence main loaded with `--plugin-dir`,
+`peer_models` set in its `cadence.config.json`, and the task prompt started with `/cadence:cadence`
+plus the pilot's note that there is no GitHub and nobody answers questions.
+
+| Order | Arm | peer_models | Cadence |
+|---|---|---|---|
+| 1 | Cadence, all Haiku | `{"default": "haiku"}` | jtouley/cadence main at the trial start (sha in `trial.json`) |
+| 2 | Cadence, Haiku with Opus reviews | Haiku default; plan-review, adversarial-review, test-benchmark-plan, pr-review-local, test-benchmark-pr on Opus | same |
+| 3 to 5 | the three arms above | | |
+
+The two review-loop trials that had restarted at 11:44 were stopped at the owner's request to run
+Cadence first; they are set aside under `void-2026-10-17-preempted/` and are not results. The budget
+rises to **$90** for the 15 trials, recorded here before the first Cadence trial.
+
 ## Results
 
 Pending.

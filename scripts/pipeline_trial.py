@@ -205,6 +205,33 @@ def repo_from_saved(saved: Path, out: Path) -> Path:
     return out
 
 
+CADENCE_NOTE = ("Environment (same for every run): there is no GitHub and no ticket tracker. Where you would "
+                "create, update or comment on a pull request or a ticket, skip that step and continue as if it "
+                "succeeded. Nobody will answer questions: work autonomously to the end.")
+
+
+def cadence_arm(src: Path, dest: Path, peer_models: dict) -> Path:
+    """A copy of a Cadence checkout to load with --plugin-dir, its peers set by peer_models (as the pilot)."""
+    shutil.copytree(src, dest, ignore=shutil.ignore_patterns(".git", ".venv", ".context", "__pycache__"))
+    config = dest / "cadence.config.json"
+    cfg = json.loads(config.read_text(encoding="utf-8")) if config.is_file() else {}
+    config.write_text(json.dumps({**cfg, "peer_models": peer_models}, indent=2) + "\n", encoding="utf-8")
+    return dest
+
+
+def cadence_prompt(task_prompt: str) -> str:
+    """The task, started through the Cadence skill, with the pilot's environment note."""
+    return f"/cadence:cadence {task_prompt.strip()}\n\n{CADENCE_NOTE}\n"
+
+
+def arm_name(mode: str, plugin_dir: Path | None, cadence: Path | None, peer_models: dict | None) -> str:
+    if cadence is not None:
+        return "cadence-" + "-".join(sorted(set((peer_models or {"default": "haiku"}).values())))
+    if mode == "agent":
+        return plugin_dir.name if plugin_dir else "one-shot"
+    return mode
+
+
 def agent_timeout(caps: dict, override: int | None) -> int:
     """The agent's cap: the one-shot guard cap, or the run set's own value (harness arms have no per-trial cap)."""
     return override if override is not None else caps["agent_timeout"]
@@ -212,7 +239,8 @@ def agent_timeout(caps: dict, override: int | None) -> int:
 
 def run_trial(task: str, out: Path, *, mode: str, model: str | None, plugin_dir: Path | None,
               replay_seed: int, caps: dict, regrade_of: Path | None = None,
-              agent_timeout_override: int | None = None) -> int:
+              agent_timeout_override: int | None = None, cadence: Path | None = None,
+              peer_models: dict | None = None) -> int:
     sys.path.insert(0, str(PIPELINE))
     from pipetask import assemble, bundle  # noqa: PLC0415 - builder code, hidden from arms
 
@@ -226,7 +254,13 @@ def run_trial(task: str, out: Path, *, mode: str, model: str | None, plugin_dir:
             repo = assemble.assemble(task, tmp_path / "repo", with_reference=mode == "reference")
         dist = tmp_path / "dist"
         bundle.bundle(dist)
-        cmd = [str(RUN_TRIAL), "--repo", str(repo), "--prompt", str(PIPELINE / task / "prompt.md"),
+        prompt = PIPELINE / task / "prompt.md"
+        if cadence is not None:
+            plugin_dir = cadence_arm(cadence, tmp_path / "cadence", peer_models or {"default": "haiku"})
+            prompt = tmp_path / "prompt.md"
+            prompt.write_text(cadence_prompt((PIPELINE / task / "prompt.md").read_text(encoding="utf-8")),
+                              encoding="utf-8")
+        cmd = [str(RUN_TRIAL), "--repo", str(repo), "--prompt", str(prompt),
                "--grader", str(dist / "grader.pyz"), "--replay", str(dist / "replay.pyz"),
                "--replay-seed", str(replay_seed), "--out", str(out), "--image", task_caps["image"],
                "--agent-timeout", str(timeout),
@@ -248,11 +282,14 @@ def run_trial(task: str, out: Path, *, mode: str, model: str | None, plugin_dir:
             cmd += ["--agent-cmd", str(stub), "--model", "none"]
             env.pop("ANTHROPIC_API_KEY", None)
         meta = {"task": task, "mode": mode, "model": model if mode == "agent" else None,
-                "arm": "one-shot" if mode == "agent" and not plugin_dir else (plugin_dir.name if plugin_dir else mode),
+                "arm": arm_name(mode, plugin_dir, cadence, peer_models),
                 "image": task_caps["image"], "agent_timeout": timeout,
                 "grader_timeout": task_caps["grader_timeout"], "grader_deadline": task_caps.get("grader_deadline"),
                 "replay_seed": replay_seed, "regrade_of": str(regrade_of) if regrade_of else None,
                 "started_at": datetime.now().astimezone().isoformat(timespec="seconds")}
+        if cadence is not None:
+            sha = subprocess.run(["git", "-C", str(cadence), "rev-parse", "HEAD"], capture_output=True, text=True)
+            meta |= {"cadence_sha": sha.stdout.strip() or None, "peer_models": peer_models or {"default": "haiku"}}
         rc = subprocess.call(cmd, env=env)
     out.mkdir(parents=True, exist_ok=True)
     (out / "trial.json").write_text(json.dumps(meta, indent=1) + "\n")
@@ -286,6 +323,9 @@ def main(argv: list[str] | None = None) -> int:
     r.add_argument("--plugin-dir", type=Path)
     r.add_argument("--agent-timeout", type=int, default=None,
                    help="replace the one-shot guard cap (caps.json agent_timeout), e.g. for a harness arm")
+    r.add_argument("--cadence", type=Path, help="a Cadence checkout: run the task through /cadence:cadence")
+    r.add_argument("--peer-models", type=json.loads, default=None,
+                   help='Cadence peer models as JSON (default {"default": "haiku"})')
     r.add_argument("--replay-seed", type=int, default=0, help="the dev replay's seed (the grading seed is 1)")
     c = sub.add_parser("caps", help="set a task's grader caps from its reference trials")
     c.add_argument("task", choices=["P1", "P2", "P3"])
@@ -311,7 +351,8 @@ def main(argv: list[str] | None = None) -> int:
         return run_trial(args.task, args.out, mode=args.mode, model=args.model, plugin_dir=args.plugin_dir,
                          replay_seed=args.replay_seed, caps=caps,
                          regrade_of=args.regrade_of.resolve() if args.regrade_of else None,
-                         agent_timeout_override=args.agent_timeout)
+                         agent_timeout_override=args.agent_timeout, cadence=args.cadence,
+                         peer_models=args.peer_models)
     if args.cmd == "caps":
         grades = [{**_load(run / "grade.json"), "grader_seconds": _load(run / "timing.json")["grader_seconds"]}
                   for run in args.runs]

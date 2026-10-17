@@ -194,3 +194,17 @@ def test_an_agent_timeout_override_replaces_the_one_shot_cap(monkeypatch, tmp_pa
     assert seen["agent_timeout"] == 86400
     assert pt.agent_timeout({"agent_timeout": 7200}, None) == 7200
     assert pt.agent_timeout({"agent_timeout": 7200}, 86400) == 86400
+
+
+def test_a_cadence_arm_copies_cadence_with_peer_models_and_prefixes_the_prompt(tmp_path):
+    """Cadence on a cheap model: the pilot's arm (run_arm.sh) on the pipeline runner."""
+    src = tmp_path / "cadence"
+    (src / ".git").mkdir(parents=True)
+    (src / ".context").mkdir()
+    (src / "SKILL.md").write_text("x")
+    (src / "cadence.config.json").write_text(json.dumps({"enabled_packs": []}))
+    arm = pt.cadence_arm(src, tmp_path / "arm", {"default": "haiku"})
+    assert (arm / "SKILL.md").is_file() and not (arm / ".git").exists() and not (arm / ".context").exists()
+    assert json.loads((arm / "cadence.config.json").read_text()) == {"enabled_packs": [], "peer_models": {"default": "haiku"}}
+    prompt = pt.cadence_prompt("Build the pipeline.")
+    assert prompt.startswith("/cadence:cadence Build the pipeline.") and "autonomously" in prompt
