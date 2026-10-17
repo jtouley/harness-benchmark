@@ -124,8 +124,8 @@ It stopped at the entry invariant (P9) and wrote no code, so the grader found no
 consumed, not idempotent, 0 of 7). Marker check: the run wrote no code outside `.context/`, so no write came
 before the entry invariant. This counts as a Cadence result. Two things held P9 shut:
 
-1. **The plan-review count disagreed.** The cycle-1 plan-update peer ran the plan-review skill itself three
-   times in its own context, and the review file ended at "cycle 5 of 5". The gate counted 2 attested
+1. **The plan-review count disagreed.** The cycle-1 plan-update peer ran the plan-review skill itself four
+   times in its own context (cycles 2 to 5), and the review file ended at "cycle 5 of 5". The gate counted 2 attested
    cycles, so it asked for another review, and the next review peer refused because the file said the limit
    was reached. Filed as jtouley/cadence#144.
 2. **P7 failed.** The test benchmark of the plan returned FAIL with 7 must-fix findings (known-answer checks,
