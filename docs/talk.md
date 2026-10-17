@@ -86,7 +86,7 @@ gain shown", not "the harness made it worse".
 | Bought | Did not buy |
 |---|---|
 | **No crash in delivered code.** Each one-shot shipped two (all six on one task, budgets, from three inputs); neither harness shipped one. | **Restraint.** The graders marked Cadence down for scope it was not asked for ("heavier than needed"). |
-| **An audit trail.** A plan, reviews by 8–12 separate agents, a findings ledger, 12–23 attestation rows per run. A one-shot leaves one commit. | **Speed or cost.** About 30 times the wall time, 4 times the tokens. |
+| **An audit trail.** A plan, reviews by 8–12 separate agents, a findings ledger, 12–23 attestation rows per run. A one-shot leaves at most one commit. | **Speed or cost.** About 30 times the wall time, 4 times the tokens. |
 | **Completion you can trust.** 3 of 3 delivered (two tasks after a rerun with the cadence#57 fix), or a recorded stop. No false success. | **Host independence.** User-level skills with the same names replaced Cadence's reviewers (cadence#53). |
 | **Rules it cannot skip.** The hooks handle 7 of 9 probes as intended: 5 blocked, 2 controls allowed (at the pinned e5c3a92). | |
 
@@ -295,9 +295,9 @@ can write the code, what is left for a harness is checking it.
 
 | Work | Use | Evidence |
 |---|---|---|
-| Small, specified work | The model alone. On precisely specified tasks a harness added time, not quality; a cheap model alone is close. | Sections 3, 10 |
+| Small, specified work | The model alone. On precisely specified tasks a harness added time, not quality; on SWE-bench Pro, even Haiku alone was close. | Sections 3, 10 |
 | Work someone must trust | A harness as verifier and record: independent review, enforced rules, a ledger. | Sections 4, 9, 12 |
-| Long work past the model | The open frontier: no one-shot finished it, Opus included. | Section 11 |
+| Long work past the model | The open frontier: no one-shot passed every check, Opus included (two readings open). | Section 11 |
 
 **Notes:** This is the answer to the title. Today's strong models finish small, well-specified work
 alone, so a harness is no longer what gets that code written. What the harness bought, every time it
@@ -315,11 +315,11 @@ data: this is about the harness's job, not its market share.
 | Did not pay | Untested, next |
 |---|---|
 | A long planning pipeline on a weak orchestrator | Holding scope as a gate: a dropped part of the request is a defect |
-| A strong-model reviewer, if the goal is cost | Contracts before code, with a stop gate |
-| Review as a stand-in for executable checks | A cheap reviewer in place of Opus |
+| A strong-model reviewer, if the goal is cost | Cheap verification: section 15 |
+| Review as a stand-in for executable checks | |
 | Deferral checks that look only at form | |
 
-**Notes:** Holding scope is untested as a gate: every cheap-model miss on B01 was scope, and Cadence itself
+**Notes:** Holding scope is untested as a gate: Haiku's B01 misses were scope narrowing, and Cadence itself
 over-built in iteration 4. The Cadence changes that follow: a cycle limit on P6 (cadence#63, done); a hook writes the
 delegation record (cadence#64, done); a no-tracker mode (cadence#65, open); a verdict counts only from the
 peer of its stage (cadence#66, open); deferrals are judged in real time (cadence#68, open). Also done since
