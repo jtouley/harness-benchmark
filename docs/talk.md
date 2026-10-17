@@ -87,7 +87,7 @@ gain shown", not "the harness made it worse".
 |---|---|
 | **No crash in delivered code.** Each one-shot shipped two (all six on one task, budgets, from three inputs); neither harness shipped one. | **Restraint.** The graders marked Cadence down for scope it was not asked for ("heavier than needed"). |
 | **An audit trail.** A plan, reviews by 8–12 separate agents, a findings ledger, 12–23 attestation rows per run. A one-shot leaves at most one commit. | **Speed or cost.** About 30 times the wall time, 4 times the tokens. |
-| **Completion you can trust.** 3 of 3 delivered (two tasks after a rerun with the cadence#57 fix), or a recorded stop. No false success. | **Host independence.** User-level skills with the same names replaced Cadence's reviewers (cadence#53). |
+| **Completion you can trust.** 3 of 3 delivered (two tasks rerun once a Cadence bug was fixed), or a recorded stop. No false success. | **Host independence.** User-level skills with the same names replaced Cadence's reviewers. |
 | **Rules it cannot skip.** The hooks handle 7 of 9 probes as intended: 5 blocked, 2 controls allowed (at the pinned e5c3a92). | |
 
 **Notes:** Better code is already off the table from section 3, so it is not repeated here. The defect gap
@@ -110,11 +110,11 @@ code.
 **Notes:** The cheap arms spent at least 3 and 8 times the dollars of the Opus one-shot (up to 14 and 11
 times at the upper bound), and delivered nothing. Both orchestrators ended above 100K prompt tokens. Static
 skill text explains only about 18K of that; one cause is that each peer returned a full report into the
-orchestrator's context (Cadence PR #97 adds one-line peer returns and a context budget; not yet rerun).
+orchestrator's context (Cadence now has one-line peer returns and a context budget; not yet rerun).
 The causes: the adversarial review had no cycle limit and found new edge cases each round. In the other
 arm, a gate depends on the orchestrator recording its own delegations, and the cheap orchestrator did not
 record them. A full harness on a weak orchestrator adds places to stop. Both runs stopped and said why:
-no false success. We filed four Cadence defects (cadence#63–#66); #63 and #64 are now fixed. This is n = 1. It shows a failure mode,
+no false success. We found four Cadence defects; two are fixed and two are being fixed. This is n = 1. It shows a failure mode,
 not a rate.
 
 ## 6. The calibration rule: choose tasks by what the bar does (7:30–8:30)
@@ -147,7 +147,7 @@ second defect.
 **Notes:** B01 is a lift task: the bar is reliable, the cheap models are not. The code belongs to a third
 party, so we publish the scores only. After a contamination incident (processes from earlier runs
 outlived them), all runs were regraded with an isolated grader. No grade changed. One container per trial
-is now done (harness-benchmark#10, closed 15 October by PR #23); these B01 runs ran before it.
+has been in place since 15 October; these B01 runs ran before it.
 
 ## 8. Why the cheap models miss (10:00–12:00)
 
@@ -172,7 +172,7 @@ is now done (harness-benchmark#10, closed 15 October by PR #23); these B01 runs 
 
 Two harness mechanisms could fix both failures without a strong model, and neither is tested yet: (1)
 **no silent deferral**: each decision to leave work out goes to an independent reviewer at once
-(cadence#68, open); (2) **contracts before
+(not built yet); (2) **contracts before
 code**: executable checks for every entry point the request covers, and the session cannot end while one
 fails.
 
@@ -273,18 +273,18 @@ suite pass.
 
 **Show:**
 
-- **PR #118** (Go, Java and C/C++ in the complexity check): 2,599 tests passed. The R1 review still
+- **A new language check** (Go, Java and C/C++ in the complexity check): 2,599 tests passed. Review still
   blocked it: a Go function literal passed to a call was scored one nesting level too shallow. Fixed and
   verified by command before closure.
-- **PR #112** (test ownership): R1 found a gate that crashed with a traceback on a malformed file.
+- **A test-ownership change:** review found a gate that crashed with a traceback on a malformed file.
   Closing the run exposed a bypass in the harness itself: `ledger_verify.py --dry-run` marked findings
-  verified without running their checks (cadence#121).
+  verified without running their checks. That is now being fixed.
 - **Review rounds** ([review value](review-value.md#independent-reviews-of-two-cadence-prs-16-october-2026)):
-  on Cadence PRs #97 and #101, the first round found 6 of 9 must-fix items, and each later round found
+  on two other Cadence changes, the first round found 6 of 9 must-fix items, and each later round found
   one more. Two came from fixes of earlier nits.
 
 **Notes:** Process evidence, not a controlled comparison. The same discipline runs on Cadence's own debt:
-the complexity audit (cadence#98) is being paid down in open refactor PRs #129–#134.
+Cadence's own complexity audit is being paid down in a set of refactors.
 
 ## 13. What strong models change: a harness's job is proving the code, not writing it (16:15–17:30)
 
@@ -320,11 +320,10 @@ data: this is about the harness's job, not its market share.
 | Deferral checks that look only at form | |
 
 **Notes:** Holding scope is untested as a gate: Haiku's B01 misses were scope narrowing, and Cadence itself
-over-built in iteration 4. The Cadence changes that follow: a cycle limit on P6 (cadence#63, done); a hook writes the
-delegation record (cadence#64, done); a no-tracker mode (cadence#65, open); a verdict counts only from the
-peer of its stage (cadence#66, open); deferrals are judged in real time (cadence#68, open). Also done since
-the pilot: one-line peer returns and a context budget (PR #97), and an R3 cognitive-complexity check for
-every language with an analyzer (PR #101). The tier-1 and tier-2 results stay measured at the pinned commit
+over-built in iteration 4. The Cadence changes that follow: a cycle limit on P6 (done); a hook writes the
+delegation record (done); a no-tracker mode and a verdict that counts only from the peer of its stage
+(being fixed); deferrals judged in real time (not built yet). Also done since the pilot: one-line peer
+returns and a context budget, and an R3 cognitive-complexity check for every language with an analyzer. The tier-1 and tier-2 results stay measured at the pinned commit
 `e5c3a92` ([whitepaper §4.1](whitepaper.md#41-cadence-after-the-benchmarks-pin-status-16-october-2026)). This agrees with Datadog's "harness-first"
 argument: verification, not review, is the bottleneck.
 
@@ -336,8 +335,8 @@ something breaks.
 **Show:**
 
 1. **Cheap verification.** Haiku-only arms: a verification harness (contracts before code, a stop gate,
-   no model reviewer); a review loop with a Haiku reviewer; full Cadence with all peers on Haiku, after
-   cadence#65 and #66 are fixed (#63 and #64 are fixed). In every harness arm, each deferral goes to an independent Haiku reviewer.
+   no model reviewer); a review loop with a Haiku reviewer; full Cadence with all peers on Haiku, once its
+   two open defects are fixed. In every harness arm, each deferral goes to an independent Haiku reviewer.
 2. **Harness arms on the pipeline family** ([tasks](tasks/pipeline-family.md)). The tasks, the
    isolated runner and the one-shot baselines are done (section 11). Next: the review loop and the
    verification harness on Haiku, with full Cadence on Haiku to follow. Then each task's follow-up change
@@ -374,12 +373,12 @@ it is a governance tool: worth it where someone must trust the result, not to sa
 | "You wrote Cadence. Why trust this?" | The rules were written before the runs, the graders were blind, and the main results do not favor Cadence: no quality gain, and no delivery on Haiku. |
 | "Did you tune the prompt for the harness?" | No. Every arm gets the same request text, word for word. A harness arm differs only by its installed harness. Each run has an empty `HOME`, and a script checks it. |
 | "Why didn't the harness win on quality?" | The small tasks fully specify every output, so review has little to add. And the harness built more than the request asked for. |
-| "Why did full Cadence fail on Haiku?" | Two Cadence defects: a review stage with no cycle limit, and a gate that depends on the orchestrator recording its own delegations. Both are fixed now (cadence#63, #64). The pilot is n = 1. |
+| "Why did full Cadence fail on Haiku?" | Two Cadence defects: a review stage with no cycle limit, and a gate that depends on the orchestrator recording its own delegations. Both are fixed now. The pilot is n = 1. |
 | "Isn't Haiku just not smart enough?" | The transcripts say no. Haiku took more turns than Opus (166 against 90), hit the second defect in 5 of 5 runs, and diagnosed it once. It chose to leave it out. A harness can check that scope decision. |
 | "What is B01? Can I see it?" | A private brownfield bug in a multi-service application with stacked faults. The code belongs to a third party, so we publish only its scores and the grader design. |
 | "The review loop costs as much as Opus. Why use it?" | In 3 valid runs (2 Haiku, 1 Sonnet) it closed the reliability gap: a signal, not yet a rate. The cost is the open question. The next arms try cheap checks: a Haiku reviewer, and executable contracts with a stop gate. If none matches the bar, the harness is a governance tool, not a cost tool. |
-| "What about the contamination incident?" | Processes from earlier B01 runs outlived them. Every run was regraded with an isolated grader; no grade changed. One container per trial is now done (harness-benchmark#10, closed by PR #23). |
+| "What about the contamination incident?" | Processes from earlier B01 runs outlived them. Every run was regraded with an isolated grader; no grade changed. One container per trial is now in place. |
 | "Why SWE-bench Pro?" | For comparison with outside numbers, filtered by the same calibration rule. On our sample of 20, Haiku alone passed 17 and Opus 18, so it has no clear lift tasks; two tasks are beyond candidates. |
 | "Where is the harness run on the pipeline tasks?" | Not run yet. The 15 October round ran the one-shot baselines (Haiku, Sonnet, Opus on P1–P3) so the harness has a bar to beat. The runner already takes a harness as a plugin, and the review-loop and verification arms are built. Those trials are next. |
 | "Could a one-shot just be asked to write a plan and tests?" | It could. That is a harness in a prompt, with no independent check and no enforcement. The baseline does not allow it, so the comparison stays fair. |
-| "What about the bugs in your own harness?" | They are real, and part of the result: cadence#56 and #57 in iteration 4, cadence#63–#66 from the pilot (#63 and #64 fixed). The harness is software, and it needs the review it gives. |
+| "What about the bugs in your own harness?" | They are real, and part of the result: a Cadence change that broke two iteration-4 runs until it was fixed, and four defects from the pilot (two fixed, two being fixed). The harness is software, and it needs the review it gives. |
