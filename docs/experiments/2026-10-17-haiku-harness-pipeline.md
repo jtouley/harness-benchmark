@@ -26,6 +26,19 @@ family (P1 to P3), the Haiku 5.5 one-shot scored 0 of 7 checks on all three task
 - Host: at most two `py`-image trials (P1, P2) at once, and P3 (the Spark image) alone, because the
   16 GB host lost earlier runs to Docker failures.
 
+## Incident: Docker crash under parallel load (2026-10-17)
+
+The run set started as planned (two `py` trials at 08:44 local). At the owner's request to run as much in
+parallel as possible, three more trials started at 08:59: P3 and the two Sonnet-reviewer trials, five at
+once. At 09:00:50 local (13:00:50Z) the Docker Desktop VM went from `running` to `stopping`
+(`com.docker.backend.engines`, with a crash-detector entry) and did not come back; `docker desktop restart`
+then failed. All five trials were lost in their agent phase. Their folders hold only `runner.log`, and
+they are set aside under `results/runs/pipeline/void-2026-10-17-docker-crash/`. They are not results and
+do not count as model failures.
+
+Lesson for this host (16 GB, Docker VM 15.6 GB, other stacks running): five pipeline trials at once,
+one of them Spark, crashed the VM. The plan's limit (two `py` trials, P3 alone) stays the limit.
+
 ## Results
 
 Pending.
