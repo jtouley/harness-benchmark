@@ -22,7 +22,7 @@ All paths below are relative to the operator's local Cadence records (`.context/
 
 ## Scope and method
 
-- Window: merged PRs from 2026-10-10 to 2026-10-17.
+- Window: merged PRs from 2026-10-10T00:00Z to 2026-10-17T16:00Z (UTC).
   Command: `gh pr list -R jtouley/cadence --state merged --limit 40 --json number,title,mergedAt`.
 - A "run" is a task id with an `implementation/<task>.json` record (`task_id`, `pipeline_run_id`).
 - Stage names: P3 plan review, P6 adversarial review, P7 test benchmark of the plan,
@@ -88,7 +88,11 @@ R1 and R2 items were fixed on the PR branch, and a re-review or a ledger `verifi
 
 ### Merged PRs in the window that were not Cadence runs
 
-[#128](https://github.com/jtouley/cadence/pull/128), [#116](https://github.com/jtouley/cadence/pull/116), [#101](https://github.com/jtouley/cadence/pull/101), [#97](https://github.com/jtouley/cadence/pull/97) and [#57](https://github.com/jtouley/cadence/pull/57) have no `implementation/<task>.json`. They are not in the tables.
+16 merged PRs in the window have no `implementation/<task>.json`, so they are not in the tables:
+
+- [#128](https://github.com/jtouley/cadence/pull/128), [#116](https://github.com/jtouley/cadence/pull/116), [#101](https://github.com/jtouley/cadence/pull/101), [#97](https://github.com/jtouley/cadence/pull/97) and [#57](https://github.com/jtouley/cadence/pull/57).
+- [#29](https://github.com/jtouley/cadence/pull/29), [#30](https://github.com/jtouley/cadence/pull/30), [#31](https://github.com/jtouley/cadence/pull/31), [#34](https://github.com/jtouley/cadence/pull/34), [#36](https://github.com/jtouley/cadence/pull/36), [#38](https://github.com/jtouley/cadence/pull/38) and [#45](https://github.com/jtouley/cadence/pull/45): merged 2026-10-10 between 01:39Z and 02:37Z, before these runs.
+- [#130](https://github.com/jtouley/cadence/pull/130), [#132](https://github.com/jtouley/cadence/pull/132), [#133](https://github.com/jtouley/cadence/pull/133) and [#134](https://github.com/jtouley/cadence/pull/134): refactoring PRs for #98, merged 2026-10-17 between 15:55Z and 15:59Z. Each had an independent review (APPROVE, no must-fix) but no Cadence run.
 [#128](https://github.com/jtouley/cadence/pull/128) had an R1-style review: APPROVE, no must-fix (`PR_REVIEW_#128.md`). [#57](https://github.com/jtouley/cadence/pull/57): no Critical or Required (`PR_REVIEW_#57.md`).
 
 ## 2. Totals for the week
