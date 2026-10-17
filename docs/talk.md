@@ -7,8 +7,8 @@ notes. Every number comes from the [whitepaper](whitepaper.md), the [findings](f
 The talk is credible because it states the results that do not favor the harness first, and because it
 never claims more than its sample sizes can show.
 
-The story in one line: **a harness earns its cost by verification and by holding scope, not by
-ceremony.**
+The story in one line: **where a harness earned its place, it was by verification, not by ceremony.**
+Whether it can also save money is the open question.
 
 The thesis, checked against the data (16 October 2026): **harnesses do not make strong models write
 better code.** On well-specified tasks a one-shot matched the harness at about 1/30 of the time. What a
@@ -87,8 +87,8 @@ gain shown", not "the harness made it worse".
 |---|---|
 | **No crash in delivered code.** Each one-shot shipped two (all six on one task, budgets, from three inputs); neither harness shipped one. | **Restraint.** The graders marked Cadence down for scope it was not asked for ("heavier than needed"). |
 | **An audit trail.** A plan, reviews by 8–12 separate agents, a findings ledger, 12–23 attestation rows per run. A one-shot leaves one commit. | **Speed or cost.** About 30 times the wall time, 4 times the tokens. |
-| **Completion you can trust.** 3 of 3 delivered, or a recorded stop. No false success. | **Its own correctness** (cadence#56, fixed in #57). |
-| **Rules it cannot skip.** The hooks block 7 of 9 probes. | |
+| **Completion you can trust.** 3 of 3 delivered (two tasks after a rerun with the cadence#57 fix), or a recorded stop. No false success. | **Host independence.** User-level skills with the same names replaced Cadence's reviewers (cadence#53). |
+| **Rules it cannot skip.** The hooks handle 7 of 9 probes as intended: 5 blocked, 2 controls allowed (at the pinned e5c3a92). | |
 
 **Notes:** Better code is already off the table from section 3, so it is not repeated here. The defect gap
 (0.67 against 1.00 major or critical defects per run) is under the 0.5 bar of our own rule. So "fewer defects" is not shown. The crash count is the clearest signal, and it comes from
@@ -170,8 +170,9 @@ is now done (harness-benchmark#10, closed 15 October by PR #23); these B01 runs 
 - **Sonnet mostly never exercised that path.** When it did, it fixed it. That is coverage.
 - **Opus treated every broken entry point as part of the request.**
 
-Two harness mechanisms fix both failures without a strong model: (1) **no silent deferral**: each
-decision to leave work out goes to an independent reviewer at once (cadence#68); (2) **contracts before
+Two harness mechanisms could fix both failures without a strong model, and neither is tested yet: (1)
+**no silent deferral**: each decision to leave work out goes to an independent reviewer at once
+(cadence#68, open); (2) **contracts before
 code**: executable checks for every entry point the request covers, and the session cannot end while one
 fails.
 
@@ -225,8 +226,8 @@ trials that died in container setup were rerun. One try is a pass rate, not reli
 
 ## 11. The pipeline family: no one-shot passes long work, and no harness has run yet (14:15–15:30)
 
-**Headline:** On long-horizon pipelines, every one-shot failed at least one check, Opus included. These are
-the first tasks where the bar itself is unreliable. The harness arms have not run on them yet.
+**Headline:** On long-horizon pipelines, every one-shot failed at least one check, Opus included. At one try
+each, they are beyond candidates. The harness arms have not run on them yet.
 
 **Show:** One spec on three stacks, run on the isolated runner (one container per trial, the grading run
 offline, with a fresh `HOME`). Seven hidden checks per task. One try per cell (k = 1). Cost at list prices:
@@ -247,8 +248,9 @@ No run passed every check: 0 of 9. Each run took 25 to 70 minutes. The nine grad
   puts out of bounds. Even with its P2 map fixed by hand, it scores 3/7 (a diagnostic, not a result). This
   is the same scope problem as B01: the cheap model does a narrower task than the one it was given.
 - **Opus is not a reliable bar here.** It led on P1 and P2, and Sonnet beat it on the Scala stack. On B01
-  Opus fixed both defects 10 of 10 times. Here no model is near a full pass. That makes these the first
-  *beyond* tasks: a harness that raises the pass rate would do what the strong model alone cannot.
+  Opus fixed both defects 10 of 10 times. Here no model passed every check. At one try each these are beyond
+  *candidates*, not calibrated beyond tasks (that needs the bar to pass at most 1 of 3 tries): a harness
+  that raises the pass rate would do what the strong model alone cannot.
 - **Where is the harness run?** It has not happened yet. The runner already installs a harness as a
   Claude Code plugin (`--plugin-dir`), and two harness arms are built: `harnesses/reviewloop` and
   `harnesses/verifyloop`. The 15 October round ran the one-shot baselines only, so there is a bar to measure
@@ -256,7 +258,8 @@ No run passed every check: 0 of 9. Each run took 25 to 70 minutes. The nine grad
 - **Limits.** One try per cell. Opus's P1 6/7 is provisional: a grader fix (reading a `checks:` key beside
   other keys) was made after its output was seen. Two check readings are open owner decisions (TASK-81):
   whether grant money is placed at the recipient's county or the place of performance (it decides 4 of
-  the 6 Sonnet and Opus runs on P2 and P3), and whether check 4 accepts a reconciliation query. Grades can
+  the 6 Sonnet and Opus runs on P2 and P3), and whether check 4 accepts a reconciliation query (it affects all six, including Opus's one miss on
+  P1). Grades can
   move when those are decided. The trials ran on an Apple Silicon laptop, not the specified x86-64 host, so
   times are laptop times.
 - **Two harness-benchmark defects were found and fixed:** the grader deleted uncommitted work before
@@ -276,46 +279,48 @@ suite pass.
 - **PR #112** (test ownership): R1 found a gate that crashed with a traceback on a malformed file.
   Closing the run exposed a bypass in the harness itself: `ledger_verify.py --dry-run` marked findings
   verified without running their checks (cadence#121).
-- **Review rounds** ([review value](review-value.md)): across 18 PR reviews, the first round found 40 of
-  51 confirmed defects (78%); rounds two and three found the other 11.
+- **Review rounds** ([review value](review-value.md#independent-reviews-of-two-cadence-prs-16-october-2026)):
+  on Cadence PRs #97 and #101, the first round found 6 of 9 must-fix items, and each later round found
+  one more. Two came from fixes of earlier nits.
 
 **Notes:** Process evidence, not a controlled comparison. The same discipline runs on Cadence's own debt:
 the complexity audit (cadence#98) is being paid down in open refactor PRs #129–#134.
 
-## 13. What strong models change: the harness's job moved from writing code to proving it (16:15–17:30)
+## 13. What strong models change: a harness's job is proving the code, not writing it (16:15–17:30)
 
-**Headline:** The stronger the model, the less a harness is needed to write code, and the more of its
-output someone has to check.
+**Headline:** With today's models, a harness's job is proving the code, not writing it. Where the model
+can write the code, what is left for a harness is checking it.
 
 **Show:** three zones, each pointing back to its evidence rather than repeating it:
 
 | Work | Use | Evidence |
 |---|---|---|
-| Small, specified work | The model alone. A harness added time, not quality; a cheap model alone is already close. | Sections 3, 10 |
+| Small, specified work | The model alone. On precisely specified tasks a harness added time, not quality; a cheap model alone is close. | Sections 3, 10 |
 | Work someone must trust | A harness as verifier and record: independent review, enforced rules, a ledger. | Sections 4, 9, 12 |
 | Long work past the model | The open frontier: no one-shot finished it, Opus included. | Section 11 |
 
 **Notes:** This is the answer to the title. Today's strong models finish small, well-specified work
 alone, so a harness is no longer what gets that code written. What the harness bought, every time it
-bought something, was verification and a record; that gets more valuable, not less, as models write more
-code faster. The third row is a hypothesis: whether a harness carries long work no model finishes alone
+bought something, was verification and a record. The one-shot did well because the tasks were precisely
+specified (class S); that is the main limit on the first row. The third row is a hypothesis: whether a harness carries long work no model finishes alone
 is the next experiment. The first two rows are measured, mostly on one run per cell. We have no market
 data: this is about the harness's job, not its market share.
 
 ## 14. What this means for building a harness (17:30–18:15)
 
-**Headline:** Keep verification and scope. Cut ceremony.
+**Headline:** Cut the ceremony. Test the scope gate.
 
-**Show:**
+**Show:** what holds up is section 13; this is what to change.
 
-| Holds up | Does not |
+| Did not pay | Untested, next |
 |---|---|
-| Independent verification of the running result | A long planning pipeline on a weak orchestrator |
-| An audit trail with attested authorship | A strong-model reviewer, if the goal is cost |
-| Enforcement the model cannot skip | Review as a stand-in for executable checks |
-| Holding scope: a dropped part of the request is a defect | Deferral checks that look only at form |
+| A long planning pipeline on a weak orchestrator | Holding scope as a gate: a dropped part of the request is a defect |
+| A strong-model reviewer, if the goal is cost | Contracts before code, with a stop gate |
+| Review as a stand-in for executable checks | A cheap reviewer in place of Opus |
+| Deferral checks that look only at form | |
 
-**Notes:** The Cadence changes that follow: a cycle limit on P6 (cadence#63, done); a hook writes the
+**Notes:** Holding scope is untested as a gate: every cheap-model miss on B01 was scope, and Cadence itself
+over-built in iteration 4. The Cadence changes that follow: a cycle limit on P6 (cadence#63, done); a hook writes the
 delegation record (cadence#64, done); a no-tracker mode (cadence#65, open); a verdict counts only from the
 peer of its stage (cadence#66, open); deferrals are judged in real time (cadence#68, open). Also done since
 the pilot: one-line peer returns and a context budget (PR #97), and an R3 cognitive-complexity check for
@@ -351,14 +356,13 @@ run, traceability when a long task goes wrong, and design quality under a follow
 
 ## 16. Close (19:15–20:00)
 
-**Headline:** A harness earns its cost by verification and by holding scope, not by ceremony.
+**Headline:** Where a harness earned its place, it was by verification, not by ceremony.
 
-**Notes:** Three lines, not a recap:
-
-1. Strong models made the harness optional for writing small, specified code.
-2. They did not make it optional for proving code: every gain we measured came from an independent check
-   or an enforced rule.
-3. Open: can that check be cheap, and can it carry long work that no model finishes alone?
+**Notes:** One line and one fork, not a recap. Every gain we measured came from an independent check or a
+rule the model could not skip. Next: if a cheap check matches Opus alone on lift tasks, and carries the
+long work where no one-shot, Opus included, passed every check, a harness is a cost tool too. If it cannot,
+it is a governance tool: worth it where someone must trust the result, not to save money
+([findings](findings.md#why-this-still-matters-as-models-get-stronger-and-more-expensive)).
 
 ---
 
