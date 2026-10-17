@@ -2,7 +2,8 @@
 
 A ready-to-present outline. Each section has a time box, a headline, what to show, and speaker
 notes. Every number comes from the [whitepaper](whitepaper.md), the [findings](findings.md), the
-[iteration 4 data](experiments/2026-10-12-iteration-4/) and the [pilot](experiments/2026-10-13-pilot.md).
+[iteration 4 data](experiments/2026-10-12-iteration-4/), the [pilot](experiments/2026-10-13-pilot.md) and the
+[pipeline trials](experiments/2026-10-15-pipeline-trials.md).
 The talk is credible because it states the results that do not favor the harness first, and because it
 never claims more than its sample sizes can show.
 
@@ -218,7 +219,47 @@ has little to add on them. The two unreliable tasks are beyond candidates: a har
 rate does something the strong model alone cannot do reliably. Limits: 20 tasks, one try per model, and
 trials that died in container setup were rerun. One try is a pass rate, not reliability (pass^k).
 
-## 11. What this means for building a harness (14:15–15:30)
+## 11. The pipeline family: no one-shot passes long work, and no harness has run yet (14:15–15:45)
+
+**Headline:** On long-horizon pipelines, every one-shot failed at least one check, Opus included. These are
+the first tasks where the bar itself is unreliable. The harness arms have not run on them yet.
+
+**Show:** One spec on three stacks, run on the isolated runner (one container per trial, the grading run
+offline, with a fresh `HOME`). Seven hidden checks per task. One try per cell (k = 1). Cost at list prices:
+
+| Task | Stack | Haiku 5.5 | Sonnet 5.5 | Opus 5.5 |
+|---|---|---|---|---|
+| P1 | dlt, dbt-duckdb | 0/7 ($0.30) | 3/7 ($2.06) | 6/7 ($5.82, provisional) |
+| P2 | Arrow, Polars, DataFusion, dbt-duckdb | 0/7 ($0.28) | 3/7 ($4.56) | 5/7 ($7.84) |
+| P3 | Scala, Spark, dbt-spark | 0/7 ($0.38) | 5/7 ($3.68) | 3/7 ($7.92) |
+
+No run passed every check: 0 of 9. Each run took 25 to 70 minutes. The nine graded trials cost $32.84.
+
+**Notes:**
+
+- **Every delivered pipeline worked as software.** Each built twice with no change to an output and
+  consumed the stream to the end. The failures are in the answers, not the build.
+- **Haiku answered against the spec.** It read the warehouse file and unpublished dbt views, which the spec
+  puts out of bounds. Even with its P2 map fixed by hand, it scores 3/7 (a diagnostic, not a result). This
+  is the same scope problem as B01: the cheap model does a narrower task than the one it was given.
+- **Opus is not a reliable bar here.** It led on P1 and P2, and Sonnet beat it on the Scala stack. On B01
+  Opus fixed both defects 10 of 10 times. Here no model is near a full pass. That makes these the first
+  *beyond* tasks: a harness that raises the pass rate would do what the strong model alone cannot.
+- **Where is the harness run?** It has not happened yet. The runner already installs a harness as a
+  Claude Code plugin (`--plugin-dir`), and two harness arms are built: `harnesses/reviewloop` and
+  `harnesses/verifyloop`. The 15 October round ran the one-shot baselines only, so there is a bar to measure
+  the harnesses against. The harness trials are the next run (section 13).
+- **Limits.** One try per cell. Opus's P1 6/7 is provisional: a grader fix (reading a `checks:` key beside
+  other keys) was made after its output was seen. Two check readings are open owner decisions (TASK-81):
+  whether grant money is placed at the recipient's county or the place of performance (it decides 4 of
+  the 6 Sonnet and Opus runs on P2 and P3), and whether check 4 accepts a reconciliation query. Grades can
+  move when those are decided. The trials ran on an Apple Silicon laptop, not the specified x86-64 host, so
+  times are laptop times.
+- **Two harness-benchmark defects were found and fixed:** the grader deleted uncommitted work before
+  grading (now `--snapshot-worktree`), and it did not read a `checks:` key beside other top-level keys.
+  The benchmark is software too.
+
+## 12. What this means for building a harness (15:45–17:00)
 
 **Headline:** Keep verification and scope. Cut ceremony.
 
@@ -239,7 +280,7 @@ every language with an analyzer (PR #101). The tier-1 and tier-2 results stay me
 `e5c3a92` ([whitepaper §4.1](whitepaper.md#41-cadence-after-the-benchmarks-pin-status-16-october-2026)). This agrees with Datadog's "harness-first"
 argument: verification, not review, is the bottleneck.
 
-## 12. What comes next (15:30–19:00)
+## 13. What comes next (17:00–19:00)
 
 **Headline:** Make the check cheap, give it long work, and measure what the record is worth when
 something breaks.
@@ -249,10 +290,11 @@ something breaks.
 1. **Cheap verification.** Haiku-only arms: a verification harness (contracts before code, a stop gate,
    no model reviewer); a review loop with a Haiku reviewer; full Cadence with all peers on Haiku, after
    cadence#65 and #66 are fixed (#63 and #64 are fixed). In every harness arm, each deferral goes to an independent Haiku reviewer.
-2. **The pipeline family** ([tasks](tasks/pipeline-family.md)). One spec on three stacks: dlt and
-   dbt-duckdb; a config-driven Arrow, Polars and DataFusion engine with dbt-duckdb; Scala Spark with
-   dbt-spark. Each lands a Parquet lake. Each has a follow-up change (a new mart and a dashboard). This is
-   work that does not fit one session.
+2. **Harness arms on the pipeline family** ([tasks](tasks/pipeline-family.md)). The tasks, the
+   isolated runner and the one-shot baselines are done (section 11). Next: the review loop and the
+   verification harness on Haiku, with full Cadence on Haiku to follow. Then each task's follow-up change
+   (a new mart and a dashboard), built by the same arm on its own code. This is work that does not fit
+   one session.
 3. **Traceability audits.** Seeded traps give each failure a known cause. A blind auditor gets only the
    run's record. It must find the cause, where the run first went wrong, and the cheapest fix point. A
    one-shot leaves a transcript. A harness leaves a spec, a plan, phases, reviews and decisions. What is
@@ -264,7 +306,7 @@ something breaks.
 prompt, word for word, with no hints and no knowledge of the traps. The measures: cost per defect-free
 run, traceability when a long task goes wrong, and design quality under a follow-up change.
 
-## 13. Close (19:00–20:00)
+## 14. Close (19:00–20:00)
 
 **Headline:** A harness earns its cost by verification and by holding scope, not by ceremony.
 
@@ -274,7 +316,8 @@ run, traceability when a long task goes wrong, and design quality under a follow
 2. A full planning pipeline does not make a cheap model work. On Haiku, it stopped before it wrote code.
 3. Cheap models miss because they narrow scope and skip paths, not because they think too little. An
    independent check of the running result recovers the miss, so far at about the strong model's cost.
-4. Next: can that check be cheap, and what is the record worth when long work goes wrong?
+4. On long pipelines no one-shot passes, Opus included. That is where the harness has to prove itself,
+   and that run is next: can the check be cheap, and what is the record worth when long work goes wrong?
 
 ---
 
@@ -292,5 +335,6 @@ run, traceability when a long task goes wrong, and design quality under a follow
 | "The review loop costs as much as Opus. Why use it?" | In 3 valid runs (2 Haiku, 1 Sonnet) it closed the reliability gap: a signal, not yet a rate. The cost is the open question. The next arms try cheap checks: a Haiku reviewer, and executable contracts with a stop gate. If none matches the bar, the harness is a governance tool, not a cost tool. |
 | "What about the contamination incident?" | Processes from earlier B01 runs outlived them. Every run was regraded with an isolated grader; no grade changed. One container per trial is now done (harness-benchmark#10, closed by PR #23). |
 | "Why SWE-bench Pro?" | For comparison with outside numbers, filtered by the same calibration rule. On our sample of 20, Haiku alone passed 17 and Opus 18, so it has no clear lift tasks; two tasks are beyond candidates. |
+| "Where is the harness run on the pipeline tasks?" | Not run yet. The 15 October round ran the one-shot baselines (Haiku, Sonnet, Opus on P1–P3) so the harness has a bar to beat. The runner already takes a harness as a plugin, and the review-loop and verification arms are built. Those trials are next. |
 | "Could a one-shot just be asked to write a plan and tests?" | It could. That is a harness in a prompt, with no independent check and no enforcement. The baseline does not allow it, so the comparison stays fair. |
 | "What about the bugs in your own harness?" | They are real, and part of the result: cadence#56 and #57 in iteration 4, cadence#63–#66 from the pilot (#63 and #64 fixed). The harness is software, and it needs the review it gives. |
