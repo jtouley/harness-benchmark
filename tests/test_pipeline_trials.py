@@ -8,7 +8,9 @@ calibration's hard3 summary.
 from __future__ import annotations
 
 import json
+import os
 import subprocess
+import sys
 from decimal import Decimal
 from pathlib import Path
 
@@ -212,7 +214,6 @@ def test_a_cadence_arm_copies_cadence_with_peer_models_and_prefixes_the_prompt(t
 
 def test_a_cadence_trial_gets_the_offline_ticket_on_its_branch_and_in_its_prompt(tmp_path):
     """Config v2: A4 reads the branch; gh-1 there binds the fake ticket #1 with no tracker and no network."""
-    import subprocess
     repo = tmp_path / "repo"
     repo.mkdir()
     git = lambda *a: subprocess.run(["git", *a], cwd=repo, check=True, capture_output=True, text=True)  # noqa: E731
@@ -227,3 +228,53 @@ def test_a_cadence_trial_gets_the_offline_ticket_on_its_branch_and_in_its_prompt
     assert prompt.startswith("/cadence:cadence Build the pipeline.")
     assert "Ticket: #1 (offline test ticket" in prompt and "do not look it up" in prompt
 
+
+
+def _git_repo(path):
+    path.mkdir()
+    git = lambda *a: subprocess.run(["git", *a], cwd=path, check=True, capture_output=True, text=True)  # noqa: E731
+    git("init", "-q", "-b", "main")
+    (path / "Makefile").write_text("all:\n")
+    git("add", "-A")
+    git("-c", "user.name=t", "-c", "user.email=t@example.invalid", "commit", "-q", "-m", "skeleton")
+    return git
+
+
+def test_a_cadence_trial_repo_gates_the_task_code_paths(tmp_path):
+    """Config v3: the ticket branch carries one commit adding .cadence.json with the task's code paths."""
+    git = _git_repo(tmp_path / "repo")
+    pt.cadence_repo(tmp_path / "repo")
+    assert git("rev-parse", "--abbrev-ref", "HEAD").stdout.strip() == "feat/gh-1-pipeline"
+    assert git("status", "--porcelain").stdout == ""
+    assert git("show", "--name-only", "--format=", "HEAD").stdout.split() == [".cadence.json"]
+    cfg = json.loads((tmp_path / "repo" / ".cadence.json").read_text())
+    assert cfg == {"gated_prefixes_extra": ["pipeline/", "transform/", "Makefile", "oracle_map.yml"]}
+
+
+CADENCE_SRC = Path(os.environ.get("CADENCE_SRC", "/Users/jasontouleyrou/Projects/cadence-wt/main-latest"))
+
+
+@pytest.mark.skipif(not (CADENCE_SRC / "hooks" / "guard_skill_gate.py").is_file(), reason="no Cadence checkout")
+def test_under_config_v3_cadence_denies_a_pipeline_write_before_the_entry_invariant(tmp_path):
+    """Replay of Cadence's PreToolUse write gate in an active run, offline: task code is held until P9.
+    (A2 and A3 depend on the host install; the trial image check in the run-set doc covers A1-A4.)"""
+    repo = tmp_path / "repo"
+    _git_repo(repo)
+    pt.cadence_repo(repo)
+    plugin = pt.cadence_arm(CADENCE_SRC, tmp_path / "plugin", {"default": "haiku"})
+    env = {**os.environ, "CADENCE_HOME": str(plugin), "CLAUDE_PLUGIN_ROOT": str(plugin), "CLAUDECODE": "1"}
+    run = lambda *a, **k: subprocess.run([sys.executable, *a], cwd=repo, env=env, capture_output=True,  # noqa: E731
+                                         text=True, **k)
+    activated = run(str(plugin / "scripts" / "activate_session.py"), "--from-branch", "--fresh").stdout
+    assert "Task ID: cd-1" in activated or '"task_id": "cd-1"' in activated
+    assert run(str(plugin / "scripts" / "ticket_gate.py")).returncode == 0  # A4 binds the offline ticket #1
+
+    def decision(rel):
+        payload = {"session_id": "s1", "hook_event_name": "PreToolUse", "cwd": str(repo), "tool_name": "Write",
+                   "tool_input": {"file_path": str(repo / rel), "content": "x"}}
+        out = run(str(plugin / "hooks" / "guard_skill_gate.py"), "--host", "claude", input=json.dumps(payload)).stdout
+        return json.loads(out)["hookSpecificOutput"]["permissionDecision"] if out.strip() else "allow"
+
+    for rel in ("pipeline/batch.py", "transform/models/x.sql", "Makefile", "oracle_map.yml"):
+        assert decision(rel) == "deny", rel
+    assert decision("README.md") == "allow"

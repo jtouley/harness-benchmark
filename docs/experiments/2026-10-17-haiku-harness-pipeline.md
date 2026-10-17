@@ -82,6 +82,28 @@ environment note says to skip them. This differs from the pilot, which had no ti
 The v2 trials (out dirs `*-v2`) run cadence-haiku and then cadence-haiku-opus on P1 to P3, under the same
 parallel limits, before the three other arms.
 
+## Cadence config v3: gate the task's code paths (2026-10-17, before the v3 trials)
+
+A postmortem of the void v1 P1 run found that Cadence holds code writes until the execution entry invariant
+(P9) only under its gated prefixes (`src/ lib/ app/ packages/`). The pipeline tasks keep their code in
+`pipeline/`, `transform/`, `Makefile` and `oracle_map.yml`, so the write gate let every code write through
+(52 writes in that run, 0 denials). v2 fixes A4 but not this.
+
+**Config v3 = v2 plus a `.cadence.json`** in the trial repo root, committed on `feat/gh-1-pipeline` as one
+commit: `{"gated_prefixes_extra": ["pipeline/", "transform/", "Makefile", "oracle_map.yml"]}`. Check before
+the v3 trials, in the `py` image with `--network none` at Cadence 0786330: after A1 to A4 passed, a PreToolUse
+`Write` to `pipeline/batch.py`, `transform/models/x.sql`, `Makefile` and `oracle_map.yml` was denied
+(`gated path ... requires entry invariant`), and `README.md` was allowed. The same replay is a test
+(`tests/test_pipeline_trials.py`). `trial.json` records `cadence_config: v3` and the prefixes.
+
+Which trials ran under which config: P1 and P2 cadence-haiku ran under v2 (started before v3), and their out
+dirs end in `-v2`. P3 cadence-haiku and all three cadence-haiku-opus trials run under v3 (`-v3`).
+
+**Counting rule for v2 and v3 (owner, 2026-10-17).** A Cadence trial counts as a Cadence result only if the
+entry-invariant marker (`.context/gates/entry-invariant-<run_id>.ok`) existed before the first code write
+outside `.context/` (the marker's time against the transcript's first Write, Edit or shell write). Otherwise
+it is labeled "Cadence loaded, gates bypassed (prefix gap)" and reported apart.
+
 ## Results
 
 Pending.

@@ -233,9 +233,29 @@ def cadence_prompt(task_prompt: str) -> str:
     return f"/cadence:cadence {task_prompt.strip()}\n\n{CADENCE_TICKET_NOTE}\n\n{CADENCE_NOTE}\n"
 
 
+# Config v3 (2026-10-17): v2 plus a `.cadence.json` that gates the task's code paths. Cadence holds code writes
+# until the entry invariant (P9) only under its gated prefixes (src/ lib/ app/ packages/); the pipeline tasks keep
+# their code in pipeline/, transform/, Makefile and oracle_map.yml, so under v2 nothing was held.
+CADENCE_CONFIG = "v3"
+CADENCE_GATED_EXTRA = ["pipeline/", "transform/", "Makefile", "oracle_map.yml"]
+
+
 def cadence_branch(repo: Path) -> None:
     """Check out the offline ticket's branch in the starting repository (same commit as main)."""
     subprocess.run(["git", "checkout", "-q", "-b", CADENCE_BRANCH], cwd=repo, check=True, capture_output=True)
+
+
+def cadence_repo(repo: Path) -> None:
+    """The starting repository of a Cadence trial (config v3): the ticket branch, with one commit on it that adds
+    the `.cadence.json` gating the task's code paths."""
+    cadence_branch(repo)
+    (repo / ".cadence.json").write_text(json.dumps({"gated_prefixes_extra": CADENCE_GATED_EXTRA}, indent=2) + "\n",
+                                        encoding="utf-8")
+    git = ["git", "-c", "user.name=harness-benchmark", "-c", "user.email=noreply@example.invalid",
+           "-c", "commit.gpgsign=false"]
+    subprocess.run([*git, "add", ".cadence.json"], cwd=repo, check=True, capture_output=True)
+    subprocess.run([*git, "commit", "-q", "--no-verify", "-m", "Cadence: gate the task's code paths"],
+                   cwd=repo, check=True, capture_output=True)
 
 
 def arm_name(mode: str, plugin_dir: Path | None, cadence: Path | None, peer_models: dict | None) -> str:
@@ -271,7 +291,7 @@ def run_trial(task: str, out: Path, *, mode: str, model: str | None, plugin_dir:
         prompt = PIPELINE / task / "prompt.md"
         if cadence is not None:
             plugin_dir = cadence_arm(cadence, tmp_path / "cadence", peer_models or {"default": "haiku"})
-            cadence_branch(repo)
+            cadence_repo(repo)
             prompt = tmp_path / "prompt.md"
             prompt.write_text(cadence_prompt((PIPELINE / task / "prompt.md").read_text(encoding="utf-8")),
                               encoding="utf-8")
@@ -305,7 +325,8 @@ def run_trial(task: str, out: Path, *, mode: str, model: str | None, plugin_dir:
         if cadence is not None:
             sha = subprocess.run(["git", "-C", str(cadence), "rev-parse", "HEAD"], capture_output=True, text=True)
             meta |= {"cadence_sha": sha.stdout.strip() or None, "peer_models": peer_models or {"default": "haiku"},
-                     "cadence_config": "v2", "ticket": CADENCE_TICKET, "branch": CADENCE_BRANCH}
+                     "cadence_config": CADENCE_CONFIG, "ticket": CADENCE_TICKET, "branch": CADENCE_BRANCH,
+                     "gated_prefixes_extra": CADENCE_GATED_EXTRA}
         rc = subprocess.call(cmd, env=env)
     out.mkdir(parents=True, exist_ok=True)
     (out / "trial.json").write_text(json.dumps(meta, indent=1) + "\n")
