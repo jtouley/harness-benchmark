@@ -36,7 +36,11 @@ we checked the result without knowing which arm made it.
 own repository.
 
 **The question in the title:** today's strong models, Opus 5.5 among them, finish small work alone. So
-what is a harness for now? Section 14 answers it.
+what is a harness for now?
+
+**What a harness is.** An AI coding model can write code from a request. A harness is the process
+around the model: it makes a plan, runs tests, has separate agents review the work, and applies rules
+that the model cannot skip. Cadence is the harness we built and measure here.
 
 **Dark coding: no human in the loop.** A human starts each run. After that, agents do the work.
 - **Benchmark runs.** Each run gets one prompt. The prompt says: "Nobody will answer questions: work
@@ -494,31 +498,29 @@ closed 62 of the 85 items, not a check that ran again. There is no control group
 show that these bugs would have shipped without Cadence. They show that the stages found them. The same discipline runs on Cadence's own debt:
 Cadence's own complexity audit is being paid down in a set of refactors.
 
-## 14. What strong models change: a harness's job is proving the code, not writing it (16:15–17:30)
+## 14. When to use a harness (16:15–17:30)
 
-**Headline:** With today's models, a harness's job is proving the code, not writing it. Where the model
-can write the code, what is left for a harness is checking it.
+**Headline:** A strong model can write small, clear code alone. Use a harness when you must trust the
+result.
 
-**Show:** three zones, each pointing back to its evidence rather than repeating it:
+**Show:**
 
-| Work | Use | Evidence |
+| The work | What to use | Why |
 |---|---|---|
-| Small, specified work | The model alone. On precisely specified tasks a harness added time, not quality; on SWE-bench Pro, even Haiku alone was close. | Sections 4, 11 |
-| Work someone must trust | A harness as verifier and record: independent review, enforced rules, a ledger. | Sections 5, 10, 13 |
-| Long work past the model | The open frontier: no one-shot passed every check, Opus included (two readings open). | Section 12 |
+| A small, clear change | One strong model, no harness | On three small tasks, the model alone was as good as the harness and about 30 times faster. On 20 real bug fixes, even the cheapest model passed 17. |
+| Work that must not break, or that a person must approve | A harness | It shipped no crash. Separate agents reviewed every step. It kept a record of each decision. |
+| Long work with many parts | Still open | No model alone passed every check on the three data-pipeline tasks. We test Cadence on the cheapest model there now. |
 
-**Notes:** This is the answer to the title. Today's strong models finish small, well-specified work
-alone, so a harness is no longer what gets that code written. What the harness bought, every time it
-bought something, was verification and a record. The one-shot did well because the tasks were precisely
-specified (class S); that is the main limit on the first row. The third row is a hypothesis: whether a harness carries long work no model finishes alone
-is the next experiment. The first two rows are measured, mostly on one run per cell. We have no market
-data: this is about the harness's job, not its market share.
+**Notes:** A harness is the process around an AI coding model: a plan, tests, reviews by separate
+agents, and rules the model cannot skip. It costs time. Use it where a wrong result costs more than the
+time. The first two rows come from measured runs, mostly one run for each task. The third row is the
+next test.
 
 ## 15. What this means for building a harness (17:30–18:15)
 
 **Headline:** Cut the ceremony. Test the scope gate.
 
-**Show:** what holds up is section 14; this is what to change.
+**Show:** what to change in a harness, from these results.
 
 | Did not pay | Untested, next |
 |---|---|
