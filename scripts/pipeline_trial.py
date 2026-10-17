@@ -205,12 +205,19 @@ def repo_from_saved(saved: Path, out: Path) -> Path:
     return out
 
 
+def agent_timeout(caps: dict, override: int | None) -> int:
+    """The agent's cap: the one-shot guard cap, or the run set's own value (harness arms have no per-trial cap)."""
+    return override if override is not None else caps["agent_timeout"]
+
+
 def run_trial(task: str, out: Path, *, mode: str, model: str | None, plugin_dir: Path | None,
-              replay_seed: int, caps: dict, regrade_of: Path | None = None) -> int:
+              replay_seed: int, caps: dict, regrade_of: Path | None = None,
+              agent_timeout_override: int | None = None) -> int:
     sys.path.insert(0, str(PIPELINE))
     from pipetask import assemble, bundle  # noqa: PLC0415 - builder code, hidden from arms
 
     task_caps = caps["tasks"][task]
+    timeout = agent_timeout(caps, agent_timeout_override)
     with tempfile.TemporaryDirectory(prefix=f"hb-{task}-") as tmp:
         tmp_path = Path(tmp)
         if mode == "regrade":
@@ -222,7 +229,7 @@ def run_trial(task: str, out: Path, *, mode: str, model: str | None, plugin_dir:
         cmd = [str(RUN_TRIAL), "--repo", str(repo), "--prompt", str(PIPELINE / task / "prompt.md"),
                "--grader", str(dist / "grader.pyz"), "--replay", str(dist / "replay.pyz"),
                "--replay-seed", str(replay_seed), "--out", str(out), "--image", task_caps["image"],
-               "--agent-timeout", str(caps["agent_timeout"]),
+               "--agent-timeout", str(timeout),
                "--grader-timeout", str(task_caps["grader_timeout"])]
         grader_args = ["--make-user", "agent", "--make-env-file", "/opt/hb/toolchain.env",
                        "--logs", "/trial/out/grade-logs", "--snapshot-worktree"]
@@ -242,7 +249,7 @@ def run_trial(task: str, out: Path, *, mode: str, model: str | None, plugin_dir:
             env.pop("ANTHROPIC_API_KEY", None)
         meta = {"task": task, "mode": mode, "model": model if mode == "agent" else None,
                 "arm": "one-shot" if mode == "agent" and not plugin_dir else (plugin_dir.name if plugin_dir else mode),
-                "image": task_caps["image"], "agent_timeout": caps["agent_timeout"],
+                "image": task_caps["image"], "agent_timeout": timeout,
                 "grader_timeout": task_caps["grader_timeout"], "grader_deadline": task_caps.get("grader_deadline"),
                 "replay_seed": replay_seed, "regrade_of": str(regrade_of) if regrade_of else None,
                 "started_at": datetime.now().astimezone().isoformat(timespec="seconds")}
@@ -277,6 +284,8 @@ def main(argv: list[str] | None = None) -> int:
     r.add_argument("--from", dest="regrade_of", type=Path, help="regrade: the run whose repo/ is graded")
     r.add_argument("--model")
     r.add_argument("--plugin-dir", type=Path)
+    r.add_argument("--agent-timeout", type=int, default=None,
+                   help="replace the one-shot guard cap (caps.json agent_timeout), e.g. for a harness arm")
     r.add_argument("--replay-seed", type=int, default=0, help="the dev replay's seed (the grading seed is 1)")
     c = sub.add_parser("caps", help="set a task's grader caps from its reference trials")
     c.add_argument("task", choices=["P1", "P2", "P3"])
@@ -301,7 +310,8 @@ def main(argv: list[str] | None = None) -> int:
             ap.error("--mode regrade needs --from RUN with a repo/ folder")
         return run_trial(args.task, args.out, mode=args.mode, model=args.model, plugin_dir=args.plugin_dir,
                          replay_seed=args.replay_seed, caps=caps,
-                         regrade_of=args.regrade_of.resolve() if args.regrade_of else None)
+                         regrade_of=args.regrade_of.resolve() if args.regrade_of else None,
+                         agent_timeout_override=args.agent_timeout)
     if args.cmd == "caps":
         grades = [{**_load(run / "grade.json"), "grader_seconds": _load(run / "timing.json")["grader_seconds"]}
                   for run in args.runs]

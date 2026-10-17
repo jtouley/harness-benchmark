@@ -177,3 +177,20 @@ def test_a_regrade_that_is_not_counted_does_not_supersede_the_trial(tmp_path, ma
     assert rows[str(trial_run)]["counted"] and rows[str(trial_run)]["superseded_by"] is None
     assert not rows[str(regrade)]["counted"]
     assert pt.counted_rows(list(rows.values())) == [rows[str(trial_run)]]
+
+
+def test_an_agent_timeout_override_replaces_the_one_shot_cap(monkeypatch, tmp_path):
+    """Harness arms have no per-trial cap (owner, 2026-10-12): --agent-timeout replaces the one-shot cap."""
+    seen = {}
+
+    def fake_run_trial(task, out, **kw):
+        seen.update(kw, agent_timeout=kw.get("agent_timeout_override"))
+        return 0
+
+    monkeypatch.setattr(pt, "run_trial", fake_run_trial)
+    assert pt.main(["run", "P1", "--model", "m", "--out", str(tmp_path / "o")]) == 0
+    assert seen["agent_timeout"] is None
+    assert pt.main(["run", "P1", "--model", "m", "--out", str(tmp_path / "o"), "--agent-timeout", "86400"]) == 0
+    assert seen["agent_timeout"] == 86400
+    assert pt.agent_timeout({"agent_timeout": 7200}, None) == 7200
+    assert pt.agent_timeout({"agent_timeout": 7200}, 86400) == 86400
