@@ -10,30 +10,33 @@ and a no-harness baseline.
 
 ## What this repository shows, and what it does not
 
-| Claim | Evidence | Status |
-|---|---|---|
-| What each harness costs in context, and which agent actions its installed hooks actually block | Tiers 1–2 below, recomputed byte for byte by `cbench verify` | **Measured, reproducible** (Cadence row: see note) |
-| Whether a harness produces better outcomes than a strong model alone | Seven exploratory rounds ([index](docs/evidence/README.md), [whitepaper](docs/whitepaper.md)) | **Exploratory.** Mostly one run per cell, one grader. Not a pre-registered result |
-| Cost per resolved task across all harnesses (the live tier, 240 trials) | [`docs/method/live-tier.md`](docs/method/live-tier.md), [criteria v1](docs/method/criteria.md) | **Not run yet** |
+- Measured and reproducible: what each harness costs in context, and which agent actions its installed
+  hooks actually block. One command recomputes it (see "Reproduce it" below).
+- Exploratory: whether a harness gives better results than a strong model working alone. Seven small
+  rounds, mostly one run per setup and one grader ([list of rounds](docs/evidence/README.md)).
+- Not run yet: cost per solved task across all seven setups ([live tier design](docs/method/live-tier.md)).
 
-What the exploratory rounds suggest so far: on small, precisely specified tasks a harness did **not**
-write better code than Opus 5.5 alone (8.00 vs 7.33 for Cadence, at about 1/30 of the time). What
-harnesses did give was verification: no crashes shipped, an audit trail, and, on a multi-cause bug, an
-independent review loop that recovered a defect cheap one-shots missed (3 of 3 runs vs 1 of 10). Those are
-signals on small samples, not measurements. Details and limits: [whitepaper](docs/whitepaper.md).
+The [claims register](docs/claims.md) lists every claim with its evidence level. The
+[whitepaper](docs/whitepaper.md) gives the full argument.
+
+So far, on small, clearly described tasks, a harness did not write better code than Opus 5.5 working
+alone (Opus scored 8.00 out of 10, Cadence 7.33), and Opus alone took about a thirtieth of the time. What
+harnesses did give was checking: no crashes shipped, a record a reviewer can audit, and on one real bug
+an independent review that caught a defect the cheaper models missed. These are signals from small
+samples, not measurements.
 
 ## Tiers 1–2: footprint and enforcement
 
 Each harness is installed the way its own README says, at a pinned commit, then measured:
 
-- **Footprint:** tokens always loaded, tokens to load the whole workflow.
-- **Enforcement:** ten replayed agent actions (forge an approval, self-certify a verdict, edit before the
+- Footprint: tokens always loaded, tokens to load the whole workflow.
+- Enforcement: ten replayed agent actions (forge an approval, self-certify a verdict, edit before the
   plan is approved, stop mid-run, read `.env`, overwrite the plan, plus controls) run through each
   harness's real installed hooks. Not every scenario applies to every harness, so denominators differ.
 
 | Harness | Pinned commit | Always-on tokens | Workflow tokens (lower–upper) | Hook probes meeting intent |
 |---|---|---|---|---|
-| `cadence`¹ | `jtouley/cadence@e5c3a92` | 671 | 9,078 – 62,141 | **7/9** |
+| `cadence` (see note) | `jtouley/cadence@e5c3a92` | 671 | 9,078 – 62,141 | 7/9 |
 | `gsd-core` | `open-gsd/gsd-core@83aba44` | 3,457 | 4,701 – 124,702 | 4/9 |
 | `superpowers` | `obra/superpowers@8ca22db` | 1,483 | 21,696 – 33,518 | 2/7 |
 | `spec-kit` | `github/spec-kit@b9e08bf` | 291 | 15,889 | 2/9 |
@@ -44,12 +47,12 @@ Each harness is installed the way its own README says, at a pinned commit, then 
 Measured on Linux with Claude Code 2.1.294. Full report: [`results/REPORT.md`](results/REPORT.md).
 Pins and install steps: [`frameworks.lock.json`](frameworks.lock.json).
 
-¹ **Cadence is a private repository**, so CI and outside readers cannot fetch it, and its row was measured
-on macOS with Claude Code 2.1.287. Cadence main has also changed since this pin
-([whitepaper §4.1](docs/whitepaper.md#41-cadence-after-the-benchmarks-pin-status-16-october-2026)).
-Cadence is in private beta: **DM [@jtouley](https://github.com/jtouley) if you want to beta test it.**
+Note on Cadence: it is a private repository, so CI and outside readers cannot fetch it, and its row was
+measured on macOS with Claude Code 2.1.287. Cadence has also changed since this pin
+([what changed](docs/whitepaper.md#41-cadence-after-the-benchmarks-pin-status-16-october-2026)).
+Cadence is in private beta: DM [@jtouley](https://github.com/jtouley) if you want to beta test it.
 
-**Reading:** only Cadence's hooks block a forged approval, a self-certified verdict, a shell edit before
+What the table says: only Cadence's hooks block a forged approval, a self-certified verdict, a shell edit before
 plan approval and a stop mid-run; GSD Core blocks reading `.env` and overwriting the plan, which Cadence
 does not. Enforcement is what Cadence is designed for; the other harnesses never claimed it, so this shows
 a different category, not a better one. Loading any harness's whole workflow costs cents.
@@ -75,27 +78,33 @@ budget that covers the worst case: see [`docs/method/live-tier.md`](docs/method/
 
 ## Limitations
 
-- **No pre-registered outcome result exists yet.** Everything about outcomes is exploratory.
-- **Six golden tasks** for the live tier. Report rates, not rankings, until more exist.
-- **Token counts use a proxy tokenizer** (`anthropic==0.37.1`, pinned by sha256): good for comparing arms,
-  not exact billing.
-- **Cursor verdicts follow Cursor's documented hook semantics.** No Cursor binary was available to validate them.
-- **Each harness's drive prompt is a choice**, versioned in the lockfile.
+- No pre-registered outcome result exists yet. Everything about outcomes is exploratory.
+- The live tier has six tasks. Report rates, not rankings, until more exist.
+- Token counts use a proxy tokenizer (`anthropic==0.37.1`, pinned by sha256): good for comparing
+  harnesses with each other, not for exact billing.
+- Cursor verdicts follow Cursor's documented hook behavior. No Cursor binary was available to check them.
+- The prompt each harness is started with is a choice, versioned in the lockfile.
 
 ## Where things are
 
-| Path | What |
-|---|---|
-| [`docs/whitepaper.md`](docs/whitepaper.md) | The argument: method, results, limits, what comes next |
-| [`docs/evidence/`](docs/evidence/README.md) | Every outcome round with its n, status and data |
-| [`docs/method/criteria.md`](docs/method/criteria.md) · [`criteria-v2.md`](docs/method/criteria-v2.md) | Pre-registered criteria for the live tier (v1, in force) and the next run set (v2, draft) |
-| [`docs/method/methodology.md`](docs/method/methodology.md) · [`process.md`](docs/method/process.md) · [`quality-model.md`](docs/method/quality-model.md) | What "deterministic" means here, how rounds were run, what "good code" means |
-| [`docs/plans/next-steps.md`](docs/plans/next-steps.md) · [`talk.md`](docs/talk/README.md) | Planned experiments; a 20-minute talk track |
-| `cbench/` | The benchmark tool (`python -m cbench --help`) |
-| `golden/` | Probe scenarios, live-tier tasks, pipeline tasks |
-| `harbor/tasks/` | Generated Harbor tasks; CI fails if they drift from the lockfile |
-| `harnesses/` | Minimal harnesses used as arms (review loop, verification loop) |
-| `results/` | Committed outputs and `REPORT.md` |
+Reading:
+
+- [Claims register](docs/claims.md): every claim and how far to trust it
+- [Whitepaper](docs/whitepaper.md): the argument, with methods, results and limits
+- [Evidence](docs/evidence/README.md): each experiment round with its sample size, status and data
+- [Method](docs/method/): pre-registered criteria ([v1, in force](docs/method/criteria.md);
+  [v2, draft](docs/method/criteria-v2.md)), [methodology](docs/method/methodology.md),
+  [how rounds were run](docs/method/process.md), [what "good code" means](docs/method/quality-model.md)
+- [Plans](docs/plans/next-steps.md): experiments not yet run, and the [pipeline tasks](docs/plans/tasks/pipeline-family.md)
+- [Talk](docs/talk/README.md): a 20-minute talk track
+
+Code and data:
+
+- `cbench/`: the benchmark tool (`python -m cbench --help`)
+- `golden/`: probe scenarios, live-tier tasks and pipeline tasks
+- `harbor/tasks/`: generated Harbor tasks; CI fails if they drift from the lockfile
+- `harnesses/`: small harnesses used as test setups (a review loop, a verification loop)
+- `results/`: committed outputs and the report
 
 ## Contributing
 
