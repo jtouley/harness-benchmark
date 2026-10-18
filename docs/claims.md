@@ -53,4 +53,5 @@ Last reviewed: 18 October 2026.
 |---|---|---|
 | Which setup gives the lowest cost per solved task, across all seven. | 240 trials under pre-registered criteria ([live tier](method/live-tier.md)) | Built and checked in CI; never run |
 | A cheap verification harness (contracts before code, a stop gate) lets a cheap model match Opus. | [Next steps](plans/next-steps.md), [verification harness](../harnesses/verifyloop/) | Built; not run |
+| Harnesses do better on accepted benchmarks graded only by code: correctness, quality under change, a tool gate. | [Grade with accepted benchmarks](plans/accepted-benchmarks.md) | Proposed |
 | A harness makes a failed long task easier to trace to its cause. | [Pipeline family](plans/tasks/pipeline-family.md), seeded traps and a blind auditor | Tasks built; no harness has run on them |

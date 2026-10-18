@@ -98,4 +98,5 @@ Everything else is scripted, an answer key, a published benchmark's tests, or pr
 ## What none of this measures
 
 Passing hidden tests, or scoring well with a model grader, is not the same as code you would put into
-production. No grade in this repository yet measures that directly.
+production. No grade in this repository yet measures that directly. The plan to replace the model
+grader with accepted benchmarks and tool-based checks: [grade with accepted benchmarks](../plans/accepted-benchmarks.md).
