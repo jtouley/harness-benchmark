@@ -159,3 +159,11 @@ def test_a_head_that_does_not_parse_has_no_final_state(tmp_path):
 
 def test_a_hanging_test_command_is_not_green(tmp_path):
     assert cr.green(tmp_path, "sleep 5", timeout=0.2) is False
+
+
+def test_a_timeout_also_stops_what_the_test_command_started(tmp_path):
+    marker = tmp_path / "survived"
+    assert cr.green(tmp_path, f"(sleep 1; touch {marker}) & wait", timeout=0.2) is False
+    import time
+    time.sleep(1.5)
+    assert not marker.exists()

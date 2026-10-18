@@ -20,8 +20,9 @@ The reference solution's code itself belongs to SlopCodeBench and is not copied 
 
 - SlopCodeBench, task `cfgpipe` (6 checkpoints): the reference passed every core test at every
   checkpoint, and regression tests from earlier checkpoints passed at 99.1% to 100%. Even the reference
-  fails a few "strict" tests (strict pass rate 0.991 to 0.995), so the core pass rate is the one to gate
-  on. Erosion rose from 0.555 to 0.782 and verbosity from 0.358 to 0.556 across the checkpoints, for
+  fails a few "strict" tests from checkpoint 3 on (strict pass rate 0.991 to 0.995; 1.0 at checkpoints 1 and 2), so the core pass rate is the one to gate
+  on. Erosion rose from 0.555 to 0.782, and verbosity from 0.358 to a peak of 0.586 at checkpoint 4 and 0.556 at
+  checkpoint 6, for
   the reference itself. Rerunning the same pinned analyzer on the saved code at each checkpoint gave the
   same values to every digit (both are committed), so the analyzer is deterministic; what the values
   mean is in the section below. An earlier run lost two checkpoints to a full disk and was discarded.
@@ -33,7 +34,6 @@ The reference solution's code itself belongs to SlopCodeBench and is not copied 
 The run in a sandbox needed one change outside the benchmark: the test machine's HTTPS proxy
 certificate had to be trusted inside the task image. That change was made to a local copy only and is
 not part of any benchmark.
-
 
 ## What erosion and verbosity measure
 
@@ -67,4 +67,3 @@ Checked on the `cfgpipe` reference solution (6 checkpoints, 148 to 928 lines in 
 - Prior evidence on the harness question: the paper tested a "plan-first" prompt. It lowered the
   starting erosion and verbosity, but the code degraded at the same rate, solve rates fell and cost per
   checkpoint rose about 12%.
-

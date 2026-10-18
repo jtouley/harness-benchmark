@@ -23,8 +23,9 @@ Over four rounds of measurement, the answer moved twice.
 
 1. **On small, fully specified tasks, a harness does not write better code.** Opus 5.5 alone scored
    8.00 of 10 against 7.33 for Cadence on Opus, in about 1/30 of the time (iteration 4, one run per
-   cell). The harness did ship no crashes (each one-shot shipped two, all six on one task, budgets, from
-   three inputs) and left an audit trail.
+   cell). The harnesses shipped no crashes in the code they delivered (ship-feature delivered 2 of 3
+   tasks; each one-shot shipped two crashes, all six on one task, budgets, from three inputs) and left an
+   audit trail.
 2. **A full harness does not make a cheap model work.** Cadence orchestrated by Haiku 5.5 delivered
    nothing on a task that the Opus one-shot finished in 111 seconds for $0.40 (pilot, one run per arm).
    Its cost ($1.13 and $3.19) is a lower bound (§3.2).
@@ -121,7 +122,8 @@ tokens, not dollars.
 
 #### What the harness gave
 
-- No crash in the delivered code. Neither harness shipped a traceback; Opus, Sonnet and Haiku alone each
+- No crash in the delivered code. Neither harness shipped a traceback in what it delivered (ship-feature
+  delivered 2 of 3 tasks); Opus, Sonnet and Haiku alone each
   shipped two, all on the budgets task (a NaN amount, a tiny limit, a NaN limit).
   Limit: major defects per run were 0.67 for Cadence against 1.00 for Opus. That gap is under the 0.5 bar
   of the pre-registered rule, so "fewer defects" is not shown.

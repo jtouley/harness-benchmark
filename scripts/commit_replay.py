@@ -34,6 +34,8 @@ from __future__ import annotations
 
 import argparse
 import json
+import os
+import signal
 import statistics
 import subprocess
 import sys
@@ -106,9 +108,14 @@ def complexity_delta(before: dict, after: dict) -> dict:
 def green(tree: Path, test_cmd: str | None, timeout: float = 600) -> bool | None:
     if not test_cmd:
         return None
+    # Its own process group, so a timeout also stops what the command started (a test server).
+    proc = subprocess.Popen(test_cmd, shell=True, cwd=tree, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL,
+                            start_new_session=True)
     try:
-        return subprocess.run(test_cmd, shell=True, cwd=tree, capture_output=True, timeout=timeout).returncode == 0
+        return proc.wait(timeout=timeout) == 0
     except subprocess.TimeoutExpired:
+        os.killpg(proc.pid, signal.SIGKILL)
+        proc.wait()
         return False
 
 
@@ -117,7 +124,7 @@ def final_state(after: dict) -> dict:
             "functions_over_10": sum(1 for v in after.values() if v > THRESHOLD)}
 
 
-def summarize(rows: list[dict], final: dict) -> dict:
+def summarize(rows: list[dict], final: dict | None) -> dict:
     if not rows:
         return {"commits": 0, "measurable": False, "final": final}
     lines = [r["lines_added"] + r["lines_deleted"] for r in rows]

@@ -9,8 +9,9 @@ Three measures, printed after every run:
 
 With HB_TEST_BUDGET=1 (CI sets it), wall or total over its budget fails the run. The budgets sit
 about 1.4 times above a typical CI run: tight enough that a doubling, or one slow shared helper,
-fails, and loose enough for CI's run-to-run spread (about 2%). A run that selects tests (paths on the command line,
--k, -m, --deselect, --lf) is only measured, never failed; the summary line says which. Set
+fails, and loose enough for CI's run-to-run spread (about 2%). A run that selects tests (paths on the
+command line, -k, -m, --deselect, --lf, --ignore) is only measured, never failed; the summary line
+says which. Set
 HB_TEST_WALL_BUDGET or HB_TEST_TOTAL_BUDGET to override a budget in seconds, for a slower machine.
 """
 
@@ -32,7 +33,8 @@ def selects_tests(config: pytest.Config) -> bool:
     """True when the run is a chosen subset, not the whole suite."""
     o = config.option
     return (config.args_source == pytest.Config.ArgsSource.ARGS or bool(o.keyword) or bool(o.markexpr)
-            or bool(getattr(o, "deselect", None)) or bool(getattr(o, "lf", False)))
+            or bool(getattr(o, "deselect", None)) or bool(getattr(o, "lf", False))
+            or bool(getattr(o, "ignore", None)) or bool(getattr(o, "ignore_glob", None)))
 
 
 class TimeBudget:

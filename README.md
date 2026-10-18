@@ -21,7 +21,8 @@ The [claims register](docs/claims.md) lists every claim with its evidence level.
 
 So far, on small, clearly described tasks, a harness did not write better code than Opus 5.5 working
 alone (Opus scored 8.00 out of 10, Cadence 7.33), and Opus alone took about a thirtieth of the time. What
-harnesses did give was checking: no crashes in the code they delivered, a record a reviewer can audit,
+harnesses did give was checking: no crashes in the code they delivered (ship-feature delivered 2 of 3
+tasks), a record a reviewer can audit,
 and on one real bug a review loop, with Opus as reviewer, that caught a defect the cheaper models
 missed (Opus alone caught it too, at about the same cost). These are signals from small
 samples, not measurements.
