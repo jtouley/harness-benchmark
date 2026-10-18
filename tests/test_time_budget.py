@@ -20,42 +20,49 @@ def test_slow():
 
 
 @pytest.fixture
-def suite(pytester, monkeypatch):
-    monkeypatch.setattr(time_budget, "MIN_FULL_RUN", 2)
+def suite(pytester):
     pytester.makepyfile(SUITE)
     return pytester
 
 
-def _run(pytester):
-    return pytester.runpytest_inprocess("-p", "time_budget", "-p", "no:xdist", "-p", "no:cacheprovider")
+def _run(pytester, *args):
+    return pytester.runpytest_inprocess("-p", "time_budget", "-p", "no:xdist", "-p", "no:cacheprovider", *args)
 
 
 def test_over_budget_fails_the_run_when_enforced(suite, monkeypatch):
     monkeypatch.setenv("HB_TEST_BUDGET", "1")
-    monkeypatch.setenv("HB_TEST_SLOWEST_BUDGET", "0.1")
+    monkeypatch.setenv("HB_TEST_TOTAL_BUDGET", "0.1")
     result = _run(suite)
     assert result.ret == pytest.ExitCode.TESTS_FAILED
-    result.stdout.fnmatch_lines(["*TIME BUDGET EXCEEDED: slowest *s is over its budget of 0s*"])
+    result.stdout.fnmatch_lines(["*TIME BUDGET EXCEEDED: total *s is over its budget of 0s*"])
 
 
 def test_within_budget_passes(suite, monkeypatch):
     monkeypatch.setenv("HB_TEST_BUDGET", "1")
     result = _run(suite)
     assert result.ret == pytest.ExitCode.OK
-    result.stdout.fnmatch_lines(["time budget: wall *s, total *s, slowest *s (*test_slow)"])
+    result.stdout.fnmatch_lines(["time budget: wall *s, total *s, slowest *s (*test_slow); enforced: wall 55s, total 190s"])
 
 
 def test_not_enforced_without_the_flag(suite, monkeypatch):
     monkeypatch.delenv("HB_TEST_BUDGET", raising=False)
-    monkeypatch.setenv("HB_TEST_SLOWEST_BUDGET", "0.1")
-    assert _run(suite).ret == pytest.ExitCode.OK
+    monkeypatch.setenv("HB_TEST_TOTAL_BUDGET", "0.1")
+    result = _run(suite)
+    assert result.ret == pytest.ExitCode.OK
+    result.stdout.fnmatch_lines(["*; not enforced (HB_TEST_BUDGET is not 1)"])
 
 
-def test_a_subset_is_measured_not_failed(suite, monkeypatch):
-    monkeypatch.setattr(time_budget, "MIN_FULL_RUN", 3)
+@pytest.mark.parametrize("selection", [["test_a_subset_is_measured_not_failed.py"], ["-k", "slow"], ["-m", "not x"]])
+def test_a_subset_is_measured_not_failed(suite, monkeypatch, selection):
     monkeypatch.setenv("HB_TEST_BUDGET", "1")
     monkeypatch.setenv("HB_TEST_TOTAL_BUDGET", "0.1")
-    assert _run(suite).ret == pytest.ExitCode.OK
+    result = _run(suite, *selection)
+    assert result.ret in (pytest.ExitCode.OK, pytest.ExitCode.NO_TESTS_COLLECTED)
+    result.stdout.fnmatch_lines(["*; not enforced (a subset of tests was selected)"])
+
+
+def test_the_slowest_test_is_reported_not_budgeted():
+    assert set(time_budget.BUDGETS) == {"wall", "total"}
 
 
 def test_the_suite_runs_in_parallel_with_work_stealing():
