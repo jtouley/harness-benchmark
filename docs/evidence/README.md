@@ -2,7 +2,8 @@
 
 Every experiment round so far, oldest first. None of them is a pre-registered result: each ran outside
 the live tier, and most ran once per setup with one grader. Check the sample size before citing a number.
-The [claims register](../claims.md) rates each claim; the [whitepaper](../whitepaper.md) draws them together.
+The [claims register](../claims.md) rates each claim, [how results are graded](../method/grading.md) says
+what produced each number, and the [whitepaper](../whitepaper.md) draws them together.
 
 *Disclosure: the owner of this benchmark wrote Cadence.*
 

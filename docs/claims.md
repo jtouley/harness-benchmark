@@ -14,6 +14,8 @@ If a sentence anywhere else in the repository goes further than its row here, th
   and the counts, but you cannot check them.
 - **Not run.** It was designed and not yet measured.
 
+How each number is produced, and which ones rest on a model's judgment: [how results are graded](method/grading.md).
+
 Last reviewed: 18 October 2026.
 
 ## Reproducible

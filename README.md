@@ -92,6 +92,7 @@ Reading:
 - [Claims register](docs/claims.md): every claim and how far to trust it
 - [Whitepaper](docs/whitepaper.md): the argument, with methods, results and limits
 - [Evidence](docs/evidence/README.md): each experiment round with its sample size, status and data
+- [How results are graded](docs/method/grading.md): what decides each number, and where a model's judgment does
 - [Method](docs/method/): pre-registered criteria ([v1, in force](docs/method/criteria.md);
   [v2, draft](docs/method/criteria-v2.md)), [methodology](docs/method/methodology.md),
   [how rounds were run](docs/method/process.md), [what "good code" means](docs/method/quality-model.md)
