@@ -20,7 +20,9 @@ from collections import defaultdict
 
 import pytest
 
-BUDGETS = {"wall": 90.0, "total": 270.0, "slowest": 20.0}
+# Just under twice what CI measured on ubuntu-latest, 18 October 2026 (run 39135971648):
+# wall 28.5 s, total 97.1 s, slowest 6.1 s.
+BUDGETS = {"wall": 55.0, "total": 190.0, "slowest": 12.0}
 MIN_FULL_RUN = 600
 
 
