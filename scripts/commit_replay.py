@@ -12,7 +12,8 @@ how the complexity reached the reviewer. This script replays the commits from BA
   removes it. Pinned radon, as in scripts/quality_metrics.py;
 - functions over 10: functions the commit takes over cyclomatic complexity 10 (radon's and the
   SlopCodeBench erosion threshold);
-- green: whether --test-cmd exits 0 on the commit's tree (None when no command is given);
+- green: whether --test-cmd exits 0 on the commit's tree within --test-timeout seconds (a timeout is
+  not green; None when no command is given);
 - time since the previous commit, from commit timestamps.
 
 A commit whose code does not parse cannot be measured: its complexity fields are None, it names the
@@ -25,7 +26,7 @@ complexity than they added (clean-up steps), the total churn (all lines and all 
 along the way, which is what drafting and cleaning up costs), and the final state, so that small
 steps bought by ending at worse code show up. Fewer than one commit, or uncommitted work, is reported, not scored.
 
-usage: commit_replay.py REPO BASE HEAD [--package DIR] [--test-cmd CMD]
+usage: commit_replay.py REPO BASE HEAD [--package DIR] [--test-cmd CMD] [--test-timeout SECONDS]
 Prints one JSON object. Needs git and uv (radon runs through `uvx`).
 """
 
@@ -102,10 +103,13 @@ def complexity_delta(before: dict, after: dict) -> dict:
     return {"complexity_added": added, "complexity_removed": removed, "newly_over_10": over}
 
 
-def green(tree: Path, test_cmd: str | None) -> bool | None:
+def green(tree: Path, test_cmd: str | None, timeout: float = 600) -> bool | None:
     if not test_cmd:
         return None
-    return subprocess.run(test_cmd, shell=True, cwd=tree, capture_output=True).returncode == 0
+    try:
+        return subprocess.run(test_cmd, shell=True, cwd=tree, capture_output=True, timeout=timeout).returncode == 0
+    except subprocess.TimeoutExpired:
+        return False
 
 
 def final_state(after: dict) -> dict:
@@ -138,7 +142,8 @@ def summarize(rows: list[dict], final: dict) -> dict:
     }
 
 
-def replay(repo: Path, base: str, head: str, package: str = ".", test_cmd: str | None = None) -> dict:
+def replay(repo: Path, base: str, head: str, package: str = ".", test_cmd: str | None = None,
+           test_timeout: float = 600) -> dict:
     shas = commits(repo, base, head)
     rows = []
     with tempfile.TemporaryDirectory() as tmp:
@@ -152,14 +157,16 @@ def replay(repo: Path, base: str, head: str, package: str = ".", test_cmd: str |
             delta = UNMEASURED if unparsed else complexity_delta(before, after)
             rows.append({"sha": sha, "subject": _git(repo, "show", "-s", "--format=%s", sha).strip(),
                          "lines_added": added, "lines_deleted": deleted, **delta, "unparsed": unparsed,
-                         "green": green(tree, test_cmd), "seconds_since_previous": when - previous_time})
+                         "green": green(tree, test_cmd, test_timeout), "seconds_since_previous": when - previous_time})
             previous_time = when
             if not unparsed:
                 before = after
+    # The final state is the head's; when the head does not parse it is unmeasured, not the last good one.
+    final = final_state(before) if not rows or not rows[-1]["unparsed"] else None
     uncommitted = _git(repo, "status", "--porcelain", "--", package).strip()
     return {"base": base, "head": head, "package": package, "test_cmd": test_cmd,
             "uncommitted_changes": bool(uncommitted), "commits": rows,
-            "summary": summarize(rows, final_state(before))}
+            "summary": summarize(rows, final)}
 
 
 def main(argv: list[str] | None = None) -> int:
@@ -169,9 +176,10 @@ def main(argv: list[str] | None = None) -> int:
     ap.add_argument("head")
     ap.add_argument("--package", default=".", help="the directory to measure, relative to the repository root")
     ap.add_argument("--test-cmd", default=None, help="shell command run in each commit's tree; exit 0 is green")
+    ap.add_argument("--test-timeout", type=float, default=600, help="seconds before a test command counts as not green")
     args = ap.parse_args(argv)
     try:
-        result = replay(args.repo.resolve(), args.base, args.head, args.package, args.test_cmd)
+        result = replay(args.repo.resolve(), args.base, args.head, args.package, args.test_cmd, args.test_timeout)
     except (ToolError, subprocess.CalledProcessError) as exc:
         print(json.dumps({"error": str(exc)}))
         return 1

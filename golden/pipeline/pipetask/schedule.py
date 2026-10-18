@@ -63,7 +63,7 @@ class Delivered:
     vrecv: float  # virtual receive time, used for pacing
 
 
-@dataclass
+@dataclass(frozen=True)  # cached and shared by the replay server (replay._plan)
 class Schedule:
     seed: int
     positions: list[Delivered]

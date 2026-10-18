@@ -146,3 +146,13 @@ def test_main_prints_json(tmp_path, capsys):
     repo = _repo(tmp_path, "r", [(BASE + PARSE, "parse")])
     assert cr.main([str(repo), "HEAD~1", "HEAD"]) == 0
     assert json.loads(capsys.readouterr().out)["summary"]["commits"] == 1
+
+
+@needs_uv
+def test_a_head_that_does_not_parse_has_no_final_state(tmp_path):
+    repo = _repo(tmp_path, "r", [(BASE + PARSE, "parse"), ("BROKEN = (\n" + BASE + PARSE, "wip")])
+    assert cr.replay(repo, "HEAD~2", "HEAD")["summary"]["final"] is None
+
+
+def test_a_hanging_test_command_is_not_green(tmp_path):
+    assert cr.green(tmp_path, "sleep 5", timeout=0.2) is False
