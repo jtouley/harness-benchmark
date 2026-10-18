@@ -7,8 +7,9 @@ Three measures, printed after every run:
 - slowest: the slowest single test. Reported only: the slowest tests fetch pinned tools, so their time
   varies with the network and would make a budget flaky.
 
-With HB_TEST_BUDGET=1 (CI sets it), wall or total over its budget fails the run. The budgets are
-below twice what CI measures, so a doubling fails. A run that selects tests (paths on the command line,
+With HB_TEST_BUDGET=1 (CI sets it), wall or total over its budget fails the run. The budgets sit
+about 1.4 times above a typical CI run: tight enough that a doubling, or one slow shared helper,
+fails, and loose enough for CI's run-to-run spread (about 2%). A run that selects tests (paths on the command line,
 -k, -m, --deselect, --lf) is only measured, never failed; the summary line says which. Set
 HB_TEST_WALL_BUDGET or HB_TEST_TOTAL_BUDGET to override a budget in seconds, for a slower machine.
 """
@@ -21,8 +22,9 @@ from collections import defaultdict
 
 import pytest
 
-# Just under twice what CI measured on ubuntu-latest, 18 October 2026 (run 39135971648):
-# wall 28.5 s, total 97.1 s.
+# CI on ubuntu-latest, 18 October 2026: four runs at wall 38.7-40.0 s, total 143-147 s (one earlier
+# run was faster: 28.5 s, 97.1 s). Restoring the 5 s replay keepalive in the pipeline tests adds about
+# 90 s of total time, so a looser total budget (2x, 290 s) would miss that regression.
 BUDGETS = {"wall": 55.0, "total": 190.0}
 
 
