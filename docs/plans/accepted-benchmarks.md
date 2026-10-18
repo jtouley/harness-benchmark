@@ -1,6 +1,6 @@
 # Plan: grade with accepted benchmarks, not a model
 
-Status: proposed, 18 October 2026. Nothing here has run.
+Status: proposed, 18 October 2026. Only the no-model smoke checks below have run.
 
 The goal is to judge harnesses with no model as grader and no reviewer in the loop: only published
 benchmarks whose grading is code, and published tools with fixed thresholds. How results are graded
@@ -45,8 +45,10 @@ SlopCodeBench ([arXiv 2603.24755](https://arxiv.org/abs/2603.24755), 36 problems
 agents extend their own code as the specification changes, and the benchmark measures how the code
 degrades (structural erosion and verbosity). The best agent passes 14.8% of checkpoints, so it is far
 from saturated. This is the closest published test of what a harness claims to buy: plans and reviews
-should keep code from eroding. To confirm before use: that its checkpoints are graded by tests and its
-metrics by code (the abstract does not say), and how to run it on Harbor.
+should keep code from eroding. Its grading is confirmed to use no model (see the smoke check below):
+each checkpoint runs held-out pytest tests, the earlier checkpoints' tests run again as regression
+tests, and erosion and verbosity come from a pinned static analyzer (`scb-check` 0.1.3) installed in
+the task image. It downloads from the Harbor hub as `gabeorlanski/slopcodebench` (36 tasks).
 
 ## Layer 3: a tool gate on every delivered change
 
@@ -64,6 +66,26 @@ Computed on the diff, with pinned tool versions, and reported next to the pass r
 
 Not used: ISO/IEC 5055 has no open-source implementation that claims conformance; CodeScene and CAST are
 commercial; the Sonar way condition on reviewing security hotspots needs a person.
+
+## Smoke check, 18 October 2026 (no model, no cost)
+
+Harbor 0.24.0 ran each benchmark's reference solution (the `oracle` agent) through the benchmark's own
+grader, to show the grading runs end to end before any money is spent.
+
+- SlopCodeBench, task `cfgpipe` (6 checkpoints): the reference passed every core test at every
+  checkpoint, and regression tests from earlier checkpoints passed at 99.1% to 100%. Even the reference
+  fails a few "strict" tests (strict pass rate 0.991 to 0.995), so the core pass rate is the one to gate
+  on. Erosion rose from 0.555 to 0.782 and verbosity from 0.358 to 0.556 across the checkpoints, for
+  the reference itself; two runs gave identical values to three decimals, so the analyzer is
+  deterministic. A first run lost two checkpoints to a full disk and was discarded.
+- FeatureBench lite, task `pydantic ... test_deprecated_fields`: not run. Its prebuilt image used about
+  25 GB, more than the test machine had free. FeatureBench needs a machine with large disk; its images
+  are per repository, so the 30 lite tasks share 13 images.
+- A model trial (the `claude-code` agent with a $1 cap) has not run: the test machine had no API key.
+
+The run in a sandbox needed one change outside the benchmark: the test machine's HTTPS proxy
+certificate had to be trusted inside the task image. That change was made to a local copy only and is
+not part of any benchmark.
 
 ## What changes in the criteria
 
