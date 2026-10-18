@@ -11,8 +11,9 @@ Benchmark: jtouley/harness-benchmark.*
 A *harness* is a set of rules and steps wrapped around an AI coding assistant: plan first, have other
 agents review the work, keep a record. We tested whether that makes the assistant's code better. On small,
 clearly described tasks it did not: the best model working alone wrote code as good as the harness did,
-about 30 times faster. Where a harness helped was checking: a second agent that tested the finished work
-caught a bug that cheaper models had missed. All of this comes from small samples, and the
+about 30 times faster. Where a harness helped was checking: on one real bug, a second agent (the stronger Opus
+model) that tested the finished work caught a defect the cheaper models had missed; Opus alone caught it
+too, at about the same cost, and that task is private, so only its scores are published. All of this comes from small samples, and the
 [claims register](claims.md) says how far each finding can be trusted.
 
 ## Abstract

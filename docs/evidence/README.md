@@ -62,8 +62,17 @@ what produced each number, and the [whitepaper](../whitepaper.md) draws them tog
 - Read: [self-evidence write-up](2026-10-17-cadence-self-evidence.md), and how review rounds are counted:
   [review value](review-value.md)
 
+## Smoke check on Harbor (18 October): no model
+
+- Question: does SlopCodeBench's and FeatureBench's grading run end to end, before money is spent?
+- Sample: each benchmark's reference solution, one task each; no model.
+- Result: SlopCodeBench grades with tests and a static analyzer, no model; its reference passes every
+  core test, and scores worse on erosion and verbosity than the paper's average agent. FeatureBench
+  needs more disk than the test machine had.
+- Read: [smoke check](2026-10-18-smoke-check.md), with its grader and analyzer outputs
+
 ## Scripts kept with the data
 
 The scripts beside each round's data (`grade.py`, `run_arm.sh` and others) are the exact ones used for that
-round, kept unchanged so it can be regraded. Current tooling lives in [`cbench/`](../../cbench/),
+round, kept unchanged except for file paths, so it can be regraded. Current tooling lives in [`cbench/`](../../cbench/),
 [`scripts/`](../../scripts/) and [`runner/`](../../runner/).

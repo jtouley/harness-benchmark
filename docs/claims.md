@@ -32,17 +32,18 @@ Last reviewed: 18 October 2026.
 | Claim | Sample and date | Evidence | Check again when |
 |---|---|---|---|
 | On small, fully specified tasks, a harness did not write better code than Opus 5.5 alone (8.00 against 7.33 for Cadence, out of 10). | 3 tasks, 1 run per cell, 1 blind grader; 12 October. Not a clean room. | [Iteration 4](evidence/2026-10-12-iteration-4.md) | A rerun with 5 runs per cell and 2 graders |
-| Neither harness shipped a crash on those tasks; each one-shot shipped two, all on one task. | Same round. | [Defect records](evidence/2026-10-12-iteration-4/defects.json) | Same |
+| Neither harness shipped a crash in the code it delivered (ship-feature delivered 2 of 3 tasks); each one-shot shipped two, all on one task. | Same round. | [Defect records](evidence/2026-10-12-iteration-4/defects.json) | Same |
 | The harness took about 30 times the wall time of a one-shot. | Same round. | [Iteration 4 results](evidence/2026-10-12-iteration-4/results.json) | Same |
 | Full Cadence orchestrated by Haiku 5.5 delivered nothing on a task the Opus one-shot finished in 111 seconds. | 1 task, 1 run per arm; 13 October. Clean room. | [Pilot](evidence/2026-10-13-pilot.md) | After the Cadence defects it surfaced are fixed |
 | On 20 SWE-bench Pro tasks, Haiku 5.5 passed 17 and Opus 5.5 passed 18, at about a tenth of the cost. | 20 tasks, 1 try per model; 14 October. Cost is a lower bound. | [Results per task](../calibration/swebench-pro/round2.md) | A repeat with several tries per task |
+| Harbor runs SlopCodeBench's grading end to end with no model: its reference solution passes every core test at all 6 checkpoints of `cfgpipe`, and its own erosion (0.782) and verbosity (0.556) are worse than the paper's average agent. | 1 task, reference solution only; 18 October. | [Smoke check](evidence/2026-10-18-smoke-check.md) | When a model runs on it |
 | On the long pipeline tasks, the best one-shot scored 6 of 7 checks (Opus on P1); Haiku scored 0 of 7 on all three. | 3 tasks, 1 run per model; 15 October. Some checks have open readings. | [Pipeline trials](evidence/2026-10-15-pipeline-trials.md) | When the open readings are settled, or a harness runs on them |
 
 ## Operator-reported
 
 | Claim | Sample and date | Why you cannot check it | Check again when |
 |---|---|---|---|
-| On a real two-cause bug, an independent review fixed both causes in 3 of 3 cheap-model runs, against 1 of 10 without it (Fisher exact, p ≈ 0.014). | 20 runs alone, 3 with review; 13–14 October. | Third-party task: code, grader and transcripts are private ([whitepaper 3.3](whitepaper.md#33-a-real-multi-cause-bug-b01-a-lift-task)). | A public task with the same shape |
+| On a real two-cause bug, a review loop with Opus 5.5 as reviewer fixed both causes in 3 of 3 cheap-model runs, against 1 of 10 cheap runs without it (Fisher exact, p ≈ 0.014). Opus alone fixed both in 10 of 10, at about the same cost. | 20 runs alone, 3 with review; 13–14 October. | Third-party task: code, grader and transcripts are private ([whitepaper 3.3](whitepaper.md#33-a-real-multi-cause-bug-b01-a-lift-task)). | A public task with the same shape |
 | Cheap models miss by narrowing scope and skipping coverage, not by shallow reasoning. | Transcripts of the same 20 one-shots. | Same private task ([whitepaper §3.4](whitepaper.md#34-why-the-cheap-models-miss)). | Same |
 | In PR reviews, the first review round found most confirmed defects (40 of 51). | Cadence's own review records. | Records are private; the counting script is public ([review value](evidence/review-value.md)). | If the records are published |
 | Cadence's reviews caught 85 must-fix findings before merge while building Cadence, 73% at plan time. | 10 merged runs, 10–17 October. | Records are private; the cited pull requests are public ([self-evidence](evidence/2026-10-17-cadence-self-evidence.md)). | If the records are published |
