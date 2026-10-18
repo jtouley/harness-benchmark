@@ -25,4 +25,4 @@ default-groups = ["pipeline"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
-addopts = "-q -p no:cacheprovider -n auto"
+addopts = "-q -p no:cacheprovider -n auto --dist worksteal"

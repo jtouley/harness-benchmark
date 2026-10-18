@@ -49,6 +49,9 @@ jobs:
         if: steps.access.outputs.private == ''
         run: uv run --frozen --with tokenizers python -m cbench verify
       - name: Unit and pipeline tests
+        # HB_TEST_BUDGET fails the run when the suite gets much slower (tests/time_budget.py).
+        env:
+          HB_TEST_BUDGET: "1"
         run: uv run --frozen --with tokenizers python -m pytest -q
       - name: Regenerate the report
         run: uv run --frozen --with tokenizers python -m cbench report
