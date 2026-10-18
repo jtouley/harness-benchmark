@@ -1,7 +1,7 @@
 # Pipeline task family: builder files (hidden from arms)
 
 Inputs, replay server, answer key, grader and reference solutions for the
-[pipeline family](../../docs/tasks/pipeline-family.md) (P1, P2, P3; issue #11). Increment 1 built
+[pipeline family](../../docs/plans/tasks/pipeline-family.md) (P1, P2, P3; issue #11). Increment 1 built
 the shared inputs, the key, the grader and the P1 reference; increment 2 adds the P2 skeleton, prompt
 and reference; increment 3 the P3 skeleton, prompt, reference and toolchain image. All three are graded
 by the same grader against the same key.

@@ -4,7 +4,7 @@ Status: **proposed** for criteria v2 (October 2026). Criteria v1 used one blind 
 1–10 dimensions (design, correctness, readability, tests: measure M7). That rubric is a judgment. It is not a
 published standard, and nobody can recompute it. This model replaces it as a measure of quality with measures that come
 from published, widely used standards and tools. Each one has a fixed threshold, and a script
-recomputes it ([`scripts/quality_metrics.py`](../scripts/quality_metrics.py)). A grader still judges
+recomputes it ([`scripts/quality_metrics.py`](../../scripts/quality_metrics.py)). A grader still judges
 the two things no tool can measure, against a fixed checklist.
 
 ## The standard behind it
@@ -16,7 +16,7 @@ characteristics that a code change can affect, and how this benchmark measures e
 | ISO/IEC 25010 characteristic | Sub-characteristic | Measure here | Source of the method and threshold |
 |---|---|---|---|
 | Functional suitability | Functional completeness and correctness | **Acceptance (M1):** hidden tests of the task pass | The task's oracle ([criteria §4](criteria.md#4-measures)) |
-| Functional suitability, reliability | Functional correctness, faultlessness | **Reproduced defects (M2):** each with a command and its output, by severity | [criteria §5](criteria.md#5-blind-review-protocol); severity rule in [`defects.json`](experiments/2026-10-12-iteration-4/defects.json) |
+| Functional suitability, reliability | Functional correctness, faultlessness | **Reproduced defects (M2):** each with a command and its output, by severity | [criteria §5](criteria.md#5-blind-review-protocol); severity rule in [`defects.json`](../evidence/2026-10-12-iteration-4/defects.json) |
 | Maintainability | Testability | **New-code coverage**: line coverage of the executable lines the change adds, ≥ 80%. Line and branch coverage of the whole package are reported | SonarQube "Sonar way" quality gate, the most widely used default gate for new code |
 | Maintainability | Testability | **Mutation score** on the changed lines: ≥ 80% after removing equivalent mutants | Mutation testing ([criteria M4](criteria.md#4-measures)); coverage shows that code ran, a mutant shows that a test checks it |
 | Maintainability | Analysability, modifiability | **Cognitive complexity** per function: no function that the change takes above 15 (new and above it, or above it now and not before) | SonarSource, *Cognitive Complexity* (G. Ann Campbell, 2017); 15 is the Sonar default |
@@ -53,10 +53,10 @@ extensible system, whose path we can understand, and at what cost.** Each part h
 | SOLID: single responsibility, dependency inversion | **Module coupling**: per module, efferent and afferent coupling and instability (Martin, *Agile Software Development*, 2002), from the import graph; plus the design checklist items below | An import-graph script per language; reported, not gated |
 | SOLID: open for extension | **Edit radius of the follow-up task**: the existing files (not new ones) the follow-up change has to modify, and their changed lines | From the follow-up diff. A small radius means the system was open for that extension |
 | Extensible | **Follow-up task success and cost**: the follow-up's hidden checks, and its dollars and wall time | Each long task has a follow-up (for the pipeline family: a new data mart and a dashboard). The same arm builds it on its own delivered code |
-| Traceable ("how we got there") | **Audit scores**: diagnosis accuracy, origin accuracy, audit cost, repair cost | The [audit protocol](tasks/pipeline-family.md#audit-protocol) |
+| Traceable ("how we got there") | **Audit scores**: diagnosis accuracy, origin accuracy, audit cost, repair cost | The [audit protocol](../plans/tasks/pipeline-family.md#audit-protocol) |
 | Cheap | **Dollars for build + follow-up + repairs**, at list prices from token counts | `pricing.json`; Claude Code's own figure is not used for models it does not price |
 
-[`scripts/quality_metrics.py`](../scripts/quality_metrics.py) measures the first three rows. Duplication:
+[`scripts/quality_metrics.py`](../../scripts/quality_metrics.py) measures the first three rows. Duplication:
 jscpd 5.4.1 over Python, SQL, Scala and YAML in the package, minimum block 5 lines (and jscpd's default
 of 50 tokens), run as `uvx --from nodejs-wheel==24.19.0 npx --yes jscpd@5.4.1`, so Node is pinned from
 PyPI and the host's Node is not used. jscpd gets an empty config file of its own and `--no-gitignore`,
@@ -94,7 +94,7 @@ A solution is **great code** for this benchmark when all three layers hold:
    duplicated lines on new code ≤ 3%.
    Test strength (the kill rate on the reference solution's mutants) ≥ 80% joins the gate when it is
    built. The tool gate is reported for every arm; it does not rank arms. The decision rule
-   ([next steps](next-steps.md#decision-rule-for-this-question)) decides on M2 defects, test-confirmed,
+   ([next steps](../plans/next-steps.md#decision-rule-for-this-question)) decides on M2 defects, test-confirmed,
    critical or major. Follow-up success and the hidden-suite pass fraction are reported beside it.
 3. **It fits the design.** Two reviewers check the design checklist. Each item is yes or no, with a
    file and line as evidence:
@@ -110,12 +110,12 @@ one-shot passes the hidden tests but ships crashes that only a reviewer reproduc
 
 ## Iteration 4, measured this way
 
-Computed by [`scripts/quality_metrics.py`](../scripts/quality_metrics.py) (tool versions pinned) on the
+Computed by [`scripts/quality_metrics.py`](../../scripts/quality_metrics.py) (tool versions pinned) on the
 delivered trees against the untouched baseline (`quality_metrics.py SOLUTION BASELINE`, with each
 solution's `CHANGE.diff`). A lint or type finding counts only on a line the change added, and a function
 counts as too complex only when the change takes it over the threshold, so fixing an old problem cannot
 hide a new one. The reference rows apply each task's `reference.patch` to the same baseline. A tool that
-fails leaves its measure unmeasured, and the gate then fails. Raw data: [`quality_metrics.json`](experiments/2026-10-12-iteration-4/quality_metrics.json).
+fails leaves its measure unmeasured, and the gate then fails. Raw data: [`quality_metrics.json`](../evidence/2026-10-12-iteration-4/quality_metrics.json).
 Mutation score is not included: mutmut 3 does not run on this code (it imports modules by bare name).
 
 | Arm | Tool gate passed | New-code coverage | Branch coverage | Highest cognitive complexity | New bug findings | New type errors |

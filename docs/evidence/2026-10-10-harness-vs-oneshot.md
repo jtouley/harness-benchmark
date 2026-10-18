@@ -1,10 +1,10 @@
 # Experiment: two harnesses vs. one-shot Haiku and Sonnet on three feature tasks
 
 Date: 2026-10-09 to 2026-10-10. Status: exploratory, one run per cell (n=1), run outside this harness. It shaped
-[criteria v1](../criteria.md); it is not a v1 result.
+[criteria v1](../method/criteria.md); it is not a v1 result.
 
 > **Iteration 4** ([write-up](2026-10-12-iteration-4.md)) adds the missing Opus one-shot control. It shows no
-> quality gain from a harness over Opus alone. Read it, and [the findings](../findings.md), before citing this round.
+> quality gain from a harness over Opus alone. Read it, and [the whitepaper](../whitepaper.md#31-small-fully-specified-tasks-iteration-4), before citing this round.
 
 ## Question
 
@@ -112,7 +112,7 @@ Execute this task:
 
 - **The one-shot baselines could see the user-level skill list** (the same host as iteration 4, where a
   transcript check found that no one-shot used a skill). This round's transcripts were not checked. See
-  [the clean room](../process.md#clean-room).
+  [the clean room](../method/process.md#clean-room).
 - **"One-shot" means one tool-using agent, not one completion.** Each baseline was a Claude
   Code subagent that could read the repo, edit, and run tests in a loop (Sonnet 6–10 tool calls,
   Haiku 57–62). It had no plan, reviewers or gates. A single completion without tools was not tested.
@@ -147,7 +147,7 @@ workspace (`.context/evals/harness-vs-oneshot-2026-10-10/` in the cadence worksp
 
 ## What this round changed in the benchmark
 
-Historical: these were the recommendations at the time. [Criteria v1](../criteria.md) supersedes them where they differ (for example, n = 5 per cell).
+Historical: these were the recommendations at the time. [Criteria v1](../method/criteria.md) supersedes them where they differ (for example, n = 5 per cell).
 
 - Tasks T04–T06 already exist there with the same hidden tests.
 - Add arms `sonnet_oneshot`, `haiku_oneshot`, `opus_oneshot` with Template B as the drive

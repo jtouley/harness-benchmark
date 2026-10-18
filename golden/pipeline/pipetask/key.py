@@ -14,7 +14,7 @@ Interpretations the key fixes (the spec leaves them open; see golden/pipeline/RE
 - Stream: an edit is an event of type `edit` or `new` whose meta.domain is not `canary`, counted once per
   meta.id. Net bytes are length.new - length.old (old absent: 0). Event time is `timestamp`; meta.dt is
   accepted as an alternative.
-- Lateness is the spec's rule (docs/tasks/pipeline-spec.md, Rules): an event is late when, at its first
+- Lateness is the spec's rule (docs/plans/tasks/pipeline-spec.md, Rules): an event is late when, at its first
   arrival, the highest event time among the events that arrived before it is more than 600 s past the
   end of its 5-minute window. The spec leaves open which events move that watermark (canaries, non-edit
   events, the invalid frame by its SSE id); `late_rule` in the key records that every reading gives the

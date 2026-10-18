@@ -1,7 +1,7 @@
 """The replay schedule: which frame the replay server sends at each position, from a seed.
 
 The frozen capture is a list of frames in arrival order. The schedule turns it into the delivered
-sequence and injects the stream faults of the trap catalog (docs/tasks/pipeline-traps.md, "Stream faults"):
+sequence and injects the stream faults of the trap catalog (docs/plans/tasks/pipeline-traps.md, "Stream faults"):
 
 - F3: frames are shuffled inside short blocks, so events arrive out of event-time order by a few seconds.
 - F4: a batch of edits from one 5-minute window is held back and delivered once the stream has moved
@@ -63,7 +63,7 @@ class Delivered:
     vrecv: float  # virtual receive time, used for pacing
 
 
-@dataclass
+@dataclass(frozen=True)  # cached and shared by the replay server (replay._plan)
 class Schedule:
     seed: int
     positions: list[Delivered]

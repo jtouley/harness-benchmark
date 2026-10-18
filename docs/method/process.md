@@ -1,7 +1,7 @@
 # How the exploratory rounds were run
 
-This page records the whole process behind [iteration 3](experiments/2026-10-10-harness-vs-oneshot.md)
-and [iteration 4](experiments/2026-10-12-iteration-4.md), so that someone can repeat it, check it, or
+This page records the whole process behind [iteration 3](../evidence/2026-10-10-harness-vs-oneshot.md)
+and [iteration 4](../evidence/2026-10-12-iteration-4.md), so that someone can repeat it, check it, or
 port it into the Harbor live tier. It also records what went wrong, because several problems
 changed the results and the next design.
 
@@ -20,13 +20,13 @@ flowchart LR
 
 ## 2. Steps
 
-0. **Build the workspace.** [`make_workspace.sh`](experiments/2026-10-12-iteration-4/make_workspace.sh)
+0. **Build the workspace.** [`make_workspace.sh`](../evidence/2026-10-12-iteration-4/make_workspace.sh)
    copies the fixture and the hidden tests from `golden/tasks/T0[456]*` and the scripts into one folder.
 1. **Fix the tasks.** Three feature requests for `ledgerlite` (a ~300-line Python CLI: models, JSON
    storage, CSV importer, reports, argparse CLI). They are T04–T06 in `golden/tasks/`. Each has a
    hidden test suite that fails on the untouched repository and passes with the reference patch
    (`python -m cbench golden-check`).
-2. **Set up one repository per arm and task.** [`setup_iteration.sh`](experiments/2026-10-12-iteration-4/setup_iteration.sh)
+2. **Set up one repository per arm and task.** [`setup_iteration.sh`](../evidence/2026-10-12-iteration-4/setup_iteration.sh)
    copies the fixture, makes the "ledgerlite baseline" commit, and gives each arm a local bare
    `origin`. Every arm starts from the same tree.
 3. **Write the prompts.** Harness arms get Template H (skill path, slash command, task text,
@@ -38,11 +38,11 @@ flowchart LR
 5. **Record cost when each run ends.** The completion notice gives wall time and the run agent's
    token count. That is the only chance to capture it, so a `timing.json` goes next to the run at
    once.
-6. **Grade.** [`grade.py`](experiments/2026-10-12-iteration-4/grade.py) runs the hidden tests on the
+6. **Grade.** [`grade.py`](../evidence/2026-10-12-iteration-4/grade.py) runs the hidden tests on the
    delivered tree and the process checks C1–C10 (plan, reviews, phases, commits, questions to the
    user, and similar). It compares against the baseline commit, not `origin/main`, because some runs
    push to `main`.
-7. **Build blind folders.** [`build_blind.py`](experiments/2026-10-12-iteration-4/build_blind.py)
+7. **Build blind folders.** [`build_blind.py`](../evidence/2026-10-12-iteration-4/build_blind.py)
    gives each arm a random letter per task. It copies the final `ledgerlite/`, `tests/`, `README.md`
    and `pyproject.toml` from the **delivered working tree** (committed or not), and a diff from the
    baseline. It removes harness names, ticket ids, phase labels and review finding ids from the text,
@@ -50,10 +50,10 @@ flowchart LR
 8. **Grade blind.** One Opus grader per task sees all folders side by side. It scores design,
    correctness, readability and tests (1–10), and must reproduce each defect with a command and its
    output. The letter map stays outside the folders. We then classify each reproduced defect by a
-   written rule ([`defects.json`](experiments/2026-10-12-iteration-4/defects.json)).
+   written rule ([`defects.json`](../evidence/2026-10-12-iteration-4/defects.json)).
 9. **Unmask and aggregate.** A script joins the blind scores, hidden tests, process checks, time,
-   tokens and the audit-trail counts into [`results.json`](experiments/2026-10-12-iteration-4/results.json)
-   and [`auditability.json`](experiments/2026-10-12-iteration-4/auditability.json).
+   tokens and the audit-trail counts into [`results.json`](../evidence/2026-10-12-iteration-4/results.json)
+   and [`auditability.json`](../evidence/2026-10-12-iteration-4/auditability.json).
 10. **Write up.** Results, findings, and the confounds next to the claims they limit.
 
 ## 3. What went wrong, and what it taught us
@@ -80,7 +80,7 @@ Code 2.1.286, 13 attached by the claude.ai account). A one-shot baseline that ca
 skills is not neutral ([criteria §2](criteria.md#2-arms)), and a description can also fire a skill on a
 wake word.
 
-[`scripts/clean_room_check.py`](../scripts/clean_room_check.py) reads a run's Claude Code transcripts,
+[`scripts/clean_room_check.py`](../../scripts/clean_room_check.py) reads a run's Claude Code transcripts,
 including every nested agent the run spawned (found through `parentAgentId`), and returns:
 
 | Verdict | Exit | Meaning |
@@ -94,14 +94,14 @@ including every nested agent the run spawned (found through `parentAgentId`), an
 Allowed paths are absolute folders. A path counts as inside one only after `..` is resolved. In a shell
 command that changes directory, a relative path resolves against the folder it changes to when that is
 one absolute folder; after any other `cd` it never counts as inside one. One regression test
-per known leak channel is in [`tests/test_clean_room_check.py`](../tests/test_clean_room_check.py); a
+per known leak channel is in [`tests/test_clean_room_check.py`](../../tests/test_clean_room_check.py); a
 newly found channel gets a test there first.
 
 The check reads Claude Code transcripts only. Another host's transcript is `unassessable`, so other hosts
-need their own check (see [next steps](next-steps.md)).
+need their own check (see [next steps](../plans/next-steps.md)).
 
 The skills and agent types every session gets are pinned in
-[`clean_room_builtin_skills.json`](../scripts/clean_room_builtin_skills.json). Each Claude Code version
+[`clean_room_builtin_skills.json`](../../scripts/clean_room_builtin_skills.json). Each Claude Code version
 adds to the list, taken from a session started with an empty `HOME`. A session
 authenticated with an API key instead of a claude.ai login does not get the 13 account skills.
 
@@ -109,7 +109,7 @@ From the next run set on, a run is graded only when the check returns `clean`. E
 `HOME` with only its arm's harness installed, so the only skills it can see are its own and the pinned
 built-in ones.
 
-**Iteration 4, checked after the fact** ([`clean_room.json`](experiments/2026-10-12-iteration-4/clean_room.json)):
+**Iteration 4, checked after the fact** ([`clean_room.json`](../evidence/2026-10-12-iteration-4/clean_room.json)):
 
 - All 9 one-shot runs were `exposed` (the 67 user-installed skills were listed) and none was
   `contaminated`: no one-shot called a skill or touched a skill, rule, command, plugin or memory location
@@ -134,4 +134,4 @@ built-in ones.
 
 These rounds ran outside this repository, one run per cell, with one grader. [Criteria v1](criteria.md)
 requires 5 runs per cell, two graders, a repro script for defects, and cost from the host's own
-accounting. The [next steps](next-steps.md) add those, and they ask the cost question directly.
+accounting. The [next steps](../plans/next-steps.md) add those, and they ask the cost question directly.

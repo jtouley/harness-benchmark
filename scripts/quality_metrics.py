@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Tool-measured code quality of one solution, against the untouched baseline.
 
-The measures and thresholds are defined in docs/quality-model.md. Each comes from a
+The measures and thresholds are defined in docs/method/quality-model.md. Each comes from a
 published, widely used source, so that anyone can recompute it:
 
 - new-code coverage: coverage.py line coverage of the executable lines the change adds,

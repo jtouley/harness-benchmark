@@ -35,7 +35,7 @@ Checked against Harbor 0.24.0's docs and source:
   README says (`harbor/tasks/*/environment/Dockerfile`), and Harbor only runs the agent.
 - **Config directory.** Harbor's `claude-code` agent sets `CLAUDE_CONFIG_DIR` to a fresh
   directory and copies only `~/.claude/skills` into it, which would drop Cadence's hooks and
-  Superpowers' plugin. [`harbor/agents/cbench_claude.py`](../harbor/agents/cbench_claude.py)
+  Superpowers' plugin. [`harbor/agents/cbench_claude.py`](../../harbor/agents/cbench_claude.py)
   is a 10-line subclass that also seeds that directory from `~/.claude`. Everything else is stock.
 - **Tokens and cost.** Each trial's `result.json` has `agent_result.n_input_tokens`
   (including cache), `n_cache_tokens`, `n_output_tokens` and `cost_usd`. For Claude Code,
@@ -47,11 +47,11 @@ Checked against Harbor 0.24.0's docs and source:
 `cbench/report.py` reports the `total_cost_usd` that Claude Code reports. Claude Code does not know the
 Haiku 5.5 price, so that figure is wrong for every Haiku 5.5 arm of this tier. In the pilot, Claude Code
 reported $39.28 for a run that costs $1.13 at list prices from its token counts
-([pilot `cost.json`](experiments/2026-10-13-pilot/cadence_haiku/cost.json)). The $1.13 is itself a lower
+([pilot `cost.json`](../evidence/2026-10-13-pilot/cadence_haiku/cost.json)). The $1.13 is itself a lower
 bound, because Haiku 5.5 costs 5 times more for a prompt above 100K tokens, and Harbor records only totals
 per trial. No live-tier result exists yet, so no reported number is wrong today. Fix this before the first
 run: price each request at its own tier from saved per-request records
-([next steps](next-steps.md#cost-accounting-price-each-request-at-its-own-tier-planned-2026-10-16)).
+([next steps](../plans/next-steps.md#cost-accounting-price-each-request-at-its-own-tier-planned-2026-10-16)).
 
 ## Run it
 

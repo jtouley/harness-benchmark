@@ -88,7 +88,7 @@ def test_only_likely_bugs_count_as_bug_findings():
 def test_the_committed_gate_results_record_the_reference_calibration():
     """R3 on PR #8: a gate result means little unless the task author's own solution is measured too."""
     import json
-    data = json.loads((ROOT / "docs/experiments/2026-10-12-iteration-4/quality_metrics.json").read_text())
+    data = json.loads((ROOT / "docs/evidence/2026-10-12-iteration-4/quality_metrics.json").read_text())
     for task in ("multicurrency", "budgets", "audit-undo"):
         assert "gate_passed" in data[f"{task}/reference"]
     assert all("cyclomatic_newly_over_10" in row for row in data.values())
@@ -221,6 +221,9 @@ def _git(repo, *args) -> str:
 def _follow_up(repo, before: dict[str, str], after: dict[str, str], removed: tuple[str, ...] = ()) -> str:
     """Commit `before`, then a follow-up commit with `after` and `removed`; return the base sha."""
     _git(repo, "init", "-q")
+    # No background gc or maintenance: it writes into .git while a test deletes or copies it.
+    _git(repo, "config", "gc.auto", "0")
+    _git(repo, "config", "maintenance.auto", "false")
     _write(repo, before)
     _git(repo, "add", "-A")
     _git(repo, "commit", "-qm", "base")

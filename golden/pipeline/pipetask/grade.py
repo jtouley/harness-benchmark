@@ -7,7 +7,7 @@ an entry returns and finds the columns by their values: the key column is the on
 agencies, county codes, wikis or window starts; each numeric column is tried as the measure. A check
 passes when some reading matches the key exactly (money to the cent, counts exact). When none does, the
 candidate's answer is compared with the wrong answer each single trap produces, so a failure names its
-trap when it can (docs/tasks/pipeline-traps.md#mapping-for-the-audit).
+trap when it can (docs/plans/tasks/pipeline-traps.md#mapping-for-the-audit).
 """
 
 from __future__ import annotations

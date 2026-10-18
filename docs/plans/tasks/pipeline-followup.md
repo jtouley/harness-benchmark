@@ -1,7 +1,7 @@
 # Follow-up task: a new data mart and a dashboard (P1f, P2f, P3f)
 
 Status: **proposed** (2026-10-14, owner direction). It measures extensibility directly: how well the
-system an arm built takes the next change ([quality model](../quality-model.md#owner-criteria-2026-10-14-dry-solid-extensible-traceable-cheap)).
+system an arm built takes the next change ([quality model](../../method/quality-model.md#owner-criteria-2026-10-14-dry-solid-extensible-traceable-cheap)).
 
 The arm that built the base task gets this request on its own delivered repository, in a new session,
 after the base task is graded. It never sees this request before. The base result is frozen first, so

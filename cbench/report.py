@@ -122,7 +122,7 @@ def render(results: Path = RESULTS_DIR) -> str:
     lines += ["## Tier 3: live runs (Harbor)", ""]
     if not live or not live["trials"]:
         lines += ["No live runs are recorded yet. `python -m cbench harbor-build`, run the tasks with Harbor "
-                  "(see `docs/live-tier.md`), then `python -m cbench harbor-collect <jobs dir>` and "
+                  "(see `docs/method/live-tier.md`), then `python -m cbench harbor-collect <jobs dir>` and "
                   "`python -m cbench report`.", ""]
     else:
         groups: dict[tuple, list] = {}
