@@ -110,6 +110,45 @@ Computed on the diff, with pinned tool versions, and reported next to the pass r
 Not used: ISO/IEC 5055 has no open-source implementation that claims conformance; CodeScene and CAST are
 commercial; the Sonar way condition on reviewing security hotspots needs a person.
 
+## Layer 4: what the process did, commit by commit
+
+For the same feature, a one-shot and a harness can ship code of the same shape. What differs is the
+path: a one-shot hands a reviewer one change with all of the complexity at once; a harness spends extra
+cost and time to build the feature in steps, review it, and clean it up. Layers 1 to 3 judge what ships.
+This layer judges the path, and puts the harness's extra cost next to what it bought. It is reported
+separately and never blended into the others.
+
+[`scripts/commit_replay.py`](../../scripts/commit_replay.py) replays the commits between two points
+(for SlopCodeBench, between checkpoints) and measures each one by code:
+
+- change size: lines added and deleted;
+- complexity added and removed: the change in cyclomatic complexity per function (pinned radon), and
+  the functions the commit takes over 10;
+- green: whether the tests pass at that commit (the earlier checkpoints' held-out tests, and the
+  run's own);
+- time between commits.
+
+Per checkpoint and setup it reports the largest and median commit, the share of green commits, the
+clean-up commits (more complexity removed than added), the total churn, the elapsed time, and the
+final state. Next to it go the run's tokens and dollars for that checkpoint.
+
+Reading it:
+
+- A setup's largest commit is the most a reviewer had to take in at once. For a one-shot it is the
+  whole change.
+- Small commits count only when they are green. A broken commit is noise, not a reviewable step.
+- Total churn is the cost of drafting and cleaning up. A harness can pass more lines and complexity
+  through review than a one-shot and still end at the same code; the checked example in the test does
+  exactly that (largest commit 29 lines and +11 complexity, against the one-shot's whole change of 21
+  lines and +9, and a clean-up commit that removed 6). So this layer does not assume a harness wins:
+  it shows what its extra cost bought, which can be smaller reviewable steps, more review, or nothing.
+- A commit whose code does not parse is reported as unmeasured and named, not scored.
+- A run with no commits, or with uncommitted work, is reported as not measurable here. Its layers
+  1 to 3 still count.
+
+To run it on SlopCodeBench, each checkpoint's saved code must keep `.git`: the task configuration
+excludes it today, one line per task. Nothing in the benchmark's grading changes.
+
 ## Smoke check, 18 October 2026 (no model, no cost)
 
 Harbor 0.24.0 ran each benchmark's reference solution (the `oracle` agent) through the benchmark's own
@@ -121,7 +160,8 @@ grader, to show the grading runs end to end before any money is spent.
   on. Erosion rose from 0.555 to 0.782 and verbosity from 0.358 to 0.556 across the checkpoints, for
   the reference itself; two runs gave identical values to three decimals, so the analyzer is
   deterministic. Running the same pinned analyzer separately on the saved code at each checkpoint gave
-  the same values; what those values mean is in the layer 2 section above. A first run lost two checkpoints to a full disk and was discarded.
+  the same values; what those values mean is in the layer 2 section above. A first run lost two
+  checkpoints to a full disk and was discarded.
 - FeatureBench lite, task `pydantic ... test_deprecated_fields`: not run. Its prebuilt image used about
   25 GB, more than the test machine had free. FeatureBench needs a machine with large disk; its images
   are per repository, so the 30 lite tasks share 13 images.
@@ -138,6 +178,8 @@ not part of any benchmark.
 - Drop the model rubric (M7) and model-found defects (M2) as measures.
 - Make layer 1 pass rates the primary outcome, the layer 3 gated pass rate the primary quality measure,
   and layer 2 the measure of quality under change.
+- Report layer 4 (the process, commit by commit, with its cost) next to them, never folded into a
+  score. It is where a harness's extra cost and time is accounted for.
 - Keep the repository's own tasks (T01 to T06 and the pipeline family) as small, fully published
   checks, graded by their hidden tests and answer key as now.
 
