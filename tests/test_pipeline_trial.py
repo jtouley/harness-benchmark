@@ -88,7 +88,8 @@ def port() -> int:
 
 def run_trial(repo: Path, key: dict, tmp_path: Path, port: int) -> dict:
     return trial.trial(repo, key, CAPTURE, seed=key["stream"]["seed"], port=port,
-                       speed=6000.0, durations=(1, 1), build_timeout=60, logs=tmp_path / "logs")
+                       speed=6000.0, durations=(1, 1), build_timeout=60, logs=tmp_path / "logs",
+                       keepalive=0.2)
 
 
 @pytest.mark.parametrize(("stream", "reward"), [
@@ -154,7 +155,7 @@ def test_make_gets_a_fresh_home_and_only_the_toolchain_environment(key, tmp_path
     repo = delivered(tmp_path, key, port, build=f"{record} && {COPY_MARTS}",
                      stream=f"{record} && {READS}")
     make_env = {"PATH": "/usr/local/bin:/usr/bin:/bin", "HB_TOOLCHAIN_PROBE": "1"}
-    result = trial.trial(repo, key, CAPTURE, seed=key["stream"]["seed"], port=port, speed=6000.0,
+    result = trial.trial(repo, key, CAPTURE, seed=key["stream"]["seed"], keepalive=0.2, port=port, speed=6000.0,
                          durations=(1, 1), build_timeout=60, logs=tmp_path / "logs", make_env=make_env)
     assert result["reward"] == 1.0, result
     homes = set((seen / "homes").read_text().split())
@@ -172,7 +173,7 @@ def test_make_gets_a_fresh_home_and_only_the_toolchain_environment(key, tmp_path
 
 def test_a_stream_run_is_killed_after_its_duration_plus_the_grace(key, tmp_path, port):
     repo = delivered(tmp_path, key, port, stream="sleep 60")
-    result = trial.trial(repo, key, CAPTURE, seed=key["stream"]["seed"], port=port, speed=6000.0,
+    result = trial.trial(repo, key, CAPTURE, seed=key["stream"]["seed"], keepalive=0.2, port=port, speed=6000.0,
                          durations=(1, 1), build_timeout=60, logs=tmp_path / "logs", stream_grace=2)
     assert [s["exit"] for s in result["stream"]] == [-9, -9]
     assert all(s["seconds"] < 10 for s in result["stream"])
@@ -182,7 +183,7 @@ def test_a_stream_run_is_killed_after_its_duration_plus_the_grace(key, tmp_path,
 def test_make_user_needs_root(key, tmp_path, port):
     if os.geteuid() == 0:
         pytest.skip("runs as root")
-    result = trial.trial(delivered(tmp_path, key, port), key, CAPTURE, seed=key["stream"]["seed"],
+    result = trial.trial(delivered(tmp_path, key, port), key, CAPTURE, seed=key["stream"]["seed"], keepalive=0.2,
                          port=port, speed=6000.0, durations=(1, 1), build_timeout=60,
                          logs=tmp_path / "logs", make_user="agent")
     assert result["reward"] == 0.0 and "root" in result["error"]
@@ -202,7 +203,7 @@ def test_the_grading_deadline_caps_the_whole_run_and_still_gives_a_result(key, t
     """The owner's cap is one number for the whole grading run: each step gets what is left of it."""
     repo = delivered(tmp_path, key, port, build="sleep 60")
     t0 = time.monotonic()
-    result = trial.trial(repo, key, CAPTURE, seed=key["stream"]["seed"], port=port, speed=6000.0,
+    result = trial.trial(repo, key, CAPTURE, seed=key["stream"]["seed"], keepalive=0.2, port=port, speed=6000.0,
                          durations=(1, 1), build_timeout=60, logs=tmp_path / "logs", deadline=3)
     assert time.monotonic() - t0 < 20
     assert result["deadline_hit"] is True and result["deadline"] == 3
@@ -213,7 +214,8 @@ def test_the_grading_deadline_caps_the_whole_run_and_still_gives_a_result(key, t
 
 def test_a_run_inside_the_deadline_is_not_marked(key, tmp_path, port):
     result = trial.trial(delivered(tmp_path, key, port), key, CAPTURE, seed=key["stream"]["seed"], port=port,
-                         speed=6000.0, durations=(1, 1), build_timeout=60, logs=tmp_path / "logs", deadline=120)
+                         speed=6000.0, durations=(1, 1), build_timeout=60, logs=tmp_path / "logs", deadline=120,
+                         keepalive=0.2)
     assert result["deadline_hit"] is False and result["reward"] == 1.0
 
 
@@ -230,7 +232,7 @@ def test_the_snapshot_grades_uncommitted_work_and_still_drops_ignored_state(key,
     (repo / ".gitignore").write_text("state/\n")  # untracked, like the rest of the agent's work
     (repo / "state").mkdir()
     (repo / "state" / "checkpoint.json").write_text("{}")  # ignored consumer state from development
-    result = trial.trial(repo, key, CAPTURE, seed=key["stream"]["seed"], port=port, speed=6000.0,
+    result = trial.trial(repo, key, CAPTURE, seed=key["stream"]["seed"], keepalive=0.2, port=port, speed=6000.0,
                          durations=(1, 1), build_timeout=60, logs=tmp_path / "logs", snapshot_worktree=True)
     assert result["snapshot"]["files"] == 2 and result["reward"] == 1.0, result  # Makefile, .gitignore
     assert not (repo / "state").exists()
@@ -262,7 +264,7 @@ def test_a_planted_fsmonitor_hook_never_runs_during_grading(key, tmp_path, port)
     marker = tmp_path / "fsmonitor-ran"
     _plant_fsmonitor(repo, marker)
     (repo / "untracked.txt").write_text("x")
-    result = trial.trial(repo, key, CAPTURE, seed=key["stream"]["seed"], port=port, speed=6000.0,
+    result = trial.trial(repo, key, CAPTURE, seed=key["stream"]["seed"], keepalive=0.2, port=port, speed=6000.0,
                          durations=(1, 1), build_timeout=60, logs=tmp_path / "logs", snapshot_worktree=True)
     assert result["reward"] == 1.0, result
     assert not marker.exists(), marker.read_text()
@@ -292,6 +294,6 @@ def test_snapshot_counts_file_names_with_spaces_once(key, tmp_path, port):
 def test_a_stale_index_lock_gives_a_clear_error(key, tmp_path, port):
     repo = delivered(tmp_path, key, port)
     (repo / ".git" / "index.lock").write_text("")
-    result = trial.trial(repo, key, CAPTURE, seed=key["stream"]["seed"], port=port, speed=6000.0,
+    result = trial.trial(repo, key, CAPTURE, seed=key["stream"]["seed"], keepalive=0.2, port=port, speed=6000.0,
                          durations=(1, 1), build_timeout=60, logs=tmp_path / "logs", snapshot_worktree=True)
     assert result["reward"] == 0.0 and "index.lock" in result["error"], result

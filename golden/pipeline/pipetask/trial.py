@@ -19,6 +19,8 @@ fresh, empty HOME that all four runs share and that is removed afterwards, so st
 development (dlt's `~/.dlt/pipelines/`) is not graded. `--make-user` runs it as that user (`setpriv`;
 the grader must run as root), so the build cannot read the grader's archive or temporary files.
 `--stream-grace` is how long a `make stream` run may take beyond its DURATION before it is killed.
+`--keepalive` is how long the replay stays silent after its last event before each idle comment; keep
+the default for grading, and lower it only to shorten tests.
 `--snapshot-worktree` first commits the working tree the agent left (`git add -A`: untracked and changed
 files, not ignored ones), so work that was never committed is graded (criteria-v2 §2.3: committing is
 not asked for); step 0 then removes only ignored files and the output folders.
@@ -187,12 +189,12 @@ def reward(result: dict) -> float:
 
 def trial(repo: Path, key: dict, capture: Path, *, seed: int, port: int, speed: float,
           durations: tuple[int, int], build_timeout: float, logs: Path, stream_grace: float = 300,
-          make_env: dict[str, str] | None = None, make_user: str | None = None,
+          keepalive: float = 5.0, make_env: dict[str, str] | None = None, make_user: str | None = None,
           deadline: float | None = None, snapshot_worktree: bool = False) -> dict:
     t_end = time.monotonic() + deadline if deadline else None
     result: dict = {"seed": seed, "durations": list(durations), "speed": speed,
                     "deadline": deadline, "deadline_hit": False,
-                    "build_timeout": build_timeout, "stream_grace": stream_grace,
+                    "build_timeout": build_timeout, "stream_grace": stream_grace, "keepalive": keepalive,
                     "make_user": make_user, "make_fresh_home": make_env is not None or make_user is not None}
     if make_user and os.geteuid() != 0:
         return {**result, "error": "--make-user needs the grader to run as root", "reward": 0.0}
@@ -223,14 +225,15 @@ def trial(repo: Path, key: dict, capture: Path, *, seed: int, port: int, speed: 
 
     try:
         return _trial(repo, key, capture, result, make, seed=seed, port=port, speed=speed,
-                      durations=durations, build_timeout=build_timeout, logs=logs, stream_grace=stream_grace)
+                      durations=durations, build_timeout=build_timeout, logs=logs, stream_grace=stream_grace,
+                      keepalive=keepalive)
     finally:
         runner.close()
 
 
 def _trial(repo: Path, key: dict, capture: Path, result: dict, make, *, seed: int, port: int,
            speed: float, durations: tuple[int, int], build_timeout: float, logs: Path,
-           stream_grace: float) -> dict:
+           stream_grace: float, keepalive: float) -> dict:
     first = make(["make", "build"], repo, build_timeout, logs / "build-1.log")
     digests1 = mart_digests(repo)
     second = make(["make", "build"], repo, build_timeout, logs / "build-2.log")
@@ -241,7 +244,7 @@ def _trial(repo: Path, key: dict, capture: Path, result: dict, make, *, seed: in
     result["changed_by_second_build"] = changed
 
     try:
-        server = replay.serve(capture, seed, port, speed)
+        server = replay.serve(capture, seed, port, speed, keepalive=keepalive)
     except OSError as exc:
         return {**result, "error": f"the replay server cannot listen on port {port} (is the dev server "
                                    f"still running?): {exc}", "reward": 0.0}
@@ -281,6 +284,8 @@ def main(argv: list[str] | None = None, key: dict | None = None) -> None:
     ap.add_argument("--logs", type=Path, default=None)
     ap.add_argument("--stream-grace", type=float, default=300,
                     help="seconds a make stream run may take beyond its DURATION")
+    ap.add_argument("--keepalive", type=float, default=5.0,
+                    help="seconds of silence before the replay sends its idle comment")
     ap.add_argument("--make-env-file", type=Path, default=None,
                     help="NAME=VALUE lines: the whole environment of make, plus a fresh HOME")
     ap.add_argument("--make-user", default=None, help="run make as this user (the grader runs as root)")
@@ -296,7 +301,7 @@ def main(argv: list[str] | None = None, key: dict | None = None) -> None:
     result = trial(args.repo.resolve(), key, args.capture.resolve(), seed=args.seed, port=args.port,
                    speed=args.speed, durations=(d1, d2), build_timeout=args.build_timeout,
                    logs=(args.logs or args.repo / "_grade_logs").resolve(), stream_grace=args.stream_grace,
-                   make_env=read_env_file(args.make_env_file) if args.make_env_file else None,
+                   keepalive=args.keepalive, make_env=read_env_file(args.make_env_file) if args.make_env_file else None,
                    make_user=args.make_user, deadline=args.deadline, snapshot_worktree=args.snapshot_worktree)
     json.dump(result, sys.stdout, indent=1, sort_keys=True, default=str)
     print()

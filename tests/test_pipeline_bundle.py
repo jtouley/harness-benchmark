@@ -29,7 +29,7 @@ def test_grader_pyz_grades_from_a_clean_directory_and_never_puts_the_key_on_disk
                      build=f"{looks_for_the_key} && mkdir -p out/marts && cp -R fixture/marts/. out/marts/")
     env = dict(os.environ, TMPDIR=str(probe))
     proc = subprocess.run([sys.executable, str(dist / "grader.pyz"), str(repo), "--port", str(port),
-                           "--speed", "6000", "--durations", "1,1", "--logs", str(tmp_path / "logs")],
+                           "--speed", "6000", "--durations", "1,1", "--keepalive", "0.2", "--logs", str(tmp_path / "logs")],
                           cwd=dist, env=env, capture_output=True, text=True, timeout=300)
     assert proc.returncode == 0, proc.stderr[-2000:]
     result = json.loads(proc.stdout)
