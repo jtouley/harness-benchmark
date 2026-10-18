@@ -92,6 +92,9 @@ def delivered(tmp_path: Path, key: dict, port: int, *, build: str = COPY_MARTS, 
     (repo / "read_stream.py").write_text(READ_STREAM)
     (repo / "Makefile").write_text(f"build:\n\t{build}\nstream:\n\t{stream.replace("{port}", str(port))}\n")
     _git(repo, "init", "-q")
+    # No background gc or maintenance: it writes into .git while a test deletes or copies it.
+    _git(repo, "config", "gc.auto", "0")
+    _git(repo, "config", "maintenance.auto", "false")
     _git(repo, "add", "-A")
     _git(repo, "-c", "user.name=t", "-c", "user.email=t@t", "commit", "-qm", "delivered")
     return repo

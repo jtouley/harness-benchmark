@@ -82,6 +82,9 @@ def _repo(tmp_path: Path, name: str, steps: list[tuple[str, str]]) -> Path:
     repo = tmp_path / name
     repo.mkdir()
     subprocess.run(["git", "init", "-q", str(repo)], check=True)
+    # No background gc or maintenance: it writes into .git while a test deletes or copies it.
+    for key, value in (("gc.auto", "0"), ("maintenance.auto", "false")):
+        subprocess.run(["git", "-C", str(repo), "config", key, value], check=True)
     _commit(repo, BASE, "base", 1_000_000)
     for i, (text, message) in enumerate(steps, 1):
         _commit(repo, text, message, 1_000_000 + 60 * i)

@@ -221,6 +221,9 @@ def _git(repo, *args) -> str:
 def _follow_up(repo, before: dict[str, str], after: dict[str, str], removed: tuple[str, ...] = ()) -> str:
     """Commit `before`, then a follow-up commit with `after` and `removed`; return the base sha."""
     _git(repo, "init", "-q")
+    # No background gc or maintenance: it writes into .git while a test deletes or copies it.
+    _git(repo, "config", "gc.auto", "0")
+    _git(repo, "config", "maintenance.auto", "false")
     _write(repo, before)
     _git(repo, "add", "-A")
     _git(repo, "commit", "-qm", "base")
