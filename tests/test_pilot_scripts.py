@@ -1,4 +1,4 @@
-"""docs/experiments/2026-10-13-pilot: the run scripts run from their committed path, and the report matches its records."""
+"""docs/evidence/2026-10-13-pilot: the run scripts run from their committed path, and the report matches its records."""
 
 from __future__ import annotations
 
@@ -13,8 +13,8 @@ from pathlib import Path
 import pytest
 
 ROOT = Path(__file__).resolve().parents[1]
-PILOT = ROOT / "docs" / "experiments" / "2026-10-13-pilot"
-REPORT = ROOT / "docs" / "experiments" / "2026-10-13-pilot.md"
+PILOT = ROOT / "docs" / "evidence" / "2026-10-13-pilot"
+REPORT = ROOT / "docs" / "evidence" / "2026-10-13-pilot.md"
 RECORDED_WORKSPACE = "/Users/jasontouleyrou/Projects/cadence-wt/cadence-workspace"
 ARMS = ("opus_oneshot", "cadence_haiku", "cadence_haiku_opus")
 
@@ -76,7 +76,7 @@ def test_run_arm_refuses_an_existing_run_and_leaves_no_files_in_the_repo(tmp_pat
 
     assert again.returncode == 1
     assert "exists:" in again.stderr
-    assert not (ROOT / "docs" / "experiments" / "pilot").exists()
+    assert not (ROOT / "docs" / "evidence" / "pilot").exists()
 
 
 @pytest.mark.parametrize("script", ["run_arm.sh", "grade_arm.sh"])

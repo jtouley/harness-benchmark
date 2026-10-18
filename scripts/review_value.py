@@ -15,7 +15,7 @@ the item comes from an earlier fix); and, with a tokens CSV (stage,round,tokens)
 tokens spent per confirmed defect.
 
 The output holds counts, stage names, PR numbers and normalized verdicts only. It never
-copies finding text. Definitions and limits: docs/review-value.md.
+copies finding text. Definitions and limits: docs/evidence/review-value.md.
 """
 
 from __future__ import annotations

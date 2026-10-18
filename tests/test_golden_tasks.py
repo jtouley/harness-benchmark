@@ -25,7 +25,7 @@ def test_ledgerlite_tasks_share_one_hidden_fixture():
 
 
 def test_reference_patches_hold_no_run_notes():
-    """Rule 4 in docs/methodology.md: the patch is the solution only."""
+    """Rule 4 in docs/method/methodology.md: the patch is the solution only."""
     for task in task_dirs():
         patch = (task / "reference.patch").read_text(encoding="utf-8")
         assert "diff --git a/docs/adr/" not in patch, task.name

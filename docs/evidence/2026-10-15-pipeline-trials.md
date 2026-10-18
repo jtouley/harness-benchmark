@@ -1,6 +1,6 @@
 # Pipeline family: first trials on the isolated runner (2026-10-15)
 
-The first runs of the pipeline tasks ([P1, P2, P3](../tasks/pipeline-family.md)) through the isolated
+The first runs of the pipeline tasks ([P1, P2, P3](../plans/tasks/pipeline-family.md)) through the isolated
 runner (`runner/`, wired in this change: [golden/pipeline/README.md](../../golden/pipeline/README.md#a-trial-on-the-isolated-runner)).
 The machine was the test laptop: Apple Silicon, Docker Desktop with 8 CPUs and 16 GB, arm64 images, one
 trial at a time. The spec asks for an x86-64 host with 32 GB, so treat these times as laptop times.
@@ -77,7 +77,7 @@ end (`stream_ok`). No API request stalled. Why each check failed:
   state totals add up to the source total" with a reconciliation query (totals and a mismatch count, or
   one row per state with `county_total = state_total`). The grader grades values, not the
   reconciliation alone: the key holds the month's county, state and source totals
-  (`docs/tasks/pipeline-traps.md`, check 4), and it reads them from rows at month, state and county
+  (`docs/plans/tasks/pipeline-traps.md`, check 4), and it reads them from rows at month, state and county
   grain (`no month column found`). The prompt may under-specify that check 4 asks for those rows.
   Opus's per-state rows are partly gradeable (state totals for one fixed month, with no month column
   and no county rows). Which shapes the key accepts is open (TASK-81 item 3), so the grade stands.

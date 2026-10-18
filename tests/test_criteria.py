@@ -1,4 +1,4 @@
-"""docs/criteria.md rules hold in the files that carry them (PR #5 review N3)."""
+"""docs/method/criteria.md rules hold in the files that carry them (PR #5 review N3)."""
 
 from __future__ import annotations
 
@@ -9,7 +9,7 @@ from pathlib import Path
 import pytest
 
 ROOT = Path(__file__).resolve().parents[1]
-CRITERIA = (ROOT / "docs" / "criteria.md").read_text(encoding="utf-8")
+CRITERIA = (ROOT / "docs" / "method" / "criteria.md").read_text(encoding="utf-8")
 
 
 def test_baseline_drive_prompt_is_the_issue_only():
@@ -19,7 +19,7 @@ def test_baseline_drive_prompt_is_the_issue_only():
 
 
 def test_live_tier_defers_to_the_criteria_decision_rule():
-    assert "criteria.md" in (ROOT / "docs" / "live-tier.md").read_text(encoding="utf-8")
+    assert "criteria.md" in (ROOT / "docs" / "method" / "live-tier.md").read_text(encoding="utf-8")
 
 
 def test_live_tier_trial_count_is_the_criteria_sample():
@@ -44,7 +44,7 @@ def test_v1_caps_are_fixed_history():
 
 def _v2_guard_cap_seconds() -> float | None:
     """The one-shot guard time cap that criteria v2 §5.3 records, or None while it is not recorded."""
-    v2 = (ROOT / "docs" / "criteria-v2.md").read_text(encoding="utf-8")
+    v2 = (ROOT / "docs" / "method" / "criteria-v2.md").read_text(encoding="utf-8")
     m = re.search(r"One-shot guard time cap: \*\*(\d+) s\*\*", v2)
     return float(m.group(1)) if m else None
 

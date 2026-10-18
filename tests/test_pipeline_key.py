@@ -1,5 +1,5 @@
 """The answer key: it regenerates from the frozen inputs, and each catalogued trap that the data holds
-changes the answer of the check the catalog maps it to (docs/tasks/pipeline-traps.md)."""
+changes the answer of the check the catalog maps it to (docs/plans/tasks/pipeline-traps.md)."""
 
 from __future__ import annotations
 

@@ -1,9 +1,9 @@
 # Next steps: the cheapest model that matches Opus, with an audit trail
 
-Status: proposed design (October 2026). Only the [pilot](experiments/2026-10-13-pilot.md), the B01
-calibration and the first [pipeline one-shot trials](experiments/2026-10-15-pipeline-trials.md) have run.
+Status: proposed design (October 2026). Only the [pilot](../evidence/2026-10-13-pilot.md), the B01
+calibration and the first [pipeline one-shot trials](../evidence/2026-10-15-pipeline-trials.md) have run.
 The main run set has not. It follows from the
-[findings so far](whitepaper.md). It changes parts of criteria v1 (the caps, the comparison arm, the
+[findings so far](../whitepaper.md). It changes parts of criteria v1 (the caps, the comparison arm, the
 primary defect measure), so it must be written up as criteria v2 before the run set starts, and no
 result counts before that.
 
@@ -21,11 +21,11 @@ the defects that reach the delivered code, and the evidence that the run leaves 
   8.00, mostly within single-run noise), at about 4 times the tokens. On these tasks, "a harness on
   the same strong model" buys evidence and enforcement, not better code or lower cost.
 - Per-token list prices differ by up to 40 times: Opus 5.5 $4 / $20 per million input / output
-  tokens, Haiku 5.5 $0.10 / $0.50 ([`pricing.json`](../pricing.json)). Two conditions: the Haiku 5.5
+  tokens, Haiku 5.5 $0.10 / $0.50 ([`pricing.json`](../../pricing.json)). Two conditions: the Haiku 5.5
   price holds for prompts up to 100K tokens ($0.50 / $2.50 above that, which a long harness session
   can pass), and its cache prices are derived, not listed. Cache reads differ by 20 times. Above
   100K prompt tokens the gap falls to 8 times. Both pilot Cadence orchestrators ended above that line
-  (111,736 and 156,578 prompt tokens at their last request; [pilot](experiments/2026-10-13-pilot.md#results)).
+  (111,736 and 156,578 prompt tokens at their last request; [pilot](../evidence/2026-10-13-pilot.md#results)).
 - **Estimate (not a result):** Cadence on Opus used about 4 times the tokens of the Opus one-shot.
   If Cadence on Haiku 5.5 uses a similar number of tokens with a similar mix, and its prompts stay
   under 100K tokens, it costs between 1/10 and 1/5 of the Opus one-shot. A weaker model may need more
@@ -41,12 +41,12 @@ the defects that reach the delivered code, and the evidence that the run leaves 
   pennies the token count does not matter; dollars per defect-free delivered run does.
 - **The tasks must be harder.** On T04–T06, Opus alone finished in about 2 minutes with the top
   scores. Those tasks are too easy to show what a harness is for. The main run set uses class L and O
-  tasks ([criteria §3](criteria.md#3-task-classes)): B01 and the other real-defect tasks first, then the
+  tasks ([criteria §3](../method/criteria.md#3-task-classes)): B01 and the other real-defect tasks first, then the
   [pipeline task family](tasks/pipeline-family.md) (P1 to P3, which supersedes L3) if calibration admits it
   (the order in [Plan](#plan), stage 2). T05 stays as a quick pilot only.
-- **Quality is measured by the published [quality model](quality-model.md)**, not by one grader's
+- **Quality is measured by the published [quality model](../method/quality-model.md)**, not by one grader's
   rubric, and every run must pass a clean-room check before it is graded: on Claude Code,
-  [`clean_room_check.py`](process.md#clean-room); on other hosts, the check in stage 0, step 3.
+  [`clean_room_check.py`](../method/process.md#clean-room); on other hosts, the check in stage 0, step 3.
 - **Two Cadence variants on the cheap model.** (a) *All cheap*: every stage, reviews included, runs on
   the arm's cheap model. (b) *Cheap + Opus reviews*: the cheap model plans and implements; the review
   peers (plan review, adversarial review, PR review, test benchmark) run on Opus 5.5, and their Opus tokens
@@ -103,15 +103,15 @@ Reading: in 2 of 2 Haiku runs and 1 of 1 Sonnet run, an Opus review loop fixed b
 ## Cost accounting: price each request at its own tier (planned, 2026-10-16)
 
 Haiku 5.5 has two price tiers: $0.10 / $0.50 per million tokens for a prompt up to 100K tokens, and
-$0.50 / $2.50 above ([`pricing.json`](../pricing.json)). The tier is set per request. Every cost script
+$0.50 / $2.50 above ([`pricing.json`](../../pricing.json)). The tier is set per request. Every cost script
 in this repository prices the session's total tokens at the base rate:
 
 | Where | What it does | Effect |
 |---|---|---|
-| Pilot [`grade_arm.sh`](experiments/2026-10-13-pilot/grade_arm.sh) | Prices `modelUsage` totals at the base rate | Haiku 5.5 costs ($1.13, $3.19) are lower bounds; both arms ended above 100K ([pilot](experiments/2026-10-13-pilot.md#results)) |
-| [`calibration/swebench-pro/collect.py`](../calibration/swebench-pro/collect.py) | Prices Harbor's per-trial totals at the base rate, and prices cache writes as plain input | Haiku 5.5 $0.54 is a lower bound; cache writes of every model are priced low |
+| Pilot [`grade_arm.sh`](../evidence/2026-10-13-pilot/grade_arm.sh) | Prices `modelUsage` totals at the base rate | Haiku 5.5 costs ($1.13, $3.19) are lower bounds; both arms ended above 100K ([pilot](../evidence/2026-10-13-pilot.md#results)) |
+| [`calibration/swebench-pro/collect.py`](../../calibration/swebench-pro/collect.py) | Prices Harbor's per-trial totals at the base rate, and prices cache writes as plain input | Haiku 5.5 $0.54 is a lower bound; cache writes of every model are priced low |
 | B01 one-shot and review-loop costs (computed off-repo) | Base rate | Haiku 5.5 costs are lower bounds (see above) |
-| [`cbench/report.py`](../cbench/report.py) (live tier) | Reports Claude Code's own `total_cost_usd` | Wrong for Haiku 5.5 ([live tier](live-tier.md#known-issue-cost-for-haiku-55)) |
+| [`cbench/report.py`](../../cbench/report.py) (live tier) | Reports Claude Code's own `total_cost_usd` | Wrong for Haiku 5.5 ([live tier](../method/live-tier.md#known-issue-cost-for-haiku-55)) |
 
 The fix, before the next run set:
 
@@ -139,7 +139,7 @@ not for its peers.
 
 ## Arms
 
-Each harness arm has a one-shot arm on the same model ([criteria §2](criteria.md)), so the
+Each harness arm has a one-shot arm on the same model ([criteria §2](../method/criteria.md)), so the
 harness effect and the model effect stay separate. Opus runs no harness arm by itself; it reviews in one
 variant only.
 
@@ -180,12 +180,12 @@ an attested Claude Code trail with an unattested one as if they were equal.
 
 ## Measures
 
-The [criteria v1](criteria.md#4-measures) measures, with these points stressed for this question:
+The [criteria v1](../method/criteria.md#4-measures) measures, with these points stressed for this question:
 
 - **M1 acceptance** gates delivery. **M2 reproduced defects, test-confirmed** decide "matches Opus": a
   defect counts only with a reproduction test that fails on the run's code and passes on the reference
   solution, and only critical and major defects count in the rule below. The other layers of the
-  [quality model](quality-model.md) (the tool gate, the design checklist, follow-up success, the
+  [quality model](../method/quality-model.md) (the tool gate, the design checklist, follow-up success, the
   hidden-suite pass fraction) are reported beside it.
 - **M9 cost in dollars**: input, output and cache tokens of the whole session, nested subagents
   included, priced from `pricing.json`. Iterations 3 and 4 did not record this split. This run must.
@@ -198,7 +198,7 @@ The [criteria v1](criteria.md#4-measures) measures, with these points stressed f
 
 ## Decision rule for this question
 
-The rule is criteria v1 §6 ([decision rule](criteria.md#6-decision-rule-pre-registered)), applied to
+The rule is criteria v1 §6 ([decision rule](../method/criteria.md#6-decision-rule-pre-registered)), applied to
 each harness arm against the **Opus one-shot** instead of a one-shot on its own model. A harness arm on
 a cheaper model **matches Opus** when all of these hold:
 
@@ -241,8 +241,8 @@ progress. This changes criteria v1 §6 and is part of the next criteria version,
 3. **Clean room per run, checked.** Each run gets a clean `HOME` with only its arm's own harness
    installed: no user-level skill, rule, command or memory. That keeps a user-level skill from taking
    the place of a Cadence peer (cadence#53) and keeps skill descriptions such as "strict TDD" away from
-   the one-shot baselines. [`scripts/clean_room_check.py`](../scripts/clean_room_check.py) reads each
-   Claude Code transcript and must return `clean` before the run is graded ([process](process.md#clean-room)).
+   the one-shot baselines. [`scripts/clean_room_check.py`](../../scripts/clean_room_check.py) reads each
+   Claude Code transcript and must return `clean` before the run is graded ([process](../method/process.md#clean-room)).
    It reads Claude Code transcripts only; any other transcript is `unassessable`. For Cursor CLI and
    OpenAI runs, the check is a listing taken before and after each run: `~/.cursor`, `~/.codex`,
    `~/.agents` and `~/.claude` hold only the arm's own harness files, and the listing is stored with the

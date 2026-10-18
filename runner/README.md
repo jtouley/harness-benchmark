@@ -1,7 +1,7 @@
 # Isolated runner
 
 One trial, one disposable container ([issue #10](https://github.com/jtouley/harness-benchmark/issues/10),
-[runner and isolation](../docs/tasks/pipeline-family.md#runner-and-isolation)). Everything a trial needs
+[runner and isolation](../docs/plans/tasks/pipeline-family.md#runner-and-isolation)). Everything a trial needs
 runs inside it: Claude Code (headless, `claude -p`), the arm's plugin (`--plugin-dir`), the task
 repository, a Docker daemon of its own (Docker-in-Docker, privileged) for any database or broker the task
 starts, the task's virtual environments and caches, and the grader. The host keeps only the collected
@@ -100,7 +100,7 @@ makes no API request.
 ## Not yet done
 
 - Real Claude Code trials have run in the container on the pipeline tasks only
-  ([2026-10-15](../docs/experiments/2026-10-15-pipeline-trials.md)); B01 has not.
+  ([2026-10-15](../docs/evidence/2026-10-15-pipeline-trials.md)); B01 has not.
 - The inner daemon starts empty each trial, so every trial pulls the task's images (no cache or mirror).
 - Parallel trials on a remote x86-64 host (the account is an owner decision); the image has not been
   built on x86-64.

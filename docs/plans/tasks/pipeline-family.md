@@ -82,7 +82,7 @@ This is the measure the family exists for.
 ## Success criteria (owner, 2026-10-14)
 
 Which arm comes closest to a **DRY, SOLID and extensible** system, **whose path we can understand**,
-and **at what cost**. The measures are in the [quality model](../quality-model.md#owner-criteria-2026-10-14-dry-solid-extensible-traceable-cheap).
+and **at what cost**. The measures are in the [quality model](../../method/quality-model.md#owner-criteria-2026-10-14-dry-solid-extensible-traceable-cheap).
 Each base task has a [follow-up task](pipeline-followup.md) (a new data mart and a Streamlit dashboard)
 that the same arm builds on its own code; its success, cost and edit radius measure extensibility.
 

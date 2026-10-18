@@ -162,7 +162,7 @@ is blind to the arm.
 ## 7. Evidence that shaped v1
 
 The criteria above come from one exploratory round (2026-10-09/10, n = 1 per cell, outside
-this harness; summary and data in [`docs/experiments/2026-10-10-harness-vs-oneshot.md`](experiments/2026-10-10-harness-vs-oneshot.md)).
+this harness; summary and data in [`docs/evidence/2026-10-10-harness-vs-oneshot.md`](../evidence/2026-10-10-harness-vs-oneshot.md)).
 Three ledgerlite features (T04–T06), four arms: Cadence and ship-feature on Opus, Sonnet and
 Haiku alone.
 

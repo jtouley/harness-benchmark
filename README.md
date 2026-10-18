@@ -13,8 +13,8 @@ and a no-harness baseline.
 | Claim | Evidence | Status |
 |---|---|---|
 | What each harness costs in context, and which agent actions its installed hooks actually block | Tiers 1–2 below, recomputed byte for byte by `cbench verify` | **Measured, reproducible** (Cadence row: see note) |
-| Whether a harness produces better outcomes than a strong model alone | Seven exploratory rounds ([index](docs/experiments/README.md), [whitepaper](docs/whitepaper.md)) | **Exploratory.** Mostly one run per cell, one grader. Not a pre-registered result |
-| Cost per resolved task across all harnesses (the live tier, 240 trials) | [`docs/live-tier.md`](docs/live-tier.md), [criteria v1](docs/criteria.md) | **Not run yet** |
+| Whether a harness produces better outcomes than a strong model alone | Seven exploratory rounds ([index](docs/evidence/README.md), [whitepaper](docs/whitepaper.md)) | **Exploratory.** Mostly one run per cell, one grader. Not a pre-registered result |
+| Cost per resolved task across all harnesses (the live tier, 240 trials) | [`docs/method/live-tier.md`](docs/method/live-tier.md), [criteria v1](docs/method/criteria.md) | **Not run yet** |
 
 What the exploratory rounds suggest so far: on small, precisely specified tasks a harness did **not**
 write better code than Opus 5.5 alone (8.00 vs 7.33 for Cadence, at about 1/30 of the time). What
@@ -71,7 +71,7 @@ and each install reproduces identically twice. It needs every framework, so with
 `/tmp/cbench`: do not run two `cbench` commands at once.
 
 Other commands: `python -m cbench --help`. The live tier spends money and refuses to start without a
-budget that covers the worst case: see [`docs/live-tier.md`](docs/live-tier.md).
+budget that covers the worst case: see [`docs/method/live-tier.md`](docs/method/live-tier.md).
 
 ## Limitations
 
@@ -87,10 +87,10 @@ budget that covers the worst case: see [`docs/live-tier.md`](docs/live-tier.md).
 | Path | What |
 |---|---|
 | [`docs/whitepaper.md`](docs/whitepaper.md) | The argument: method, results, limits, what comes next |
-| [`docs/experiments/`](docs/experiments/README.md) | Every outcome round with its n, status and data |
-| [`docs/criteria.md`](docs/criteria.md) · [`criteria-v2.md`](docs/criteria-v2.md) | Pre-registered criteria for the live tier (v1, in force) and the next run set (v2, draft) |
-| [`docs/methodology.md`](docs/methodology.md) · [`process.md`](docs/process.md) · [`quality-model.md`](docs/quality-model.md) | What "deterministic" means here, how rounds were run, what "good code" means |
-| [`docs/next-steps.md`](docs/next-steps.md) · [`talk.md`](docs/talk.md) | Planned experiments; a 20-minute talk track |
+| [`docs/evidence/`](docs/evidence/README.md) | Every outcome round with its n, status and data |
+| [`docs/method/criteria.md`](docs/method/criteria.md) · [`criteria-v2.md`](docs/method/criteria-v2.md) | Pre-registered criteria for the live tier (v1, in force) and the next run set (v2, draft) |
+| [`docs/method/methodology.md`](docs/method/methodology.md) · [`process.md`](docs/method/process.md) · [`quality-model.md`](docs/method/quality-model.md) | What "deterministic" means here, how rounds were run, what "good code" means |
+| [`docs/plans/next-steps.md`](docs/plans/next-steps.md) · [`talk.md`](docs/talk/README.md) | Planned experiments; a 20-minute talk track |
 | `cbench/` | The benchmark tool (`python -m cbench --help`) |
 | `golden/` | Probe scenarios, live-tier tasks, pipeline tasks |
 | `harbor/tasks/` | Generated Harbor tasks; CI fails if they drift from the lockfile |

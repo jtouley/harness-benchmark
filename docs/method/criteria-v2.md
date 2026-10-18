@@ -14,19 +14,19 @@ v2 run set.
 | Key | Source | Date |
 |---|---|---|
 | [v1] | [criteria v1](criteria.md) | 2026-10-10 |
-| [OD] | [next steps: owner decisions](next-steps.md#owner-decisions-for-this-design-2026-10-12) | 2026-10-12 |
-| [CAP] | [next steps: decision rule, "Caps (owner decision)"](next-steps.md#decision-rule-for-this-question) | 2026-10-12 |
-| [DR] | [next steps: decision rule for this question](next-steps.md#decision-rule-for-this-question) | 2026-10-12 |
-| [PRE] | [next steps: prerequisites](next-steps.md#prerequisites-stage-0) | 2026-10-12 |
-| [TS] | [next steps: task selection, calibrated against the bar](next-steps.md#task-selection-calibrated-against-the-bar-owner-direction-2026-10-13) | 2026-10-13 |
-| [TC] | [next steps: two task classes (revised)](next-steps.md#task-selection-calibrated-against-the-bar-owner-direction-2026-10-13) | 2026-10-14 |
+| [OD] | [next steps: owner decisions](../plans/next-steps.md#owner-decisions-for-this-design-2026-10-12) | 2026-10-12 |
+| [CAP] | [next steps: decision rule, "Caps (owner decision)"](../plans/next-steps.md#decision-rule-for-this-question) | 2026-10-12 |
+| [DR] | [next steps: decision rule for this question](../plans/next-steps.md#decision-rule-for-this-question) | 2026-10-12 |
+| [PRE] | [next steps: prerequisites](../plans/next-steps.md#prerequisites-stage-0) | 2026-10-12 |
+| [TS] | [next steps: task selection, calibrated against the bar](../plans/next-steps.md#task-selection-calibrated-against-the-bar-owner-direction-2026-10-13) | 2026-10-13 |
+| [TC] | [next steps: two task classes (revised)](../plans/next-steps.md#task-selection-calibrated-against-the-bar-owner-direction-2026-10-13) | 2026-10-14 |
 | [CR] | [process: clean room](process.md#clean-room) | 2026-10-12 |
 | [#16] | [harness-benchmark#16](https://github.com/jtouley/harness-benchmark/issues/16): adopt the quality model as criteria v2 | 2026-10-13 |
 | [QM] | [quality model](quality-model.md) (adopted by [#16]) | 2026-10-13 |
 | [OC] | [quality model: owner criteria](quality-model.md#owner-criteria-2026-10-14-dry-solid-extensible-traceable-cheap) | 2026-10-14 |
-| [PF] | [pipeline family](tasks/pipeline-family.md): success criteria, arms, deferral review, prompt hygiene, isolation, audit protocol | 2026-10-14 |
-| [FU] | [follow-up task](tasks/pipeline-followup.md) | 2026-10-14 |
-| [WP] | [whitepaper](whitepaper.md) | 2026-10-14 |
+| [PF] | [pipeline family](../plans/tasks/pipeline-family.md): success criteria, arms, deferral review, prompt hygiene, isolation, audit protocol | 2026-10-14 |
+| [FU] | [follow-up task](../plans/tasks/pipeline-followup.md) | 2026-10-14 |
+| [WP] | [whitepaper](../whitepaper.md) | 2026-10-14 |
 | [#10] | [harness-benchmark#10](https://github.com/jtouley/harness-benchmark/issues/10): one isolated container per trial | 2026-10-14 |
 
 ## 1. The question
@@ -211,7 +211,7 @@ side [QM].
 
 ### 4.2 Layer 2: the tool gate
 
-Computed by [`scripts/quality_metrics.py`](../scripts/quality_metrics.py), with the tools pinned in the
+Computed by [`scripts/quality_metrics.py`](../../scripts/quality_metrics.py), with the tools pinned in the
 lockfile. A lint or type finding counts only on a line that the change added. For both complexity measures,
 one rule applies: a function is flagged when the change takes it over the threshold, that is, it is new and
 over the threshold, or it was at or under the threshold in the baseline and is over it now (output keys
@@ -335,7 +335,7 @@ A run counts only if it saw and used nothing but its own arm's tools [CR]:
 
 - Each run gets a clean `HOME` with only its arm's harness installed: no user-level skill, rule, command or
   memory [CR] [PRE].
-- [`scripts/clean_room_check.py`](../scripts/clean_room_check.py) reads the run's transcripts, nested
+- [`scripts/clean_room_check.py`](../../scripts/clean_room_check.py) reads the run's transcripts, nested
   agents included. A run is graded only when the check returns `clean` [CR] [OD].
 - The other verdicts are split by their cause (proposed, owner to confirm in §11) [CR] [v2]:
   - **Setup faults** are infrastructure errors: `exposed` and `unassessable`. The run is not graded and
@@ -582,24 +582,24 @@ These items must be filled or confirmed by the owner, with a changelog entry, be
 
 | # | Change | Date | Decided in |
 |---|---|---|---|
-| 1 | The question adds the bar: the cheapest model that, inside a harness, matches or beats the Opus 5.5 one-shot (§1) | 2026-10-12 | [next steps: owner decisions](next-steps.md#owner-decisions-for-this-design-2026-10-12) |
-| 2 | No per-trial time or dollar cap for harness arms; one budget for the run set; one-shots keep a guard time cap, reported separately (§5.3). Replaces v1 §6 "Caps" | 2026-10-12 | [next steps: decision rule, Caps](next-steps.md#decision-rule-for-this-question) |
-| 3 | Clean-room gating: a clean `HOME` per run, and grading only when `clean_room_check.py` returns `clean` (§5.2) | 2026-10-12 | [process: clean room](process.md#clean-room), [next steps: owner decisions](next-steps.md#owner-decisions-for-this-design-2026-10-12) |
-| 4 | Task admission by calibration against the bar (§3.1) | 2026-10-13 | [next steps: task selection](next-steps.md#task-selection-calibrated-against-the-bar-owner-direction-2026-10-13) |
-| 5 | Claims by lift and beyond classes; v1 classes S, L and O stay as descriptions; T04–T06 only for contrast (§3.2, §3.3) | 2026-10-14 | [next steps: two task classes](next-steps.md#task-selection-calibrated-against-the-bar-owner-direction-2026-10-13) |
-| 6 | Task sources: private brownfield tasks (scores published, code not), review-caught defects, a published hard set, the pipeline family (§3.3) | 2026-10-13 | [next steps: task selection](next-steps.md#task-selection-calibrated-against-the-bar-owner-direction-2026-10-13), [pipeline family](tasks/pipeline-family.md) |
-| 7 | Reliability over repeats: pass^k per cell, n = 5 per cell (§4.4) | 2026-10-14 | [next steps: two task classes](next-steps.md#task-selection-calibrated-against-the-bar-owner-direction-2026-10-13), [whitepaper](whitepaper.md) |
-| 8 | The quality model is the quality measure: three layers, a tool gate with published thresholds, a design checklist; M2 (test-confirmed, critical or major) is the primary measure; v1's M7 rubric is replaced and kept only for comparison, M6 folds into the tool gate (§4) | 2026-10-13 | [harness-benchmark#16](https://github.com/jtouley/harness-benchmark/issues/16), [quality model](quality-model.md), [next steps: measures](next-steps.md#measures) |
-| 9 | Owner success criteria: DRY (duplication ≤ 3%), SOLID (coupling, checklist, edit radius), extensible (follow-up success and cost), traceable (audit scores), cheapest in the top design tier (§4.3, §8.5) | 2026-10-14 | [quality model: owner criteria](quality-model.md#owner-criteria-2026-10-14-dry-solid-extensible-traceable-cheap), [pipeline family](tasks/pipeline-family.md#success-criteria-owner-2026-10-14) |
-| 10 | Haiku-only harness arms, reviews included; the Opus one-shot is the bar; Haiku and Sonnet one-shots; named comparison arms only where named (§2.1, §2.2). The 2026-10-12 Cursor, OpenAI, Haiku 4.5 and Opus-review arms are not in the v2 run set | 2026-10-14 | [pipeline family: arms](tasks/pipeline-family.md#arms), [next steps: owner decisions](next-steps.md#owner-decisions-for-this-design-2026-10-12) |
-| 11 | Follow-up tasks on the arm's own frozen code (§4.5) | 2026-10-14 | [follow-up task](tasks/pipeline-followup.md) |
-| 12 | Prompt hygiene: five rules beside the neutral baseline (§2.4) | 2026-10-14 | [pipeline family: prompt hygiene](tasks/pipeline-family.md#prompt-hygiene) |
-| 13 | Deferral review in real time by an independent Haiku reviewer (§2.5) | 2026-10-14 | [pipeline family: arms](tasks/pipeline-family.md#arms) |
-| 14 | Full isolation of every trial in its own container, on a remote host (§5.1) | 2026-10-14 | [pipeline family: runner and isolation](tasks/pipeline-family.md#runner-and-isolation), [harness-benchmark#10](https://github.com/jtouley/harness-benchmark/issues/10) |
-| 15 | Traceability audit protocol (§7) | 2026-10-14 | [pipeline family: audit protocol](tasks/pipeline-family.md#audit-protocol) |
-| 16 | Cost from token counts at `pricing.json` list prices, split by model; long-task cost is build + follow-up + repairs (§4.6) | 2026-10-12, 2026-10-14 | [next steps: prerequisites](next-steps.md#prerequisites-stage-0), [quality model: owner criteria](quality-model.md#owner-criteria-2026-10-14-dry-solid-extensible-traceable-cheap) |
-| 17 | M10 auditability as a checklist share per run, with the deferral log (§4.7) | 2026-10-12, 2026-10-14 | [next steps: measures](next-steps.md#measures), [pipeline family: arms](tasks/pipeline-family.md#arms) |
-| 18 | Decision rule restated: comparison A (v1 rule, same model), comparison B (non-inferiority to the bar, margin 0.25), comparison C (beyond the bar), and the answer as the cheapest arm in the top design tier (§8) | 2026-10-12, 2026-10-14 | [next steps: decision rule](next-steps.md#decision-rule-for-this-question), [quality model: owner criteria](quality-model.md#owner-criteria-2026-10-14-dry-solid-extensible-traceable-cheap) |
+| 1 | The question adds the bar: the cheapest model that, inside a harness, matches or beats the Opus 5.5 one-shot (§1) | 2026-10-12 | [next steps: owner decisions](../plans/next-steps.md#owner-decisions-for-this-design-2026-10-12) |
+| 2 | No per-trial time or dollar cap for harness arms; one budget for the run set; one-shots keep a guard time cap, reported separately (§5.3). Replaces v1 §6 "Caps" | 2026-10-12 | [next steps: decision rule, Caps](../plans/next-steps.md#decision-rule-for-this-question) |
+| 3 | Clean-room gating: a clean `HOME` per run, and grading only when `clean_room_check.py` returns `clean` (§5.2) | 2026-10-12 | [process: clean room](process.md#clean-room), [next steps: owner decisions](../plans/next-steps.md#owner-decisions-for-this-design-2026-10-12) |
+| 4 | Task admission by calibration against the bar (§3.1) | 2026-10-13 | [next steps: task selection](../plans/next-steps.md#task-selection-calibrated-against-the-bar-owner-direction-2026-10-13) |
+| 5 | Claims by lift and beyond classes; v1 classes S, L and O stay as descriptions; T04–T06 only for contrast (§3.2, §3.3) | 2026-10-14 | [next steps: two task classes](../plans/next-steps.md#task-selection-calibrated-against-the-bar-owner-direction-2026-10-13) |
+| 6 | Task sources: private brownfield tasks (scores published, code not), review-caught defects, a published hard set, the pipeline family (§3.3) | 2026-10-13 | [next steps: task selection](../plans/next-steps.md#task-selection-calibrated-against-the-bar-owner-direction-2026-10-13), [pipeline family](../plans/tasks/pipeline-family.md) |
+| 7 | Reliability over repeats: pass^k per cell, n = 5 per cell (§4.4) | 2026-10-14 | [next steps: two task classes](../plans/next-steps.md#task-selection-calibrated-against-the-bar-owner-direction-2026-10-13), [whitepaper](../whitepaper.md) |
+| 8 | The quality model is the quality measure: three layers, a tool gate with published thresholds, a design checklist; M2 (test-confirmed, critical or major) is the primary measure; v1's M7 rubric is replaced and kept only for comparison, M6 folds into the tool gate (§4) | 2026-10-13 | [harness-benchmark#16](https://github.com/jtouley/harness-benchmark/issues/16), [quality model](quality-model.md), [next steps: measures](../plans/next-steps.md#measures) |
+| 9 | Owner success criteria: DRY (duplication ≤ 3%), SOLID (coupling, checklist, edit radius), extensible (follow-up success and cost), traceable (audit scores), cheapest in the top design tier (§4.3, §8.5) | 2026-10-14 | [quality model: owner criteria](quality-model.md#owner-criteria-2026-10-14-dry-solid-extensible-traceable-cheap), [pipeline family](../plans/tasks/pipeline-family.md#success-criteria-owner-2026-10-14) |
+| 10 | Haiku-only harness arms, reviews included; the Opus one-shot is the bar; Haiku and Sonnet one-shots; named comparison arms only where named (§2.1, §2.2). The 2026-10-12 Cursor, OpenAI, Haiku 4.5 and Opus-review arms are not in the v2 run set | 2026-10-14 | [pipeline family: arms](../plans/tasks/pipeline-family.md#arms), [next steps: owner decisions](../plans/next-steps.md#owner-decisions-for-this-design-2026-10-12) |
+| 11 | Follow-up tasks on the arm's own frozen code (§4.5) | 2026-10-14 | [follow-up task](../plans/tasks/pipeline-followup.md) |
+| 12 | Prompt hygiene: five rules beside the neutral baseline (§2.4) | 2026-10-14 | [pipeline family: prompt hygiene](../plans/tasks/pipeline-family.md#prompt-hygiene) |
+| 13 | Deferral review in real time by an independent Haiku reviewer (§2.5) | 2026-10-14 | [pipeline family: arms](../plans/tasks/pipeline-family.md#arms) |
+| 14 | Full isolation of every trial in its own container, on a remote host (§5.1) | 2026-10-14 | [pipeline family: runner and isolation](../plans/tasks/pipeline-family.md#runner-and-isolation), [harness-benchmark#10](https://github.com/jtouley/harness-benchmark/issues/10) |
+| 15 | Traceability audit protocol (§7) | 2026-10-14 | [pipeline family: audit protocol](../plans/tasks/pipeline-family.md#audit-protocol) |
+| 16 | Cost from token counts at `pricing.json` list prices, split by model; long-task cost is build + follow-up + repairs (§4.6) | 2026-10-12, 2026-10-14 | [next steps: prerequisites](../plans/next-steps.md#prerequisites-stage-0), [quality model: owner criteria](quality-model.md#owner-criteria-2026-10-14-dry-solid-extensible-traceable-cheap) |
+| 17 | M10 auditability as a checklist share per run, with the deferral log (§4.7) | 2026-10-12, 2026-10-14 | [next steps: measures](../plans/next-steps.md#measures), [pipeline family: arms](../plans/tasks/pipeline-family.md#arms) |
+| 18 | Decision rule restated: comparison A (v1 rule, same model), comparison B (non-inferiority to the bar, margin 0.25), comparison C (beyond the bar), and the answer as the cheapest arm in the top design tier (§8) | 2026-10-12, 2026-10-14 | [next steps: decision rule](../plans/next-steps.md#decision-rule-for-this-question), [quality model: owner criteria](quality-model.md#owner-criteria-2026-10-14-dry-solid-extensible-traceable-cheap) |
 | 19 | Operational definitions that v2 adds, each marked [v2] and listed in §11 for owner confirmation | 2026-10-14 | this document |
 
 ## Changelog

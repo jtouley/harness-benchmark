@@ -1,5 +1,5 @@
 """The pipeline task as an arm sees it: frozen inputs, an unpoisoned prompt, and a starting repository
-that holds nothing hidden (docs/tasks/pipeline-family.md#prompt-hygiene)."""
+that holds nothing hidden (docs/plans/tasks/pipeline-family.md#prompt-hygiene)."""
 
 from __future__ import annotations
 
@@ -15,8 +15,8 @@ from pipetask import assemble, manifest, prompt
 
 PIPELINE = Path(__file__).resolve().parents[1] / "golden" / "pipeline"
 TASKS = ("P1", "P2", "P3")
-# The stack each Python skeleton pins (docs/tasks/P1-*.md, docs/tasks/P2-*.md), plus the shared
-# modeling layer. P3 pins in build.sbt and requirements.txt instead (docs/tasks/P3-scala-spark.md).
+# The stack each Python skeleton pins (docs/plans/tasks/P1-*.md, docs/plans/tasks/P2-*.md), plus the shared
+# modeling layer. P3 pins in build.sbt and requirements.txt instead (docs/plans/tasks/P3-scala-spark.md).
 STACK_PINS = {
     "P1": ("dlt[parquet]", "dbt-duckdb", "dbt-core", "duckdb"),
     "P2": ("pyarrow", "polars", "datafusion", "dbt-duckdb", "dbt-core", "duckdb"),

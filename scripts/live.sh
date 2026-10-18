@@ -5,7 +5,7 @@
 #   CBENCH_BUDGET_USD=300 ANTHROPIC_API_KEY=... scripts/live.sh           # full matrix
 #   CBENCH_BUDGET_USD=1  ANTHROPIC_API_KEY=... scripts/live.sh smoke      # 1 trial, ~$1 cap
 #
-# Environment knobs: TRIALS (default 5, docs/criteria.md §6), HAIKU_CAP_USD (1.00), BASELINE_CAP_USD (3.00),
+# Environment knobs: TRIALS (default 5, docs/method/criteria.md §6), HAIKU_CAP_USD (1.00), BASELINE_CAP_USD (3.00),
 # BASELINE_MODEL (claude-sonnet-5-5), JOBS_DIR (jobs).
 set -euo pipefail
 cd "$(dirname "$0")/.."

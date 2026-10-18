@@ -2,7 +2,7 @@
 
     python -m pipetask.prompt P1 > golden/pipeline/P1/prompt.md
 
-The prompt is the shared request (the quoted block under "The request" in docs/tasks/pipeline-spec.md)
+The prompt is the shared request (the quoted block under "The request" in docs/plans/tasks/pipeline-spec.md)
 followed by the task's stack section (the quoted block under "Stack section" in the task's page), with
 the quote markers removed and nothing added. A test checks that the committed prompt files still equal
 this, so a prompt cannot drift from the spec or gain a hint.
@@ -13,7 +13,7 @@ from __future__ import annotations
 import sys
 from pathlib import Path
 
-DOCS = Path(__file__).resolve().parents[3] / "docs" / "tasks"
+DOCS = Path(__file__).resolve().parents[3] / "docs" / "plans" / "tasks"
 TASK_PAGES = {"P1": "P1-duckdb-dlt-dbt.md", "P2": "P2-config-arrow-polars-datafusion.md", "P3": "P3-scala-spark.md"}
 
 

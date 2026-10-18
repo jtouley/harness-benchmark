@@ -88,7 +88,7 @@ def test_only_likely_bugs_count_as_bug_findings():
 def test_the_committed_gate_results_record_the_reference_calibration():
     """R3 on PR #8: a gate result means little unless the task author's own solution is measured too."""
     import json
-    data = json.loads((ROOT / "docs/experiments/2026-10-12-iteration-4/quality_metrics.json").read_text())
+    data = json.loads((ROOT / "docs/evidence/2026-10-12-iteration-4/quality_metrics.json").read_text())
     for task in ("multicurrency", "budgets", "audit-undo"):
         assert "gate_passed" in data[f"{task}/reference"]
     assert all("cyclomatic_newly_over_10" in row for row in data.values())

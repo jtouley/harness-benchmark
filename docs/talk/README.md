@@ -1,9 +1,9 @@
 # Talk track: "Why a harness, when the model is this good?" (20 minutes)
 
 A ready-to-present outline. Each section has a time box, a headline, what to show, and speaker
-notes. Every number comes from the [whitepaper](whitepaper.md), the
-[iteration 4 data](experiments/2026-10-12-iteration-4/), the [pilot](experiments/2026-10-13-pilot.md) and the
-[pipeline trials](experiments/2026-10-15-pipeline-trials.md).
+notes. Every number comes from the [whitepaper](../whitepaper.md), the
+[iteration 4 data](../evidence/2026-10-12-iteration-4/), the [pilot](../evidence/2026-10-13-pilot.md) and the
+[pipeline trials](../evidence/2026-10-15-pipeline-trials.md).
 Each section states what the harness bought, then what it did not buy. The talk never claims more
 than its sample sizes can show.
 
@@ -16,13 +16,13 @@ harness's delivered code. Each one-shot shipped two. On well-specified tasks a o
 harness's code quality at about 1/30 of the time. An independent Opus agent's review of the running result recovered a
 bug that the cheap models missed: 1 of 10 cheap one-shot runs fixed both B01 defects, against 3 of 3 with an
 Opus review loop (Haiku and Sonnet pooled, Fisher exact test, one-sided, p ≈ 0.014, small samples). The
-first round of separate reviewer agents found most of the confirmed defects ([review value](review-value.md)). A long planning
+first round of separate reviewer agents found most of the confirmed defects ([review value](../evidence/review-value.md)). A long planning
 pipeline did not help: on a cheap model it stalled before it wrote code. Precise specs are why the
 one-shot did well. Specs as executable contracts are not tested yet.
 
 **Cost figures.** Haiku 5.5 dollar figures in this talk use the base price for every request, so they
 are lower bounds: Haiku 5.5 costs 5 times more for a prompt above 100K tokens, and the scripts priced
-session totals ([next steps](next-steps.md#cost-accounting-price-each-request-at-its-own-tier-planned-2026-10-16)).
+session totals ([next steps](../plans/next-steps.md#cost-accounting-price-each-request-at-its-own-tier-planned-2026-10-16)).
 
 ---
 
@@ -64,7 +64,7 @@ why the graders were blind, and why the results against Cadence stay in.
 
 **Show:**
 
-- The rule from [criteria v1](criteria.md#6-decision-rule-pre-registered): a harness is worth it only if
+- The rule from [criteria v1](../method/criteria.md#6-decision-rule-pre-registered): a harness is worth it only if
   it gives **fewer defects** or **more trustworthy evidence** at an acceptable cost. "Solves the task"
   is not enough.
 - Per-token list prices: Opus 5.5 $4 / $20 per million, Haiku 5.5 $0.10 / $0.50 (for prompts up to 100K
@@ -102,7 +102,7 @@ Known weaknesses:
 
 - One grader per task.
 - One trial per cell in most rounds.
-- [Criteria v2](criteria-v2.md) asks for two independent blind reviewer agents, a script that runs each
+- [Criteria v2](../method/criteria-v2.md) asks for two independent blind reviewer agents, a script that runs each
   reproduction again in a clean copy, and 5 runs per cell before a result counts.
 - B01's grader is private, so nobody else can check it.
 
@@ -218,7 +218,7 @@ iteration 4, each one-shot shipped a crash on this task. The pilot compares Cade
 Opus 5.5 one-shot. The 7 hidden tests of iteration 4, the quality-model tools and a clean-room check
 grade each run.
 
-**Show:** T05 (budgets), clean room, one run per arm ([pilot](experiments/2026-10-13-pilot.md)).
+**Show:** T05 (budgets), clean room, one run per arm ([pilot](../evidence/2026-10-13-pilot.md)).
 
 | Arm | Result | Time | Cost |
 |---|---|---|---|
@@ -240,7 +240,7 @@ not a rate.
 
 **Headline:** A task is hard only when the strong model fails it, not when it looks hard.
 
-**Show:** two task classes ([next steps](next-steps.md#task-selection-calibrated-against-the-bar-owner-direction-2026-10-13)):
+**Show:** two task classes ([next steps](../plans/next-steps.md#task-selection-calibrated-against-the-bar-owner-direction-2026-10-13)):
 
 - **Lift task:** the Opus one-shot is reliable and the cheap one-shots are not. Can a harness lift a cheap
   model to the bar, for less?
@@ -329,7 +329,7 @@ test, one-sided, p ≈ 0.014). Small samples, two models pooled, one bug.
 
 Process evidence from outside the benchmark points the same way: on 16 October, fresh-subagent reviews of
 two Cadence PRs found 5 and 4 must-fix defects; two of them came from fixes of earlier nits
-([review value](review-value.md#independent-reviews-of-two-cadence-prs-16-october-2026)).
+([review value](../evidence/review-value.md#independent-reviews-of-two-cadence-prs-16-october-2026)).
 
 ## 12. SWE-bench Pro: the cheap one-shot is close, the bar is unreliable (13:30–14:15)
 
@@ -506,7 +506,7 @@ suite pass.
 
 **Show:** Every review here is a separate Cadence peer agent. No person reviewed.
 
-- **This week, 10 to 17 October** ([self-evidence](experiments/2026-10-17-cadence-self-evidence.md)).
+- **This week, 10 to 17 October** ([self-evidence](../evidence/2026-10-17-cadence-self-evidence.md)).
   Cadence stopped 85 must-fix findings before merge in the 10 Cadence runs that merged. Plan time caught
   62 of them (73%), before any code existed. Code review by reviewer agents caught the other 23. Cadence deferred 0 of them.
   None reached main open.
@@ -515,7 +515,7 @@ suite pass.
   verified by command before closure.
 - **A test-ownership change:** the reviewer agent found a gate that crashed with a traceback on a
   malformed file.
-- **Review rounds** ([review value](review-value.md#independent-reviews-of-two-cadence-prs-16-october-2026)):
+- **Review rounds** ([review value](../evidence/review-value.md#independent-reviews-of-two-cadence-prs-16-october-2026)):
   on two other Cadence changes, the first round of reviewer agents found 6 of 9 must-fix items, and each later round found
   one more. Two came from fixes of earlier nits.
 
@@ -562,7 +562,7 @@ over-built in iteration 4. The Cadence changes that follow: a cycle limit on P6 
 delegation record (done); a no-tracker mode and a verdict that counts only from the peer of its stage
 (being fixed); deferrals judged in real time (not built yet). Also done since the pilot: one-line peer
 returns and a context budget, and an R3 cognitive-complexity check for every language with an analyzer. The tier-1 and tier-2 results stay measured at the pinned commit
-`e5c3a92` ([whitepaper §4.1](whitepaper.md#41-cadence-after-the-benchmarks-pin-status-16-october-2026)). This agrees with Datadog's "harness-first"
+`e5c3a92` ([whitepaper §4.1](../whitepaper.md#41-cadence-after-the-benchmarks-pin-status-16-october-2026)). This agrees with Datadog's "harness-first"
 argument: verification, not review, is the bottleneck.
 
 ## 17. What comes next (18:15–19:15)
@@ -575,7 +575,7 @@ something breaks.
 1. **Cheap verification.** Haiku-only arms: a verification harness (contracts before code, a stop gate,
    no model reviewer); a review loop with a Haiku reviewer; full Cadence with all peers on Haiku, once its
    two open defects are fixed. In every harness arm, each deferral goes to an independent Haiku reviewer.
-2. **Harness arms on the pipeline family** ([tasks](tasks/pipeline-family.md)). The tasks, the
+2. **Harness arms on the pipeline family** ([tasks](../plans/tasks/pipeline-family.md)). The tasks, the
    isolated runner and the one-shot baselines exist. Full Cadence on Haiku is in
    progress. Next: the review loop and the verification harness on Haiku. Then each task's follow-up change
    (a new mart and a dashboard), built by the same arm on its own code. This is work that does not fit
@@ -610,7 +610,7 @@ benchmark is public at https://github.com/jtouley/harness-benchmark, and anyone 
 rule the model could not skip. Next: if a cheap check matches Opus alone on lift tasks, and carries the
 long work where no one-shot, Opus included, passed every check, a harness is a cost tool too. If it cannot,
 it is a governance tool: worth it where someone must trust the result, not to save money
-([whitepaper §4](whitepaper.md#4-what-this-means-for-building-a-harness)).
+([whitepaper §4](../whitepaper.md#4-what-this-means-for-building-a-harness)).
 
 ---
 

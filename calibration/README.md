@@ -1,6 +1,6 @@
 # Calibration and harness arms
 
-Task selection is calibrated against the bar ([next steps](../docs/next-steps.md#task-selection-calibrated-against-the-bar-owner-direction-2026-10-13)).
+Task selection is calibrated against the bar ([next steps](../docs/plans/next-steps.md#task-selection-calibrated-against-the-bar-owner-direction-2026-10-13)).
 This folder holds the calibration runs' scripts and summaries, and the minimal harnesses used as arms.
 
 ## Layout
@@ -12,10 +12,10 @@ This folder holds the calibration runs' scripts and summaries, and the minimal h
 | `../harnesses/reviewloop/` | Review loop: the session model works, an independent `reviewer` subagent (Opus) checks the running result, the session model fixes until it approves (max 3 reviews) | yes |
 | `../harnesses/reviewloop-sonnet-reviewer/` | The same, with the reviewer on Sonnet | yes |
 | `../harnesses/verifyloop/` | Verification harness: a `contract-writer` subagent writes an executable `CONTRACT.md` before any code; a Stop hook runs it and blocks the session from finishing while a check fails | yes |
-| `../private/` | Private tasks (B01, a brownfield bug from a third-party interview repository): prompt, grader, runner, run copies | **no**: this repository is public. Only scores are published, in [next steps](../docs/next-steps.md) |
+| `../private/` | Private tasks (B01, a brownfield bug from a third-party interview repository): prompt, grader, runner, run copies | **no**: this repository is public. Only scores are published, in [next steps](../docs/plans/next-steps.md) |
 
 Each harness is a Claude Code plugin, loaded for one session with `claude --plugin-dir <harness>`. Its
-instructions are generic: none names a task, its data or its traps ([prompt hygiene](../docs/tasks/pipeline-family.md#prompt-hygiene)).
+instructions are generic: none names a task, its data or its traps ([prompt hygiene](../docs/plans/tasks/pipeline-family.md#prompt-hygiene)).
 
 ## SWE-bench Pro, so far (one-shot Claude Code, Harbor 0.24.0, Claude Code in the task container)
 
@@ -46,7 +46,7 @@ instructions are generic: none names a task, its data or its traps ([prompt hygi
   request above 100K prompt tokens, and Harbor keeps no per-request counts, so the Haiku 5.5 cost is a lower
   bound. `collect.py` also prices cache writes as plain input (Harbor does not split them out), so every
   model's cost is somewhat low. The planned fix is in
-  [next steps](../docs/next-steps.md#cost-accounting-price-each-request-at-its-own-tier-planned-2026-10-16).
+  [next steps](../docs/plans/next-steps.md#cost-accounting-price-each-request-at-its-own-tier-planned-2026-10-16).
 - Earlier attempts of round 2 lost all or most of their trials to Docker Desktop failures (emulated x86 images on an
   arm64 laptop); they are kept in `results.json` as `infra_error`, not as failures.
 

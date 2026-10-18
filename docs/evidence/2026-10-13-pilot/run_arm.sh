@@ -17,7 +17,7 @@ W="${2:?usage: run_arm.sh ARM WORKSPACE}"
 HERE="$(cd "$(dirname "$0")" && pwd)"
 ROOT="$(cd "$HERE/../../.." && pwd)"
 case "$ARM" in cadence_haiku|cadence_haiku_opus|opus_oneshot) ;; *) echo "unknown arm: $ARM" >&2; exit 2 ;; esac
-[ -d "$W/fixture" ] || bash "$ROOT/docs/experiments/2026-10-12-iteration-4/make_workspace.sh" "$W" > /dev/null
+[ -d "$W/fixture" ] || bash "$ROOT/docs/evidence/2026-10-12-iteration-4/make_workspace.sh" "$W" > /dev/null
 W="$(cd "$W" && pwd)"
 P="$W/pilot"
 D="$P/$ARM"

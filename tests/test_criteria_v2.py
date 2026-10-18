@@ -1,4 +1,4 @@
-"""docs/criteria-v2.md pins: load-bearing constants and wording (PR #20 review R1-R8, N2-N4, O1, NEW-1-NEW-8, N-8).
+"""docs/method/criteria-v2.md pins: load-bearing constants and wording (PR #20 review R1-R8, N2-N4, O1, NEW-1-NEW-8, N-8).
 
 Like tests/test_criteria.py does for v1, each test reads the document as committed and fails when a
 decision input changes without a deliberate edit here.
@@ -12,7 +12,7 @@ import re
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
-V2 = (ROOT / "docs" / "criteria-v2.md").read_text(encoding="utf-8")
+V2 = (ROOT / "docs" / "method" / "criteria-v2.md").read_text(encoding="utf-8")
 
 
 def _section(heading: str) -> str:
@@ -259,7 +259,7 @@ def _github_slugs(md: str) -> set[str]:
 
 def test_every_relative_link_and_anchor_resolves():
     """N3: every relative link in v2 points at a file, and every anchor at a GitHub heading slug."""
-    docs = ROOT / "docs"
+    docs = ROOT / "docs" / "method"
     for target in re.findall(r"\]\(([^)\s]+)\)", V2):
         if target.startswith(("http://", "https://")):
             continue

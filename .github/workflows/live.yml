@@ -6,7 +6,7 @@ on:
   workflow_dispatch:
     inputs:
       mode:
-        description: smoke (1 Haiku trial) or full (240 trials; see docs/live-tier.md, it may not fit one job)
+        description: smoke (1 Haiku trial) or full (240 trials; see docs/method/live-tier.md, it may not fit one job)
         type: choice
         options: [smoke, full]
         default: smoke

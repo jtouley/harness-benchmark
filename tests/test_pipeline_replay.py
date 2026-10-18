@@ -1,4 +1,4 @@
-"""The replay server's schedule and its faults (docs/tasks/pipeline-traps.md#stream-faults-injected-by-the-replay-server-from-a-seed).
+"""The replay server's schedule and its faults (docs/plans/tasks/pipeline-traps.md#stream-faults-injected-by-the-replay-server-from-a-seed).
 
 The schedule tests use a small synthetic capture, so each fault's position can be checked exactly.
 """

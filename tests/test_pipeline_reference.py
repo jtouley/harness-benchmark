@@ -4,7 +4,7 @@ Slow (a few minutes per task: a virtual environment, two builds, two stream runs
 server), so it runs only with HB_PIPELINE_REFERENCE=1. P1 and P2 need make and uv on the PATH. P3 runs
 entirely in its pinned toolchain container (golden/pipeline/P3/image/), so it needs only docker.
 
-P2 adds two checks of its engine (docs/tasks/P2-config-arrow-polars-datafusion.md): a pipeline file it
+P2 adds two checks of its engine (docs/plans/tasks/P2-config-arrow-polars-datafusion.md): a pipeline file it
 has never seen runs with no code change (the generality check), and a broken file is reported with its
 file and line before anything runs.
 """

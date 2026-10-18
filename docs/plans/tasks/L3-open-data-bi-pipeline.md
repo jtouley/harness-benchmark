@@ -4,12 +4,12 @@
 
 Status: **proposed** (2026-10-12). It is not a golden task yet. It enters a run set only after it is
 committed under `golden/tasks/` with a reference solution and a hidden oracle, and after the untouched
-repository fails that oracle ([criteria §3](../criteria.md#3-task-classes)).
+repository fails that oracle ([criteria §3](../../method/criteria.md#3-task-classes)).
 
 ## Why this task
 
 On T04–T06 (about 300 lines of Python, every output format given), Opus 5.5 alone finished in about
-2 minutes with the top scores ([findings](../whitepaper.md#31-small-fully-specified-tasks-iteration-4)). Those tasks are too small to show what a
+2 minutes with the top scores ([findings](../../whitepaper.md#31-small-fully-specified-tasks-iteration-4)). Those tasks are too small to show what a
 harness is for. Real data work is the opposite: many tools, a design the spec does not fix, and data
 quirks where a plausible answer is wrong. That is class L (repository scale, open design) and class O
 (a wrong number that looks right) at the same time.
@@ -61,8 +61,8 @@ is a failed question, not a crash.
 
 - **M1 acceptance**: all five oracle questions pass.
 - **M2 defects** and **M3 false success**: a run that reports success while an oracle answer is wrong is a
-  false success, the most expensive failure ([criteria §4](../criteria.md#4-measures)).
-- **The [quality model](../quality-model.md)**: the design checklist, including "dbt tests on every key"
+  false success, the most expensive failure ([criteria §4](../../method/criteria.md#4-measures)).
+- **The [quality model](../../method/quality-model.md)**: the design checklist, including "dbt tests on every key"
   and "the grain of each model is documented", and the tool gate. `scripts/quality_metrics.py` measures
   Python only; this task's dbt SQL needs its own measures (sqlfluff, and dbt test coverage of each model's
   keys), added to the script before the task is admitted.

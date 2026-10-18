@@ -99,4 +99,4 @@ Each cell is the combined decision of the framework's installed hooks for one re
 
 ## Tier 3: live runs (Harbor)
 
-No live runs are recorded yet. `python -m cbench harbor-build`, run the tasks with Harbor (see `docs/live-tier.md`), then `python -m cbench harbor-collect <jobs dir>` and `python -m cbench report`.
+No live runs are recorded yet. `python -m cbench harbor-build`, run the tasks with Harbor (see `docs/method/live-tier.md`), then `python -m cbench harbor-collect <jobs dir>` and `python -m cbench report`.

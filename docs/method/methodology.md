@@ -1,6 +1,6 @@
 # Methodology
 
-How the three tiers work and what "deterministic" means here. Results and the conclusion are in the [README](../README.md).
+How the three tiers work and what "deterministic" means here. Results and the conclusion are in the [README](../../README.md).
 
 ## The three tiers
 
@@ -15,27 +15,27 @@ run). It reports:
   step's own file. Upper adds the step's `@file` references and its whole skill
   package.
 
-Costs come from [`pricing.json`](../pricing.json).
+Costs come from [`pricing.json`](../../pricing.json).
 
-**Tier 2, golden hook probes (deterministic).** [`golden/probes/`](../golden/probes/)
+**Tier 2, golden hook probes (deterministic).** [`golden/probes/`](../../golden/probes/)
 defines 10 scenarios. Examples: "edit `src/` before the plan is approved",
 "forge the approval marker", "stop mid-execution", "read `.env`". Each framework
 gets fixture files for each workflow state, in its own artifact layout. The
 probe builds the exact JSON payload the host would send, runs every registered
 hook, and classifies the result with an explicit rule table
-([`cbench/hookrun.py`](../cbench/hookrun.py)). Each verdict records the rule that
+([`cbench/hookrun.py`](../../cbench/hookrun.py)). Each verdict records the rule that
 produced it (`via`), so a deliberate deny can be told apart from a hook that
 crashed while registered fail-closed.
 
 **Tier 3, live golden tasks (observed).** Six golden tasks live in
-[`golden/tasks/`](../golden/tasks/): a bugfix, a CLI feature, a spec-to-code module (T01–T03), and three
+[`golden/tasks/`](../../golden/tasks/): a bugfix, a CLI feature, a spec-to-code module (T01–T03), and three
 multi-module features on one small ledger CLI (T04–T06: multi-currency, budgets, audit and undo).
 T01–T03 are small enough to one-shot. T04–T06 each change the data model, the store format, the
 CLI and the reports, which is the size of change a plan-to-PR harness is for. In
 [criteria](criteria.md) v1 all six are class S (exact spec): the spec fixes every output, so a
 model alone may still do well on them; classes L and O cover open design and hard oracles. Each has
 hidden tests and a reference patch, and `golden-check` proves the hidden tests fail before the patch
-and pass after it. [`python -m cbench harbor-build`](../cbench/harbor.py) turns each (task, arm) into a
+and pass after it. [`python -m cbench harbor-build`](../../cbench/harbor.py) turns each (task, arm) into a
 [Harbor](https://github.com/harbor-framework/harbor) task whose image installs the arm from the
 lockfile. Harbor runs Claude Code, grades with the same hidden tests, and records tokens and cost.
 See [live-tier.md](live-tier.md).
