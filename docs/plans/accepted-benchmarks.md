@@ -50,6 +50,49 @@ each checkpoint runs held-out pytest tests, the earlier checkpoints' tests run a
 tests, and erosion and verbosity come from a pinned static analyzer (`scb-check` 0.1.3) installed in
 the task image. It downloads from the Harbor hub as `gabeorlanski/slopcodebench` (36 tasks).
 
+### What erosion and verbosity measure, and how far to trust them
+
+From the analyzer's source (`scb-check` 0.1.3) and the paper:
+
+- Erosion: each function's complexity mass is its cyclomatic complexity times the square root of its
+  lines of code. Erosion is the share of the total mass held by functions with cyclomatic complexity
+  above 10. It is a share, so it can fall when simple code is added, and it does not grow with size alone.
+- Verbosity: the share of lines flagged by any of three detectors: ast-grep pattern rules, structural
+  clones (3 or more lines), and functions that only wrap another call.
+
+Checked on the `cfgpipe` reference solution (6 checkpoints, 148 to 928 lines in one file):
+
+- The reference scores worse than the paper's average agent. At checkpoint 6 it has verbosity 0.556
+  and erosion 0.782. The paper reports agents at 0.44 and 0.68 on average, and 473 human Python
+  repositories at 0.19 and 0.34. The absolute values are not a quality bar.
+- The Harbor version is not the paper's version. The paper describes 137 ast-grep rules;
+  `scb-check` 0.1.3 ships 197. Scores from Harbor cannot be compared with the paper's human baseline.
+- Verbosity mostly counts validation the spec asks for. 73% of the lines the ast-grep rules flag at
+  checkpoint 6 (424 of 581, before the analyzer's own thresholds) come from the "defensive" rules, and
+  one rule, `defensive-fstring-raise-heavy`, flags 359 lines. Those rules flag a whole function once
+  it has three `raise` statements with f-string messages, or several `isinstance` guards, on the
+  reasoning that validation belongs at the program's boundary. But the spec requires it: "The error
+  must identify the parameter, the source, and the parse-failure reason." In a command-line program
+  that reads untrusted files, that code is the boundary.
+- Erosion does not rise steadily: 0.555, 0.668, 0.528, 0.794, 0.766, 0.782. It jumps when a
+  checkpoint adds a large feature (checkpoint 4 doubled the code).
+- The analyzer fails quietly. It runs `sg` from the PATH; on Debian `/usr/bin/sg` is an unrelated
+  system command, and with that one first the analyzer logs a warning and counts zero pattern lines.
+  The benchmark's grading script sets the PATH correctly; any other use must too.
+- Prior evidence on the harness question: the paper tested a "plan-first" prompt. It lowered the
+  starting erosion and verbosity, but the code degraded at the same rate, solve rates fell and cost per
+  checkpoint rose about 12%.
+
+How to use it here, then:
+
+- Compare setups only against each other, on the same task and checkpoint, never against a fixed
+  threshold or the paper's numbers. Report the change from checkpoint to checkpoint, since that is
+  what a harness claims to slow.
+- Use erosion as the main measure of code holding up under change. Report verbosity twice: with all
+  rules, and without the defensive rules, so that a setup is not rewarded for dropping error handling
+  the spec asks for.
+- Read the checkpoint pass rate next to both. Lower verbosity bought by failing tests is not better code.
+
 ## Layer 3: a tool gate on every delivered change
 
 Computed on the diff, with pinned tool versions, and reported next to the pass rate as a "gated pass"
@@ -77,7 +120,8 @@ grader, to show the grading runs end to end before any money is spent.
   fails a few "strict" tests (strict pass rate 0.991 to 0.995), so the core pass rate is the one to gate
   on. Erosion rose from 0.555 to 0.782 and verbosity from 0.358 to 0.556 across the checkpoints, for
   the reference itself; two runs gave identical values to three decimals, so the analyzer is
-  deterministic. A first run lost two checkpoints to a full disk and was discarded.
+  deterministic. Running the same pinned analyzer separately on the saved code at each checkpoint gave
+  the same values; what those values mean is in the layer 2 section above. A first run lost two checkpoints to a full disk and was discarded.
 - FeatureBench lite, task `pydantic ... test_deprecated_fields`: not run. Its prebuilt image used about
   25 GB, more than the test machine had free. FeatureBench needs a machine with large disk; its images
   are per repository, so the 30 lite tasks share 13 images.
