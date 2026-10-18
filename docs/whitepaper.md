@@ -1,6 +1,7 @@
 # Harnesses against one-shotting: what a harness is for when the model is this good
 
-*Whitepaper, version 1, 14 October 2026; updated 16 October 2026. Benchmark: jtouley/harness-benchmark.*
+*Whitepaper, version 1, 14 October 2026; updated 18 October 2026 (absorbs the former `findings.md`).
+Benchmark: jtouley/harness-benchmark.*
 
 > **Disclosure.** The author of this benchmark wrote Cadence, one of the harnesses measured. The
 > results below that do not favor Cadence are stated first, and every number links to its data.
@@ -85,18 +86,56 @@ must rest on something a one-shot cannot give:
 ### 3.1 Small, fully specified tasks (iteration 4)
 
 Three feature tasks on a 300-line Python ledger (T04–T06), one run per cell, one blind grader
-([iteration 4](experiments/2026-10-12-iteration-4.md), [findings](findings.md)).
+([iteration 4](experiments/2026-10-12-iteration-4.md), [data](experiments/2026-10-12-iteration-4/)).
+A quality gap under about 1 point is noise. "Delivered" means the run passed every hidden test (M1,
+[criteria v1](criteria.md#4-measures)). Quality is the blind mean (1–10) over delivered runs only.
 
-| Arm | Delivered | Blind quality | Crashes shipped | Time per task |
-|---|---|---|---|---|
-| Opus 5.5 one-shot | 3 of 3 | 8.00 | 2 | 2 min |
-| ship-feature (Opus) | 2 of 3 | 7.88 (2 tasks) | 0 | 42 min |
-| Cadence (Opus) | 3 of 3 | 7.33 | 0 | 63 min |
-| Sonnet 5.5 one-shot | 3 of 3 | 7.08 | 2 | 2 min |
-| Haiku 4.5 one-shot | 1 of 3 | 3.50 (1 task) | 2 | 4 min |
+| Arm | Delivered | Blind quality | Major or critical defects per run | Crashes shipped | Time per task | Audit trail |
+|---|---|---|---|---|---|---|
+| Opus 5.5 one-shot | 3 of 3 | 8.00 | 1.00 | 2 | 2 min | 1 commit |
+| ship-feature (Opus) | 2 of 3 | 7.88 (2 tasks) | 0.67 | 0 | 42 min | plan and reviews |
+| Cadence (Opus) | 3 of 3 | 7.33 | 0.67 | 0 | 63 min | plan, 6 reviews by separate agents, verified ledger, attestations |
+| Sonnet 5.5 one-shot | 3 of 3 | 7.08 | 1.33 | 2 | 2 min | 1 commit |
+| Haiku 4.5 one-shot | 1 of 3 | 3.50 (1 task) | 2.67 | 2 | 4 min | 2 of 3 runs did not commit |
 
-No quality gain from the harness. What it did give: no crash in delivered code, an audit trail with
-hash-attested reviews by separate agents, completion or a recorded stop, and hooks the model cannot skip.
+Defects are reproduced by the grader; severity is assigned from the grader's text by a written rule
+([`defects.json`](experiments/2026-10-12-iteration-4/defects.json)). One call is borderline:
+ship-feature's multicurrency change no longer loads a hand-edited old ledger file with a JSON-number
+amount. It is labeled minor, because ledgerlite never writes that shape; as major, it raises
+ship-feature to 1.00 and leaves Cadence unchanged. These runs did not record the input, output and cache
+split, so they report tokens, not dollars.
+
+**What the harness gave.**
+
+| What | Evidence | Limit |
+|---|---|---|
+| **No crash in the delivered code.** Neither harness shipped a traceback. Opus, Sonnet and Haiku alone each shipped two, all on budgets (a NaN amount, a tiny limit, a NaN limit). | [`defects.json`](experiments/2026-10-12-iteration-4/defects.json), [`blind_scores/budgets.json`](experiments/2026-10-12-iteration-4/blind_scores/budgets.json) | Major or critical defects per run: Cadence 0.67, Opus 1.00. That gap (0.33) is under the 0.5 bar of the pre-registered rule, so "fewer defects" is **not shown**. |
+| **Review caught defects before delivery, with a record.** Cadence's peers raised 6 must-fix findings across 3 runs, each fixed and verified by a command: a README example that failed (`--base EUR`), a CSV header that switched the currency check off, a stored limit that crashed with a traceback. | [`cadence_ledgers/`](experiments/2026-10-12-iteration-4/cadence_ledgers/) | Cadence still shipped two major defects that its reviews did not catch (a duplicate alert, an unlogged empty import). |
+| **An audit trail a reviewer can check without trusting the model.** Per run: a plan, a spec check, a plan review, an adversarial review, two test scorecards, a PR review, and a findings ledger. 12–23 attestation rows per run record the hash of each review file and the agent that wrote it (8–12 different peer agents per run). The hook denies a review write by the orchestrator. 16 gate records per run. | [`auditability.json`](experiments/2026-10-12-iteration-4/auditability.json), [`cadence_attest/`](experiments/2026-10-12-iteration-4/cadence_attest/) | The attestation is a Claude Code feature. On other hosts the trail has no agent ids ([next steps](next-steps.md#what-differs-by-host-read-before-comparing-hosts)). |
+| **It finished every task, or it stopped and said why.** 3 of 3 delivered (after cadence#57). When a Cadence defect (cadence#56) broke two runs, both stopped with a recorded reason, and neither reported success. | [iteration 4](experiments/2026-10-12-iteration-4.md#results) | ship-feature failed to deliver 1 of 3 tasks in each round. |
+| **Rules the model cannot skip.** Cadence's installed hooks block a forged approval, a self-certified verdict, a shell edit before plan approval and a stop mid-run (7 of 9 probes). A one-shot session enforces none of these. | [`results/probes.json`](../results/probes.json) | The probes test the hooks, not code quality. |
+
+**What the harness did not give.**
+
+| What | Evidence |
+|---|---|
+| **Better code than the same model alone.** Per task the gaps are +2.0 (multicurrency, Opus better), −0.5 (budgets, Cadence better) and +0.5 (audit-undo, Opus better). Only multicurrency is outside the noise band. The supported statement is "no quality gain shown", not "a quality loss". | [`results.json`](experiments/2026-10-12-iteration-4/results.json) |
+| **Restraint.** The graders marked Cadence down for building beyond the spec: overflow handling, header normalization, a store version bump, a duplicate-sequence guard, a clock seam. | [`blind_scores/`](experiments/2026-10-12-iteration-4/blind_scores/) |
+| **Simpler code by the tools: not shown.** On the [quality model](quality-model.md)'s tool gate (measured before duplication was added), Opus alone passed 3 of 3 tasks and Cadence 1 of 3. But the task authors' own reference solutions pass only 1 of 3, because adding a subcommand takes the CLI dispatcher over cyclomatic 10, so the gate does not yet separate good solutions from bad ones. Cadence's tests reach more branches (91–93% against 82–89%). | [`quality_metrics.json`](experiments/2026-10-12-iteration-4/quality_metrics.json) |
+| **Speed or low cost.** About 30 times the wall time and 4 times the tokens of a one-shot. | [`results.json`](experiments/2026-10-12-iteration-4/results.json) |
+| **Freedom from its own defects.** cadence#52 added a defect (cadence#56) that broke 2 of 3 runs until cadence#57 fixed it. | cadence#56, cadence#57 |
+| **Independence from the host setup.** User-level skills with the same names took the place of Cadence's review peers (cadence#53). | [iteration 4 confounds](experiments/2026-10-12-iteration-4.md#confounds-and-limits-read-before-citing) |
+
+**What one-shotting gave, and did not.** Opus alone had the highest score, every hidden test passed, in
+2 minutes, but no plan, no review and no record of what was checked; a person must re-review the code.
+Opus and Sonnet both shipped two crashes on budgets. Two Haiku 4.5 runs never committed their work, and a
+one-shot has no way to report "not done" or "not proven".
+
+**Iteration 3** ([write-up](experiments/2026-10-10-harness-vs-oneshot.md)) scored the harnesses above
+Sonnet and Haiku alone on audit-undo (Cadence 8.5, ship-feature 8.25, Sonnet 6.25). It had no Opus
+one-shot, so it cannot separate the harness from the model, and its Cadence run reviewed its own work. In
+iteration 4 Opus alone scored 8.00 on the same task against Cadence's 7.50. Iteration 3 is not evidence
+for a harness.
 
 ### 3.2 Cadence on a cheap model (pilot)
 
@@ -204,6 +243,10 @@ Pass/fail per task, and the script that merges the runs: [`round2.md`](../calibr
 
 ## 4. What this means for building a harness
 
+Stronger models do not remove the need to check their work; they write more code someone must trust. A
+one-shot gives you code. A harness can give you code plus evidence: a ledger, reviews by agents that did
+not write it, and gate records. It changes what a person checks, the evidence rather than every line.
+
 | Holds up | Does not |
 |---|---|
 | Independent verification of the running result (a signal: it recovered the cheap-model miss in 2/2 Haiku and 1/1 Sonnet B01 runs) | A long planning pipeline on a weak orchestrator (more places to stop) |
@@ -242,8 +285,15 @@ functions over cognitive complexity 15.
 
 ## 5. Threats to validity
 
-- **Small samples.** Iteration 4 and the pilot are one run per cell. B01 has 5–10 runs per one-shot arm
-  and 1–2 per review-loop arm. Only the largest gaps are outside noise.
+- **Small samples.** Iteration 4 and the pilot are one run per cell, with one grader. B01 has 5–10 runs
+  per one-shot arm and 1–2 per review-loop arm. Only the largest gaps are outside noise. Criteria v1
+  requires 5 runs per cell and two graders before any claim.
+- **Iteration 4 was not a clean room.** Its one-shots could see the user-level skill list, which
+  describes TDD. None used a skill, but the descriptions may have primed them. Later rounds gate on
+  [`clean_room_check.py`](../scripts/clean_room_check.py).
+- **Easy tasks.** T04–T06 are class S ([criteria §3](criteria.md#3-task-classes)), where a model alone
+  should do well; Opus finished each in about 2 minutes. Class L and O tasks, where review and evidence
+  should matter most, have not run.
 - **Invalid runs set aside.** Two further review-loop runs were set aside as invalid (Docker went down
   during the run). They are not counted in either review-loop arm, so the 2/2 and 1/1 cells are the valid
   runs only.

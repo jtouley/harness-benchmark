@@ -9,7 +9,7 @@ repository fails that oracle ([criteria §3](../criteria.md#3-task-classes)).
 ## Why this task
 
 On T04–T06 (about 300 lines of Python, every output format given), Opus 5.5 alone finished in about
-2 minutes with the top scores ([findings](../findings.md)). Those tasks are too small to show what a
+2 minutes with the top scores ([findings](../whitepaper.md#31-small-fully-specified-tasks-iteration-4)). Those tasks are too small to show what a
 harness is for. Real data work is the opposite: many tools, a design the spec does not fix, and data
 quirks where a plausible answer is wrong. That is class L (repository scale, open design) and class O
 (a wrong number that looks right) at the same time.

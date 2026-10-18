@@ -1,7 +1,7 @@
 # Talk track: "Why a harness, when the model is this good?" (20 minutes)
 
 A ready-to-present outline. Each section has a time box, a headline, what to show, and speaker
-notes. Every number comes from the [whitepaper](whitepaper.md), the [findings](findings.md), the
+notes. Every number comes from the [whitepaper](whitepaper.md), the
 [iteration 4 data](experiments/2026-10-12-iteration-4/), the [pilot](experiments/2026-10-13-pilot.md) and the
 [pipeline trials](experiments/2026-10-15-pipeline-trials.md).
 Each section states what the harness bought, then what it did not buy. The talk never claims more
@@ -610,7 +610,7 @@ benchmark is public at https://github.com/jtouley/harness-benchmark, and anyone 
 rule the model could not skip. Next: if a cheap check matches Opus alone on lift tasks, and carries the
 long work where no one-shot, Opus included, passed every check, a harness is a cost tool too. If it cannot,
 it is a governance tool: worth it where someone must trust the result, not to save money
-([findings](findings.md#why-this-still-matters-as-models-get-stronger-and-more-expensive)).
+([whitepaper §4](whitepaper.md#4-what-this-means-for-building-a-harness)).
 
 ---
 

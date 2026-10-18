@@ -3,7 +3,7 @@
 Status: proposed design (October 2026). Only the [pilot](experiments/2026-10-13-pilot.md), the B01
 calibration and the first [pipeline one-shot trials](experiments/2026-10-15-pipeline-trials.md) have run.
 The main run set has not. It follows from the
-[findings so far](findings.md). It changes parts of criteria v1 (the caps, the comparison arm, the
+[findings so far](whitepaper.md). It changes parts of criteria v1 (the caps, the comparison arm, the
 primary defect measure), so it must be written up as criteria v2 before the run set starts, and no
 result counts before that.
 

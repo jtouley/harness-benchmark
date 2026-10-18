@@ -4,7 +4,7 @@ Date: 2026-10-09 to 2026-10-10. Status: exploratory, one run per cell (n=1), run
 [criteria v1](../criteria.md); it is not a v1 result.
 
 > **Iteration 4** ([write-up](2026-10-12-iteration-4.md)) adds the missing Opus one-shot control. It shows no
-> quality gain from a harness over Opus alone. Read it, and [the findings](../findings.md), before citing this round.
+> quality gain from a harness over Opus alone. Read it, and [the whitepaper](../whitepaper.md#31-small-fully-specified-tasks-iteration-4), before citing this round.
 
 ## Question
 
