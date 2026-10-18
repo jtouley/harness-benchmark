@@ -15,6 +15,7 @@ Stdlib only, so it runs in any trial container without a virtual environment.
 from __future__ import annotations
 
 import argparse
+import functools
 import sys
 import threading
 import time
@@ -99,11 +100,17 @@ def make_handler(state: ReplayState):
     return Handler
 
 
+@functools.lru_cache(maxsize=4)
+def _plan(capture: Path, seed: int) -> sched.Schedule:
+    # A schedule is read-only once built; per-server state lives in ReplayState.
+    return sched.build(sched.load_capture(capture), seed)
+
+
 def serve(capture: Path, seed: int, port: int, speed: float, host: str = "127.0.0.1",
           keepalive: float = 5.0) -> ThreadingHTTPServer:
     """Build the schedule and return a server bound to (host, port); call serve_forever() on it.
     `server.state` is its ReplayState (connections made, highest position served)."""
-    plan = sched.build(sched.load_capture(capture), seed)
+    plan = _plan(capture, seed)
     state = ReplayState(plan, speed, keepalive)
     server = ThreadingHTTPServer((host, port), make_handler(state))
     server.daemon_threads = True

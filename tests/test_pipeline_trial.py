@@ -10,11 +10,14 @@ so a trial takes a few seconds. The full P1 reference trial is in test_pipeline_
 
 from __future__ import annotations
 
+import atexit
+import functools
 import json
 import os
 import shutil
 import socket
 import subprocess
+import tempfile
 import time
 from pathlib import Path
 
@@ -60,11 +63,24 @@ def _git(repo: Path, *args: str) -> None:
     subprocess.run(["git", *args], cwd=repo, check=True, capture_output=True)
 
 
+@functools.cache
+def _correct_candidate_at(key_json: str) -> Path:
+    key = json.loads(key_json)
+    root = Path(tempfile.mkdtemp(prefix="pipeline-candidate-"))
+    atexit.register(shutil.rmtree, root, ignore_errors=True)
+    return write_candidate(root, key, answers(key))
+
+
+def _correct_candidate(key: dict) -> Path:
+    """The correct marts, written once per process; callers copy from it and never write to it."""
+    return _correct_candidate_at(json.dumps(key, sort_keys=True))
+
+
 def delivered(tmp_path: Path, key: dict, port: int, *, build: str = COPY_MARTS, stream: str = READS,
               commit_outputs: bool = False) -> Path:
     """A committed repository: fixture/marts/ (correct marts), oracle_map.yml, read_stream.py and the
     Makefile. `{port}` in the stream recipe is the grading replay's port."""
-    src = write_candidate(tmp_path / "src", key, answers(key))
+    src = _correct_candidate(key)
     repo = tmp_path / "repo"
     repo.mkdir()
     shutil.copytree(src / "out" / "marts", repo / "fixture" / "marts")
