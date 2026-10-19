@@ -12,8 +12,7 @@ some hosts:
 - The Cursor `stop` hook does not fire in headless mode (`cursor-agent -p`), so the stop rule then
   depends on the outer loop.
 
-At the pinned commit, Cadence blocks neither S09 nor S10. Later Cadence commits deny both; the
-benchmark has not measured them yet.
+At the pinned commit, Cadence blocks neither S09 nor S10.
 
 ## The idea
 
@@ -131,8 +130,8 @@ results in [`results/REPORT.md`](../../results/REPORT.md).
 | S10 | Overwrite the plan with a 3-line stub | block | Not in this spec |
 
 S09 and S10 test two rules this spec does not cover: protect secrets from reads, and protect the plan
-from being replaced. In the tier 2 results, GSD Core blocks both and Cadence blocks neither. A harness that wants all ten
-needs both patterns. The probes score a hook's decision only, so none of them tests V4 (which agent
-wrote a verdict) or the ledger rules (L1 to L5).
+from being replaced. In the tier 2 results, GSD Core blocks both and Cadence blocks neither. A harness
+that wants all ten needs both patterns. The probes score a hook's decision only, so none of them tests
+V4 (which agent wrote a verdict) or the ledger rules (L1 to L5).
 
 To measure your own harness against these probes, see [Add a harness](add-a-harness.md).

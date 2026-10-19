@@ -132,7 +132,8 @@ uv run --frozen python -m cbench probes my-harness         # print tier 2 for th
 
 `install-check` must print `deterministic=True`. If it does not, the installer writes something that
 changes between runs, such as a timestamp. Add a rule to the lockfile's top-level `normalize` list
-(`pattern`, `replace`, `why`) or `ignore` list. The first `normalize` rule, for Spec Kit's timestamps, is an example.
+(`pattern`, `replace`, `why`) or `ignore` list. The first `normalize` rule, for Spec Kit's timestamps,
+is an example.
 
 With a name, `footprint` and `probes` print JSON and write nothing (`footprint` prints a one-line
 summary per harness first, so its output is not pure JSON). A workflow step that does not match
@@ -175,10 +176,11 @@ framework is private, so while Cadence is in the lockfile, run `verify` locally.
 ## 5. Update the README
 
 Add the harness's row to the table in the [README](../../README.md), with the numbers from
-`results/REPORT.md` (without access to every framework, take them from the step 3 JSON; the
-maintainer checks them against the regenerated report), and update the harness count. It appears in the README's first paragraph and its
-first list ("all seven setups"), and in [`docs/claims.md`](../claims.md). For the live tier, also add
-the name to `haiku_arms` in [`scripts/live.sh`](../../scripts/live.sh). Each Haiku arm adds 30 trials
-(6 tasks, 5 trials each) and $30 to the worst case, and `live.sh` refuses a budget below the worst case.
-Update the trial count and the budget in [`live-tier.md`](live-tier.md), the budget in the usage
-comment at the top of `scripts/live.sh`, and the trial count in `docs/claims.md` to match.
+`results/REPORT.md` (without access to every framework, take them from the step 3 JSON; the maintainer
+checks them against the regenerated report), and update the harness count. It appears in the README's
+first paragraph and its first list ("all seven setups"), and in [`docs/claims.md`](../claims.md). For
+the live tier, also add the name to `haiku_arms` in [`scripts/live.sh`](../../scripts/live.sh). Each
+Haiku arm adds 30 trials (6 tasks, 5 trials each) and $30 to the worst case, and `live.sh` refuses a
+budget below the worst case. Update the trial count and the budget in [`live-tier.md`](live-tier.md),
+the budget in the usage comment at the top of `scripts/live.sh`, and the trial count in
+`docs/claims.md` to match.
