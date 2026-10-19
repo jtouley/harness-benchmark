@@ -1,6 +1,9 @@
 # Pipeline family: the first harness arm (cadence-core on Haiku 5.5), 2026-10-19
 
-Status: exploratory, one run per cell, run outside the isolated runner. Data:
+Status: exploratory, one run per cell, run outside the isolated runner. Corrected on 19 October after
+the owner's review ([#55](https://github.com/jtouley/harness-benchmark/issues/55)): the third P1
+run's cause, the P2 run's status, the cost label, the audit-trail claim, and the missing transcripts
+are all amended below. Data:
 [`2026-10-19-pipeline-cadence-core/`](2026-10-19-pipeline-cadence-core/). The one-shot rows it is
 compared with are from [the 15 October trials](2026-10-15-pipeline-trials.md).
 
@@ -51,9 +54,9 @@ Same results as on the laptop (15 October), on a different architecture and OS.
 | P1-cadence-core-1 | P1 | cadence-core | Opus 5.5 | 0.0 | 0/7 | no | no | 0 | 1,029 | $1.96 | $2.17 |
 | P1-cadence-core-opus-2 | P1 | cadence-core | Opus 5.5 | interrupted at P1 (owner switched the arm to Haiku) | | | | | | | |
 | **P1-cadence-core-haiku-1** | P1 | cadence-core | **Haiku 5.5** | **0.7143** | **5/7** | yes | yes | 9 | 3,062 | **$0.67** | $2.24 |
-| P2-cadence-core-haiku-1 | P2 | cadence-core | Haiku 5.5 | 0.1429 | 1/7 | yes | yes | 9 | 7,203 (guard cap) | $0.65 | none (killed) |
+| P2-cadence-core-haiku-1 | P2 | cadence-core | Haiku 5.5 | cut off: not a scored run (grader read 1/7 of the tree it left) | | yes | yes | 9 | 7,203 (host guard) | $0.65 | none (killed) |
 | P1-cadence-core-haiku-2 | P1 | cadence-core | Haiku 5.5 | 0.0 | 0/7 | no | no | 0 | 1,496 | $0.30 | $0.32 |
-| P1-cadence-core-haiku-3 | P1 | cadence-core | Haiku 5.5 | 0.0 | 0/7 | no | yes | 14 | 6,117 | $0.90 | $3.00 |
+| P1-cadence-core-haiku-3 | P1 | cadence-core | Haiku 5.5 | 0.0 | 0/7 | no (grader bug #49) | yes | 14 | 6,117 | $0.90 | $3.00 |
 
 For comparison, the 15 October one-shots on P1 (isolated runner, Claude Code 2.1.287, regraded):
 
@@ -71,10 +74,15 @@ And on P2:
 | P2-sonnet-1 | Sonnet 5.5 | 0.4286 | 3/7 | 1,716 | $4.56 |
 | P2-opus-1 | Opus 5.5 | 0.7143 | 5/7 | 2,465 | $7.84 |
 
-The cost column uses `pricing.json` list prices from the token counts, as the other rounds do.
-Claude Code's own figure (the last column) prices the Haiku calls differently; it is kept for the record
-and not used. The P2 run has no host figure: the guard cap killed the session before it wrote its
-result, so its cost is summed from the transcript (`cost.json`, `source`).
+The cost column uses `pricing.json` list prices from the token counts, as the other rounds do. **Every
+Haiku figure in it is a lower bound**: the cost code prices every token at the base rate, and Haiku
+5.5 charges five times more for a prompt over 100K tokens, which these sessions reach early (the
+sessions read 240K to 290K cached tokens per turn on average). Per-request pricing is
+[#51](https://github.com/jtouley/harness-benchmark/issues/51). Claude Code's own figure (the last
+column) is kept for the record; it is 3.3 times the list figure on two runs and equal on the third,
+so the long-prompt rate alone does not explain it. The P2 run has no host figure: the host's guard
+killed the session before it wrote its result, so its cost is summed from the transcript
+(`cost.json`, `source`).
 
 ### P1-cadence-core-haiku-1
 
@@ -120,7 +128,13 @@ The quality gate fails on complexity (two stream functions) and on the unmeasure
 clean-room check reports ten "contacts"; all are shell variable names, Cadence's own text
 (`.cursor/plans`), or tokens such as `/` and `2>/dev/null`. None is a real contact, as in the pilot.
 
-### P2-cadence-core-haiku-1 (timed out before the export step)
+### P2-cadence-core-haiku-1 (cut off by the host: an infrastructure loss, not a scored run)
+
+This run is recorded, not scored. The host ran the arm under the runner's 7,200 s guard, and
+[criteria v2 §5.3](../method/criteria-v2.md#53-caps-and-the-run-set-budget) gives harness arms no
+time cap: "a harness run is never cut off". A session ended from outside is an infrastructure loss
+under §5.3 and is run again ([#48](https://github.com/jtouley/harness-benchmark/issues/48)). The grade
+below is what the grader read of the tree the agent left, kept for the record.
 
 The timeline, from the transcript and the commit dates (UTC):
 
@@ -188,7 +202,7 @@ The tool measures have nothing to read (no lines added). The clean-room check re
 variable names, Cadence's own paths, `uv` cache paths, and a dlt source path the plan-create peer
 read under the virtual environment. None is a real contact.
 
-### P1-cadence-core-haiku-3 (the whole pipeline ran; the marts are not where the grader reads)
+### P1-cadence-core-haiku-3 (the whole pipeline ran; the answers were never published)
 
 The third P1 run, on the gate fix (`f6011df`). It is the first run of the core on this family that
 went through every block: plan, five review cycles (limit again), the entry invariant, nine
@@ -197,14 +211,21 @@ review (R1) with a fix commit after each of the first four, closure (R5: `must_f
 session summary (R7). No hard stop. 102 minutes, $0.90 at list price (planning $0.12,
 implementation $0.23, review rounds $0.28, the rest activation and closure).
 
-The grade is 0 of 7, and it comes from one decision. The spec says the marts are Parquet under
-`out/marts/`, one folder per mart, and the grader reads only those folders. This run let
-dbt-duckdb's `external` materialization write two files, `mart_obligations_monthly.parquet` and
-`mart_edit_windows_5min.parquet`, at the top of `out/marts/`, and kept the seven check models the
-oracle map names as views in `out/warehouse.duckdb`. The grader finds no folder, so every check
-fails with "no published mart named `chk_…` under `out/marts/`", and the idempotence check has no
-mart to digest. The first Haiku run wrote seven folders and passed five checks on the same spec.
-Both stream runs read the replay to the end over 5 connections.
+The grade is 0 of 7. The cause, corrected after the owner's review (#55): `oracle_map.yml` names
+seven `chk_*` dbt views that exist only in `out/warehouse.duckdb`. The spec says downstream reads only
+`out/marts/`, and the grader's message for every check is "no published mart named `chk_…` under
+`out/marts/`". The two marts the run did publish are single files at the top of `out/marts/`
+(`mart_obligations_monthly.parquet`, `mart_edit_windows_5min.parquet`), which the checks would have
+read (`oracle.py` registers a single-file mart). So the answers were never published, not published
+in the wrong shape. The run-twice check did fail on the shape: it digests folders only, and with none
+it reports `idempotent: false`, a grader inconsistency logged as
+[#49](https://github.com/jtouley/harness-benchmark/issues/49). The single files follow the spec's own
+stack note (dbt-duckdb `external` with no location writes one file per model), which contradicts its
+publish rule ([#57](https://github.com/jtouley/harness-benchmark/issues/57)). The first Haiku run
+wrote seven folders and passed five checks on the same spec. By its own acceptance record, this run's
+batch answers match the key (checks 1 to 3: the total, the top county, 1,122 awards); they were in
+the warehouse, not under `out/marts/`. Both of the grader's stream runs read the replay to the end
+over 5 connections.
 
 What the review rounds did instead: the nine must-fix items over four rounds were all about the
 stream consumer's handling of odd input (non-event JSON, a silent stream, field types, event-time
@@ -234,6 +255,24 @@ Tool measures (`quality_metrics.json`):
 The consumer that four review rounds hardened is also the function that grew to 34 cognitive
 complexity. The clean-room check reports 23 contacts, all variable names and Cadence's own paths.
 
+The audit trail (criteria v2 §4.7), checked against the lockfile row, Cadence's code and the run's
+full `.context/` (#55):
+
+| Declared item | Found for run `c3e98618` | Note |
+|---|---|---|
+| Plan | `context/plans/open-data-pipeline_gh-1.plan.md` | |
+| Spec check (P9 marker) | absent at the end; present in the transcript's listings from 08:28 to 09:05 | Session close (R7) removes this run's marker by design (`activate_session.py`, cd-76 D3). The row now says so |
+| Plan review | `context/reviews/plan_open-data-pipeline_gh-1.md` (cycle 5; earlier cycles only in the transcript) | |
+| PR review | `context/prs/reviews/PR_REVIEW_local.md` (round 5) | |
+| PR record | `context/prs/draft-pr-c3e98618….md`; the PR text at `outputs/PR.md` | The row declared `PR-<id>.md` only; corrected to both names |
+| Findings ledger | absent | R1 listed its items in the review file; the ledger exists only when findings go through `findings_io.py` |
+| Closure record | `context/summaries/gh-1-session.md`, names head `c6ab925` | The delivered head is `7becba4` (phase 9 was committed after the summary) |
+| Attestation | `context/attest/c3e98618….jsonl` and six siblings | Now committed for all four runs |
+| Adversarial review, deferral log | not in the core (null) | |
+
+Peer handoffs, from the four transcripts: 55 Agent calls, every one a one-line slash command (longest
+165 characters, a path). The handoff logs under `context/handoff/` are committed.
+
 ### P1-cadence-core-1 (Opus, no delivery)
 
 The orchestrator activated, wrote the local ticket and called the plan-create peer with
@@ -262,14 +301,12 @@ so does `runner/claude-agent.sh`. 17 minutes, $1.96, no plan file.
    runner and in Cadence's quickstart.
 5. **The tool measures work on this task family** and show what the reviewer would have found: two
    stream functions over both complexity limits, the whole consumer in one 224-line commit.
-6. **On P2 the harness ran out of clock, not out of pipeline.** Nine phases were committed in 72
-   minutes, after 20 minutes and five review cycles of planning. The orchestrator then spent the
-   last 46 minutes of a 120-minute budget on a one-hour acceptance run that the plan did not require,
-   and the export step that the grader reads never ran: 1 of 7, against 0 of 7 for Haiku alone. The
-   agent is never told the time budget. A harness that sizes its acceptance step to a budget it
-   cannot see is a defect of the environment note as much as of the harness. Two things to change
-   before a rerun: state the budget in the task's environment note, and let the plan reviewer ask how
-   long each acceptance step takes.
+6. **The P2 run was cut off by the host and is not a result.** Nine phases were committed in 72
+   minutes, after 20 minutes and five review cycles of planning. The orchestrator then started a
+   one-hour acceptance run, and the host's 7,200 s guard, which criteria v2 does not allow on a
+   harness arm, killed the session 14 minutes before it ended. The export step never ran. Under §5.3
+   this is an infrastructure loss to run again without a cap (#48). "The replayed hour" came from
+   the task's own prompt, so the run length was not the harness's invention.
 7. **The plan-review loop hit its cycle limit on all three Haiku runs.** Five cycles each time, every
    verdict `READY WITH CHANGES`, and each cycle found new must-fix items in the text the previous cycle
    added. The limit, not the reviewer, ended the loop. On P2 that cost 20 minutes and $0.15 of the
@@ -281,24 +318,38 @@ so does `runner/claude-agent.sh`. 17 minutes, $1.96, no plan file.
    the first Haiku run) passed the same gate because its fifth review named no earlier ids.
 9. **The full pipeline, with the local PR record and five review rounds, scored 0 of 7.** The third
    P1 run is the process record this round was after: every block ran, R1 found nine defects and
-   each was fixed with a test. It also shows what that review did not do: read the delivered files
-   against the spec's publish rule. Four rounds hardened the stream consumer against odd input while
-   the marts sat in the wrong place. The 5 of 7 and the 0 of 7 came from the same arm, model and
-   spec; the difference is one publish decision that no gate reads. Two things follow. The review
-   contract's end-to-end walk should start from the delivered artifacts (here, `out/marts/`), not from
-   the code. And the benchmark's checks are the only grading of delivery here; a harness that is
-   never told what the grader reads cannot aim at it, which is the point of the hidden checks.
+   each was fixed with a test. It also shows what that review did not do: hold the delivery to the
+   ticket's own sentences. Four rounds hardened the stream consumer against odd input while the seven
+   answers stayed as views in the warehouse, unpublished. The 5 of 7 and the 0 of 7 came from the
+   same arm, model and spec; the difference is one publish decision that no gate reads. The generic
+   lesson for the harness is a requirement list quoted from the ticket, traced to a phase and a proof,
+   and gated at closure; a review that reads the benchmark's own paths would tune the harness to the
+   test (criteria v2 §2.4), so that is not the ask.
 
 ## Limits
 
 - One run per cell, on the host, not in the isolated runner: no clean room, no network isolation,
   Claude Code 2.1.303 (the lockfile pins 2.1.294).
-- The P2 run was killed by the guard cap, so its cost comes from the transcript and its delivered tree
-  is the snapshot of what the agent left, with six check views built but not exported.
-- Two of the four Haiku runs that reached code lost most or all of their checks to the publish
-  shape (views or files where the grader reads folders of Parquet under `out/marts/`). The spec
-  states the rule; the runs did not follow it. The grading is right to count that as not delivered,
-  and n = 1 per cell cannot say how often it happens.
+- The P2 run was cut off by a host guard that criteria v2 forbids on harness arms; it is recorded, not
+  scored (#48). Its cost comes from the transcript and its tree is the snapshot of what the agent
+  left, with six check views built but not exported.
+- Two of the three Haiku runs that reached code lost most or all of their checks to unpublished
+  answers (views in the warehouse where the grader reads `out/marts/`). The spec states the rule; the
+  runs did not follow it. n = 1 per cell cannot say how often it happens. The grader itself reads
+  single-file marts for the checks but not for the run-twice check (#49), and the spec's stack note
+  steers runs to single files (#57).
+- **Prompt hygiene.** The prompts broke criteria v2 §2.3 and §2.4: the ticket was inlined in full
+  (the lockfile's `{issue}`), and the pilot's environment note (host paths, "continue as if it
+  succeeded", "nobody will answer") was appended to it. The environment belongs in the task image,
+  and the request should reach each arm by reference ([#56](https://github.com/jtouley/harness-benchmark/issues/56)).
+  Every arm in this round got the same text, so the comparison between arms stands; the comparison
+  with a future v2 run set does not.
+- **Costs are lower bounds** (above, #51).
+- **Transcripts are not committed.** Each run's session transcript (`transcript.jsonl`, 1.8 to 4.2 MB,
+  14 MB for the four runs, with the host's absolute paths throughout) stays off the repository. What
+  they would show is committed in smaller form: the peer handoff logs and attestation rows under each
+  run's `context/`, the per-peer records under `context/subagent-runs/`, and the counts above (55
+  peer calls, all lean). The transcripts are kept on the host and can be attached to a request.
 - The task repository got a `.cadence.json` (five gated prefixes) that the one-shot repositories did
   not have. It changes nothing for a one-shot.
 - The Opus arm has no result: one run died on the host defect, one was interrupted.
@@ -308,8 +359,9 @@ so does `runner/claude-agent.sh`. 17 minutes, $1.96, no plan file.
 ## Next
 
 - P3 needs the Docker image.
-- Rerun P1 and P2 at n = 3 in the isolated runner, on Cadence `58f0919` or later, with the time
-  budget in the environment note.
-- In Cadence: make R1's end-to-end walk start from the delivered artifacts the spec names.
+- Rerun P1 and P2 at n = 3 in the isolated runner, on Cadence `58f0919` or later, with no time cap on
+  the harness arm (#48) and the request handed over by reference (#56).
+- In Cadence: a requirement list quoted from the ticket, traced and gated to closure (the generic
+  form of what the third run missed).
 - Rerun P1 in the isolated runner with the runner's new environment, n = 3, when a Docker host exists.
 - Fix the no-PR mode in Cadence, then rerun so R1 and R5 run on the delivered code.

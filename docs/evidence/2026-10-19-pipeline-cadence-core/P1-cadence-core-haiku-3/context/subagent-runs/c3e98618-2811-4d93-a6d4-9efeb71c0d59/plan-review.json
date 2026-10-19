@@ -1,0 +1,12 @@
+{
+  "stage": "plan-review",
+  "command": "/plan-review /tmp/claude-0/-home-user/a08112b2-70f8-5c85-83c0-3c1d7290b3c5/scratchpad/pipe/P1-cadence-core-haiku-3/repo/.cursor/plans/open-data-pipeline_gh-1.plan.md",
+  "pipeline_run_id": "c3e98618-2811-4d93-a6d4-9efeb71c0d59",
+  "status": "running",
+  "source": "PreToolUse",
+  "started_at": "2026-10-19T07:46:59.519498+00:00",
+  "completed_at": "",
+  "artifact_path": "",
+  "manifest_entry_id": "",
+  "tool_use_id": "toolu_01JXnF7UegVgQCp1Sv1zTdZP"
+}

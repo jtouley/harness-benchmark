@@ -1,0 +1,12 @@
+{
+  "stage": "plan-review",
+  "command": "/plan-review .context/plans/gh-1-pipeline.plan.md",
+  "pipeline_run_id": "3c4d3cd0-e61f-4332-a2f6-32c46236dc68",
+  "status": "running",
+  "source": "PreToolUse",
+  "started_at": "2026-10-19T04:11:01.538118+00:00",
+  "completed_at": "",
+  "artifact_path": "",
+  "manifest_entry_id": "",
+  "tool_use_id": "toolu_01VmaLPgv1sue6QJCYg5ozsu"
+}

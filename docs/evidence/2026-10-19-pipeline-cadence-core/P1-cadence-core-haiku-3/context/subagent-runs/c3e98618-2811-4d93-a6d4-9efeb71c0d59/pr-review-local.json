@@ -1,0 +1,12 @@
+{
+  "stage": "pr-review-local",
+  "command": "/pr-review-local",
+  "pipeline_run_id": "c3e98618-2811-4d93-a6d4-9efeb71c0d59",
+  "status": "running",
+  "source": "PreToolUse",
+  "started_at": "2026-10-19T09:05:32.269471+00:00",
+  "completed_at": "",
+  "artifact_path": "",
+  "manifest_entry_id": "",
+  "tool_use_id": "toolu_01AEMaWfwF8JKnbGv1A7Pv4r"
+}

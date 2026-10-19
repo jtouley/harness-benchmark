@@ -1,0 +1,12 @@
+{
+  "stage": "plan-review",
+  "command": "/plan-review .cursor/plans/open-data-pipeline_gh-1.plan.md",
+  "pipeline_run_id": "d7ce32a2-e66d-4618-83be-89bdcbaf2347",
+  "status": "running",
+  "source": "PreToolUse",
+  "started_at": "2026-10-19T05:01:31.562910+00:00",
+  "completed_at": "",
+  "artifact_path": "",
+  "manifest_entry_id": "",
+  "tool_use_id": "toolu_01Dy1MtsUGxTTYLBW8UCciHL"
+}

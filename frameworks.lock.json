@@ -126,19 +126,22 @@
           ".cursor/plans/<slug>_<id>.plan.md",
           ".context/plans/<slug>.plan.md"
         ],
-        "spec_check": ".context/gates/entry-invariant-<pipeline_run_id>.ok",
+        "spec_check": ".context/gates/entry-invariant-<pipeline_run_id>.ok (present from P9 until R7: session close removes this run's marker, activate_session.py cd-76 D3)",
         "plan_review": ".context/reviews/plan_<slug>.md",
         "adversarial_review": null,
         "pr_review": [
           ".context/prs/reviews/PR_REVIEW_local.md",
           ".context/prs/reviews/PR_REVIEW_#<n>.md"
         ],
-        "pr_record": ".context/prs/PR-<pipeline_run_id>.md",
+        "pr_record": [
+          ".context/prs/draft-pr-<pipeline_run_id>.md (the E4 breadcrumb, written after the PR exists)",
+          ".context/prs/PR-<pipeline_run_id>.md or the file the environment names (the PR title and body under adapter none; commit-push-pr.md)"
+        ],
         "findings_ledger": ".context/findings/<task_id>.jsonl",
         "closure_record": ".context/summaries/*.md",
         "deferral_log": null,
-        "attestation": ".context/attest/<pipeline_run_id>.jsonl",
-        "note": "<pipeline_run_id> is `pipeline_run_id` in the session record named by stop_signal.resolve. The ten-block core has no adversarial review and no deferral log (null). The spec check is the P9 entry-invariant marker: it is written only when the plan carries every open must-fix item. The closure record is the session summary; it has no fixed name and does not always name the delivered head. Authorship by another agent is in the attestation rows (`.context/attest/<id>.agents.jsonl`, `.models.jsonl`)."
+        "attestation": ".context/attest/<pipeline_run_id>.jsonl (with .agents, .calls, .context, .joins, .models, .returns siblings)",
+        "note": "<pipeline_run_id> is `pipeline_run_id` in the session record named by stop_signal.resolve. The ten-block core has no adversarial review and no deferral log (null). The spec check is the P9 entry-invariant marker: it is written only when the plan carries every open must-fix item, and session close (R7) removes it, so a completed run shows it only in the transcript; the per-stage breadcrumbs under .context/gates/<slug>-gate.json remain. The findings ledger is written only when a review records findings through findings_io.py; R1 may list its items in the review file instead, as the 19 October runs did. The closure record is the session summary; it has no fixed name and does not always name the delivered head. Authorship by another agent is in the attestation rows. Checked against Cadence f6011df and the full .context/ of run c3e98618 (harness-benchmark #55)."
       }
     },
     "superpowers": {
