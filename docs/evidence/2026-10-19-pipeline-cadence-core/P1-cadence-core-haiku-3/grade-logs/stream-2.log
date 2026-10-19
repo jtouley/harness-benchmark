@@ -1,0 +1,76 @@
+mkdir -p out/marts
+uv run python -m pipeline.stream_consumer --duration 90
+warning: The `UV_NATIVE_TLS` environment variable is deprecated and will be removed in a future release. Use `UV_SYSTEM_CERTS` instead.
+warning: `VIRTUAL_ENV=/home/user/harness-benchmark/.venv` does not match the project environment path `.venv` and will be ignored; use `--active` to target the active environment instead
+{"last_id": "[{\"topic\":\"eqiad.mediawiki.recentchange\",\"partition\":0,\"timestamp\":1792025208170},{\"topic\":\"codfw.mediawiki.recentchange\",\"partition\":0,\"offset\":-1}]", "last_arrival_seq": 15799, "last_batch_id": 33, "skipped_malformed": 0}
+uv run dbt build --project-dir transform --profiles-dir transform --select tag:stream
+warning: The `UV_NATIVE_TLS` environment variable is deprecated and will be removed in a future release. Use `UV_SYSTEM_CERTS` instead.
+warning: `VIRTUAL_ENV=/home/user/harness-benchmark/.venv` does not match the project environment path `.venv` and will be ignored; use `--active` to target the active environment instead
+[0m09:17:37  Running with dbt=1.11.6
+[0m09:17:38  Registered adapter: duckdb=1.11.0
+[0m09:17:38  Found 22 models, 62 data tests, 3 sources, 500 macros
+[0m09:17:38  
+[0m09:17:38  Concurrency: 4 threads (target='dev')
+[0m09:17:38  
+[0m09:17:38  1 of 28 START sql view model main.stg_recentchange ............................. [RUN]
+[0m09:17:38  1 of 28 OK created sql view model main.stg_recentchange ........................ [[32mOK[0m in 0.10s]
+[0m09:17:38  2 of 28 START test not_null_stg_recentchange_meta_id ........................... [RUN]
+[0m09:17:38  2 of 28 PASS not_null_stg_recentchange_meta_id ................................. [[32mPASS[0m in 0.06s]
+[0m09:17:38  3 of 28 START sql incremental model main.stream_arrivals ....................... [RUN]
+[0m09:17:38  3 of 28 OK created sql incremental model main.stream_arrivals .................. [[32mOK[0m in 0.14s]
+[0m09:17:38  4 of 28 START test not_null_stream_arrivals_meta_id ............................ [RUN]
+[0m09:17:38  5 of 28 START test unique_stream_arrivals_meta_id .............................. [RUN]
+[0m09:17:38  4 of 28 PASS not_null_stream_arrivals_meta_id .................................. [[32mPASS[0m in 0.04s]
+[0m09:17:39  5 of 28 PASS unique_stream_arrivals_meta_id .................................... [[32mPASS[0m in 0.04s]
+[0m09:17:39  6 of 28 START sql incremental model main.fct_edit .............................. [RUN]
+[0m09:17:40  6 of 28 OK created sql incremental model main.fct_edit ......................... [[32mOK[0m in 1.97s]
+[0m09:17:40  7 of 28 START test not_null_fct_edit_meta_id ................................... [RUN]
+[0m09:17:40  8 of 28 START test unique_fct_edit_meta_id ..................................... [RUN]
+[0m09:17:41  7 of 28 PASS not_null_fct_edit_meta_id ......................................... [[32mPASS[0m in 0.04s]
+[0m09:17:41  8 of 28 PASS unique_fct_edit_meta_id ........................................... [[32mPASS[0m in 0.03s]
+[0m09:17:41  9 of 28 START sql view model main.chk_stream_edits_by_wiki ..................... [RUN]
+[0m09:17:41  10 of 28 START sql view model main.chk_top_windows_enwiki ...................... [RUN]
+[0m09:17:41  11 of 28 START sql incremental model main.edit_windows_5min_state .............. [RUN]
+[0m09:17:41  12 of 28 START sql table model main.late_events ................................ [RUN]
+[0m09:17:41  9 of 28 OK created sql view model main.chk_stream_edits_by_wiki ................ [[32mOK[0m in 0.22s]
+[0m09:17:41  11 of 28 OK created sql incremental model main.edit_windows_5min_state ......... [[32mOK[0m in 0.24s]
+[0m09:17:41  13 of 28 START test not_null_edit_windows_5min_state_is_bot .................... [RUN]
+[0m09:17:41  14 of 28 START test not_null_edit_windows_5min_state_namespace ................. [RUN]
+[0m09:17:41  12 of 28 OK created sql table model main.late_events ........................... [[32mOK[0m in 0.25s]
+[0m09:17:41  10 of 28 OK created sql view model main.chk_top_windows_enwiki ................. [[32mOK[0m in 0.26s]
+[0m09:17:41  15 of 28 START test not_null_edit_windows_5min_state_wiki ...................... [RUN]
+[0m09:17:41  16 of 28 START test not_null_edit_windows_5min_state_window_start .............. [RUN]
+[0m09:17:41  13 of 28 PASS not_null_edit_windows_5min_state_is_bot .......................... [[32mPASS[0m in 0.09s]
+[0m09:17:41  14 of 28 PASS not_null_edit_windows_5min_state_namespace ....................... [[32mPASS[0m in 0.09s]
+[0m09:17:41  17 of 28 START test not_null_late_events_meta_id ............................... [RUN]
+[0m09:17:41  15 of 28 PASS not_null_edit_windows_5min_state_wiki ............................ [[32mPASS[0m in 0.08s]
+[0m09:17:41  18 of 28 START test relationships_late_events_meta_id__meta_id__ref_fct_edit_ .. [RUN]
+[0m09:17:41  16 of 28 PASS not_null_edit_windows_5min_state_window_start .................... [[32mPASS[0m in 0.09s]
+[0m09:17:41  19 of 28 START test unique_late_events_meta_id ................................. [RUN]
+[0m09:17:41  20 of 28 START sql external model main.mart_edit_windows_5min .................. [RUN]
+[0m09:17:41  17 of 28 PASS not_null_late_events_meta_id ..................................... [[32mPASS[0m in 0.16s]
+[0m09:17:41  18 of 28 PASS relationships_late_events_meta_id__meta_id__ref_fct_edit_ ........ [[32mPASS[0m in 0.17s]
+[0m09:17:41  19 of 28 PASS unique_late_events_meta_id ....................................... [[32mPASS[0m in 0.15s]
+[0m09:17:41  21 of 28 START sql view model main.chk_late_event_count ........................ [RUN]
+[0m09:17:41  21 of 28 OK created sql view model main.chk_late_event_count ................... [[32mOK[0m in 0.07s]
+[0m09:17:41  20 of 28 OK created sql external model main.mart_edit_windows_5min ............. [[32mOK[0m in 0.27s]
+[0m09:17:41  22 of 28 START test assert_edit_windows_mart_key_unique ........................ [RUN]
+[0m09:17:41  23 of 28 START test not_null_mart_edit_windows_5min_edits_ontime ............... [RUN]
+[0m09:17:41  24 of 28 START test not_null_mart_edit_windows_5min_is_bot ..................... [RUN]
+[0m09:17:41  25 of 28 START test not_null_mart_edit_windows_5min_namespace .................. [RUN]
+[0m09:17:41  22 of 28 PASS assert_edit_windows_mart_key_unique .............................. [[32mPASS[0m in 0.09s]
+[0m09:17:41  23 of 28 PASS not_null_mart_edit_windows_5min_edits_ontime ..................... [[32mPASS[0m in 0.10s]
+[0m09:17:41  26 of 28 START test not_null_mart_edit_windows_5min_wiki ....................... [RUN]
+[0m09:17:41  24 of 28 PASS not_null_mart_edit_windows_5min_is_bot ........................... [[32mPASS[0m in 0.10s]
+[0m09:17:41  25 of 28 PASS not_null_mart_edit_windows_5min_namespace ........................ [[32mPASS[0m in 0.10s]
+[0m09:17:41  27 of 28 START test not_null_mart_edit_windows_5min_window_end ................. [RUN]
+[0m09:17:41  28 of 28 START test not_null_mart_edit_windows_5min_window_start ............... [RUN]
+[0m09:17:41  27 of 28 PASS not_null_mart_edit_windows_5min_window_end ....................... [[32mPASS[0m in 0.06s]
+[0m09:17:41  26 of 28 PASS not_null_mart_edit_windows_5min_wiki ............................. [[32mPASS[0m in 0.08s]
+[0m09:17:41  28 of 28 PASS not_null_mart_edit_windows_5min_window_start ..................... [[32mPASS[0m in 0.06s]
+[0m09:17:41  
+[0m09:17:41  Finished running 1 external model, 3 incremental models, 1 table model, 19 data tests, 4 view models in 0 hours 0 minutes and 3.48 seconds (3.48s).
+[0m09:17:41  
+[0m09:17:41  [32mCompleted successfully[0m
+[0m09:17:41  
+[0m09:17:41  Done. PASS=28 WARN=0 ERROR=0 SKIP=0 NO-OP=0 TOTAL=28

@@ -1,0 +1,58 @@
+# Oracle map: for each analyst check in the ticket, the table or view that answers it, and the tests that cover it.
+# Each name below is a dbt model in transform/models/ (checked by `dbt ls`). Money is US dollars, DECIMAL.
+checks:
+  - check: 1
+    question: FY2024 net obligations per awarding agency.
+    table: chk_fy2024_obligations_by_agency
+    columns: [agency_code, agency_name, net_obligations]
+    source_model: fct_award_transaction
+    tests: [fct_award_transaction.transaction_id unique, fct_award_transaction.agency_code relationships dim_agency]
+
+  - check: 2
+    question: The ten counties with the highest FY2024 obligations per person (population 2024, D3).
+    table: chk_top10_counties_per_person
+    columns: [state_name, county_name, county_fips, population, population_source_year, net_obligations, obligations_per_person]
+    source_model: fct_award_transaction
+    tests: [fct_award_transaction.place_key relationships dim_place, dim_place.place_key unique]
+
+  - check: 3
+    question: The number of awards with a net negative obligation in FY2024.
+    table: chk_negative_award_count
+    columns: [negative_award_count]
+    source_model: fct_award_transaction
+    tests: [fct_award_transaction.is_negative_obligation not_null]
+
+  - check: 4
+    question: For one month, county totals add up to state totals, and state totals add up to the source total.
+    table: chk_month_reconciliation
+    columns: [state_fips, state_total, county_sum, county_vs_state_difference]
+    month_variable: recon_month (default 2024-06-01)
+    source_model: mart_obligations_monthly
+    tests: [mart_obligations_monthly key singular test, assert_fact_sum_equals_staging_sum]
+
+  - check: 5
+    question: For the stream, edits and net bytes per wiki for the replayed hour, split human and bot, late events included.
+    table: chk_stream_edits_by_wiki
+    columns: [wiki, is_bot, edits, net_bytes]
+    source_model: fct_edit
+    tests: [fct_edit.meta_id unique and not_null]
+
+  - check: 6
+    question: For the stream, the 5-minute windows with the most edits on en.wikipedia.org (on-time only).
+    table: chk_top_windows_enwiki
+    columns: [window_start, edits_ontime]
+    source_model: fct_edit
+    tests: [fct_edit.meta_id unique and not_null, fixture_f06_not_late_at_exact_ten_minutes]
+
+  - check: 7
+    question: For the stream, the count of late events.
+    table: chk_late_event_count
+    columns: [late_event_count]
+    source_model: late_events
+    tests: [late_events.meta_id unique, not_null and relationships to fct_edit, fixture_f08_is_late]
+
+extra:
+  - question: Per-state obligations per person (D5).
+    table: chk_state_per_person
+    columns: [state_name, state_fips, population, net_obligations, obligations_per_person]
+    source_model: fct_award_transaction
