@@ -350,10 +350,16 @@ def test_no_measure_is_decided_by_judgment():
     assert "fails on at least one wrong variant" in checks and "sha256 is recorded" in checks
     # The reviewer is kept in line: tests only, confirmed by code, run against every arm, severity by rule.
     assert "Its only output is executable reproduction tests" in checks
-    assert "passes on the reference solution and fails on the code of the arm it was written for" in checks
-    assert "Every kept test then runs against every arm's code" in checks
+    assert "use the task's public interface" in checks and "does not count as failing" in checks
+    assert "a second, independently written correct solution committed with the task" in checks
+    assert "Every kept test runs against every arm's code" in checks
+    assert "count as one defect, however many the reviewer wrote" in checks
+    assert "A failing kept test is a major defect, never critical" in checks
     assert "The reviewer's own words about severity are not used" in checks
+    assert "test-confirmed" not in _flat(_section("### 4.4 Reliability (pass^k)"))
+    assert "reports success" not in _flat(_section("### 8.1 Units and interval"))
     audit = _flat(_section("## 7. Traceability: the audit protocol"))
-    assert "a script scores its answers against the answer key" in audit
+    assert "a script scores its answers, and no person or model scores them" in audit
+    assert "the first commit where the check gives the trap's stored wrong answer" in audit
     assert "spot check" not in audit
     assert "design-checklist" not in _flat(_section("### 8.5 The answer"))

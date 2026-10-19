@@ -58,7 +58,7 @@ This is the measure the family exists for.
    failures have a known trap id and cause class before anyone audits.
 2. **Blind auditor.** For each failed run, an auditor gets only the run's record and the symptom ("check 2
    is wrong: expected X, got Y"). It does not get the trap id. The auditor is a fixed agent (the same
-   model and prompt for every arm), plus a human spot check on a sample. The record is:
+   model and prompt for every arm), and a script scores its answers ([criteria v2 §7](../../method/criteria-v2.md#7-traceability-the-audit-protocol)). The record is:
    - one-shot arms: the repository, the transcript, and the arm's own summary;
    - harness arms: the same, plus the harness artifacts (spec notes, plan, phase commits, reviews,
      `DECISIONS.md`).
@@ -71,7 +71,8 @@ This is the measure the family exists for.
 4. **Scores.**
    - Diagnosis accuracy: the cause matches the grader's trap id, or any id in its
      [equivalence set](pipeline-traps.md#equivalent-traps) (questions 1 and 3).
-   - Origin accuracy: question 2 matches the human adjudication.
+   - Origin accuracy: the commit the auditor names matches the first commit where the failing check gives
+     the trap's wrong answer, found by running the grader on each commit (criteria v2 §7).
    - Audit cost: the auditor's wall time and tokens.
    - Repair cost: an arm-matched repair agent fixes the run from the auditor's answer; its time, tokens and
      whether the checks then pass.

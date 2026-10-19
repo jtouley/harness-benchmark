@@ -4,8 +4,9 @@ Status: **proposed** for criteria v2 (October 2026). Criteria v1 used one blind 
 1–10 dimensions (design, correctness, readability, tests: measure M7). That rubric is a judgment. It is not a
 published standard, and nobody can recompute it. This model replaces it as a measure of quality with measures that come
 from published, widely used standards and tools. Each one has a fixed threshold, and a script
-recomputes it ([`scripts/quality_metrics.py`](../../scripts/quality_metrics.py)). A grader still judges
-the two things no tool can measure, against a fixed checklist.
+recomputes it ([`scripts/quality_metrics.py`](../../scripts/quality_metrics.py)). Defects and design fit
+are measured by code too: defects by frozen checks and by reviewer-proposed tests that code confirms, and
+design fit by the follow-up change ([criteria v2](criteria-v2.md#6-defect-checks)).
 
 ## The standard behind it
 
@@ -16,7 +17,7 @@ characteristics that a code change can affect, and how this benchmark measures e
 | ISO/IEC 25010 characteristic | Sub-characteristic | Measure here | Source of the method and threshold |
 |---|---|---|---|
 | Functional suitability | Functional completeness and correctness | **Acceptance (M1):** hidden tests of the task pass | The task's oracle ([criteria §4](criteria.md#4-measures)) |
-| Functional suitability, reliability | Functional correctness, faultlessness | **Reproduced defects (M2):** each with a command and its output, by severity | [criteria §5](criteria.md#5-blind-review-protocol); severity rule in [`defects.json`](../evidence/2026-10-12-iteration-4/defects.json) |
+| Functional suitability, reliability | Functional correctness, faultlessness | **Detected defects (M2):** from frozen checks and confirmed reviewer tests, by severity | [criteria v2 §6](criteria-v2.md#6-defect-checks); in iterations 3 and 4, a blind review ([criteria v1 §5](criteria.md#5-blind-review-protocol)) |
 | Maintainability | Testability | **New-code coverage**: line coverage of the executable lines the change adds, ≥ 80%. Line and branch coverage of the whole package are reported | SonarQube "Sonar way" quality gate, the most widely used default gate for new code |
 | Maintainability | Testability | **Mutation score** on the changed lines: ≥ 80% after removing equivalent mutants | Mutation testing ([criteria M4](criteria.md#4-measures)); coverage shows that code ran, a mutant shows that a test checks it |
 | Maintainability | Analysability, modifiability | **Cognitive complexity** per function: no function that the change takes above 15 (new and above it, or above it now and not before) | SonarSource, *Cognitive Complexity* (G. Ann Campbell, 2017); 15 is the Sonar default |
@@ -25,7 +26,7 @@ characteristics that a code change can affect, and how this benchmark measures e
 | Reliability | Faultlessness | **No new bug-class static findings**: undefined or redefined names and broken statements (pyflakes F82, F811, F63, F7), syntax errors, flake8-bugbear, pylint errors | The "no new bugs" condition of the Sonar way gate, measured with ruff |
 | Maintainability | Analysability | **Code smells per 100 new lines** (the other ruff rules, including the other pyflakes rules such as unused imports: pycodestyle without line length, pylint conventions and refactors, simplify, pyupgrade, mccabe), reported | The Sonar maintainability rating idea (smells relative to code size) |
 | Maintainability | Modifiability | **No new type errors** (mypy with `--check-untyped-defs`, so unannotated code is checked too) | Static type checking, the Python community standard checker |
-| Maintainability | Modularity, reusability | **Design fit**, judged against a checklist (below) | Reviewer judgment; no tool measures it |
+| Maintainability | Modularity, reusability | **Design fit**: follow-up success and edit radius, module coupling (below) | Measured by code; the reviewer checklist proposed earlier is not used |
 
 Line length (pycodestyle E501) is formatting, not quality, and the Sonar way gate does not use it, so
 it is left out. Duplication was not measured in iteration 4; the owner criteria below add it (`jscpd`).
@@ -54,7 +55,7 @@ extensible system, whose path we can understand, and at what cost.** Each part h
 | Part | Measure | How |
 |---|---|---|
 | DRY | **Duplicated lines on new code ≤ 3%** | `jscpd` (one tool for Python, SQL, Scala and YAML), minimum block 5 lines; the threshold is the Sonar way gate's duplication condition |
-| SOLID: single responsibility, dependency inversion | **Module coupling**: per module, efferent and afferent coupling and instability (Martin, *Agile Software Development*, 2002), from the import graph; plus the design checklist items below | An import-graph script per language; reported, not gated |
+| SOLID: single responsibility, dependency inversion | **Module coupling**: per module, efferent and afferent coupling and instability (Martin, *Agile Software Development*, 2002), from the import graph | An import-graph script per language; reported, not gated |
 | SOLID: open for extension | **Edit radius of the follow-up task**: the existing files (not new ones) the follow-up change has to modify, and their changed lines | From the follow-up diff. A small radius means the system was open for that extension |
 | Extensible | **Follow-up task success and cost**: the follow-up's hidden checks, and its dollars and wall time | Each long task has a follow-up (for the pipeline family: a new data mart and a dashboard). The same arm builds it on its own delivered code |
 | Traceable ("how we got there") | **Audit scores**: diagnosis accuracy, origin accuracy, audit cost, repair cost | The [audit protocol](../plans/tasks/pipeline-family.md#audit-protocol) |
@@ -140,7 +141,8 @@ What the tools add to the picture:
   not yet evidence of simpler code. Criteria v2 should adopt the gate only on tasks whose reference
   passes it, or record why not.
 - **The tools miss what the reviewers found.** The Opus budgets solution passes the gate and still ships
-  two crashes. Layer 1 needs the reviewers.
+  two crashes. Layer 1 needs defect checks beyond the tool gate: in criteria v2, edge checks and probe
+  inputs written before the runs, and reviewer-proposed tests that code confirms.
 
 ## Adopting it
 

@@ -185,8 +185,8 @@ than on easy ones [OD] [DR]. T05 is the pilot task [OD].
 
 ### 3.4 Freezing the task list
 
-The task list of a run set is frozen before the first run. Its sha256 over `golden/tasks/` is recorded in
-the run set's results. A task added later starts a new run set [v1]. A public task enters a run set only
+The task list of a run set is frozen before the first run. Its sha256 over `golden/tasks/` and
+`golden/pipeline/` is recorded in the run set's results [#41]. A task added later starts a new run set [v1]. A public task enters a run set only
 once it is committed under `golden/tasks/` with its starting state, hidden oracle and reference solution
 [v1]. A private task enters with the sha256 of its private task folder recorded in the results; its
 contents are not published [TS] [v2].
@@ -208,10 +208,10 @@ side [QM].
 | # | Measure | How it is computed | Role | Source |
 |---|---|---|---|---|
 | M1 | **Acceptance** | The hidden checks (or the oracle) on the delivered working tree, in the running system where the task has one | Gate: a run that fails M1 is not delivered | [v1] [TS] |
-| M1f | **Hidden-suite pass fraction** | The fraction of the hidden checks that pass (30 or more per task where the task has a suite) | Reported | [QM] |
+| M1f | **Hidden-suite pass fraction** | The fraction of the hidden acceptance checks that pass (30 or more per task where the task has a suite). The edge suite (§6) is counted in M2, not here | Reported | [QM] |
 | M2 | **Detected defects** | Found by code (§6): each failing check of the task's edge suite; each crash (an uncaught exception or a non-zero exit with a traceback) on the task's fixed probe inputs; in a follow-up, each base check that no longer passes; and each failing reviewer-proposed test that code has confirmed. Severity comes from labels committed with the task before the run set, or by rule for reviewer-proposed tests (§6): critical (data loss, a wrong result reported as success), major (a crash, a sentence of the request not met), minor. Failures with the same check id count once | **Primary.** Only critical and major defects count in the decision rule (§8); minor ones are reported | [v1] [QM] [DR] [#41] |
-| M3 | **False success** | A run that ends as completed (no recorded stop, no question to the user) while M1 fails or M2 has a critical or major defect. A harness that stops with a recorded reason is not a false success | Decision rule input (§8.2–§8.4), beside M2 | [v1] [DR] [#41] |
-| M8 | **Completion** | Finished without a human answer. A hard stop or a question to the user counts as not complete | Reported | [v1] |
+| M3 | **False success** | A run that ends as completed while M1 fails or M2 has a critical or major defect. A run ends as completed when its transcript has no call to the host's ask-the-user tool (in Claude Code, `AskUserQuestion`) and the arm's declared stop signal is absent. Each arm declares its stop signal (a file it writes, or an exit status) in `frameworks.lock.json` before the run set. A harness that stops with its signal is not a false success | Decision rule input (§8.2–§8.4), beside M2 | [v1] [DR] [#41] |
+| M8 | **Completion** | Ends as completed (M3's script rule). A stop signal or an ask-the-user call counts as not complete | Reported | [v1] [#41] |
 
 ### 4.2 Layer 2: the tool gate
 
@@ -261,7 +261,7 @@ A one-shot that passes once says nothing about the next run. Reliability is meas
   not part of the run set.
 - **pass^k.** For a cell with c passing runs out of n, pass^k = C(c, k) / C(n, k): the estimated chance
   that k fresh runs all pass [v2]. Report pass^1 and pass^5 per cell. A pass means M1 passes and M2 has no
-  test-confirmed critical or major defect [v2].
+  critical or major defect [v2] [#41].
 - **What pass^k does.** pass^k selects tasks (§3.2) and describes each cell. It does not decide whether an
   arm matches the bar: that is the decision rule (§8.3), on M1 delivery and M2 defects. pass^k is reported
   beside it [TC]. pass^1 is the pass rate that decides "beyond the bar" (§8.4) [v2].
@@ -377,26 +377,41 @@ tests, and code decides whether each one counts. No model or person decides by j
   inputs that the request covers. Each edge check passes on the reference solution, fails on at least one
   wrong variant of it (a mutant or a known-wrong solution, committed with the task), and fails on the
   untouched starting state where the behavior is new [v1] [#41].
-- **Probe inputs.** Each task has a fixed list of inputs, generated from a recorded seed, that a run's
-  program must handle without crashing [#41].
-- **Severity labels** are part of each check's definition, committed with the task [#41].
-- The edge suites, probe inputs and labels are part of the frozen task list: their sha256 is recorded
-  with the run set (§3.4). A check added after the first run starts a new run set [v1] [#41].
+- **Probe inputs.** Each task has a fixed list of inputs, generated from a recorded seed, a fixed command
+  that runs the program on them, a time limit per input, and a crash signature per stack (for Python an
+  uncaught exception's traceback; for the JVM an uncaught exception's stack trace; for dbt a failed
+  model or test). A probe that matches the crash signature, or passes its time limit, finds a crash.
+  Crashes count once per distinct signature (the exception type and its innermost frame of the
+  candidate's code), so many probes hitting one bug count as one defect [#41].
+- **Severity labels** are part of each check's definition, committed with the task; a probe crash is
+  major [#41].
+- The edge suites, probe inputs, probe commands, crash signatures and labels are part of the frozen task
+  list: their sha256 is recorded with the run set (§3.4). A check added after the first run starts a new run set [v1] [#41].
 
-**Reviewer-proposed checks**, after the runs, to find defects that no frozen check anticipated [#41]:
+**Reviewer-proposed checks**, after the runs, to find defects that no frozen check anticipated. This is
+the one exception to the rule above: the protocol is fixed before the run set, and the review runs once,
+after every run of the run set, so an arm's count depends only on its own code and the frozen protocol
+[#41].
 
-- **A fixed instrument.** One reviewer model, prompt and token budget for every arm, recorded with the run
-  set before the first run. It sees each arm's final source, tests and diff as anonymous folders, as v1's
-  blind review did, and no process files [v1] [#41].
-- **Tests only.** Its only output is executable reproduction tests. Prose, verdicts and scores are not
-  read [#41].
-- **Code confirms each test.** A proposed test is kept only when it passes on the reference solution and
-  fails on the code of the arm it was written for. Every kept test then runs against every arm's code,
-  so an arm is never penalized because the reviewer looked at it longer [#41].
-- **Severity by rule.** A failing kept test is a major defect; it is critical when the run also ended as
-  completed (M3). The reviewer's own words about severity are not used [#41].
+- **A fixed instrument.** One reviewer model, version, prompt and token budget per run, the same for every
+  arm, pinned before the first run. It sees each arm's final source, tests and diff as anonymous folders,
+  as v1's blind review did, and no process files. The tokens it used and the lines it read are reported
+  per run [v1] [#41].
+- **Tests only, through the public interface.** Its only output is executable reproduction tests that
+  use the task's public interface: the same harness the hidden checks use, never the arm's internal
+  names. Prose, verdicts and scores are not read [#41].
+- **Code confirms each test.** A proposed test is kept only when it passes 3 of 3 times on the reference
+  solution and on a second, independently written correct solution committed with the task, and fails 3
+  of 3 times on the code of the arm it was written for, within its time limit. A test that errors (it
+  cannot import, or it breaks before its assertions) does not count as failing [#41].
+- **Applied to every arm, counted once.** Every kept test runs against every arm's code. Tests that pass
+  and fail on exactly the same runs count as one defect, however many the reviewer wrote [#41].
+- **Severity by rule.** A failing kept test is a major defect, never critical: critical comes only from
+  a frozen check's label or an undelivered run (§8.1). The reviewer's own words about severity are not
+  used [#41].
 - Kept tests are committed with the run set's results, and their defects are reported in a column of
-  their own beside the frozen-check defects; both count in M2 [#41].
+  their own beside the frozen-check defects. Both count in M2, and the decision (§8) is also reported
+  with frozen-check defects only, so the reviewer's effect on it can be seen [#41].
 
 The limit is stated with every result: a defect that neither a frozen check nor a kept test catches is not
 counted [#41].
@@ -408,24 +423,32 @@ For tasks with seeded ground truth (the pipeline family), each failed run is aud
 1. The grader first explains each failed check from the answer key, which stores the wrong answer that
    each single trap produces [PF].
 2. A blind auditor gets only the run's record and the symptom. It does not get the trap id. The auditor
-   is a fixed agent (the same model and prompt for every arm). It is the instrument being measured with,
-   not a grader: a script scores its answers against the answer key, and no person or model scores
-   them [PF] [#41].
+   is a fixed agent: one model, version and prompt for every arm, pinned with the run set before the
+   first run. It is the instrument being measured with, not a grader: a script scores its answers, and no
+   person or model scores them [PF] [#41].
    - One-shot arms: the repository, the transcript and the arm's own summary.
    - Harness arms: the same, plus the harness artifacts (spec notes, plan, phase commits, reviews,
      decisions, deferral log).
-3. The auditor answers: which cause; where it first went wrong; the cheapest fix point; how much of the
-   delivered work must be redone [PF].
-4. Scores: diagnosis accuracy, origin accuracy, audit cost (wall time and tokens), repair cost (an
-   arm-matched repair agent fixes the run from the auditor's answer: its time, tokens, and whether the
-   checks then pass) [PF].
+3. The auditor answers in a fixed form that a script reads: the cause, as a trap id from the catalog; the
+   origin, as the sha of the commit where it first went wrong; the cheapest fix point, as a file path;
+   and the work to redo, as a list of tables or phases [PF] [#41].
+4. Scores, each by script [PF] [#41]:
+   - Diagnosis accuracy: the trap id matches the answer key's (or its equivalence set).
+   - Origin accuracy: the commit matches the ground truth found by code: the grader runs the failing
+     check on each commit of the run in order, and the origin is the first commit where the check gives
+     the trap's stored wrong answer. A run with a single commit has no origin to find; its origin
+     accuracy is not reported.
+   - Audit cost: the auditor's wall time and tokens.
+   - Repair cost: an arm-matched repair agent fixes the run from the auditor's answer; its time, tokens,
+     and whether the checks then pass. The fix point and the work to redo are scored only through this.
 
 ## 8. Decision rule (pre-registered)
 
 ### 8.1 Units and interval
 
 - **Units.** Every measure is per **attempted** run. A run that does not deliver (fails M1 or M8) counts as
-  one critical defect for M2, and as one false success for M3 if it reports success. M3 is a per-run rate
+  one critical defect for M2 (its edge-check failures are not added), and as one false success for M3
+  if it ends as completed (§4.1). M3 is a per-run rate
   [v1].
 - **Attempted run.** A graded run (§5.2), a `contaminated` run (§5.2) and a one-shot run that hits the
   guard time cap (§5.3). A `contaminated` run and a guard-cap run are attempted runs that are not
@@ -585,9 +608,9 @@ These items must be filled or confirmed by the owner, with a changelog entry, be
 5. Each other [v2] operational definition: the lift threshold (§3.2), the private-task hash (§3.4),
    pass^k (§4.4), the beyond rule (§8.4) and the scope of the §2.1 model rule (§2.1).
 6. The code that pins v1 caps changes to v2 (§5.3).
-7. Scripts for every measure that a run set reports (§4) and that is not built yet: test-confirmed
+7. Scripts for every measure that a run set reports (§4) and that is not built yet: detected
    defects (the edge suites, probe inputs and severity labels of each task, and the reviewer's model,
-   prompt and budget, §6), test strength, an
+   prompt and budget, and a second, independent correct solution per task, §6), each arm's stop signal (M3), the origin bisect (§7), test strength, an
    import-graph reader for each non-Python stack in the run set, the audit
    scores [QM] [OC]. (Duplication, Python coupling and the edit radius are built in
    `scripts/quality_metrics.py`.)
@@ -603,8 +626,8 @@ These items must be filled or confirmed by the owner, with a changelog entry, be
 | 5 | Claims by lift and beyond classes; v1 classes S, L and O stay as descriptions; T04–T06 only for contrast (§3.2, §3.3) | 2026-10-14 | [next steps: two task classes](../plans/next-steps.md#task-selection-calibrated-against-the-bar-owner-direction-2026-10-13) |
 | 6 | Task sources: private brownfield tasks (scores published, code not), review-caught defects, a published hard set, the pipeline family (§3.3) | 2026-10-13 | [next steps: task selection](../plans/next-steps.md#task-selection-calibrated-against-the-bar-owner-direction-2026-10-13), [pipeline family](../plans/tasks/pipeline-family.md) |
 | 7 | Reliability over repeats: pass^k per cell, n = 5 per cell (§4.4) | 2026-10-14 | [next steps: two task classes](../plans/next-steps.md#task-selection-calibrated-against-the-bar-owner-direction-2026-10-13), [whitepaper](../whitepaper.md) |
-| 8 | The quality model is the quality measure: three layers, a tool gate with published thresholds, a design checklist; M2 (test-confirmed, critical or major) is the primary measure; v1's M7 rubric is replaced and kept only for comparison, M6 folds into the tool gate (§4) | 2026-10-13 | [harness-benchmark#16](https://github.com/jtouley/harness-benchmark/issues/16), [quality model](quality-model.md), [next steps: measures](../plans/next-steps.md#measures) |
-| 9 | Owner success criteria: DRY (duplication ≤ 3%), SOLID (coupling, checklist, edit radius), extensible (follow-up success and cost), traceable (audit scores), cheapest in the top design tier (§4.3, §8.5) | 2026-10-14 | [quality model: owner criteria](quality-model.md#owner-criteria-2026-10-14-dry-solid-extensible-traceable-cheap), [pipeline family](../plans/tasks/pipeline-family.md#success-criteria-owner-2026-10-14) |
+| 8 | The quality model is the quality measure: three layers, a tool gate with published thresholds, a design checklist; M2 (test-confirmed, critical or major) is the primary measure (superseded in part by row 20); v1's M7 rubric is replaced and kept only for comparison, M6 folds into the tool gate (§4) | 2026-10-13 | [harness-benchmark#16](https://github.com/jtouley/harness-benchmark/issues/16), [quality model](quality-model.md), [next steps: measures](../plans/next-steps.md#measures) |
+| 9 | Owner success criteria (the checklist part superseded by row 20): DRY (duplication ≤ 3%), SOLID (coupling, checklist, edit radius), extensible (follow-up success and cost), traceable (audit scores), cheapest in the top design tier (§4.3, §8.5) | 2026-10-14 | [quality model: owner criteria](quality-model.md#owner-criteria-2026-10-14-dry-solid-extensible-traceable-cheap), [pipeline family](../plans/tasks/pipeline-family.md#success-criteria-owner-2026-10-14) |
 | 10 | Haiku-only harness arms, reviews included; the Opus one-shot is the bar; Haiku and Sonnet one-shots; named comparison arms only where named (§2.1, §2.2). The 2026-10-12 Cursor, OpenAI, Haiku 4.5 and Opus-review arms are not in the v2 run set | 2026-10-14 | [pipeline family: arms](../plans/tasks/pipeline-family.md#arms), [next steps: owner decisions](../plans/next-steps.md#owner-decisions-for-this-design-2026-10-12) |
 | 11 | Follow-up tasks on the arm's own frozen code (§4.5) | 2026-10-14 | [follow-up task](../plans/tasks/pipeline-followup.md) |
 | 12 | Prompt hygiene: five rules beside the neutral baseline (§2.4) | 2026-10-14 | [pipeline family: prompt hygiene](../plans/tasks/pipeline-family.md#prompt-hygiene) |
@@ -615,7 +638,7 @@ These items must be filled or confirmed by the owner, with a changelog entry, be
 | 17 | M10 auditability as a checklist share per run, with the deferral log (§4.7) | 2026-10-12, 2026-10-14 | [next steps: measures](../plans/next-steps.md#measures), [pipeline family: arms](../plans/tasks/pipeline-family.md#arms) |
 | 18 | Decision rule restated: comparison A (v1 rule, same model), comparison B (non-inferiority to the bar, margin 0.25), comparison C (beyond the bar), and the answer as the cheapest arm in the top design tier (§8) | 2026-10-12, 2026-10-14 | [next steps: decision rule](../plans/next-steps.md#decision-rule-for-this-question), [quality model: owner criteria](quality-model.md#owner-criteria-2026-10-14-dry-solid-extensible-traceable-cheap) |
 | 19 | Operational definitions that v2 adds, each marked [v2] and listed in §11 for owner confirmation | 2026-10-14 | this document |
-| 20 | No model or person decides a measure by judgment. M2 becomes defects detected by code: frozen edge checks and probe inputs with pre-committed severity, plus tests a fixed, blind reviewer proposes, kept only when they pass on the reference and fail on the arm, run against every arm, with severity by rule; M3 is decided by script; the design checklist, the M7 comparison column and pairwise judging are dropped; the audit is scored by script against the answer key, with no human spot check (§4, §6, §7, §8.5) | 2026-10-19 | [harness-benchmark#41](https://github.com/jtouley/harness-benchmark/issues/41) |
+| 20 | No model or person decides a measure by judgment. M2 becomes defects detected by code: frozen edge checks and probe inputs with pre-committed severity, plus tests a fixed, blind reviewer proposes, kept only when they pass on the reference and fail on the arm, run against every arm, with severity by rule; M3 is decided by script; the design checklist, the M7 comparison column and pairwise judging are dropped; the audit answers in a fixed form and is scored by script, its origin found by a bisect over the run's commits, with no human spot check or adjudication; M3 and M8 are read from the transcript and a declared stop signal (§4, §6, §7, §8.5) | 2026-10-19 | [harness-benchmark#41](https://github.com/jtouley/harness-benchmark/issues/41) |
 
 ## Changelog
 
