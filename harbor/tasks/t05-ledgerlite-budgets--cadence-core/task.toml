@@ -9,7 +9,7 @@ keywords = ["harness-benchmark", "cadence-core", "T05-ledgerlite-budgets"]
 task = "T05-ledgerlite-budgets"
 arm = "cadence-core"
 framework_sha = "f734888648997be7c0a268a3e01b60c0904cec6c"
-lock_sha256 = "273ea0b9b6dc606db44ec639130fcbb8002f6914f9a9dede7f90a6e01b70eed3"
+lock_sha256 = "fc348dd3c2541d7b30cf902517fd9af162c452d9c26cd73bea39f03d5e285eab"
 
 [verifier]
 timeout_sec = 300.0
