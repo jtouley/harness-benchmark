@@ -1,0 +1,17 @@
+{
+  "cadence_sha": "4935e831b45a46e7468543035424032d65d4afa1",
+  "cadence_branch": "ccr-3d2e0c73-lr6bdt",
+  "claude_version": "2.1.303 (Claude Code)",
+  "model": "claude-opus-5-5",
+  "arm": "cadence-core",
+  "task": "P1",
+  "isolation": "host (no Docker daemon here): clean HOME, no clean room, dev replay seed 0, grading seed 1",
+  "plugin_config": {
+    "adapter": "none",
+    "gated_prefixes_extra": [
+      "pipeline/",
+      "transform/",
+      "Makefile"
+    ]
+  }
+}
