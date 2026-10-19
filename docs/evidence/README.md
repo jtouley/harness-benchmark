@@ -71,6 +71,17 @@ what produced each number, and the [whitepaper](../whitepaper.md) draws them tog
   needs more disk than the test machine had.
 - Read: [smoke check](2026-10-18-smoke-check.md), with its grader and analyzer outputs
 
+## Postmortem of the first cadence-core round (19 October)
+
+- Question: whose failure was each lost check in the first Cadence-core runs on P1 and P2, and what
+  did the reporting get wrong?
+- Sample: four runs on Haiku 5.5, on a host; the round itself is on branch `ccr-3d2e0c73-lr6bdt`.
+- Result: most lost checks are the delivered pipelines' own; one run was lost to a Cadence defect and
+  one to a time cap that criteria v2 forbids for harness arms. Four benchmark defects found: the
+  runner caps every arm, the grader treats single-file marts inconsistently, coverage cannot be
+  measured on pipeline tasks, and Haiku costs ignore the long-prompt price, so they are lower bounds.
+- Read: [postmortem](2026-10-19-cadence-core-postmortem.md)
+
 ## Scripts kept with the data
 
 The scripts beside each round's data (`grade.py`, `run_arm.sh` and others) are the exact ones used for that
