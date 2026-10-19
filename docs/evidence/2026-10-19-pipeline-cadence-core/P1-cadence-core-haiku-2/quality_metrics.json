@@ -1,0 +1,43 @@
+{
+  "package_lines_added": 0,
+  "tests_passed": null,
+  "tests_failed": null,
+  "new_code_coverage": null,
+  "cyclomatic_max": 0,
+  "cyclomatic_newly_over_10": [],
+  "cognitive_max": 0,
+  "cognitive_newly_over_15": [],
+  "maintainability_index": null,
+  "lint_new_by_rule": {},
+  "bug_findings_new": 0,
+  "smells_per_100_new_lines": 0.0,
+  "new_code_duplication": null,
+  "duplication": null,
+  "module_coupling": {},
+  "gate": {
+    "tests_pass": false,
+    "new_code_coverage_at_least_80": false,
+    "no_function_newly_over_cyclomatic_10": true,
+    "no_function_newly_over_cognitive_15": true,
+    "no_new_bug_findings": true,
+    "no_new_type_errors": false,
+    "new_code_duplication_at_most_3": false
+  },
+  "gate_passed": false,
+  "tool_errors": {
+    "coverage": "uv run --quiet --no-project exited 5: ata-collected\n  self._warn(\"No data was collected.\", slug=\"no-data-collected\")\n/root/.cache/uv/archive-v0/F5O8DzLDusvQtklb/lib/python3.12/site-packages/pytest_cov/plugin.py:366: CovReportWarning: Failed to generate report: No data to report.\n\n  warnings.warn(CovReportWarning(message), stacklevel=1)\n",
+    "types": "uvx --quiet mypy==2.4.0 --check-untyped-defs exited 2: pipeline: error: Cannot read file: No such file or directory\n",
+    "duplication": "uvx --quiet --from nodejs-wheel==24.19.0 exited 1: Using config from /tmp/tmp1pr8c8x_/jscpd.json\nError: path does not exist: pipeline\n"
+  },
+  "tools": {
+    "ruff": "ruff==0.17.0",
+    "radon": "radon==6.0.1",
+    "complexipy": "complexipy==8.0.1",
+    "mypy": "mypy==2.4.0",
+    "pytest": "pytest==9.1.1",
+    "pytest-cov": "pytest-cov==7.1.0",
+    "coverage": "coverage==7.16.2",
+    "jscpd": "jscpd@5.4.1",
+    "node": "nodejs-wheel==24.19.0"
+  }
+}

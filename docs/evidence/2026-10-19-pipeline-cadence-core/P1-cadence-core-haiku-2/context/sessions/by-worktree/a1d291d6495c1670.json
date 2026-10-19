@@ -1,0 +1,50 @@
+{
+  "skill": "cadence",
+  "pipeline_run_id": "0fec6725-2ec0-4484-9927-c271c6dad961",
+  "task_id": "cd-1",
+  "task_source": "branch:feature/gh-1-pipeline",
+  "task_description": "",
+  "branch": "feature/gh-1-pipeline",
+  "ticket_tokens": [
+    "1",
+    "cd-1",
+    "feature/gh-1-pipeline"
+  ],
+  "fresh_run": true,
+  "supersede_on_activate": false,
+  "superseded_paths": [],
+  "activated_at": "2026-10-19T06:49:31.439250+00:00",
+  "owner_session_id": "a08112b2-70f8-5c85-83c0-3c1d7290b3c5",
+  "orchestrator_agent_ids": [],
+  "orchestrator_source": "toplevel",
+  "host": "claude",
+  "base": "origin/main",
+  "workspace": "/tmp/claude-0/-home-user/a08112b2-70f8-5c85-83c0-3c1d7290b3c5/scratchpad/pipe/P1-cadence-core-haiku-2/repo",
+  "primary_checkout": "/tmp/claude-0/-home-user/a08112b2-70f8-5c85-83c0-3c1d7290b3c5/scratchpad/pipe/P1-cadence-core-haiku-2/repo",
+  "context_root": "/tmp/claude-0/-home-user/a08112b2-70f8-5c85-83c0-3c1d7290b3c5/scratchpad/pipe/P1-cadence-core-haiku-2/repo/.context",
+  "matching_artifacts": {},
+  "resume_slug": "activate-session",
+  "resume_block": "A1",
+  "resume_reason": "Fresh run \u2014 start at A1 (activate-session)",
+  "active_skill": "cadence",
+  "registry_version": 1,
+  "env_exports": {
+    "CURSOR_ACTIVE_SKILL": "cadence",
+    "CADENCE_TASK_ID": "cd-1",
+    "CADENCE_FRESH_RUN": "1",
+    "CADENCE_PIPELINE_RUN_ID": "0fec6725-2ec0-4484-9927-c271c6dad961",
+    "CADENCE_HOME": "/tmp/claude-0/-home-user/a08112b2-70f8-5c85-83c0-3c1d7290b3c5/scratchpad/pipe/P1-cadence-core-haiku-2/cadence"
+  },
+  "peer_models": {
+    "plan-create": "haiku",
+    "plan-review": "haiku",
+    "pr-review-local": "haiku"
+  },
+  "lean_record_by_hook": true,
+  "worktree_key": "a1d291d6495c1670",
+  "hard_stop": {
+    "class": "retries",
+    "reason": "P9 entry-invariant fails: plan-review cycle 5 is READY WITH CHANGES and the plan's ## Carried review findings lacks MF-5, MF-7, MF-12 to MF-16. Three plan-update peer runs after cycle 5 did not add these mappings. The review limit is reached, so no further review can run. E1 cannot start.",
+    "at": "2026-10-19T07:13:48.013343+00:00"
+  }
+}

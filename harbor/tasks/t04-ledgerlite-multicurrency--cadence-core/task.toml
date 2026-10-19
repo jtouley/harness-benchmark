@@ -8,8 +8,8 @@ keywords = ["harness-benchmark", "cadence-core", "T04-ledgerlite-multicurrency"]
 [metadata]
 task = "T04-ledgerlite-multicurrency"
 arm = "cadence-core"
-framework_sha = "f734888648997be7c0a268a3e01b60c0904cec6c"
-lock_sha256 = "fc348dd3c2541d7b30cf902517fd9af162c452d9c26cd73bea39f03d5e285eab"
+framework_sha = "f6011dfbc425a2224f36e5df0b1b5438392d806f"
+lock_sha256 = "738a3f7358cc7486edc55566c903f8bc69d604bc1427ca2a8043956e73cb2502"
 
 [verifier]
 timeout_sec = 300.0

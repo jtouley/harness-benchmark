@@ -8,10 +8,10 @@ RUN ln -s ../lib/node_modules/npm/bin/npm-cli.js /usr/local/bin/npm \
 ENV CI=1 DO_NOT_TRACK=1 OPENSPEC_TELEMETRY=0 DISABLE_AUTOUPDATER=1 PYTHONDONTWRITEBYTECODE=1
 RUN pip install --no-cache-dir -q uv==0.11.0 pytest
 RUN npm install -g @anthropic-ai/claude-code@2.1.294
-# cadence-core @ f734888648997be7c0a268a3e01b60c0904cec6c
+# cadence-core @ f6011dfbc425a2224f36e5df0b1b5438392d806f
 RUN git init -q /opt/fw && cd /opt/fw \
- && git fetch -q --depth 1 https://github.com/jtouley/cadence f734888648997be7c0a268a3e01b60c0904cec6c && git checkout -q FETCH_HEAD \
- && test "$(git rev-parse HEAD)" = "f734888648997be7c0a268a3e01b60c0904cec6c"
+ && git fetch -q --depth 1 https://github.com/jtouley/cadence f6011dfbc425a2224f36e5df0b1b5438392d806f && git checkout -q FETCH_HEAD \
+ && test "$(git rev-parse HEAD)" = "f6011dfbc425a2224f36e5df0b1b5438392d806f"
 COPY repo/ /app/
 RUN cd /app && git init -q -b main && git config user.email bench@example.invalid \
  && git config user.name bench && git add -A && git commit -q -m base

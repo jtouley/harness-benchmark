@@ -1,0 +1,17 @@
+{
+ "base": "0d6dc7a718c81b891e1f963636f26775f1e7adc9",
+ "head": "0d6dc7a718c81b891e1f963636f26775f1e7adc9",
+ "package": "pipeline",
+ "test_cmd": null,
+ "uncommitted_changes": false,
+ "commits": [],
+ "summary": {
+  "commits": 0,
+  "measurable": false,
+  "final": {
+   "functions": 0,
+   "total_complexity": 0,
+   "functions_over_10": 0
+  }
+ }
+}

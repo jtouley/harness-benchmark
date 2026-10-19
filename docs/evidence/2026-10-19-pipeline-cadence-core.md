@@ -21,8 +21,8 @@ with Haiku 5.5 as orchestrator and as every peer.
   on seed 1, after it. No clean room: the file system was not isolated, and the agent's environment
   came from the host's shell with `HOME`, `CADENCE_HOME` and the two variables below overridden.
 - **Arm.** Cadence on branch `ccr-3d2e0c73-lr6bdt` (`4935e83` for the Opus runs, `b1bbdcd` for the
-  two Haiku runs; each run's `provenance.json` names its sha), loaded with `--plugin-dir` for the
-  session only. Config: `adapter: none`, `peer_models: {"default": "haiku"}`. The task repository got
+  first two Haiku runs, `f734888` for the P1 rerun; each run's `provenance.json` names its sha),
+  loaded with `--plugin-dir` for the session only. Config: `adapter: none`, `peer_models: {"default": "haiku"}`. The task repository got
   a `.cadence.json` that gates `pipeline/`, `engine/`, `pipelines/`, `transform/` and the `Makefile`,
   so the edit guard applies to the task's code. Prompt: the lockfile's Cadence drive prompt around the
   task prompt word for word, plus the pilot's environment note (no GitHub, PR text to `outputs/PR.md`,
@@ -51,6 +51,7 @@ Same results as on the laptop (15 October), on a different architecture and OS.
 | P1-cadence-core-opus-2 | P1 | cadence-core | Opus 5.5 | interrupted at P1 (owner switched the arm to Haiku) | | | | | | | |
 | **P1-cadence-core-haiku-1** | P1 | cadence-core | **Haiku 5.5** | **0.7143** | **5/7** | yes | yes | 9 | 3,062 | **$0.67** | $2.24 |
 | P2-cadence-core-haiku-1 | P2 | cadence-core | Haiku 5.5 | 0.1429 | 1/7 | yes | yes | 9 | 7,203 (guard cap) | $0.65 | none (killed) |
+| P1-cadence-core-haiku-2 | P1 | cadence-core | Haiku 5.5 | 0.0 | 0/7 | no | no | 0 | 1,496 | $0.30 | $0.32 |
 
 For comparison, the 15 October one-shots on P1 (isolated runner, Claude Code 2.1.287, regraded):
 
@@ -161,6 +162,30 @@ The quality gate fails on complexity, on the bug finding, on the type errors and
 coverage. The clean-room check reports 29 "contacts"; all are shell variable names, Cadence's own
 paths, or the task's own folders (`data`, `transform`). None is a real contact.
 
+### P1-cadence-core-haiku-2 (hard stop at P9, no code)
+
+The rerun on Cadence `f734888`, the commit that adds the local PR record under `adapter: none`. The
+record was never reached. Timeline (UTC): 06:49 activation; 06:50 plan-create; 06:54 to 07:09 five
+plan-review cycles, each `READY WITH CHANGES` with new must-fix items (MF-1 to MF-19 over the five
+reviews); 07:10 to 07:13 three plan-update runs after the fifth review, to carry the open items;
+07:13 the orchestrator ran the entry invariant after each, got the same failure three times, recorded
+a hard stop of class `retries`, and ended. 25 minutes, $0.30, no commit. The grader found no
+`oracle_map.yml` and no build target.
+
+The failure, from the review and the gate output: the fifth review listed three open items (MF-17 to
+MF-19) under `## Must-fix items`, and named seven earlier ids elsewhere: two as applied in a status
+list, two in the notes, two under "checked and found sound", one cited inside another item's text.
+The P9 gate read every `MF-n` in the file as open and asked the plan to map all ten. The three plan
+updates mapped the three open ones each time. The orchestrator did not write the mapping itself
+("the gate needs the peer's output"), which is the rule. The defect is the gate's, not the model's.
+Fixed in Cadence `f6011df`: the gate reads the open ids from the review's must-fix section,
+and only the items labelled there. On this run's review the fixed gate asks for MF-17 to MF-19,
+which the plan carries, so P9 would have passed.
+
+The tool measures have nothing to read (no lines added). The clean-room check reports 19 contacts:
+variable names, Cadence's own paths, `uv` cache paths, and a dlt source path the plan-create peer
+read under the virtual environment. None is a real contact.
+
 ### P1-cadence-core-1 (Opus, no delivery)
 
 The orchestrator activated, wrote the local ticket and called the plan-create peer with
@@ -183,7 +208,8 @@ so does `runner/claude-agent.sh`. 17 minutes, $1.96, no plan file.
 3. **The core needs a no-PR mode for a benchmark environment.** `draft_pr_gate.py` wants a PR URL and
    R1 wants a PR number. The pilot's environment note ("continue as if it succeeded") did not get the
    orchestrator past that; it recorded a hard stop instead. A local PR record (a file path in place of a
-   URL under `adapter: none`) would let the review stages run. Not a benchmark change.
+   URL under `adapter: none`) lets the review stages run. Added in Cadence `f734888`; the rerun on it
+   stopped at P9 (below), so the record is still untested on this family.
 4. **Headless hosts need two environment variables** (above). Found by the first run, fixed in the
    runner and in Cadence's quickstart.
 5. **The tool measures work on this task family** and show what the reviewer would have found: two
@@ -196,9 +222,15 @@ so does `runner/claude-agent.sh`. 17 minutes, $1.96, no plan file.
    cannot see is a defect of the environment note as much as of the harness. Two things to change
    before a rerun: state the budget in the task's environment note, and let the plan reviewer ask how
    long each acceptance step takes.
-7. **The plan-review loop hit its cycle limit on both tasks.** Five cycles each time, every verdict
-   `READY WITH CHANGES`, and each cycle found new must-fix items in the text the previous cycle added.
-   The limit, not the reviewer, ended the loop. On P2 that cost 20 minutes and $0.15 of the run.
+7. **The plan-review loop hit its cycle limit on all three Haiku runs.** Five cycles each time, every
+   verdict `READY WITH CHANGES`, and each cycle found new must-fix items in the text the previous cycle
+   added. The limit, not the reviewer, ended the loop. On P2 that cost 20 minutes and $0.15 of the
+   run; on the P1 rerun, 19 minutes and most of its $0.30.
+8. **The P1 rerun died on a gate defect, not on the task.** The entry invariant counted every
+   `MF-n` in the review as open, including the applied ones, so no plan update could satisfy it. The
+   orchestrator followed the rule (three peer runs, then a hard stop) rather than writing the mapping
+   itself. Found by this run, fixed in Cadence `f6011df`. The one run that reached code (P1,
+   the first Haiku run) passed the same gate because its fifth review named no earlier ids.
 
 ## Limits
 
@@ -215,6 +247,7 @@ so does `runner/claude-agent.sh`. 17 minutes, $1.96, no plan file.
 ## Next
 
 - P3 needs the Docker image.
+- Rerun P1 on the gate fix, so the local PR record and R1 run on delivered code.
 - Rerun P2 with the time budget in the environment note, so the acceptance step fits.
 - Rerun P1 in the isolated runner with the runner's new environment, n = 3, when a Docker host exists.
 - Fix the no-PR mode in Cadence, then rerun so R1 and R5 run on the delivered code.

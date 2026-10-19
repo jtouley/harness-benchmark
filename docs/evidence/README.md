@@ -70,8 +70,10 @@ what produced each number, and the [whitepaper](../whitepaper.md) draws them tog
 - Result: on P1, 5 of 7 checks at $0.67 list price, against 0 of 7 for Haiku alone and 6 of 7 for
   Opus alone ($5.82). The run stopped before its review stages because the environment has no PR. On
   P2, 1 of 7 at $0.65: the guard cap killed the run during a one-hour acceptance step, before the
-  export step the grader reads. An Opus run died on a host defect (a peer started in the background),
-  now fixed in the runner.
+  export step the grader reads. A P1 rerun on the Cadence commit with a local PR record stopped at
+  the entry gate with no code (0 of 7, $0.30): the gate counted applied review items as open, a
+  Cadence defect fixed from this run. An Opus run died on a host defect (a peer started in the
+  background), now fixed in the runner.
 - Read: [write-up](2026-10-19-pipeline-cadence-core.md), [data](2026-10-19-pipeline-cadence-core/)
 
 ## Smoke check on Harbor (18 October): no model
