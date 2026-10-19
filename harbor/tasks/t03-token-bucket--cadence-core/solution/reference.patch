@@ -1,0 +1,39 @@
+diff --git a/ratelimit/bucket.py b/ratelimit/bucket.py
+index 8486ed7..e04290e 100644
+--- a/ratelimit/bucket.py
++++ b/ratelimit/bucket.py
+@@ -5,10 +5,31 @@ class TokenBucket:
+     """Token-bucket rate limiter. See the issue for the required behavior."""
+ 
+     def __init__(self, capacity, refill_rate, clock=time.monotonic):
+-        raise NotImplementedError
++        if not isinstance(capacity, int) or isinstance(capacity, bool) or capacity <= 0:
++            raise ValueError("capacity must be an int > 0")
++        if refill_rate < 0:
++            raise ValueError("refill_rate must be >= 0")
++        self.capacity = capacity
++        self.refill_rate = float(refill_rate)
++        self._clock = clock
++        self._tokens = float(capacity)
++        self._last = clock()
++
++    def _refill(self):
++        now = self._clock()
++        elapsed = max(0.0, now - self._last)
++        self._last = now
++        self._tokens = min(float(self.capacity), self._tokens + elapsed * self.refill_rate)
+ 
+     def try_acquire(self, n=1):
+-        raise NotImplementedError
++        if not isinstance(n, int) or isinstance(n, bool) or n < 1 or n > self.capacity:
++            raise ValueError("n must be an int between 1 and capacity")
++        self._refill()
++        if self._tokens >= n:
++            self._tokens -= n
++            return True
++        return False
+ 
+     def available(self):
+-        raise NotImplementedError
++        self._refill()
++        return self._tokens

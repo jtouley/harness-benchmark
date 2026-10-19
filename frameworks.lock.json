@@ -71,6 +71,38 @@
       "drive_prompt": "Use the cadence skill to ship this change end to end through R7.\n\nIssue (ticket gh-1):\n{issue}",
       "install_note": "Only the host directories exist before install (no skills dirs): the first-install case. Pinned to the current jtouley/cadence main; the whole repo is the installed skill root, so anything in that repo ships in the skill."
     },
+    "cadence-core": {
+      "title": "Cadence core",
+      "repo": "https://github.com/jtouley/cadence",
+      "sha": "6f5919b3ab39817aadedd928e736caa71e7ecd98",
+      "build": [],
+      "install": [
+        {
+          "op": "mkdir",
+          "path": "{home}/.claude"
+        },
+        {
+          "op": "mkdir",
+          "path": "{home}/.cursor"
+        },
+        {
+          "op": "run",
+          "cwd": "{src}",
+          "argv": [
+            "bash",
+            "./install.sh"
+          ]
+        }
+      ],
+      "plugin_dirs": [],
+      "workflow": {
+        "source": "derived: skill `cadence`, then every slash-command stage in stages.json order, resolved through references/bundled-peers.json",
+        "derive": "cadence-stages",
+        "steps": []
+      },
+      "drive_prompt": "Use the cadence skill to ship this change end to end through R7.\n\nIssue (ticket gh-1):\n{issue}",
+      "install_note": "The ten-block core of Cadence (ADR-0008) on branch ccr-3d2e0c73-lr6bdt. Same install as `cadence`: only the host directories exist before install; the whole repo is the skill root."
+    },
     "superpowers": {
       "title": "Superpowers",
       "repo": "https://github.com/obra/superpowers",

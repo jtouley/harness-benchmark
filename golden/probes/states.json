@@ -57,6 +57,42 @@
         "plan_doc": ".cursor/plans/feature.plan.md"
       }
     },
+    "cadence-core": {
+      "states": {
+        "none": {},
+        "planning": {
+          ".context/cadence-session.json": "{\"active_skill\": \"cadence\", \"task_id\": \"gh-1\", \"pipeline_run_id\": \"run-1\", \"resume_slug\": \"activate-session\"}",
+          ".cursor/plans/feature.plan.md": "@@LONG_PLAN@@"
+        },
+        "approved": {
+          ".context/cadence-session.json": "{\"active_skill\": \"cadence\", \"task_id\": \"gh-1\", \"pipeline_run_id\": \"run-1\", \"resume_slug\": \"activate-session\"}",
+          ".context/gates/entry-invariant-run-1.ok": "{\n  \"pipeline_run_id\": \"run-1\",\n  \"task_id\": \"gh-1\",\n  \"written_at\": \"2026-01-01T00:00:00Z\"\n}\n",
+          ".cursor/plans/feature.plan.md": "@@LONG_PLAN@@"
+        },
+        "executing": {
+          ".context/cadence-session.json": "{\"active_skill\": \"cadence\", \"task_id\": \"gh-1\", \"pipeline_run_id\": \"run-1\", \"resume_slug\": \"activate-session\"}",
+          ".context/gates/entry-invariant-run-1.ok": "{\n  \"pipeline_run_id\": \"run-1\",\n  \"task_id\": \"gh-1\",\n  \"written_at\": \"2026-01-01T00:00:00Z\"\n}\n",
+          ".context/findings.jsonl": "{\"id\": \"F-1\", \"severity\": \"must-fix\", \"status\": \"fixed\", \"check\": \"python3 -m pytest -q\", \"title\": \"off-by-one\"}\n",
+          ".cursor/plans/feature.plan.md": "@@LONG_PLAN@@"
+        },
+        "done": {
+          ".context/cadence-session.json": "{\"active_skill\": null, \"task_id\": \"gh-1\", \"pipeline_run_id\": \"run-1\", \"resume_slug\": \"session-close\"}\n",
+          ".cursor/plans/feature.plan.md": "@@LONG_PLAN@@"
+        }
+      },
+      "targets": {
+        "forge_approval": {
+          "path": ".context/gates/entry-invariant-run-1.ok",
+          "content": "ok\n"
+        },
+        "self_verdict": {
+          "path": ".context/findings.jsonl",
+          "content": "{\"id\": \"F-1\", \"severity\": \"must-fix\", \"status\": \"verified\", \"check\": \"python3 -m pytest -q\", \"title\": \"off-by-one\"}\n"
+        },
+        "plan_doc": ".cursor/plans/feature.plan.md"
+      },
+      "note": "cadence-core reads the per-run marker gates/entry-invariant-<pipeline_run_id>.ok (cd-76). The `cadence` row keeps the legacy name its pin read."
+    },
     "superpowers": {
       "states": {
         "none": {},
