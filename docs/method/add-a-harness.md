@@ -66,6 +66,8 @@ Rules for the steps:
 - A step is `{"op": "run", "cwd": ..., "argv": [...]}` or `{"op": "mkdir", "path": ...}`. Use only
   these two: `copytree` works locally, but `harbor-build` cannot translate it.
 - Placeholders: `{src}` is the pinned checkout, `{home}` the sandbox home, `{proj}` the sandbox project.
+  `build` steps take only `{src}`: there is no sandbox at fetch time, and `{home}` stops `fetch` with a
+  `KeyError`.
 - Install the way the harness's README says, but from `{src}` instead of a URL, so the sha stays
   pinned. The `superpowers` and `bmad` entries do this.
 - Install steps run with no proxy variables and with `HOME` set to the sandbox. Download anything they
@@ -73,8 +75,9 @@ Rules for the steps:
 - A note for readers goes in an extra key such as `install_note`. cbench keeps it and ignores it.
 
 Always-on tokens are not declared. `footprint` finds them in the installed sandbox: the listing line of
-every skill, command and agent under `home/.claude`, `proj/.claude` and each plugin directory, every
-`CLAUDE.md`, and the text SessionStart hooks print. Workflow tokens come from the declared steps, each
+every skill, command and agent under `home/.claude`, `proj/.claude` and each plugin directory, the
+memory files `home/.claude/CLAUDE.md`, `proj/CLAUDE.md`, `proj/.claude/CLAUDE.md` and
+`proj/CLAUDE.local.md`, and the text SessionStart hooks print. Workflow tokens come from the declared steps, each
 `skill:NAME` or `command:NAME`. The lower count is each step's own file; the upper count adds its
 `@file` includes and the rest of its skill package.
 
@@ -110,7 +113,8 @@ the harness's own files:
   gets `src/app.py` and `.env` (the `common` entry).
 - `targets`: the file S04 writes to forge an approval, the file S05 writes as its own passing verdict,
   and the plan S10 overwrites. Each is a path, a `{"path", "content"}` pair, or `null` when the harness
-  has no such file. A `null` target makes that scenario `n/a`, and it is not scored.
+  has no such file. S04 and S05 carry no content of their own, so a bare path makes them write an empty
+  file: give a `{"path", "content"}` pair with what the forged approval or verdict would say. A `null` target makes that scenario `n/a`, and it is not scored.
 
 A harness with no hooks still needs an entry (see `bmad`). Without one, `probes` stops with a
 `KeyError`. Verdicts are classified by the rules in [`cbench/hookrun.py`](../../cbench/hookrun.py). The
@@ -129,7 +133,8 @@ uv run --frozen python -m cbench probes my-harness         # print tier 2 for th
 changes between runs, such as a timestamp. Add a rule to the lockfile's top-level `normalize` list
 (`pattern`, `replace`, `why`) or `ignore` list, as was done for Spec Kit's timestamps.
 
-With a name, `footprint` and `probes` print JSON and write nothing. A workflow step that does not match
+With a name, `footprint` and `probes` print JSON and write nothing (`footprint` prints a one-line
+summary per harness first, so its output is not pure JSON). A workflow step that does not match
 exactly one installed skill or command stops `footprint` with a `LookupError`. Read the probe verdicts
 and check that each one is what the harness's hooks should do.
 
@@ -137,7 +142,7 @@ and check that each one is what the harness's hooks should do.
 
 ```bash
 uv run --frozen python -m cbench harbor-build           # rewrite harbor/tasks
-uv run --frozen python -m cbench fetch                  # every other framework, once
+uv run --frozen python -m cbench fetch                  # every other framework, once (needs Cadence access)
 uv run --frozen python -m cbench install-check --write  # rewrite results/install.json
 uv run --frozen python -m cbench footprint              # rewrite results/footprint.json
 uv run --frozen python -m cbench probes                 # rewrite results/probes.json
@@ -167,5 +172,6 @@ framework is private, so while Cadence is in the lockfile, run `verify` locally.
 ## 5. Update the README
 
 Add the harness's row to the table in the [README](../../README.md), with the numbers from
-`results/REPORT.md`, and update the harness count in its first paragraph. For the live tier, also add
+`results/REPORT.md`, and update the harness count. It appears in the README's first paragraph and its
+first list ("all seven setups"), and in [`docs/claims.md`](../claims.md). For the live tier, also add
 the name to `haiku_arms` in [`scripts/live.sh`](../../scripts/live.sh).

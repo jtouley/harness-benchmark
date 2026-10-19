@@ -97,9 +97,9 @@ budget that covers the worst case: see [`docs/method/live-tier.md`](docs/method/
 ## Add your own harness
 
 A harness is two data entries: its pinned install in `frameworks.lock.json` and its probe fixtures in
-`golden/probes/states.json`. The code does not change. [Add a harness](docs/method/add-a-harness.md)
+`golden/probes/states.json`. The code in `cbench/` does not change. [Add a harness](docs/method/add-a-harness.md)
 gives the steps and the commands, and a prompt that asks Claude Code to do it for you.
-To make your harness block what the probes test, the [enforcement spec](docs/method/enforcement-spec.md)
+To make your harness block what probes S01 to S08 test, the [enforcement spec](docs/method/enforcement-spec.md)
 lists the rules: the gate contract, the findings ledger and the hook points, for any host.
 
 ## Limitations
