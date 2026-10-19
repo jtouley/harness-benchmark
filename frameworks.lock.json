@@ -74,7 +74,7 @@
     "cadence-core": {
       "title": "Cadence core",
       "repo": "https://github.com/jtouley/cadence",
-      "sha": "6f5919b3ab39817aadedd928e736caa71e7ecd98",
+      "sha": "4935e831b45a46e7468543035424032d65d4afa1",
       "build": [],
       "install": [
         {

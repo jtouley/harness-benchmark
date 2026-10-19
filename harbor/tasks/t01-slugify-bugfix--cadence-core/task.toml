@@ -8,8 +8,8 @@ keywords = ["harness-benchmark", "cadence-core", "T01-slugify-bugfix"]
 [metadata]
 task = "T01-slugify-bugfix"
 arm = "cadence-core"
-framework_sha = "6f5919b3ab39817aadedd928e736caa71e7ecd98"
-lock_sha256 = "ca84e0d837e84f37ba908c7647a9a4e282c3a860feb0e85027863f8c89f4a23c"
+framework_sha = "4935e831b45a46e7468543035424032d65d4afa1"
+lock_sha256 = "c8992dc3d288cd6671beab78e4ebe8c857c6679c320f27efaf90065cd38a2fde"
 
 [verifier]
 timeout_sec = 300.0

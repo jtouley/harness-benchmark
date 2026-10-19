@@ -9,7 +9,7 @@ keywords = ["harness-benchmark", "openspec", "T01-slugify-bugfix"]
 task = "T01-slugify-bugfix"
 arm = "openspec"
 framework_sha = "9111a7654d7800391459431fff4eaf66e33a3d2e"
-lock_sha256 = "ca84e0d837e84f37ba908c7647a9a4e282c3a860feb0e85027863f8c89f4a23c"
+lock_sha256 = "c8992dc3d288cd6671beab78e4ebe8c857c6679c320f27efaf90065cd38a2fde"
 
 [verifier]
 timeout_sec = 300.0
