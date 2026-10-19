@@ -90,8 +90,9 @@ so the checks read it. `golden/pipeline/pipetask/trial.py:124` digests only fold
 - A pipeline that mixes folders and files has its file marts graded but never checked for
   idempotence. That bypasses traps B7 and D2.
 
-This did not change the third P1 run's score, whose answer map named views that were not published at
-all (C1). It may have affected earlier pipeline runs. That needs a regrade to rule out.
+The third P1 run published its two marts as single files, so this alone would have scored it 0 even
+with a correct answer map; its map was also wrong (C1), so the score does not move. The P1 spec steers
+runs toward single files (F2). Earlier pipeline runs need a regrade to rule out any effect.
 
 **A3. Coverage cannot be measured on the pipeline tasks, and "not measured" counts as a failure.**
 `scripts/quality_metrics.py:133` runs pytest with `uv run --no-project` and only pytest and coverage
@@ -101,14 +102,19 @@ The third run's own record says its 30 unit tests pass in its own environment. `
 then sets the `tests_pass` gate to false. This affects every arm, one-shots included, on any task with
 third-party dependencies.
 
-**A4. Haiku 5.5 costs ignore the long-prompt price.**
+**A4. Haiku 5.5 costs ignore the long-prompt price (known and planned since 16 October, not fixed).**
+[Next steps](../plans/next-steps.md#cost-accounting-price-each-request-at-its-own-tier-planned-2026-10-16)
+already plans per-request pricing, and the [live tier](../method/live-tier.md#known-issue-cost-for-haiku-55)
+lists Claude Code's figure as a known issue. Neither had an issue, `scripts/pipeline_trial.py` is not in
+the plan's table, and this round published list costs without the lower-bound label.
 Haiku 5.5 costs $0.10 / $0.50 per million tokens for prompts up to 100K tokens and $0.50 / $2.50
 beyond (Anthropic's model table; `pricing.json` notes this). `scripts/pipeline_trial.py:59-80` prices
 every token at the base rate. These sessions read about 240K to 290K cached tokens per turn on average
 (34.1M over 140 turns, 46.8M over 159), so many requests were probably above 100K. Claude Code's own
 figure is 3.3 times ours on two runs ($2.24 against $0.67, $3.00 against $0.90). On the third it is
-about equal ($0.32 against $0.30), so the long-prompt price alone does not explain the gap. The 15 October round put
-its host figure down to the host not recognising the model; that explanation was never tested. Until
+about equal ($0.32 against $0.30), so the long-prompt price alone does not explain the gap. The live
+tier's note says Claude Code does not know the Haiku 5.5 price (the pilot's figure was $39.28 against
+$1.13); with Claude Code 2.1.303 that may no longer hold. Until
 each request is priced from its own usage, Haiku costs here are lower bounds, and any "cheap model with
 a harness" cost comparison is unsettled. The P2 cost was summed from the transcript, which reports
 only 2,518 output tokens for a two-hour session; that total also needs checking.
@@ -219,6 +225,40 @@ the grader reads the model the task names, with no oracle map:
 The grader also needs fixtures for every delivery shape it has met, so that a gap like A2 fails CI. A
 second correct solution per task is already an open item of criteria v2.
 
+### F. The handoff and the missing requirement list
+
+**F1. The benchmark hands every arm the whole spec, plus environment instructions, as the prompt.** The
+lockfile's `drive_prompt` inlines the request (`{issue}`; 5.9 KB for P1) and the runner appends an
+environment note: "write that text to … PR.md … and continue as if it succeeded. Nobody will answer
+questions", with the operator's absolute paths. That breaks [criteria v2 §2.3](../method/criteria-v2.md#23-neutral-baseline-prompt-rule)
+("the environment comes from the task image, not from the prompt"). It also contradicts a harness's
+own stop rules, so each arm resolves the conflict its own way; the first P1 run hard-stopped anyway. It
+bypasses each harness's way of taking work (a ticket by reference, lean document handoffs to its
+peers): every context downstream starts from the full text. This is the benchmark's to fix
+([#56](https://github.com/jtouley/harness-benchmark/issues/56)). Cadence's own orchestrator-to-peer
+handoff is a separate layer. The 13 October pilot found peer prompts sent as "full briefings, not the
+one-line lean form the gate expects". No transcript was committed for this round, so whether that still
+happens cannot be checked ([#55](https://github.com/jtouley/harness-benchmark/issues/55)).
+
+**F2. The P1 spec contradicts itself.** Its stack note says to materialize the marts "with dbt-duckdb's
+`external` materialization". With no `location`, that writes one file named after the model. The
+publish rule asks for one folder per mart. The reference solution overrides `location` per model to
+get folders (`golden/pipeline/P1/reference/transform/models/marts/mart_county_obligations.sql:2`).
+The third P1 run followed the stack note, and with A2 that alone zeroes it
+([#57](https://github.com/jtouley/harness-benchmark/issues/57)).
+
+**F3. Cadence did not turn the spec into a requirement list and hold the run to it.** The third run's
+plan (`context/plans/open-data-pipeline_gh-1.plan.md`) paraphrases the spec into seven "acceptance
+signals". The publish rule is not among them: the plan writes
+`out/marts/mart_obligations_monthly.parquet` (lines 204, 262, 511). Its Phase 8 exit criterion is
+"every check in `oracle_map.yml` names a model that exists in `dbt ls`", where the spec asks for a
+published mart. Five plan reviews and five PR reviews then checked the plan and the code against
+themselves, never against the spec's own sentences. Nothing in the run lists the spec's requirements,
+traces each to the phase that meets it, and blocks closure until each has evidence. That is Cadence's
+to fix (drafted, item 5 of the [Cadence drafts](2026-10-19-cadence-issue-drafts.md)). The nearest known
+Cadence issue is jtouley/cadence#103 (plans name the external contracts they read). Whether the
+orchestrator kept a task list in Claude Code cannot be checked without transcripts.
+
 ## What went well
 
 - The grader's answer key made the third run's failure precise: the computed answers can be compared
@@ -243,11 +283,14 @@ for duplicates.
 | 6 | Brownfield dbt family on jaffle shop; log "(or SQL view)" as an open reading | Owner decision, then benchmark | [#53](https://github.com/jtouley/harness-benchmark/issues/53) |
 | 7 | Golden grader fixtures for every delivery shape met so far | Benchmark | [#54](https://github.com/jtouley/harness-benchmark/issues/54) |
 | 8 | Correct the round's write-up before it merges | Other session | [#55](https://github.com/jtouley/harness-benchmark/issues/55) |
-| 9 | Cadence: review from the delivered files; audit paths against the lockfile; the plan-review loop that always reaches its limit | Cadence | Drafted in [cadence issue drafts](2026-10-19-cadence-issue-drafts.md); not filed, as this session has no access to `jtouley/cadence` |
-| 10 | Status messages: check a restated claim against its file first, or label it "reported, not checked" | This session | — |
+| 9 | Task handoff: the request as a file in the task image, a one-line pointer for every arm, no environment in the prompt (changes §2.3 and §2.4) | Owner decision, then benchmark | [#56](https://github.com/jtouley/harness-benchmark/issues/56) |
+| 10 | P1 spec: the stack note steers to single files, the publish rule asks for folders | Owner decision | [#57](https://github.com/jtouley/harness-benchmark/issues/57) |
+| 11 | Cadence: a requirement list from the spec, traced and gated to closure; review from the delivered files; audit paths against the lockfile; the plan-review loop that always reaches its limit; lean peer handoffs | Cadence | Drafted in [cadence issue drafts](2026-10-19-cadence-issue-drafts.md); not filed, as this session has no access to `jtouley/cadence` |
+| 12 | Status messages: check a restated claim against its file first, or label it "reported, not checked" | This session | — |
 
 Already tracked, not filed again: the second correct solution per task (#41), computing each check
 under every reading the spec allows (#28, from #18), cache-write pricing as a lower bound (#28, from #19).
+Per-request pricing (#51) was already planned in next steps without an issue; #51 now tracks that plan.
 
 ## Limits of this review
 

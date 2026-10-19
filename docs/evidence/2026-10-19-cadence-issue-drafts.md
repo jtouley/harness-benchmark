@@ -55,3 +55,39 @@ plan did not require (it says `DURATION=<s>`), and the session was cut off befor
 Under harness-benchmark's criteria v2 a harness run has no time cap, so this would not cost a score
 there. It still costs an hour. Ask: the orchestrator uses the plan's stated duration, or the shortest
 run that covers what the acceptance step checks.
+
+## 5. No requirement list from the spec, and nothing holds the run to one
+
+Possibly overlaps jtouley/cadence#103 (plans name the external contracts they read); check before filing.
+
+The third P1 run's plan turned the spec into seven "acceptance signals" in its own words. The spec's
+publish rule ("one folder per mart under `out/marts/`; anything downstream reads only `out/marts/`") is
+not among them. The plan then wrote the opposite:
+- it publishes `out/marts/mart_obligations_monthly.parquet` (plan lines 204, 262, 511);
+- its Phase 8 exit criterion is "every check in `oracle_map.yml` names a model that exists in `dbt ls`",
+  where the spec asks for a published mart.
+
+Five plan reviews and five PR reviews checked the plan and the code against themselves, never against
+the spec's sentences. The run scored 0 of 7.
+
+Ask:
+- At plan creation, extract every requirement sentence of the ticket into a numbered list, quoted, not
+  paraphrased.
+- Map each one to the phase that meets it and to the check that proves it; the plan review fails a plan
+  with an unmapped requirement.
+- At closure, a gate reads the list and refuses `must_fix: 0` until each requirement has evidence from
+  the delivered artifacts (a command and its output), not from the plan.
+- The orchestrator keeps the list as its working task list (Claude Code's task tools where the host has
+  them) and works it to the end.
+
+## 6. Peer handoffs should be lean documents, not briefings
+
+Probably already tracked on the Cadence side (the lean-prompt contract); check before filing, and add
+this evidence there instead.
+
+The 13 October pilot found peer prompts sent as "full briefings, not the one-line lean form the gate
+expects", and `guard_lean_task_prompt.py` wired only in the Cursor hooks, not Claude Code's
+(`docs/evidence/2026-10-13-pilot/cadence_haiku_opus/outputs/summary.md`, item 1). No transcripts were
+committed for the 19 October runs, so whether that still holds cannot be checked here. Ask: each peer gets
+a one-line prompt that names the context documents to read (ticket, plan, requirement list), and the
+guard that enforces it runs under every host Cadence supports.
