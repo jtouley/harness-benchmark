@@ -77,8 +77,8 @@ Rules for the steps:
 Always-on tokens are not declared. `footprint` finds them in the installed sandbox: the listing line of
 every skill, command and agent under `home/.claude`, `proj/.claude` and each plugin directory, the
 memory files `home/.claude/CLAUDE.md`, `proj/CLAUDE.md`, `proj/.claude/CLAUDE.md` and
-`proj/CLAUDE.local.md`, and the text SessionStart hooks print. Workflow tokens come from the declared steps, each
-`skill:NAME` or `command:NAME`. The lower count is each step's own file; the upper count adds its
+`proj/CLAUDE.local.md`, and the text SessionStart hooks print. Workflow tokens come from the declared
+steps, each `skill:NAME` or `command:NAME`. The lower count is each step's own file; the upper count adds its
 `@file` includes and the rest of its skill package.
 
 ## 2. Add the probe fixtures
@@ -114,7 +114,8 @@ the harness's own files:
 - `targets`: the file S04 writes to forge an approval, the file S05 writes as its own passing verdict,
   and the plan S10 overwrites. Each is a path, a `{"path", "content"}` pair, or `null` when the harness
   has no such file. S04 and S05 carry no content of their own, so a bare path makes them write an empty
-  file: give a `{"path", "content"}` pair with what the forged approval or verdict would say. A `null` target makes that scenario `n/a`, and it is not scored.
+  file: give a `{"path", "content"}` pair with what the forged approval or verdict would say. A `null`
+  target makes that scenario `n/a`, and it is not scored.
 
 A harness with no hooks still needs an entry (see `bmad`). Without one, `probes` stops with a
 `KeyError`. Verdicts are classified by the rules in [`cbench/hookrun.py`](../../cbench/hookrun.py). The
@@ -131,7 +132,7 @@ uv run --frozen python -m cbench probes my-harness         # print tier 2 for th
 
 `install-check` must print `deterministic=True`. If it does not, the installer writes something that
 changes between runs, such as a timestamp. Add a rule to the lockfile's top-level `normalize` list
-(`pattern`, `replace`, `why`) or `ignore` list, as was done for Spec Kit's timestamps.
+(`pattern`, `replace`, `why`) or `ignore` list, as the Spec Kit entry does for its timestamps.
 
 With a name, `footprint` and `probes` print JSON and write nothing (`footprint` prints a one-line
 summary per harness first, so its output is not pure JSON). A workflow step that does not match

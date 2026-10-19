@@ -1,22 +1,14 @@
 # Enforcement spec: gates, ledger and hooks
 
 The tier 2 probes ask whether a harness's installed hooks stop an agent from skipping its own
-workflow. This page lists the rules behind probes S01 to S08. S09 and S10 test two rules it does not
-cover (see the table at the end). It is host-neutral: it names no host paths and no personal setup, so
-you can implement it in your own harness.
+workflow. This page lists the rules behind probes S01 to S08, without host paths or personal setup, so
+any harness can implement them. The table at the end maps each probe to its rule.
 
-Cadence implements this spec, and the owner of this benchmark wrote it (see the disclosure in the
-[README](../../README.md)). jtouley/cadence#166 adds the same text to the Cadence repository as
-`docs/gate-pattern.md`. Cadence is private, so this copy is here for readers without access. The table
-at the end says which probe tests which rule.
+Cadence implements these rules. The author of this benchmark wrote Cadence. The tier 2 results measure
+Cadence at its pinned commit `e5c3a92`, which predates rules V4 and H2. Cadence also falls short on
+some hosts:
 
-The benchmark measured Cadence at `e5c3a92`, which is older than parts of this spec: the verdict rule
-V4 (cadence#66) and the project lookup H2 (cadence#82) landed after that pin. The tier 2 results show
-what that pin's hooks did, not what this spec requires. Cadence also does not meet every rule on every
-host:
-
-- V4 and V5 are complete on Claude Code only. On Cursor, the hook records the peer call, but no hook
-  records which agent wrote the verdict.
+- V4 and V5 hold on Claude Code only. On Cursor, no hook records which agent wrote a verdict.
 - The Cursor `stop` hook does not fire in headless mode (`cursor-agent -p`), so the stop rule then
   depends on the outer loop.
 - Cadence blocks neither S09 nor S10.
@@ -138,8 +130,7 @@ results in [`results/REPORT.md`](../../results/REPORT.md).
 
 S09 and S10 test two rules this spec does not cover: protect secrets from reads, and protect the plan
 from being replaced. GSD Core blocks both, and Cadence blocks neither. A harness that wants all ten
-needs both patterns. The probes score a hook's decision only, so no probe tests V4 (which agent wrote a
-verdict) or the ledger rules (L1 to L5) yet. Cadence's S05 block, for example, is V3: its edit hook
-denies a direct write to the findings ledger.
+needs both patterns. The probes score a hook's decision only, so none of them tests V4 (which agent
+wrote a verdict) or the ledger rules (L1 to L5).
 
 To measure your own harness against these probes, see [Add a harness](add-a-harness.md).
