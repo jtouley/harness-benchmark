@@ -11,7 +11,7 @@ and a no-harness baseline.
 ## What this repository shows, and what it does not
 
 - Measured and reproducible: what each harness costs in context, and which agent actions its installed
-  hooks actually block. One command recomputes it (see "Reproduce it" below).
+  hooks actually block. One command recomputes it (see "Reproduce everything" below).
 - Exploratory: whether a harness gives better results than a strong model working alone. Seven small
   rounds, mostly one run per setup and one grader ([list of rounds](docs/evidence/README.md)).
 - Not run yet: cost per solved task across all seven setups ([live tier design](docs/method/live-tier.md)).
@@ -26,6 +26,21 @@ tasks), a record a reviewer can audit,
 and on one real bug a review loop, with Opus as reviewer, that caught a defect the cheaper models
 missed (Opus alone caught it too, at about the same cost). These are signals from small
 samples, not measurements.
+
+## Try it
+
+Rebuild the report from the committed data. You need git and [uv](https://docs.astral.sh/uv/), and it
+takes under a minute.
+
+```bash
+git clone https://github.com/jtouley/harness-benchmark && cd harness-benchmark
+uv run --frozen python -m cbench report     # rebuild results/REPORT.md from results/*.json
+git diff --exit-code results/               # no output: the report reproduced byte for byte
+```
+
+On the first run, uv downloads about 35 MB of pinned packages, and Python 3.12 if you do not have it.
+After that, the commands work offline. This rebuilds the report, not the measurements behind it: to
+recompute those, see "Reproduce everything" below.
 
 ## Tiers 1–2: footprint and enforcement
 
@@ -59,10 +74,11 @@ plan approval and a stop mid-run; GSD Core blocks reading `.env` and overwriting
 does not. Enforcement is what Cadence is designed for; the other harnesses never claimed it, so this shows
 a different category, not a better one. Loading any harness's whole workflow costs cents.
 
-## Reproduce it
+## Reproduce everything
 
-Requires Linux or macOS, Python 3.11+, [uv](https://docs.astral.sh/uv/), Node.js 22+, git, and Claude Code
-2.1.294 (`npm install -g @anthropic-ai/claude-code@2.1.294`).
+Fetch every harness at its pinned commit, install it and measure it again. Requires Linux or macOS,
+Python 3.11+, [uv](https://docs.astral.sh/uv/), Node.js 22+, git, and Claude Code 2.1.294
+(`npm install -g @anthropic-ai/claude-code@2.1.294`).
 
 ```bash
 git clone https://github.com/jtouley/harness-benchmark && cd harness-benchmark
@@ -77,6 +93,14 @@ and each install reproduces identically twice. It needs every framework, so with
 
 Other commands: `python -m cbench --help`. The live tier spends money and refuses to start without a
 budget that covers the worst case: see [`docs/method/live-tier.md`](docs/method/live-tier.md).
+
+## Add your own harness
+
+A harness is two data entries: its pinned install in `frameworks.lock.json` and its probe fixtures in
+`golden/probes/states.json`. The code in `cbench/` does not change. [Add a harness](docs/method/add-a-harness.md)
+gives the steps and the commands, and a prompt that asks Claude Code to do it for you.
+To make your harness block what probes S01 to S08 test, the [enforcement spec](docs/method/enforcement-spec.md)
+lists the rules: the gate contract, the findings ledger and the hook points, for any host.
 
 ## Limitations
 
@@ -95,6 +119,8 @@ Reading:
 - [Whitepaper](docs/whitepaper.md): the argument, with methods, results and limits
 - [Evidence](docs/evidence/README.md): each experiment round with its sample size, status and data
 - [How results are graded](docs/method/grading.md): what decides each number, and where a model's judgment does
+- [Add a harness](docs/method/add-a-harness.md): the lockfile entry, probe fixtures and commands
+- [Enforcement spec](docs/method/enforcement-spec.md): the host-neutral rules behind the hook probes
 - [Method](docs/method/): pre-registered criteria ([v1, in force](docs/method/criteria.md);
   [v2, draft](docs/method/criteria-v2.md)), [methodology](docs/method/methodology.md),
   [how rounds were run](docs/method/process.md), [what "good code" means](docs/method/quality-model.md)
@@ -112,7 +138,9 @@ Code and data:
 ## Contributing
 
 Pull requests are welcome. A change to a number must come with the regenerated `results/`, and
-`cbench verify` must pass.
+`cbench verify` must pass. If you cannot fetch every framework (Cadence is private), say so in the pull
+request and include the JSON that `cbench footprint NAME` and `cbench probes NAME` print for your
+harness. The maintainer then regenerates `results/` and runs `verify` before the merge.
 
 Thanks to [Harbor](https://github.com/harbor-framework/harbor) for the task format and runner, and to the
 maintainers of the harnesses measured here.
