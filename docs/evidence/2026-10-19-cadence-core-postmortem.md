@@ -142,16 +142,16 @@ one-shot rows.
 - **B4.** On P2, the orchestrator chose a one-hour acceptance run that the plan did not require.
 - **B5.** Without a PR the first P1 run hit a hard stop (no PR URL for R1). A local PR record was added in
   `f734888`.
-- **B6.** The audit trail does not match the lockfile's declaration. The other session reported that
-  every declared path exists except the findings ledger. The committed evidence for the third P1 run
-  (`context/`) does not support that:
-  - no entry-invariant marker for its run id (`c3e98618…`);
-  - no attestation file;
-  - a PR record at `prs/draft-pr-<id>.md`, where the lockfile declares `prs/PR-<id>.md`;
-  - no findings ledger.
+- **B6. Withdrawn: not a Cadence defect.** The audit trail looked incomplete against the lockfile's
+  declaration. The other session checked it against Cadence's code and the full `.context/` (round
+  write-up at `0ccce65`). What it found:
+  - The entry-invariant marker existed during the run; session close removes it by design.
+  - The attestation files existed but were left out of the evidence copy; they are now committed.
+  - Cadence writes the PR record under two names.
+  - The findings ledger is written only when findings go through `findings_io.py`.
 
-  Either the evidence copy is incomplete or the declaration does not match what Cadence writes. M10
-  cannot be scored until that is settled.
+  The lockfile row (written by the benchmark session) and the evidence copy were wrong. Both are now
+  corrected.
 
 ### C. The delivered pipelines (the model working inside Cadence)
 
@@ -177,7 +177,7 @@ publishing and two real defects.
 |---|---|---|
 | "The P2 run exposes a gap in the criteria … a run killed by a time cap … counts as an attempted run that wasn't delivered, as §8.1 already says for one-shots" | Criteria v2 forbids the cap for harness arms (§5.3). The gap is in the runner (A1). The criteria need only a sentence saying an outside kill is an infrastructure error | §5.3 was not re-read before proposing a change to the pre-registered rules |
 | "It wrote the output tables as loose .parquet files, but the grader only reads folders … The run-twice check also failed, for the same reason" | The checks read single files. They failed because the map named unpublished views (C1). The run-twice check did fail because it reads only folders (A2) | Relayed from the other session without opening the grader |
-| "Every file path Cadence declares for the audit exists except the findings ledger … a missing ledger is a real miss" | The committed evidence lacks three more declared items and has one under another name (B6) | Relayed without listing the evidence folder |
+| "Every file path Cadence declares for the audit exists except the findings ledger … a missing ledger is a real miss" | Not a miss by Cadence: the lockfile row and the evidence copy were wrong (B6). This postmortem's first version then blamed the declaration or Cadence without checking Cadence's code | Relayed without listing the evidence folder, then corrected from the evidence copy alone |
 | "In each of the four Haiku runs the grader read what was there and scored it correctly" | Every score this round stands, but the grader is inconsistent (A2), and P2 should not have been capped (A1) | Stated before reading `trial.py` |
 | "Killed the run during a stream step" next to "both stream runs read the replay to the end" | The first is the agent's own one-hour run during its session. The second is the grader's two runs afterwards. Both are true | One phrase used for two different things |
 | Costs quoted as exact ($0.67, $0.65, $0.30, $0.90) | Lower bounds (A4) | The price table's own note about the long-prompt price was not checked against the cost code |
@@ -237,8 +237,10 @@ bypasses each harness's way of taking work (a ticket by reference, lean document
 peers): every context downstream starts from the full text. This is the benchmark's to fix
 ([#56](https://github.com/jtouley/harness-benchmark/issues/56)). Cadence's own orchestrator-to-peer
 handoff is a separate layer. The 13 October pilot found peer prompts sent as "full briefings, not the
-one-line lean form the gate expects". No transcript was committed for this round, so whether that still
-happens cannot be checked ([#55](https://github.com/jtouley/harness-benchmark/issues/55)).
+one-line lean form the gate expects". For this round the other session reports, from the uncommitted transcripts,
+55 peer calls across the four runs, every one a one-line slash command (the longest 165 characters).
+The committed handoff logs hold only prompt hashes (53 rows), so that count is reported, not checked
+here ([#55](https://github.com/jtouley/harness-benchmark/issues/55)).
 
 **F2. The P1 spec contradicts itself.** Its stack note says to materialize the marts "with dbt-duckdb's
 `external` materialization". With no `location`, that writes one file named after the model. The
