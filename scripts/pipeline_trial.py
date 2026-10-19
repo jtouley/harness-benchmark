@@ -12,6 +12,10 @@
     python scripts/pipeline_trial.py caps P1 results/runs/pipeline/P1-ref-*
     # the results table (markdown) and its rows (JSON)
     python scripts/pipeline_trial.py summary results/runs/pipeline/* [--json FILE]
+    # mark a run void (lost to a harness defect) or an infrastructure error (ended from outside the agent:
+    # a lost container, an operator's kill); neither is counted, and an infrastructure error is run again
+    python scripts/pipeline_trial.py void RUN --reason TEXT
+    python scripts/pipeline_trial.py infra RUN --reason TEXT
 
 The image per task and the caps are in runner/pipeline/caps.json. The API key comes from the
 environment, as run_trial.sh reads it; this script never prints it, and drops it for runs with no agent.
@@ -106,22 +110,21 @@ def _session_span(run: Path) -> float | None:
 def outcome(run: Path, result: dict, timing: dict, arm: str = "one-shot") -> str:
     """graded, api_stall (not a model failure), guard_cap (attempted, not delivered) or infra_error.
 
-    Only a one-shot has a guard cap (criteria v2 section 5.3), so only a one-shot ended at its cap is a
-    guard_cap run. A session ended any other way from outside the agent (a harness arm killed by a
-    timeout or a signal, a one-shot killed before its cap) is an infrastructure error: not an attempted
-    run, and run again."""
+    Only a one-shot has a guard cap (criteria v2 section 5.3), so only a one-shot that ran to its cap is
+    a guard_cap run. A harness arm has no cap, so its exit status is its own: a session that crashed or
+    killed itself is graded on what it left. An exit status cannot tell a kill from outside (a lost
+    container, an operator) from the arm's own, so an infrastructure error is never inferred from it: it
+    is a run with no timing record, or one marked with the `infra` command."""
     if not timing:
         return "infra_error"
     if result.get("is_error") and API_ERROR.search(str(result.get("result", ""))):
         return "api_stall"
-    rc, cap = timing.get("agent_exit"), timing.get("agent_timeout") or 0
-    if arm == "one-shot" and rc in (124, 137) and cap and timing.get("agent_seconds", 0) >= cap:
+    cap = timing.get("agent_timeout") or 0
+    if arm == "one-shot" and timing.get("agent_exit") in (124, 137) and cap and timing.get("agent_seconds", 0) >= cap:
         span = _session_span(run)
         if span is not None and timing.get("agent_seconds", 0) - span > STALL_IDLE_SECONDS:
             return "api_stall"
         return "guard_cap"
-    if isinstance(rc, int) and (rc in (124, 137) or rc > 128):
-        return "infra_error"
     return "graded"
 
 
@@ -136,13 +139,15 @@ def summarize(run: Path, pricing: dict) -> dict:
         timing = {**src_timing, "grader_seconds": timing.get("grader_seconds", 0)}
     cost, tokens = cost_and_tokens(result, pricing, meta.get("model"))
     kind = ("void" if meta.get("void") else "diagnostic" if meta.get("diagnostic")
+            else "infra_error" if meta.get("infra_error")
             else outcome(run, result, timing, meta.get("arm", "one-shot")))
     builds = grade.get("build") or []
     first = builds[0]["seconds"] if builds else None
     wall = round(timing.get("agent_seconds", 0) + timing.get("grader_seconds", 0), 1) if timing else None
     reward = grade.get("reward", 0.0)
     return {
-        "run": run.name, "run_path": str(run), "void": meta.get("void"), "superseded_by": None,
+        "run": run.name, "run_path": str(run), "void": meta.get("void"), "infra_error": meta.get("infra_error"),
+        "superseded_by": None,
         "diagnostic": meta.get("diagnostic"), "counted": kind not in ("void", "diagnostic", "infra_error"),
         "task": meta.get("task"), "mode": meta.get("mode", "agent"), "model": meta.get("model"),
         "outcome": kind,
@@ -253,7 +258,7 @@ def run_trial(task: str, out: Path, *, mode: str, model: str | None, plugin_dir:
             cmd += ["--agent-cmd", str(stub), "--model", "none"]
             env.pop("ANTHROPIC_API_KEY", None)
         meta = {"task": task, "mode": mode, "model": model if mode == "agent" else None,
-                "arm": "one-shot" if mode == "agent" and not plugin_dir else (plugin_dir.name if plugin_dir else mode),
+                "arm": plugin_dir.name if harness else "one-shot" if mode == "agent" else mode,
                 "image": task_caps["image"], "agent_timeout": agent_timeout or None,
                 "grader_timeout": task_caps["grader_timeout"], "grader_deadline": task_caps.get("grader_deadline"),
                 "replay_seed": replay_seed, "regrade_of": str(regrade_of) if regrade_of else None,
@@ -296,14 +301,18 @@ def main(argv: list[str] | None = None) -> int:
     v = sub.add_parser("void", help="mark a run void (lost to a harness defect, not a result)")
     v.add_argument("run", type=Path)
     v.add_argument("--reason", required=True)
+    i = sub.add_parser("infra", help="mark a run an infrastructure error (ended from outside the agent; run again)")
+    i.add_argument("run", type=Path)
+    i.add_argument("--reason", required=True)
     s = sub.add_parser("summary", help="the results table")
     s.add_argument("runs", type=Path, nargs="+")
     s.add_argument("--json", type=Path)
     args = ap.parse_args(argv)
 
-    if args.cmd == "void":
+    if args.cmd in ("void", "infra"):
         meta = _load(args.run / "trial.json")
-        (args.run / "trial.json").write_text(json.dumps({**meta, "void": args.reason}, indent=1) + "\n")
+        key = "void" if args.cmd == "void" else "infra_error"
+        (args.run / "trial.json").write_text(json.dumps({**meta, key: args.reason}, indent=1) + "\n")
         return 0
     caps = json.loads(CAPS.read_text(encoding="utf-8"))
     if args.cmd == "run":

@@ -21,7 +21,7 @@
 #                  harness arm
 #   --agent-timeout  the one-shot guard cap in seconds (default 3600). A harness arm has no time cap
 #                  (criteria v2 section 5.3): with --plugin-dir the default is 0, which means none, and a
-#                  positive value is refused
+#                  positive value is refused; without it, 0 is refused
 #   --agent-cmd    replaces Claude Code with this script (tests only; it runs as the agent would)
 #
 # ANTHROPIC_API_KEY is read from this process's environment and written to the container's standard
@@ -68,6 +68,8 @@ done
 [ -f "$GRADER" ] && [ -x "$GRADER" ] || die "--grader must be an executable file"
 [ -n "$OUT" ] || die "--out is required"
 [ -z "$PLUGIN" ] || [ -d "$PLUGIN" ] || die "--plugin-dir must be a directory"
+# An empty plugin is not loaded (claude-agent.sh), so it would be a one-shot that the rules below leave uncapped.
+[ -z "$PLUGIN" ] || [ -n "$(ls -A "$PLUGIN")" ] || die "--plugin-dir is empty"
 [ -z "$AGENT_CMD" ] || [ -f "$AGENT_CMD" ] || die "--agent-cmd must be a file"
 [ -z "$REPLAY" ] || [ -f "$REPLAY" ] || die "--replay must be a file"
 case "$REPLAY_SEED" in ''|*[!0-9]*) die "--replay-seed must be a number" ;; esac
@@ -75,6 +77,8 @@ case "$REPLAY_SEED" in ''|*[!0-9]*) die "--replay-seed must be a number" ;; esac
 case "$AGENT_TIMEOUT" in *[!0-9]*) die "--agent-timeout must be a whole number of seconds" ;; esac
 [ -z "$PLUGIN" ] || [ "$AGENT_TIMEOUT" -eq 0 ] ||
   die "--agent-timeout is a one-shot guard cap; a harness arm (--plugin-dir) has no time cap (criteria v2 section 5.3)"
+[ -n "$PLUGIN" ] || [ "$AGENT_TIMEOUT" -gt 0 ] ||
+  die "--agent-timeout 0 is for a harness arm; a one-shot keeps a guard cap (criteria v2 section 5.3)"
 if [ -e "$OUT" ] && [ -n "$(ls -A "$OUT")" ]; then die "--out exists and is not empty: $OUT"; fi
 mkdir -p "$OUT"
 

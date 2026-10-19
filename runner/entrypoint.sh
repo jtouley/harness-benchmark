@@ -30,6 +30,9 @@ set -uo pipefail
 OUT=/trial/out
 log() { printf '[trial %s] %s\n' "$(date -u +%H:%M:%S)" "$*"; }
 now() { date +%s.%N; }
+# The command prefix that caps the agent at $1 seconds, one word per line; none for 0, a harness arm, which
+# is never cut off (criteria v2 section 5.3). A value that is not a whole number fails.
+agent_limit() { case "$1" in ''|*[!0-9]*) return 1 ;; 0) return 0 ;; *) printf '%s\n' timeout --kill-after=30 "$1" ;; esac; }
 
 HB_API_KEY=""
 IFS= read -r -t 10 HB_API_KEY || true
@@ -79,10 +82,10 @@ agent_vars=(PATH=/home/agent/.local/bin:/usr/local/bin:/usr/bin:/bin "${toolchai
   USER=agent TERM=dumb LANG=C.UTF-8 DISABLE_AUTOUPDATER=1 HB_OUTPUTS="$OUT/agent"
   HB_MODEL="${HB_MODEL:-}" HB_PERMISSION_MODE="${HB_PERMISSION_MODE:-auto}")
 
-# A one-shot keeps a guard cap; a harness arm (timeout 0) is never cut off (criteria v2 section 5.3).
-limit=()
-[ "$agent_timeout" -gt 0 ] && limit=(timeout --kill-after=30 "$agent_timeout")
-log "agent start (model ${HB_MODEL:-unset}, timeout $([ "$agent_timeout" -gt 0 ] && echo "${agent_timeout}s" || echo none))"
+limit_words=$(agent_limit "$agent_timeout") || { log "HB_AGENT_TIMEOUT is not a whole number: $agent_timeout"; exit 94; }
+mapfile -t limit <<<"$limit_words"
+[ -n "$limit_words" ] || limit=()
+log "agent start (model ${HB_MODEL:-unset}, timeout $([ ${#limit[@]} -gt 0 ] && echo "${agent_timeout}s" || echo none))"
 t0=$(now)
 # The subshell drops every inherited variable and exports only the agent's. `export` is a builtin, so
 # the key is in the environment of the agent process and in no process's arguments.

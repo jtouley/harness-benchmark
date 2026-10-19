@@ -57,29 +57,62 @@ def test_bad_arguments_fail_before_docker_is_called(args, tmp_path):
 
 @pytest.mark.parametrize("args, message", [
     (["--plugin-dir", "PLUGIN", "--agent-timeout", "60"], "a harness arm (--plugin-dir) has no time cap"),
+    (["--agent-timeout", "0"], "a one-shot keeps a guard cap"),
     (["--agent-timeout", "1h"], "--agent-timeout must be a whole number of seconds"),
+    (["--plugin-dir", "EMPTY"], "--plugin-dir is empty"),
 ])
-def test_a_harness_arm_cannot_be_given_a_time_cap(args, message, tmp_path):
-    """Criteria v2 section 5.3: only a one-shot keeps a guard cap; the runner refuses one for a harness arm."""
+def test_only_a_one_shot_has_a_time_cap(args, message, tmp_path):
+    """Criteria v2 section 5.3: a one-shot keeps a guard cap, a harness arm has none; the runner refuses
+    anything else, and an empty plugin (which would run as an uncapped one-shot)."""
     env = {**os.environ, "PATH": f"{tmp_path}:{os.environ['PATH']}"}
     (tmp_path / "docker").write_text("#!/bin/sh\necho docker-called >&2\nexit 99\n")
     (tmp_path / "docker").chmod(0o755)
     (tmp_path / "plugin").mkdir()
+    (tmp_path / "plugin" / "plugin.json").write_text("{}")
+    (tmp_path / "empty").mkdir()
     prompt = tmp_path / "prompt.md"
     prompt.write_text("task")
-    args = [str(tmp_path / "plugin") if a == "PLUGIN" else a for a in args]
+    paths = {"PLUGIN": str(tmp_path / "plugin"), "EMPTY": str(tmp_path / "empty")}
+    args = [paths.get(a, a) for a in args]
     r = sh(str(RUN_TRIAL), "--repo", str(tmp_path), "--prompt", str(prompt), "--grader", str(RUN_TRIAL),
            "--out", str(tmp_path / "out"), *args, check=False, env=env)
     assert r.returncode == 2 and message in r.stderr
     assert "docker-called" not in r.stderr
 
 
-def test_the_agent_runs_under_a_time_limit_only_when_it_has_one():
-    """entrypoint.sh wraps the agent in `timeout` only for a positive cap (HB_AGENT_TIMEOUT=0: none)."""
-    text = (RUNNER / "entrypoint.sh").read_text()
-    assert '[ "$agent_timeout" -gt 0 ] && limit=(timeout --kill-after=30 "$agent_timeout")' in text
-    assert 'exec "${limit[@]}" setpriv' in text
-    assert "exec timeout" not in text
+# The lines of entrypoint.sh that turn HB_AGENT_TIMEOUT into the agent's command prefix (exit 94: not a number).
+ENTRYPOINT_LIMIT_LINES = [
+    'limit_words=$(agent_limit "$agent_timeout") || { log "HB_AGENT_TIMEOUT is not a whole number: $agent_timeout"; exit 94; }',
+    'mapfile -t limit <<<"$limit_words"',
+    '[ -n "$limit_words" ] || limit=()',
+]
+
+
+def _agent_limit() -> str:
+    """entrypoint.sh's agent_limit function, as written there."""
+    line = next(l for l in (RUNNER / "entrypoint.sh").read_text().splitlines() if l.startswith("agent_limit() "))
+    return line
+
+
+@pytest.mark.parametrize("seconds, words, rc", [("0", "", 0), ("7200", "timeout --kill-after=30 7200", 0),
+                                                ("", "", 1), ("1h", "", 1)])
+def test_agent_limit_gives_a_cap_only_for_a_positive_whole_number(seconds, words, rc):
+    r = sh("bash", "-c", f'{_agent_limit()}\nagent_limit "$1"', "_", seconds, check=False)
+    assert (r.returncode, " ".join(r.stdout.split())) == (rc, words)
+
+
+@pytest.mark.parametrize("seconds, rc", [("1", 124), ("0", 0)])
+def test_the_agent_limit_stops_a_one_shot_and_leaves_a_harness_running(seconds, rc):
+    """The same prefix entrypoint.sh puts before the agent: a 1 s cap stops a 2 s session; none lets it end."""
+    script = "\n".join([_agent_limit(), 'agent_timeout="$1"', *ENTRYPOINT_LIMIT_LINES, 'exec "${limit[@]}" sleep 2'])
+    assert sh("bash", "-c", script, "_", seconds, check=False, timeout=30).returncode == rc
+
+
+def test_entrypoint_runs_the_agent_under_agent_limit():
+    lines = (RUNNER / "entrypoint.sh").read_text().splitlines()
+    for line in ENTRYPOINT_LIMIT_LINES:
+        assert line in lines
+    assert any(l.strip().startswith('exec "${limit[@]}" setpriv') for l in lines)
 
 
 KEY_VARIABLES = ("ANTHROPIC_API_KEY", "HB_API_KEY")
@@ -351,7 +384,7 @@ def test_default_agent_starts_claude_code_with_the_arms_plugin_and_no_key(image,
     out = tmp_path / "out"
     sh(str(RUN_TRIAL), "--repo", str(repo), "--prompt", str(prompt), "--grader", str(grader),
        "--plugin-dir", str(ROOT / "harnesses" / "reviewloop"), "--model", "claude-haiku-5-5",
-       "--out", str(out), "--image", image, env=env)
+       "--out", str(out), "--image", image, env=env, timeout=900)  # the arm has no cap; the test does
     assert json.loads((out / "timing.json").read_text())["agent_timeout"] == 0  # a harness arm: no cap
     events = [json.loads(line) for line in (out / "transcript.jsonl").read_text().splitlines()]
     init = events[0]

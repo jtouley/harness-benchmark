@@ -91,32 +91,42 @@ def test_a_session_busy_until_the_guard_cap_is_a_guard_cap_run(tmp_path):
 
 
 @pytest.mark.parametrize("rc", [124, 137, 143])
-def test_a_harness_session_ended_from_outside_is_an_infrastructure_error(tmp_path, rc):
-    """Criteria v2 section 5.3: a harness arm has no cap, so whatever ended its session was not the arm."""
+def test_a_harness_session_has_no_cap_so_its_exit_status_is_its_own(tmp_path, rc):
+    """Criteria v2 section 5.3: no cap to hit, so a crash or self-kill is graded on what the arm left."""
     run = write_run(tmp_path, timing={"agent_exit": rc, "agent_seconds": 7203.0, "agent_timeout": 0},
                     session=["2026-10-19T04:46:00.000Z", "2026-10-19T06:46:00.000Z"], meta={"arm": "cadence-core"})
     row = pt.summarize(run, PRICING)
-    assert row["outcome"] == "infra_error"
+    assert row["outcome"] == "graded" and row["counted"] is True and row["counts_as_model_failure"] is True
+
+
+def test_a_one_shot_killed_before_its_cap_is_graded_not_a_guard_cap_run(tmp_path):
+    run = write_run(tmp_path, timing={"agent_exit": 137, "agent_seconds": 300.0},
+                    session=["2026-10-15T10:00:00.000Z", "2026-10-15T10:05:00.000Z"])
+    assert pt.summarize(run, PRICING)["outcome"] == "graded"
+
+
+def test_an_infrastructure_error_is_marked_by_the_operator_and_not_counted(tmp_path):
+    run = write_run(tmp_path, timing={"agent_exit": 137, "agent_seconds": 7203.0, "agent_timeout": 0},
+                    meta={"arm": "cadence-core"})
+    pt.main(["infra", str(run), "--reason", "host guard killed the session"])
+    row = pt.summarize(run, PRICING)
+    assert row["outcome"] == "infra_error" and row["infra_error"] == "host guard killed the session"
     assert row["counted"] is False and row["counts_as_model_failure"] is False
 
 
-def test_a_one_shot_killed_before_its_cap_is_an_infrastructure_error_not_a_guard_cap_run(tmp_path):
-    run = write_run(tmp_path, timing={"agent_exit": 137, "agent_seconds": 300.0},
-                    session=["2026-10-15T10:00:00.000Z", "2026-10-15T10:05:00.000Z"])
+def test_a_run_with_no_timing_record_is_an_infrastructure_error(tmp_path):
+    run = write_run(tmp_path)
+    (run / "timing.json").unlink()
     row = pt.summarize(run, PRICING)
     assert row["outcome"] == "infra_error" and row["counted"] is False
 
 
-def test_a_harness_session_that_exits_on_its_own_is_graded(tmp_path):
-    run = write_run(tmp_path, timing={"agent_exit": 0, "agent_timeout": 0}, meta={"arm": "cadence-core"})
-    assert pt.summarize(run, PRICING)["outcome"] == "graded"
-
-
-def test_a_regrade_of_a_harness_trial_keeps_the_harness_rule(tmp_path):
-    src = write_run(tmp_path / "a", timing={"agent_exit": 124, "agent_seconds": 7203.0, "agent_timeout": 0},
-                    meta={"arm": "cadence-core"})
+def test_a_regrade_keeps_its_source_trials_arm(tmp_path):
+    """A regrade's own arm is "regrade"; the guard-cap rule must read the source trial's."""
+    src = write_run(tmp_path / "a", timing={"agent_exit": 124, "agent_seconds": 7200.0},
+                    session=["2026-10-15T10:00:00.000Z", "2026-10-15T11:58:00.000Z"])
     regrade = write_run(tmp_path / "b", meta={"mode": "regrade", "regrade_of": str(src), "arm": "regrade"})
-    assert pt.summarize(regrade, PRICING)["outcome"] == "infra_error"
+    assert pt.summarize(regrade, PRICING)["outcome"] == "guard_cap"
 
 
 @pytest.mark.parametrize("plugin, expected", [(False, "7200"), (True, "0")])

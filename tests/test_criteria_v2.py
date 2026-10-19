@@ -208,7 +208,7 @@ def test_a_session_ended_from_outside_never_ends_as_completed():
     assert "A session ended from outside the agent (a time cap, a signal, a lost container) has not ended as completed" in m3
     caps = _flat(_section("### 5.3 Caps and the run-set budget"))
     assert "A harness session ended from outside the agent is an infrastructure error." in caps
-    assert "The runner gives a harness arm no time limit at all" in caps
+    assert "The runner gives a harness arm no time limit at all and a one-shot always one" in caps
 
 
 def test_reviewer_picks_await_owner_confirmation():
