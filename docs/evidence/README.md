@@ -62,6 +62,16 @@ what produced each number, and the [whitepaper](../whitepaper.md) draws them tog
 - Read: [self-evidence write-up](2026-10-17-cadence-self-evidence.md), and how review rounds are counted:
   [review value](review-value.md)
 
+## Pipeline family, first harness arm (19 October): exploratory
+
+- Question: does a harness let Haiku 5.5 deliver P1, which it did not deliver alone?
+- Sample: one run per cell, on a host without the isolated runner (no clean room). The ten-block core
+  of Cadence, Haiku 5.5 as orchestrator and every peer.
+- Result: 5 of 7 checks at $0.67 list price, against 0 of 7 for Haiku alone and 6 of 7 for Opus alone
+  ($5.82). The run stopped before its review stages because the environment has no PR. An Opus run died
+  on a host defect (a peer started in the background), now fixed in the runner.
+- Read: [write-up](2026-10-19-pipeline-cadence-core.md), [data](2026-10-19-pipeline-cadence-core/)
+
 ## Smoke check on Harbor (18 October): no model
 
 - Question: does SlopCodeBench's and FeatureBench's grading run end to end, before money is spent?

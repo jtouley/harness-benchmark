@@ -1,0 +1,14 @@
+{
+  "by_model": {
+    "claude-haiku-5-5": {
+      "input": 3844,
+      "output": 423844,
+      "cache_write": 943753,
+      "cache_read": 34090929,
+      "usd": "0.6712"
+    }
+  },
+  "usd_total": "0.6712",
+  "host_reported_usd": 2.240711065,
+  "num_turns": 140
+}

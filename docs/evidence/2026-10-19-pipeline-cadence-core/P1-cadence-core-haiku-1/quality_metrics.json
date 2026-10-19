@@ -1,0 +1,82 @@
+{
+  "package_lines_added": 341,
+  "tests_passed": null,
+  "tests_failed": null,
+  "new_code_coverage": null,
+  "cyclomatic_max": 14,
+  "cyclomatic_newly_over_10": [
+    "pipeline/stream.py:_sse_events=12",
+    "pipeline/stream.py:consume=14"
+  ],
+  "cognitive_max": 26,
+  "cognitive_newly_over_15": [
+    "pipeline/stream.py:_sse_events=23",
+    "pipeline/stream.py:consume=26"
+  ],
+  "maintainability_index": 70.2,
+  "lint_new_by_rule": {
+    "C901": 2,
+    "PLR0913": 1,
+    "PLR0917": 1,
+    "PLW1508": 1,
+    "SIM105": 1,
+    "SIM117": 1,
+    "UP041": 1
+  },
+  "bug_findings_new": 0,
+  "smells_per_100_new_lines": 2.3,
+  "type_errors_new": 2,
+  "new_code_duplication": 0.0,
+  "duplication": {
+    "new_duplicated_lines": 0,
+    "new_lines": 341,
+    "new_code_duplication": 0.0,
+    "duplicated_lines_total": 0
+  },
+  "module_coupling": {
+    "pipeline": {
+      "afferent": 0,
+      "efferent": 0,
+      "instability": null
+    },
+    "pipeline.batch": {
+      "afferent": 0,
+      "efferent": 1,
+      "instability": 1.0
+    },
+    "pipeline.sources": {
+      "afferent": 1,
+      "efferent": 0,
+      "instability": 0.0
+    },
+    "pipeline.stream": {
+      "afferent": 0,
+      "efferent": 0,
+      "instability": null
+    }
+  },
+  "gate": {
+    "tests_pass": false,
+    "new_code_coverage_at_least_80": false,
+    "no_function_newly_over_cyclomatic_10": false,
+    "no_function_newly_over_cognitive_15": false,
+    "no_new_bug_findings": true,
+    "no_new_type_errors": false,
+    "new_code_duplication_at_most_3": true
+  },
+  "gate_passed": false,
+  "tool_errors": {
+    "coverage": "uv run --quiet --no-project exited 2: ============================\nERROR tests/test_dlt_stream_gate.py\nERROR tests/test_stream_acceptance.py\nERROR tests/test_stream_restart.py\n!!!!!!!!!!!!!!!!!!! Interrupted: 3 errors during collection !!!!!!!!!!!!!!!!!!!!\n============================== 3 errors in 0.26s ===============================\n"
+  },
+  "tools": {
+    "ruff": "ruff==0.17.0",
+    "radon": "radon==6.0.1",
+    "complexipy": "complexipy==8.0.1",
+    "mypy": "mypy==2.4.0",
+    "pytest": "pytest==9.1.1",
+    "pytest-cov": "pytest-cov==7.1.0",
+    "coverage": "coverage==7.16.2",
+    "jscpd": "jscpd@5.4.1",
+    "node": "nodejs-wheel==24.19.0"
+  }
+}

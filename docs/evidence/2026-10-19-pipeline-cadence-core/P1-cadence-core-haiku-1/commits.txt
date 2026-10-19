@@ -1,0 +1,11 @@
+e861b62 phase 9: documentation and handoff files
+2b54842 phase 8: stream checks and resume verification
+be91ee5 phase 7: stream models
+559d454 phase 6: stream consumer and lake landing
+fd42274 phase 5: question A marts and publish
+99b8e22 phase 4: question A star schema
+250b643 phase 3: dbt project and staging models
+a306192 phase 2: batch ingestion to the lake
+3210672 phase 1: source checks and dlt stream gate
+62cdc82 task repository: gate the pipeline code for Cadence
+6cdc7f5 P1 skeleton

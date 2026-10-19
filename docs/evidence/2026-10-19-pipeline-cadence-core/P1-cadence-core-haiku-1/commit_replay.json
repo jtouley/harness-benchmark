@@ -1,0 +1,140 @@
+{
+ "base": "62cdc829fcf4da8e16b0ff9ea599bd34fe2f921b",
+ "head": "e861b6271f5ee30b9712ce7762ca68aba744846f",
+ "package": "pipeline",
+ "test_cmd": null,
+ "uncommitted_changes": false,
+ "commits": [
+  {
+   "sha": "3210672ce24168cb1860938c966beff2b42ede86",
+   "subject": "phase 1: source checks and dlt stream gate",
+   "lines_added": 0,
+   "lines_deleted": 0,
+   "complexity_added": 0,
+   "complexity_removed": 0,
+   "newly_over_10": [],
+   "unparsed": [],
+   "green": null,
+   "seconds_since_previous": 1624
+  },
+  {
+   "sha": "a306192aae100275d3bc528aac97465e37109654",
+   "subject": "phase 2: batch ingestion to the lake",
+   "lines_added": 117,
+   "lines_deleted": 0,
+   "complexity_added": 18,
+   "complexity_removed": 0,
+   "newly_over_10": [],
+   "unparsed": [],
+   "green": null,
+   "seconds_since_previous": 80
+  },
+  {
+   "sha": "250b6437b37143499352b5cccda4a60ed371323f",
+   "subject": "phase 3: dbt project and staging models",
+   "lines_added": 0,
+   "lines_deleted": 0,
+   "complexity_added": 0,
+   "complexity_removed": 0,
+   "newly_over_10": [],
+   "unparsed": [],
+   "green": null,
+   "seconds_since_previous": 63
+  },
+  {
+   "sha": "99b8e22872112cc6c8254633b7cbae162344b1fe",
+   "subject": "phase 4: question A star schema",
+   "lines_added": 0,
+   "lines_deleted": 0,
+   "complexity_added": 0,
+   "complexity_removed": 0,
+   "newly_over_10": [],
+   "unparsed": [],
+   "green": null,
+   "seconds_since_previous": 81
+  },
+  {
+   "sha": "fd42274baa65e64980770a6e1ac7c1e4437bfbaf",
+   "subject": "phase 5: question A marts and publish",
+   "lines_added": 0,
+   "lines_deleted": 0,
+   "complexity_added": 0,
+   "complexity_removed": 0,
+   "newly_over_10": [],
+   "unparsed": [],
+   "green": null,
+   "seconds_since_previous": 160
+  },
+  {
+   "sha": "559d454245fdd9f37f0ffd9f76bdf70af14ece45",
+   "subject": "phase 6: stream consumer and lake landing",
+   "lines_added": 224,
+   "lines_deleted": 0,
+   "complexity_added": 49,
+   "complexity_removed": 0,
+   "newly_over_10": [
+    "pipeline/stream.py:_sse_events=12",
+    "pipeline/stream.py:consume=14"
+   ],
+   "unparsed": [],
+   "green": null,
+   "seconds_since_previous": 263
+  },
+  {
+   "sha": "be91ee5cf576b9126206e30e7211bbc10720c074",
+   "subject": "phase 7: stream models",
+   "lines_added": 0,
+   "lines_deleted": 0,
+   "complexity_added": 0,
+   "complexity_removed": 0,
+   "newly_over_10": [],
+   "unparsed": [],
+   "green": null,
+   "seconds_since_previous": 307
+  },
+  {
+   "sha": "2b548422cc213888f6a751cf98eb6097218b4214",
+   "subject": "phase 8: stream checks and resume verification",
+   "lines_added": 0,
+   "lines_deleted": 0,
+   "complexity_added": 0,
+   "complexity_removed": 0,
+   "newly_over_10": [],
+   "unparsed": [],
+   "green": null,
+   "seconds_since_previous": 105
+  },
+  {
+   "sha": "e861b6271f5ee30b9712ce7762ca68aba744846f",
+   "subject": "phase 9: documentation and handoff files",
+   "lines_added": 0,
+   "lines_deleted": 0,
+   "complexity_added": 0,
+   "complexity_removed": 0,
+   "newly_over_10": [],
+   "unparsed": [],
+   "green": null,
+   "seconds_since_previous": 118
+  }
+ ],
+ "summary": {
+  "commits": 9,
+  "measurable": true,
+  "largest_commit_lines": 224,
+  "median_commit_lines": 0,
+  "total_lines_changed": 341,
+  "largest_commit_complexity_added": 49,
+  "median_commit_complexity_added": 0,
+  "unparsed_commits": 0,
+  "green_share": null,
+  "cleanup_commits": 0,
+  "complexity_added_total": 67,
+  "complexity_removed_total": 0,
+  "seconds_base_to_head": 2801,
+  "final": {
+   "functions": 19,
+   "total_complexity": 67,
+   "functions_over_10": 2
+  }
+ }
+}

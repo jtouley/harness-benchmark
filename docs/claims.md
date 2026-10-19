@@ -38,6 +38,7 @@ Last reviewed: 18 October 2026.
 | On 20 SWE-bench Pro tasks, Haiku 5.5 passed 17 and Opus 5.5 passed 18, at about a tenth of the cost. | 20 tasks, 1 try per model; 14 October. Cost is a lower bound. | [Results per task](../calibration/swebench-pro/round2.md) | A repeat with several tries per task |
 | Harbor runs SlopCodeBench's grading end to end with no model: its reference solution passes every core test at all 6 checkpoints of `cfgpipe`, and its own erosion (0.782) and verbosity (0.556) are worse than the paper's average agent. | 1 task, reference solution only; 18 October. | [Smoke check](evidence/2026-10-18-smoke-check.md) | When a model runs on it |
 | On the long pipeline tasks, the best one-shot scored 6 of 7 checks (Opus on P1); Haiku scored 0 of 7 on all three. | 3 tasks, 1 run per model; 15 October. Some checks have open readings. | [Pipeline trials](evidence/2026-10-15-pipeline-trials.md) | When the open readings are settled, or a harness runs on them |
+| With the ten-block core of Cadence, Haiku 5.5 delivered P1 with 5 of 7 checks at $0.67, where Haiku alone delivered 0 of 7. The run reached no review stage. | 1 task, 1 run; 19 October. On a host, not in the isolated runner. | [Pipeline, first harness arm](evidence/2026-10-19-pipeline-cadence-core.md) | A rerun in the isolated runner with n = 3 |
 
 ## Operator-reported
 
