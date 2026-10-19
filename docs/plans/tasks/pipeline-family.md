@@ -58,20 +58,21 @@ This is the measure the family exists for.
    failures have a known trap id and cause class before anyone audits.
 2. **Blind auditor.** For each failed run, an auditor gets only the run's record and the symptom ("check 2
    is wrong: expected X, got Y"). It does not get the trap id. The auditor is a fixed agent (the same
-   model and prompt for every arm), plus a human spot check on a sample. The record is:
+   model and prompt for every arm), and a script scores its answers ([criteria v2 §7](../../method/criteria-v2.md#7-traceability-the-audit-protocol)). The record is:
    - one-shot arms: the repository, the transcript, and the arm's own summary;
    - harness arms: the same, plus the harness artifacts (spec notes, plan, phase commits, reviews,
      `DECISIONS.md`).
 3. **The auditor answers four questions:**
    1. Which trap or cause (a cause class from the catalog, and the specific fact)?
-   2. Where did it first go wrong: the reading of the spec, the plan, a phase, a review that missed it, or
-      never considered?
+   2. Where did it first go wrong: the sha of the commit (uncommitted work counts as a last commit)?
    3. What is the cheapest fix point (the file or artifact to change)?
    4. How much of the delivered work must be redone (a list of tables or phases)?
 4. **Scores.**
    - Diagnosis accuracy: the cause matches the grader's trap id, or any id in its
-     [equivalence set](pipeline-traps.md#equivalent-traps) (questions 1 and 3).
-   - Origin accuracy: question 2 matches the human adjudication.
+     [equivalence set](pipeline-traps.md#equivalent-traps) (question 1). Questions 3 and 4 are scored only
+     through the repair.
+   - Origin accuracy: the commit the auditor names matches the first commit where the failing check gives
+     the trap's wrong answer, found by running the grader on each commit (criteria v2 §7).
    - Audit cost: the auditor's wall time and tokens.
    - Repair cost: an arm-matched repair agent fixes the run from the auditor's answer; its time, tokens and
      whether the checks then pass.
