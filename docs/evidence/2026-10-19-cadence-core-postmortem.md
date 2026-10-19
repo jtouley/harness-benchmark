@@ -180,6 +180,45 @@ The common cause: claims from another session were treated as checked data and p
 session's voice. The other session's message was a summary; the files it summarised were on a branch this session
 could read and did not read until asked.
 
+### E. The task design: the pipeline family grades its own interface more than the pipeline
+
+Sections A to D look at this round. The pattern across both pipeline rounds points at the task
+design itself.
+
+| Lost checks | Cause | Runs |
+|---|---|---|
+| Most of Haiku's | The map names warehouse tables or dbt views that were never published | All four Haiku deliveries: one-shot P1, P2, P3 (15 October), cadence-core third P1 run |
+| 6, one per run | Check 4 answered as a reconciliation; the key grades rows (an open reading) | All six Sonnet and Opus one-shots |
+| 4 | Check 2's county reading (an open reading) | Four of the six Sonnet and Opus one-shots |
+| 15 lost by the three cadence-core runs that delivered code | 7 publish or map, 6 never exported (time cap, A1), 1 check-4 reading, 1 pipeline defect | 19 October |
+
+Two diagnostics show the computation was often right when the score said otherwise. On P2 (15
+October), Haiku's map edited by hand scored 3 of 7 instead of 0. The cadence-core third run's own
+record has checks 1 to 3 matching the key exactly; it scored 0.
+
+**Why.** The pipeline tasks are greenfield from a prose spec, and the interface between grader and
+delivery (`oracle_map.yml`, one folder per mart under `out/marts/`, "or SQL view") exists only in that
+prose. Nothing in the repository shows the convention, and no tool the agent has can check it before it
+delivers. In a real team the convention lives in the repository (where marts go, model contracts,
+tests), and `dbt build`, `dbt test` and CI check it. So the family measures "followed a contract it
+could not see, and guessed two readings" about as much as "built a correct pipeline". That holds for
+every arm, so comparisons are not void. But at one run per cell, the noise is larger than any difference.
+
+**What follows.** Keep P1 to P3 as they are; changing the spec mid-family would break comparison. Add a
+brownfield family on an existing public dbt project, where the conventions are in the repository and
+the grader reads the model the task names, with no oracle map:
+
+- `dbt-labs/jaffle_shop_duckdb` is Apache-2.0, self-contained on DuckDB, with a `uv.lock`. Its seeds
+  are about 100 rows each.
+- `dbt-labs/jaffle-shop-generator` (`jafgen`, Apache-2.0) generates years of data. No seed option was
+  found, so generate once, freeze the files and record their hashes.
+- `dbt-labs/jaffle-shop` has no LICENSE file at `5beb145`, requires dbt 2.0 and targets dbt Cloud. Do
+  not use it unless the license is clarified.
+- Risk: jaffle shop is in every model's training data, so tasks must be new work with hidden checks.
+
+The grader also needs fixtures for every delivery shape it has met, so that a gap like A2 fails CI. A
+second correct solution per task is already an open item of criteria v2.
+
 ## What went well
 
 - The grader's answer key made the third run's failure precise: the computed answers can be compared
@@ -191,17 +230,24 @@ could read and did not read until asked.
 
 ## Action items
 
-| # | Action | Owner | Blocks |
+Logged on 19 October after checking every open and closed issue (#3, #11, #28, #41 and #44 read in full)
+for duplicates.
+
+| # | Action | Owner | Issue |
 |---|---|---|---|
-| 1 | Runner: apply `agent_timeout` only to one-shot arms. Record a harness session ended from outside as `infra_error`, not `guard_cap`. Add the one-sentence rule to criteria v2 §4.1 and §5.3 | Benchmark | Any v2 run set |
-| 2 | Grader: make `mart_digests` read single-file marts as `oracle.py` does, or make both refuse them (owner's choice; the spec says folders). Regrade every pipeline run and report any change | Benchmark (choice: owner) | Pipeline results |
-| 3 | Coverage: run the delivered tests in the task's own environment. Report "not measured" as not measured, not as a failed gate | Benchmark | Quality gate on pipeline tasks |
-| 4 | Cost: price each request from the transcript's per-request usage, with the long-prompt price. Explain the host figures on all runs. Mark Haiku costs as lower bounds until then, including on main | Benchmark | Any cost claim |
-| 5 | Commit replay: flag commits with no time between them, and say in its output that SQL is not measured | Benchmark | Layer 4 report |
-| 6 | Log "(or SQL view)" as an open reading of the pipeline spec | Benchmark | — |
-| 7 | Round write-up: correct the third run's cause (C1), the audit-trail claim (B6), and the costs (A4). Drop "state the time budget in the environment note", which conflicts with §5.3 | Other session | Merging the round |
-| 8 | Cadence: R1's end-to-end walk starts from the delivered files the spec names. Settle the audit paths against the lockfile (B6). Look at the plan-review loop that always reaches its limit | Cadence | Next cadence-core runs |
-| 9 | Status messages: a claim restated from another session is checked against its file first, or labelled "reported, not checked" | This session | — |
+| 1 | Runner: no time cap on harness arms; an outside kill is an infrastructure error; one sentence in criteria v2 §4.1 and §5.3 | Benchmark | [#48](https://github.com/jtouley/harness-benchmark/issues/48) |
+| 2 | Grader: single-file marts read the same way by the checks and the run-twice check; regrade | Benchmark (choice: owner) | [#49](https://github.com/jtouley/harness-benchmark/issues/49) |
+| 3 | Coverage in the task's own environment; "not measured" is not a failed gate | Benchmark | [#50](https://github.com/jtouley/harness-benchmark/issues/50) |
+| 4 | Cost: per-request pricing with Haiku's long-prompt rate; explain the host figures | Benchmark | [#51](https://github.com/jtouley/harness-benchmark/issues/51) |
+| 5 | Commit replay: flag commits split after the fact; name files not measured | Benchmark | [#52](https://github.com/jtouley/harness-benchmark/issues/52) |
+| 6 | Brownfield dbt family on jaffle shop; log "(or SQL view)" as an open reading | Owner decision, then benchmark | [#53](https://github.com/jtouley/harness-benchmark/issues/53) |
+| 7 | Golden grader fixtures for every delivery shape met so far | Benchmark | [#54](https://github.com/jtouley/harness-benchmark/issues/54) |
+| 8 | Correct the round's write-up before it merges | Other session | [#55](https://github.com/jtouley/harness-benchmark/issues/55) |
+| 9 | Cadence: review from the delivered files; audit paths against the lockfile; the plan-review loop that always reaches its limit | Cadence | Drafted in [cadence issue drafts](2026-10-19-cadence-issue-drafts.md); not filed, as this session has no access to `jtouley/cadence` |
+| 10 | Status messages: check a restated claim against its file first, or label it "reported, not checked" | This session | — |
+
+Already tracked, not filed again: the second correct solution per task (#41), computing each check
+under every reading the spec allows (#28, from #18), cache-write pricing as a lower bound (#28, from #19).
 
 ## Limits of this review
 
