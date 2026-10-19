@@ -285,7 +285,7 @@ for duplicates.
 | 8 | Correct the round's write-up before it merges | Other session | [#55](https://github.com/jtouley/harness-benchmark/issues/55) |
 | 9 | Task handoff: the request as a file in the task image, a one-line pointer for every arm, no environment in the prompt (changes §2.3 and §2.4) | Owner decision, then benchmark | [#56](https://github.com/jtouley/harness-benchmark/issues/56) |
 | 10 | P1 spec: the stack note steers to single files, the publish rule asks for folders | Owner decision | [#57](https://github.com/jtouley/harness-benchmark/issues/57) |
-| 11 | Cadence: a requirement list from the spec, traced and gated to closure; review from the delivered files; audit paths against the lockfile; the plan-review loop that always reaches its limit; lean peer handoffs | Cadence | Drafted in [cadence issue drafts](2026-10-19-cadence-issue-drafts.md); not filed, as this session has no access to `jtouley/cadence` |
+| 11 | Cadence: a requirement list from the ticket, traced and gated to closure (new); this round's evidence on the plan-review loop and on lean peer handoffs (comments on existing issues). Review-from-delivered-files and acceptance-step sizing were dropped after the owner's review | Cadence | [Cadence issue drafts](2026-10-19-cadence-issue-drafts.md), handed to the session that runs the Cadence arm to file, as this session has no access to `jtouley/cadence` |
 | 12 | Status messages: check a restated claim against its file first, or label it "reported, not checked" | This session | — |
 
 Already tracked, not filed again: the second correct solution per task (#41), computing each check
