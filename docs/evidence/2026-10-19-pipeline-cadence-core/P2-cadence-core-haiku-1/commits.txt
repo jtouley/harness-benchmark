@@ -1,0 +1,12 @@
+9e94467 the working tree the agent left
+5978a1d gh-1 phase 9: stream dbt models
+2cda953 gh-1 phase 8: event time, windows and lateness
+280bb34 gh-1 phase 7: stream source and atomic micro-batch sink
+098a286 gh-1 phase 6: batch checks and the idempotence proof
+f3d76a3 gh-1 phase 5: star schema and monthly mart for Question A
+1c9d2b1 gh-1 phase 4: dbt foundation over the lake
+baa0bcb gh-1 phase 3: batch ingestion into the lake
+6cb38af gh-1 phase 2: engine core with YAML validation
+c3dc4b5 gh-1 phase 1: dependencies, CLI smoke test and Makefile wiring
+d5f3e8c task repository: gate the pipeline code for Cadence
+5276305 P2 skeleton

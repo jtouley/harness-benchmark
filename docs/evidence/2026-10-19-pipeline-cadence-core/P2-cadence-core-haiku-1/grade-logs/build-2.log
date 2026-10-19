@@ -1,0 +1,106 @@
+uv run python -m engine run pipelines/batch.yml
+warning: The `UV_NATIVE_TLS` environment variable is deprecated and will be removed in a future release. Use `UV_SYSTEM_CERTS` instead.
+warning: `VIRTUAL_ENV=/home/user/harness-benchmark/.venv` does not match the project environment path `.venv` and will be ignored; use `--active` to target the active environment instead
+mkdir -p out/marts/mart_obligations_monthly out/marts/mart_edit_window_5min out/marts/late_events
+uv run dbt build --project-dir transform --profiles-dir transform --exclude tag:stream
+warning: The `UV_NATIVE_TLS` environment variable is deprecated and will be removed in a future release. Use `UV_SYSTEM_CERTS` instead.
+warning: `VIRTUAL_ENV=/home/user/harness-benchmark/.venv` does not match the project environment path `.venv` and will be ignored; use `--active` to target the active environment instead
+[0m06:46:48  Running with dbt=1.11.6
+[0m06:46:48  Registered adapter: duckdb=1.11.0
+[0m06:46:49  Found 18 models, 34 data tests, 1 operation, 5 sources, 501 macros
+[0m06:46:49  
+[0m06:46:49  Concurrency: 4 threads (target='dev')
+[0m06:46:49  
+[0m06:46:49  1 of 42 START sql table model main.dim_date .................................... [RUN]
+[0m06:46:49  2 of 42 START sql view model main.stg_census_county_estimates .................. [RUN]
+[0m06:46:49  3 of 42 START sql view model main.stg_usaspending_transactions ................. [RUN]
+[0m06:46:49  4 of 42 START sql view model main.stg_wiki_sites ............................... [RUN]
+[0m06:46:49  2 of 42 OK created sql view model main.stg_census_county_estimates ............. [[32mOK[0m in 0.39s]
+[0m06:46:49  4 of 42 OK created sql view model main.stg_wiki_sites .......................... [[32mOK[0m in 0.38s]
+[0m06:46:49  3 of 42 OK created sql view model main.stg_usaspending_transactions ............ [[32mOK[0m in 0.40s]
+[0m06:46:49  5 of 42 START test not_null_stg_census_county_estimates_county_geoid ........... [RUN]
+[0m06:46:49  6 of 42 START test not_null_stg_census_county_estimates_county_vintage_key ..... [RUN]
+[0m06:46:49  1 of 42 OK created sql table model main.dim_date ............................... [[32mOK[0m in 0.42s]
+[0m06:46:49  7 of 42 START test unique_stg_census_county_estimates_county_vintage_key ....... [RUN]
+[0m06:46:50  8 of 42 START test not_null_stg_wiki_sites_wiki_id ............................. [RUN]
+[0m06:46:50  6 of 42 PASS not_null_stg_census_county_estimates_county_vintage_key ........... [[32mPASS[0m in 0.12s]
+[0m06:46:50  7 of 42 PASS unique_stg_census_county_estimates_county_vintage_key ............. [[32mPASS[0m in 0.12s]
+[0m06:46:50  5 of 42 PASS not_null_stg_census_county_estimates_county_geoid ................. [[32mPASS[0m in 0.13s]
+[0m06:46:50  9 of 42 START test unique_stg_wiki_sites_wiki_id ............................... [RUN]
+[0m06:46:50  10 of 42 START test not_null_stg_usaspending_transactions_federal_action_obligation  [RUN]
+[0m06:46:50  11 of 42 START test not_null_stg_usaspending_transactions_transaction_key ...... [RUN]
+[0m06:46:50  8 of 42 PASS not_null_stg_wiki_sites_wiki_id ................................... [[32mPASS[0m in 0.09s]
+[0m06:46:50  12 of 42 START test unique_stg_usaspending_transactions_transaction_key ........ [RUN]
+[0m06:46:50  11 of 42 PASS not_null_stg_usaspending_transactions_transaction_key ............ [[32mPASS[0m in 0.10s]
+[0m06:46:50  9 of 42 PASS unique_stg_wiki_sites_wiki_id ..................................... [[32mPASS[0m in 0.10s]
+[0m06:46:50  10 of 42 PASS not_null_stg_usaspending_transactions_federal_action_obligation .. [[32mPASS[0m in 0.11s]
+[0m06:46:50  13 of 42 START test not_null_dim_date_date_day ................................. [RUN]
+[0m06:46:50  14 of 42 START test unique_dim_date_date_day ................................... [RUN]
+[0m06:46:50  12 of 42 PASS unique_stg_usaspending_transactions_transaction_key .............. [[32mPASS[0m in 0.08s]
+[0m06:46:50  15 of 42 START sql table model main.dim_wiki ................................... [RUN]
+[0m06:46:50  16 of 42 START sql table model main.dim_agency ................................. [RUN]
+[0m06:46:50  13 of 42 PASS not_null_dim_date_date_day ....................................... [[32mPASS[0m in 0.09s]
+[0m06:46:50  14 of 42 PASS unique_dim_date_date_day ......................................... [[32mPASS[0m in 0.09s]
+[0m06:46:50  17 of 42 START sql table model main.dim_place .................................. [RUN]
+[0m06:46:50  18 of 42 START sql table model main.fct_award_transaction ...................... [RUN]
+[0m06:46:50  15 of 42 OK created sql table model main.dim_wiki .............................. [[32mOK[0m in 0.19s]
+[0m06:46:50  16 of 42 OK created sql table model main.dim_agency ............................ [[32mOK[0m in 0.22s]
+[0m06:46:50  19 of 42 START test not_null_dim_agency_awarding_agency_code ................... [RUN]
+[0m06:46:50  20 of 42 START test unique_dim_agency_awarding_agency_code ..................... [RUN]
+[0m06:46:50  18 of 42 OK created sql table model main.fct_award_transaction ................. [[32mOK[0m in 0.22s]
+[0m06:46:50  17 of 42 OK created sql table model main.dim_place ............................. [[32mOK[0m in 0.22s]
+[0m06:46:50  21 of 42 START test assert_fact_total_matches_source ........................... [RUN]
+[0m06:46:50  22 of 42 START test not_null_fct_award_transaction_place_key ................... [RUN]
+[0m06:46:50  19 of 42 PASS not_null_dim_agency_awarding_agency_code ......................... [[32mPASS[0m in 0.08s]
+[0m06:46:50  20 of 42 PASS unique_dim_agency_awarding_agency_code ........................... [[32mPASS[0m in 0.09s]
+[0m06:46:50  23 of 42 START test not_null_fct_award_transaction_transaction_key ............. [RUN]
+[0m06:46:50  24 of 42 START test unique_fct_award_transaction_transaction_key ............... [RUN]
+[0m06:46:50  22 of 42 PASS not_null_fct_award_transaction_place_key ......................... [[32mPASS[0m in 0.10s]
+[0m06:46:50  23 of 42 PASS not_null_fct_award_transaction_transaction_key ................... [[32mPASS[0m in 0.08s]
+[0m06:46:50  21 of 42 PASS assert_fact_total_matches_source ................................. [[32mPASS[0m in 0.11s]
+[0m06:46:50  25 of 42 START test assert_county_population_fallback .......................... [RUN]
+[0m06:46:50  24 of 42 PASS unique_fct_award_transaction_transaction_key ..................... [[32mPASS[0m in 0.08s]
+[0m06:46:50  26 of 42 START test assert_fallback_counties_exist ............................. [RUN]
+[0m06:46:50  27 of 42 START test not_null_dim_place_place_key ............................... [RUN]
+[0m06:46:50  28 of 42 START test unique_dim_place_place_key ................................. [RUN]
+[0m06:46:50  27 of 42 PASS not_null_dim_place_place_key ..................................... [[32mPASS[0m in 0.08s]
+[0m06:46:50  28 of 42 PASS unique_dim_place_place_key ....................................... [[32mPASS[0m in 0.07s]
+[0m06:46:50  26 of 42 PASS assert_fallback_counties_exist ................................... [[32mPASS[0m in 0.09s]
+[0m06:46:50  25 of 42 PASS assert_county_population_fallback ................................ [[32mPASS[0m in 0.10s]
+[0m06:46:50  29 of 42 START sql view model main.v_check1_net_by_agency ...................... [RUN]
+[0m06:46:50  30 of 42 START sql view model main.v_check3_negative_awards .................... [RUN]
+[0m06:46:50  31 of 42 START sql table model main.mart_obligations_monthly ................... [RUN]
+[0m06:46:51  29 of 42 OK created sql view model main.v_check1_net_by_agency ................. [[32mOK[0m in 0.18s]
+[0m06:46:51  30 of 42 OK created sql view model main.v_check3_negative_awards ............... [[32mOK[0m in 0.18s]
+[0m06:46:51  31 of 42 OK created sql table model main.mart_obligations_monthly .............. [[32mOK[0m in 0.21s]
+[0m06:46:51  32 of 42 START test assert_mart_key_unique ..................................... [RUN]
+[0m06:46:51  33 of 42 START test assert_state_equals_county_sum ............................. [RUN]
+[0m06:46:51  34 of 42 START test not_null_mart_obligations_monthly_awarding_agency_code ..... [RUN]
+[0m06:46:51  35 of 42 START test not_null_mart_obligations_monthly_county_fips .............. [RUN]
+[0m06:46:51  32 of 42 PASS assert_mart_key_unique ........................................... [[32mPASS[0m in 0.09s]
+[0m06:46:51  35 of 42 PASS not_null_mart_obligations_monthly_county_fips .................... [[32mPASS[0m in 0.09s]
+[0m06:46:51  34 of 42 PASS not_null_mart_obligations_monthly_awarding_agency_code ........... [[32mPASS[0m in 0.09s]
+[0m06:46:51  36 of 42 START test not_null_mart_obligations_monthly_net_obligations .......... [RUN]
+[0m06:46:51  33 of 42 PASS assert_state_equals_county_sum ................................... [[32mPASS[0m in 0.10s]
+[0m06:46:51  37 of 42 START test not_null_mart_obligations_monthly_obligation_month ......... [RUN]
+[0m06:46:51  38 of 42 START test not_null_mart_obligations_monthly_state_fips ............... [RUN]
+[0m06:46:51  39 of 42 START test not_null_mart_obligations_monthly_transaction_count ........ [RUN]
+[0m06:46:51  36 of 42 PASS not_null_mart_obligations_monthly_net_obligations ................ [[32mPASS[0m in 0.09s]
+[0m06:46:51  37 of 42 PASS not_null_mart_obligations_monthly_obligation_month ............... [[32mPASS[0m in 0.08s]
+[0m06:46:51  38 of 42 PASS not_null_mart_obligations_monthly_state_fips ..................... [[32mPASS[0m in 0.08s]
+[0m06:46:51  39 of 42 PASS not_null_mart_obligations_monthly_transaction_count .............. [[32mPASS[0m in 0.08s]
+[0m06:46:51  40 of 42 START sql view model main.v_check2_top_counties_per_person ............ [RUN]
+[0m06:46:51  41 of 42 START sql view model main.v_check4_month_reconciliation ............... [RUN]
+[0m06:46:51  41 of 42 OK created sql view model main.v_check4_month_reconciliation .......... [[32mOK[0m in 0.08s]
+[0m06:46:51  42 of 42 START test assert_check4_reconciles ................................... [RUN]
+[0m06:46:51  40 of 42 OK created sql view model main.v_check2_top_counties_per_person ....... [[32mOK[0m in 0.09s]
+[0m06:46:51  42 of 42 PASS assert_check4_reconciles ......................................... [[32mPASS[0m in 0.03s]
+[0m06:46:51  
+[0m06:46:51  1 of 1 START hook: open_data_pipeline.on-run-end.0 ............................. [RUN]
+[0m06:46:51  1 of 1 OK hook: open_data_pipeline.on-run-end.0 ................................ [[32mOK[0m in 0.02s]
+[0m06:46:51  
+[0m06:46:51  Finished running 1 project hook, 6 table models, 29 data tests, 7 view models in 0 hours 0 minutes and 1.96 seconds (1.96s).
+[0m06:46:51  
+[0m06:46:51  [32mCompleted successfully[0m
+[0m06:46:51  
+[0m06:46:51  Done. PASS=43 WARN=0 ERROR=0 SKIP=0 NO-OP=0 TOTAL=43

@@ -1,0 +1,47 @@
+{
+  "skill": "cadence",
+  "pipeline_run_id": "d7ce32a2-e66d-4618-83be-89bdcbaf2347",
+  "task_id": "gh-1",
+  "task_source": "explicit",
+  "task_description": "Federal spending and Wikipedia edit stream pipeline (gh-1)",
+  "branch": "feature/gh-1-pipeline",
+  "ticket_tokens": [
+    "1",
+    "feature/gh-1-pipeline",
+    "gh-1"
+  ],
+  "fresh_run": true,
+  "supersede_on_activate": false,
+  "superseded_paths": [],
+  "activated_at": "2026-10-19T04:47:02.078789+00:00",
+  "owner_session_id": "a08112b2-70f8-5c85-83c0-3c1d7290b3c5",
+  "orchestrator_agent_ids": [],
+  "orchestrator_source": "toplevel",
+  "host": "claude",
+  "base": "origin/main",
+  "workspace": "/tmp/claude-0/-home-user/a08112b2-70f8-5c85-83c0-3c1d7290b3c5/scratchpad/pipe/P2-cadence-core-haiku-1/repo",
+  "primary_checkout": "/tmp/claude-0/-home-user/a08112b2-70f8-5c85-83c0-3c1d7290b3c5/scratchpad/pipe/P2-cadence-core-haiku-1/repo",
+  "context_root": "/tmp/claude-0/-home-user/a08112b2-70f8-5c85-83c0-3c1d7290b3c5/scratchpad/pipe/P2-cadence-core-haiku-1/repo/.context",
+  "matching_artifacts": {},
+  "resume_slug": "activate-session",
+  "resume_block": "A1",
+  "resume_reason": "Fresh run \u2014 start at A1 (activate-session)",
+  "active_skill": "cadence",
+  "registry_version": 1,
+  "env_exports": {
+    "CURSOR_ACTIVE_SKILL": "cadence",
+    "CADENCE_TASK_ID": "gh-1",
+    "CADENCE_FRESH_RUN": "1",
+    "CADENCE_PIPELINE_RUN_ID": "d7ce32a2-e66d-4618-83be-89bdcbaf2347",
+    "CADENCE_HOME": "/tmp/claude-0/-home-user/a08112b2-70f8-5c85-83c0-3c1d7290b3c5/scratchpad/pipe/P2-cadence-core-haiku-1/cadence"
+  },
+  "peer_models": {
+    "plan-create": "haiku",
+    "plan-review": "haiku",
+    "pr-review-local": "haiku"
+  },
+  "lean_record_by_hook": true,
+  "worktree_key": "f4a5bc7da98592b9",
+  "stop_refusals": 2,
+  "stop_refusal_slug": "implement"
+}

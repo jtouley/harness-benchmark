@@ -1,0 +1,17 @@
+{
+  "by_model": {
+    "claude-haiku-5-5": {
+      "input": 610,
+      "output": 2518,
+      "cache_write": 900921,
+      "cache_read": 54020364,
+      "usd": "0.6541"
+    }
+  },
+  "usd_total": "0.6541",
+  "host_reported_usd": null,
+  "num_turns": null,
+  "is_error": null,
+  "source": "token counts summed from the session transcript (assistant messages, one per request id); the host wrote no result.json because the guard cap (7,200 s) killed it",
+  "assistant_messages": 305
+}

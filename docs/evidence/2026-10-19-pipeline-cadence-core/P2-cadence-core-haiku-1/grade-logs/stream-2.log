@@ -1,0 +1,43 @@
+uv run python -m engine run pipelines/stream.yml --duration 90 --run-id 20261019T064729Z
+warning: The `UV_NATIVE_TLS` environment variable is deprecated and will be removed in a future release. Use `UV_SYSTEM_CERTS` instead.
+warning: `VIRTUAL_ENV=/home/user/harness-benchmark/.venv` does not match the project environment path `.venv` and will be ignored; use `--active` to target the active environment instead
+engine: run 20261019T064729Z captured 21502 events
+mkdir -p out/marts/mart_obligations_monthly out/marts/mart_edit_window_5min out/marts/late_events
+uv run dbt build --project-dir transform --profiles-dir transform --select tag:stream
+warning: The `UV_NATIVE_TLS` environment variable is deprecated and will be removed in a future release. Use `UV_SYSTEM_CERTS` instead.
+warning: `VIRTUAL_ENV=/home/user/harness-benchmark/.venv` does not match the project environment path `.venv` and will be ignored; use `--active` to target the active environment instead
+[0m06:49:01  Running with dbt=1.11.6
+[0m06:49:02  Registered adapter: duckdb=1.11.0
+[0m06:49:02  Found 18 models, 34 data tests, 1 operation, 5 sources, 501 macros
+[0m06:49:02  
+[0m06:49:02  Concurrency: 4 threads (target='dev')
+[0m06:49:02  
+[0m06:49:02  1 of 10 START sql incremental model main.fct_edit .............................. [RUN]
+[0m06:49:02  2 of 10 START sql table model main.late_events ................................. [RUN]
+[0m06:49:03  2 of 10 OK created sql table model main.late_events ............................ [[32mOK[0m in 0.33s]
+[0m06:49:03  1 of 10 OK created sql incremental model main.fct_edit ......................... [[32mOK[0m in 0.45s]
+[0m06:49:03  3 of 10 START test assert_fct_edit_unique ...................................... [RUN]
+[0m06:49:03  4 of 10 START test assert_late_rows_match ...................................... [RUN]
+[0m06:49:03  4 of 10 PASS assert_late_rows_match ............................................ [[32mPASS[0m in 0.07s]
+[0m06:49:03  3 of 10 PASS assert_fct_edit_unique ............................................ [[32mPASS[0m in 0.08s]
+[0m06:49:03  5 of 10 START sql incremental model main.mart_edit_window_5min ................. [RUN]
+[0m06:49:03  6 of 10 START sql view model main.v_check5_edits ............................... [RUN]
+[0m06:49:03  6 of 10 OK created sql view model main.v_check5_edits .......................... [[32mOK[0m in 0.09s]
+[0m06:49:03  7 of 10 START test assert_check5_matches_lake .................................. [RUN]
+[0m06:49:03  5 of 10 OK created sql incremental model main.mart_edit_window_5min ............ [[32mOK[0m in 0.13s]
+[0m06:49:03  8 of 10 START test assert_window_total_equals_on_time .......................... [RUN]
+[0m06:49:03  9 of 10 START test assert_window_unique ........................................ [RUN]
+[0m06:49:03  9 of 10 PASS assert_window_unique .............................................. [[32mPASS[0m in 0.08s]
+[0m06:49:03  8 of 10 PASS assert_window_total_equals_on_time ................................ [[32mPASS[0m in 0.09s]
+[0m06:49:03  10 of 10 START sql view model main.v_check6_top_windows ........................ [RUN]
+[0m06:49:03  7 of 10 PASS assert_check5_matches_lake ........................................ [[32mPASS[0m in 0.16s]
+[0m06:49:03  10 of 10 OK created sql view model main.v_check6_top_windows ................... [[32mOK[0m in 0.05s]
+[0m06:49:03  
+[0m06:49:03  1 of 1 START hook: open_data_pipeline.on-run-end.0 ............................. [RUN]
+[0m06:49:03  1 of 1 OK hook: open_data_pipeline.on-run-end.0 ................................ [[32mOK[0m in 0.04s]
+[0m06:49:03  
+[0m06:49:03  Finished running 2 incremental models, 1 project hook, 1 table model, 5 data tests, 2 view models in 0 hours 0 minutes and 1.01 seconds (1.01s).
+[0m06:49:03  
+[0m06:49:03  [32mCompleted successfully[0m
+[0m06:49:03  
+[0m06:49:03  Done. PASS=11 WARN=0 ERROR=0 SKIP=0 NO-OP=0 TOTAL=11

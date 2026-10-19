@@ -20,7 +20,8 @@ with Haiku 5.5 as orchestrator and as every peer.
   dev replay (seed 0) on `localhost:8099` during the agent's session; the grader, with its own replay
   on seed 1, after it. No clean room: the file system was not isolated, and the agent's environment
   came from the host's shell with `HOME`, `CADENCE_HOME` and the two variables below overridden.
-- **Arm.** Cadence at `4935e83` (branch `ccr-3d2e0c73-lr6bdt`), loaded with `--plugin-dir` for the
+- **Arm.** Cadence on branch `ccr-3d2e0c73-lr6bdt` (`4935e83` for the Opus runs, `b1bbdcd` for the
+  two Haiku runs; each run's `provenance.json` names its sha), loaded with `--plugin-dir` for the
   session only. Config: `adapter: none`, `peer_models: {"default": "haiku"}`. The task repository got
   a `.cadence.json` that gates `pipeline/`, `engine/`, `pipelines/`, `transform/` and the `Makefile`,
   so the edit guard applies to the task's code. Prompt: the lockfile's Cadence drive prompt around the
@@ -49,7 +50,7 @@ Same results as on the laptop (15 October), on a different architecture and OS.
 | P1-cadence-core-1 | P1 | cadence-core | Opus 5.5 | 0.0 | 0/7 | no | no | 0 | 1,029 | $1.96 | $2.17 |
 | P1-cadence-core-opus-2 | P1 | cadence-core | Opus 5.5 | interrupted at P1 (owner switched the arm to Haiku) | | | | | | | |
 | **P1-cadence-core-haiku-1** | P1 | cadence-core | **Haiku 5.5** | **0.7143** | **5/7** | yes | yes | 9 | 3,062 | **$0.67** | $2.24 |
-| P2-cadence-core-haiku-1 | P2 | cadence-core | Haiku 5.5 | running | | | | | | | |
+| P2-cadence-core-haiku-1 | P2 | cadence-core | Haiku 5.5 | 0.1429 | 1/7 | yes | yes | 9 | 7,203 (guard cap) | $0.65 | none (killed) |
 
 For comparison, the 15 October one-shots on P1 (isolated runner, Claude Code 2.1.287, regraded):
 
@@ -59,9 +60,18 @@ For comparison, the 15 October one-shots on P1 (isolated runner, Claude Code 2.1
 | P1-sonnet-1 | Sonnet 5.5 | 0.4286 | 3/7 | 1,349 | $2.06 |
 | P1-opus-1 | Opus 5.5 | 0.8571 | 6/7 | 1,689 | $5.82 |
 
+And on P2:
+
+| Run | Model | Reward | Checks | Agent s | Cost (list) |
+|---|---|---|---|---|---|
+| P2-haiku-1 | Haiku 5.5 | 0.0 | 0/7 | 1,597 | $0.28 |
+| P2-sonnet-1 | Sonnet 5.5 | 0.4286 | 3/7 | 1,716 | $4.56 |
+| P2-opus-1 | Opus 5.5 | 0.7143 | 5/7 | 2,465 | $7.84 |
+
 The cost column uses `pricing.json` list prices from the token counts, as the other rounds do.
 Claude Code's own figure (the last column) prices the Haiku calls differently; it is kept for the record
-and not used.
+and not used. The P2 run has no host figure: the guard cap killed the session before it wrote its
+result, so its cost is summed from the transcript (`cost.json`, `source`).
 
 ### P1-cadence-core-haiku-1
 
@@ -107,6 +117,50 @@ The quality gate fails on complexity (two stream functions) and on the unmeasure
 clean-room check reports ten "contacts"; all are shell variable names, Cadence's own text
 (`.cursor/plans`), or tokens such as `/` and `2>/dev/null`. None is a real contact, as in the pilot.
 
+### P2-cadence-core-haiku-1 (timed out before the export step)
+
+The timeline, from the transcript and the commit dates (UTC):
+
+| Time | Step |
+|---|---|
+| 04:46 | Activation, local ticket, plan-create |
+| 04:50 to 05:07 | Five plan-review cycles. Each returned `READY WITH CHANGES` with three to five new must-fix items. The loop ended at the cycle limit with the open findings carried into the plan (682 lines, five plan updates). $0.15 of the run's $0.65 |
+| 05:07 to 05:22 | Phases 1 to 8 committed: engine, batch ingestion, dbt foundation, star schema, batch checks, stream source and sink, event time and lateness |
+| 05:22 to 05:59 | Phase 9 (stream dbt models), with a clean 90-second stream run and a rebuild of the batch side |
+| 06:00 | The orchestrator started the plan's acceptance step as `make stream DURATION=3600` under one run id, killed the consumer after a minute, restarted it for the remaining 3,540 s, and waited in 110-second slices |
+| 06:46 | The guard cap (7,200 s from the start) killed the session, 14 minutes before the run would have ended |
+
+Phase 10 never ran. It would have exported the six check views to `out/marts/`, written
+`outputs/summary.md` and `outputs/PR.md`, and started E4 and R1. The plan did not fix the acceptance
+run at one hour: it says `DURATION=<s>` and notes that a shorter run covers a shorter window. The hour
+was the orchestrator's own reading of "the replayed hour" in the issue. No hard stop was recorded,
+and the host wrote no result.
+
+What the grader found, from `grade.json`: both builds gave the same outputs; both stream runs read the
+replay to the end over 10 connections (21,503 positions served of 11,774 needed). Check 7 (the late
+event count) passes from the `late_events` table. Checks 1 to 6 fail with the same message: "no
+published mart named `v_check…` under `out/marts/`". The oracle map names six dbt views under
+`transform/models/checks/`, which exist in `out/warehouse.duckdb` but were never exported.
+`out/marts/` holds three marts. So the six answers are unread, not wrong or right.
+
+Tool measures (`quality_metrics.json`, `commit_replay.json`):
+
+| Measure | Value |
+|---|---|
+| Lines added in `engine/` | 696 |
+| Cyclomatic complexity, functions newly over 10 | `config.py:_check_names` 15, `stream.py:StreamConsumer.run` 16, `StreamConsumer._commit` 13 |
+| Cognitive complexity, functions newly over 15 | `_check_names` 22, `run` 28, `_commit` 17 |
+| New bug-class findings / new type errors | 1 / 3 |
+| Code smells per 100 new lines | 1.3 |
+| Duplicated lines on new code | 2.2% |
+| Maintainability index | 59 |
+| New-code coverage | not measured: the run's seven test files fail to import under the measurer's environment, as on P1 |
+| Commits | 9 phase commits and the snapshot; largest 321 lines and +83 complexity (phase 7, the stream source and sink); median 38 lines |
+
+The quality gate fails on complexity, on the bug finding, on the type errors and on the unmeasured
+coverage. The clean-room check reports 29 "contacts"; all are shell variable names, Cadence's own
+paths, or the task's own folders (`data`, `transform`). None is a real contact.
+
 ### P1-cadence-core-1 (Opus, no delivery)
 
 The orchestrator activated, wrote the local ticket and called the plan-create peer with
@@ -134,11 +188,24 @@ so does `runner/claude-agent.sh`. 17 minutes, $1.96, no plan file.
    runner and in Cadence's quickstart.
 5. **The tool measures work on this task family** and show what the reviewer would have found: two
    stream functions over both complexity limits, the whole consumer in one 224-line commit.
+6. **On P2 the harness ran out of clock, not out of pipeline.** Nine phases were committed in 72
+   minutes, after 20 minutes and five review cycles of planning. The orchestrator then spent the
+   last 46 minutes of a 120-minute budget on a one-hour acceptance run that the plan did not require,
+   and the export step that the grader reads never ran: 1 of 7, against 0 of 7 for Haiku alone. The
+   agent is never told the time budget. A harness that sizes its acceptance step to a budget it
+   cannot see is a defect of the environment note as much as of the harness. Two things to change
+   before a rerun: state the budget in the task's environment note, and let the plan reviewer ask how
+   long each acceptance step takes.
+7. **The plan-review loop hit its cycle limit on both tasks.** Five cycles each time, every verdict
+   `READY WITH CHANGES`, and each cycle found new must-fix items in the text the previous cycle added.
+   The limit, not the reviewer, ended the loop. On P2 that cost 20 minutes and $0.15 of the run.
 
 ## Limits
 
 - One run per cell, on the host, not in the isolated runner: no clean room, no network isolation,
   Claude Code 2.1.303 (the lockfile pins 2.1.294).
+- The P2 run was killed by the guard cap, so its cost comes from the transcript and its delivered tree
+  is the snapshot of what the agent left, with six check views built but not exported.
 - The task repository got a `.cadence.json` (five gated prefixes) that the one-shot repositories did
   not have. It changes nothing for a one-shot.
 - The Opus arm has no result: one run died on the host defect, one was interrupted.
@@ -147,6 +214,7 @@ so does `runner/claude-agent.sh`. 17 minutes, $1.96, no plan file.
 
 ## Next
 
-- P2 with the same arm is running; P3 needs the Docker image.
+- P3 needs the Docker image.
+- Rerun P2 with the time budget in the environment note, so the acceptance step fits.
 - Rerun P1 in the isolated runner with the runner's new environment, n = 3, when a Docker host exists.
 - Fix the no-PR mode in Cadence, then rerun so R1 and R5 run on the delivered code.

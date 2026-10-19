@@ -1,0 +1,155 @@
+{
+ "base": "d5f3e8c0c3ec9bba171ae9889b3d64f128da56ca",
+ "head": "9e944671ae93b6f28817760bda8e7e0ae4baf740",
+ "package": "engine",
+ "test_cmd": null,
+ "uncommitted_changes": false,
+ "commits": [
+  {
+   "sha": "c3dc4b548f9b2e3f1a6f466835c48221bf69b594",
+   "subject": "gh-1 phase 1: dependencies, CLI smoke test and Makefile wiring",
+   "lines_added": 24,
+   "lines_deleted": 0,
+   "complexity_added": 3,
+   "complexity_removed": 0,
+   "newly_over_10": [],
+   "unparsed": [],
+   "green": null,
+   "seconds_since_previous": 4503
+  },
+  {
+   "sha": "6cb38afbe6b624e55c225550b61d5c3a7da89258",
+   "subject": "gh-1 phase 2: engine core with YAML validation",
+   "lines_added": 226,
+   "lines_deleted": 2,
+   "complexity_added": 44,
+   "complexity_removed": 0,
+   "newly_over_10": [
+    "engine/config.py:_check_names=13"
+   ],
+   "unparsed": [],
+   "green": null,
+   "seconds_since_previous": 82
+  },
+  {
+   "sha": "baa0bcb541139801c8b01ca31b5a8a99423d9a22",
+   "subject": "gh-1 phase 3: batch ingestion into the lake",
+   "lines_added": 94,
+   "lines_deleted": 3,
+   "complexity_added": 25,
+   "complexity_removed": 0,
+   "newly_over_10": [],
+   "unparsed": [],
+   "green": null,
+   "seconds_since_previous": 182
+  },
+  {
+   "sha": "1c9d2b169825a2c1a440fea1625ae33212c110b5",
+   "subject": "gh-1 phase 4: dbt foundation over the lake",
+   "lines_added": 0,
+   "lines_deleted": 0,
+   "complexity_added": 0,
+   "complexity_removed": 0,
+   "newly_over_10": [],
+   "unparsed": [],
+   "green": null,
+   "seconds_since_previous": 47
+  },
+  {
+   "sha": "f3d76a36b00b45343ef883ddd70e14a0f0e79260",
+   "subject": "gh-1 phase 5: star schema and monthly mart for Question A",
+   "lines_added": 0,
+   "lines_deleted": 0,
+   "complexity_added": 0,
+   "complexity_removed": 0,
+   "newly_over_10": [],
+   "unparsed": [],
+   "green": null,
+   "seconds_since_previous": 195
+  },
+  {
+   "sha": "098a286e38ef6a9af1cbb323d5c04d49aedbb1de",
+   "subject": "gh-1 phase 6: batch checks and the idempotence proof",
+   "lines_added": 0,
+   "lines_deleted": 0,
+   "complexity_added": 0,
+   "complexity_removed": 0,
+   "newly_over_10": [],
+   "unparsed": [],
+   "green": null,
+   "seconds_since_previous": 105
+  },
+  {
+   "sha": "280bb34970cf08ca9be816518f74d1b4bfb2462d",
+   "subject": "gh-1 phase 7: stream source and atomic micro-batch sink",
+   "lines_added": 317,
+   "lines_deleted": 4,
+   "complexity_added": 83,
+   "complexity_removed": 0,
+   "newly_over_10": [],
+   "unparsed": [],
+   "green": null,
+   "seconds_since_previous": 190
+  },
+  {
+   "sha": "2cda953869e841c7bbdca69b9081f5c7fe094e5a",
+   "subject": "gh-1 phase 8: event time, windows and lateness",
+   "lines_added": 40,
+   "lines_deleted": 12,
+   "complexity_added": 9,
+   "complexity_removed": 0,
+   "newly_over_10": [
+    "engine/stream.py:StreamConsumer._commit=11"
+   ],
+   "unparsed": [],
+   "green": null,
+   "seconds_since_previous": 119
+  },
+  {
+   "sha": "5978a1d4122d62ab55b7fad3c520d767828ccb52",
+   "subject": "gh-1 phase 9: stream dbt models",
+   "lines_added": 85,
+   "lines_deleted": 13,
+   "complexity_added": 16,
+   "complexity_removed": 1,
+   "newly_over_10": [
+    "engine/stream.py:StreamConsumer.run=16"
+   ],
+   "unparsed": [],
+   "green": null,
+   "seconds_since_previous": 2204
+  },
+  {
+   "sha": "9e944671ae93b6f28817760bda8e7e0ae4baf740",
+   "subject": "the working tree the agent left",
+   "lines_added": 0,
+   "lines_deleted": 0,
+   "complexity_added": 0,
+   "complexity_removed": 0,
+   "newly_over_10": [],
+   "unparsed": [],
+   "green": null,
+   "seconds_since_previous": 2826
+  }
+ ],
+ "summary": {
+  "commits": 10,
+  "measurable": true,
+  "largest_commit_lines": 321,
+  "median_commit_lines": 38.0,
+  "total_lines_changed": 820,
+  "largest_commit_complexity_added": 83,
+  "median_commit_complexity_added": 6.0,
+  "unparsed_commits": 0,
+  "green_share": null,
+  "cleanup_commits": 0,
+  "complexity_added_total": 180,
+  "complexity_removed_total": 1,
+  "seconds_base_to_head": 10453,
+  "final": {
+   "functions": 46,
+   "total_complexity": 179,
+   "functions_over_10": 3
+  }
+ }
+}

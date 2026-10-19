@@ -1,0 +1,92 @@
+{
+  "package_lines_added": 696,
+  "tests_passed": null,
+  "tests_failed": null,
+  "new_code_coverage": null,
+  "cyclomatic_max": 16,
+  "cyclomatic_newly_over_10": [
+    "engine/config.py:_check_names=15",
+    "engine/stream.py:StreamConsumer._commit=13",
+    "engine/stream.py:StreamConsumer.run=16"
+  ],
+  "cognitive_max": 28,
+  "cognitive_newly_over_15": [
+    "engine/config.py:_check_names=22",
+    "engine/stream.py:StreamConsumer::_commit=17",
+    "engine/stream.py:StreamConsumer::run=28"
+  ],
+  "maintainability_index": 59.4,
+  "lint_new_by_rule": {
+    "B007": 1,
+    "C901": 2,
+    "PLR0912": 1,
+    "PLR0913": 1,
+    "UP017": 5
+  },
+  "bug_findings_new": 1,
+  "smells_per_100_new_lines": 1.3,
+  "type_errors_new": 3,
+  "new_code_duplication": 2.2,
+  "duplication": {
+    "new_duplicated_lines": 15,
+    "new_lines": 696,
+    "new_code_duplication": 2.2,
+    "duplicated_lines_total": 8
+  },
+  "module_coupling": {
+    "engine": {
+      "afferent": 0,
+      "efferent": 0,
+      "instability": null
+    },
+    "engine.__main__": {
+      "afferent": 0,
+      "efferent": 4,
+      "instability": 1.0
+    },
+    "engine.config": {
+      "afferent": 1,
+      "efferent": 1,
+      "instability": 0.5
+    },
+    "engine.run": {
+      "afferent": 1,
+      "efferent": 1,
+      "instability": 0.5
+    },
+    "engine.steps": {
+      "afferent": 3,
+      "efferent": 0,
+      "instability": 0.0
+    },
+    "engine.stream": {
+      "afferent": 1,
+      "efferent": 0,
+      "instability": 0.0
+    }
+  },
+  "gate": {
+    "tests_pass": false,
+    "new_code_coverage_at_least_80": false,
+    "no_function_newly_over_cyclomatic_10": false,
+    "no_function_newly_over_cognitive_15": false,
+    "no_new_bug_findings": false,
+    "no_new_type_errors": false,
+    "new_code_duplication_at_most_3": true
+  },
+  "gate_passed": false,
+  "tool_errors": {
+    "coverage": "uv run --quiet --no-project exited 2: t_engine_config.py\nERROR tests/test_idempotence.py\nERROR tests/test_late_count.py\nERROR tests/test_lateness.py\nERROR tests/test_stream.py\n!!!!!!!!!!!!!!!!!!! Interrupted: 7 errors during collection !!!!!!!!!!!!!!!!!!!!\n============================== 7 errors in 0.33s ===============================\n"
+  },
+  "tools": {
+    "ruff": "ruff==0.17.0",
+    "radon": "radon==6.0.1",
+    "complexipy": "complexipy==8.0.1",
+    "mypy": "mypy==2.4.0",
+    "pytest": "pytest==9.1.1",
+    "pytest-cov": "pytest-cov==7.1.0",
+    "coverage": "coverage==7.16.2",
+    "jscpd": "jscpd@5.4.1",
+    "node": "nodejs-wheel==24.19.0"
+  }
+}

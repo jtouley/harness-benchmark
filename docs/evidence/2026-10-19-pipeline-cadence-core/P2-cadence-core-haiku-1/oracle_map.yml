@@ -1,0 +1,50 @@
+# Maps each analyst check in the issue to the table or view and the column that answers it.
+# Views are in transform/models/checks. Tables are in out/marts or the warehouse file out/warehouse.duckdb.
+
+checks:
+  - id: 1
+    question: FY2024 net obligations per awarding agency.
+    table: v_check1_net_by_agency
+    column: net_obligations
+    key: awarding_agency_code
+
+  - id: 2
+    question: The ten counties with the highest FY2024 obligations per person.
+    table: v_check2_top_counties_per_person
+    column: obligations_per_person
+    key: county_rank
+    note: Ranks use the July 1, 2024 population (D2). Ten rows.
+
+  - id: 3
+    question: The number of awards with a net negative obligation in FY2024.
+    table: v_check3_negative_awards
+    column: negative_award_count
+    note: An award is one award id, or the transaction key when the row has no award id (D4).
+
+  - id: 4
+    question: For one month (September 2024), county totals add up to state totals, and state totals add up to the source total.
+    table: v_check4_month_reconciliation
+    column: difference
+    key: state_fips
+    note: Each state row compares county rows with the state fact total. The ALL row compares county rows with the source total. A zero difference means the rows reconcile.
+
+  - id: 5
+    question: For the stream, edits and net bytes per wiki for the replayed window, split human and bot. Late events are included.
+    table: v_check5_edits
+    column: edit_count and net_bytes_sum (sum over the rows for each wiki and actor_type)
+    key: wiki, actor_type
+    note: The replayed window is the first and last meta.dt of the earliest captured run (plan update 5, MF-4). The window length in seconds is in window_first_dt and window_last_dt. The check counts every edit in fct_edit, late or on time.
+
+  - id: 6
+    question: For the stream, the 5-minute windows with the most edits on en.wikipedia.org (on-time edits only).
+    table: v_check6_top_windows
+    column: edit_count
+    key: window_rank
+    note: Ten rows. The wiki is enwiki, the wiki id for en.wikipedia.org. Late events are not counted (the mart holds on-time edits only).
+
+  - id: 7
+    question: For the stream, the count of late events.
+    table: late_events
+    column: meta_id (count of rows)
+    key: meta_id
+    note: A late event is in lake/recentchange_late and in fct_edit with is_late = true.
