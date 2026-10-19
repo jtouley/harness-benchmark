@@ -158,7 +158,9 @@ for the new harness.
 
 Without names, `install-check`, `footprint`, `probes` and `verify` need every framework fetched,
 Cadence included. Cadence is a private repository. Without access to it, run `harbor-build` and the
-tests, and open the pull request with the JSON from step 3 and a note that `results/` is not regenerated, so the maintainer can regenerate it.
+tests, and open the pull request with the JSON from step 3 and a note that `results/` is not
+regenerated. The maintainer regenerates `results/` and runs `verify` before the merge (see
+Contributing in the [README](../../README.md#contributing)).
 
 What fails when a step is missing:
 
@@ -175,4 +177,7 @@ framework is private, so while Cadence is in the lockfile, run `verify` locally.
 Add the harness's row to the table in the [README](../../README.md), with the numbers from
 `results/REPORT.md`, and update the harness count. It appears in the README's first paragraph and its
 first list ("all seven setups"), and in [`docs/claims.md`](../claims.md). For the live tier, also add
-the name to `haiku_arms` in [`scripts/live.sh`](../../scripts/live.sh).
+the name to `haiku_arms` in [`scripts/live.sh`](../../scripts/live.sh). Each Haiku arm adds 30 trials
+(6 tasks, 5 trials each) and $30 to the worst case, and `live.sh` refuses a budget below the worst case.
+Update the trial count and the budget in [`live-tier.md`](live-tier.md) and the trial count in
+`docs/claims.md` to match.

@@ -138,7 +138,9 @@ Code and data:
 ## Contributing
 
 Pull requests are welcome. A change to a number must come with the regenerated `results/`, and
-`cbench verify` must pass.
+`cbench verify` must pass. If you cannot fetch every framework (Cadence is private), say so in the pull
+request and include the JSON that `cbench footprint NAME` and `cbench probes NAME` print for your
+harness. The maintainer then regenerates `results/` and runs `verify` before the merge.
 
 Thanks to [Harbor](https://github.com/harbor-framework/harbor) for the task format and runner, and to the
 maintainers of the harnesses measured here.
