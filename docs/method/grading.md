@@ -26,8 +26,10 @@ measurement, and it does not say whether code is fit to ship.
   also has a reference solution, and `python -m cbench golden-check` shows the hidden tests fail before
   it and pass after it.
 - Quality: [criteria v1](criteria.md#4-measures) makes reproduced defects the primary measure and a
-  1-to-10 rubric a secondary one. Both come from a blind reviewer, which can be a model. So under the
-  current criteria, the primary measure would be judgment, not a script.
+  1-to-10 rubric a secondary one. Both come from a blind reviewer, which can be a model. So under v1
+  the primary measure would be judgment, not a script. [Criteria v2](criteria-v2.md#6-defect-checks-no-reviewer),
+  the draft for the next run set, removes that: defects come from edge checks and probe inputs frozen
+  before the runs, and no model or person grades any measure.
 
 What a hidden test looks like (from T05, budgets):
 
@@ -91,7 +93,8 @@ such as a NaN amount, which is how the Opus one-shot shipped a crash and still p
 
 - The blind quality scores of iterations 3 and 4, including the headline 8.00 against 7.33.
 - The defects those graders reported (each reproduced by a command, but found by the model).
-- Under criteria v1, the primary measure of the live tier (reproduced defects) and its rubric.
+- Under criteria v1, the primary measure of the live tier (reproduced defects) and its rubric. Criteria v2
+  removes both: no model or person grades any measure.
 
 Everything else is scripted, an answer key, a published benchmark's tests, or private.
 

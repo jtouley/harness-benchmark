@@ -172,9 +172,8 @@ def test_top_design_tier_has_an_order_and_a_scope():
     answer = _flat(_section("### 8.5 The answer"))
     assert "The answer is computed **per class**" in answer
     assert (
-        "follow-up success (higher is better), then edit radius (smaller is better), then the share of "
-        "design-checklist items answered yes (higher is better), then duplicated lines on new code "
-        "(lower is better)"
+        "follow-up success (higher is better), then edit radius (smaller is better), then duplicated "
+        "lines on new code (lower is better)"
     ) in answer
     assert "Two arms **tie** on a measure when the 90% interval of their difference includes 0." in answer  # NEW-6
 
@@ -339,3 +338,17 @@ def test_incomplete_arm_is_listed_beside_the_answer():
     answer = _flat(_section("### 8.5 The answer"))
     assert 'It is listed beside the answer as "incomplete".' in answer
     assert 'If it could still change the answer, the answer is "incomplete"' in answer
+
+
+def test_no_measure_is_graded_by_a_model_or_a_person():
+    """#41: defects come from frozen checks; no reviewer, judge, rubric or spot check decides a result."""
+    measures = _flat(_section("## 4. Measures"))
+    assert "**No measure is decided by a model or a person**" in measures
+    assert "Blind reviewers" not in measures and "Pairwise judging (two or three LLM judges" not in measures
+    assert "Design checklist |" not in measures
+    checks = _flat(_section("## 6. Defect checks (no reviewer)"))
+    assert "fails on at least one wrong variant" in checks and "sha256 is recorded" in checks
+    audit = _flat(_section("## 7. Traceability: the audit protocol"))
+    assert "a script scores its answers against the answer key" in audit
+    assert "spot check" not in audit
+    assert "design-checklist" not in _flat(_section("### 8.5 The answer"))

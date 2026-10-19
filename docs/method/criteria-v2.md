@@ -23,6 +23,7 @@ v2 run set.
 | [CR] | [process: clean room](process.md#clean-room) | 2026-10-12 |
 | [#16] | [harness-benchmark#16](https://github.com/jtouley/harness-benchmark/issues/16): adopt the quality model as criteria v2 | 2026-10-13 |
 | [QM] | [quality model](quality-model.md) (adopted by [#16]) | 2026-10-13 |
+| [#41] | [harness-benchmark#41](https://github.com/jtouley/harness-benchmark/issues/41): no model or person grades; defects from frozen checks | 2026-10-19 |
 | [OC] | [quality model: owner criteria](quality-model.md#owner-criteria-2026-10-14-dry-solid-extensible-traceable-cheap) | 2026-10-14 |
 | [PF] | [pipeline family](../plans/tasks/pipeline-family.md): success criteria, arms, deferral review, prompt hygiene, isolation, audit protocol | 2026-10-14 |
 | [FU] | [follow-up task](../plans/tasks/pipeline-followup.md) | 2026-10-14 |
@@ -113,7 +114,8 @@ Haiku 5.5 reviewer at the moment it is proposed [PF]:
   blocked, with a reason. **Reject:** the work is part of the request [PF].
 - A rejected deferral is implemented before the run may finish [PF].
 - The log of proposals and verdicts is part of the run record and of the audit (§7) [PF].
-- A part of the request that a run drops without a recorded, accepted deferral is a defect (M2) [WP] [v2].
+- A part of the request that a run drops shows as a failing acceptance or edge check (M1, M2). The
+  deferral log is evidence for the audit (§4.7, §7), not a grade [WP] [v2].
 
 This rule comes from B01, where a cheap one-shot diagnosed a second defect, decided to leave it out, and
 then reported nothing [PF] [WP]. Cadence does not do this yet (jtouley/cadence#68) [PF].
@@ -191,8 +193,9 @@ contents are not published [TS] [v2].
 
 ## 4. Measures
 
-Each measure is computed on the state that the run leaves, by a script in this repository, or from the
-recorded reviewer outputs under §6 [v1]. Claims in an agent's own summary are never evidence for a measure
+Each measure is computed by a script in this repository on the state that the run leaves [v1]. **No
+measure is decided by a model or a person**: no reviewer, judge or rubric score enters a measure, a
+ranking or a tie-break (§6) [#41]. Claims in an agent's own summary are never evidence for a measure
 [v1]. A measure that has no script at the start of a run set is not reported for that run set [v1].
 
 The quality measure is the [quality model](quality-model.md), in three layers [#16] [QM]. No layer
@@ -205,8 +208,8 @@ side [QM].
 |---|---|---|---|---|
 | M1 | **Acceptance** | The hidden checks (or the oracle) on the delivered working tree, in the running system where the task has one | Gate: a run that fails M1 is not delivered | [v1] [TS] |
 | M1f | **Hidden-suite pass fraction** | The fraction of the hidden checks that pass (30 or more per task where the task has a suite) | Reported | [QM] |
-| M2 | **Reproduced defects** | Blind reviewers (§6) list defects. Each needs a command and its output, re-run by a script in a clean copy. Severity: critical (data loss, wrong result reported as success), major (crash, spec violation), minor. A defect counts only when it is test-confirmed: a reproduction test fails on the run's code and passes on the reference solution | **Primary.** Only test-confirmed critical and major defects count in the decision rule (§8); minor ones are reported | [v1] [QM] [DR] |
-| M3 | **False success** | Places where the run reports success but M1 or M2 shows failure. A harness that stops with a recorded reason is not a false success | Decision rule input (§8.2–§8.4), beside M2 | [v1] [DR] |
+| M2 | **Detected defects** | Found by the task's frozen defect checks (§6), never by a reviewer: each failing check of the task's edge suite; each crash (an uncaught exception or a non-zero exit with a traceback) on the task's fixed probe inputs; in a follow-up, each base check that no longer passes. Severity comes from labels committed with the task before the run set: critical (data loss, a wrong result reported as success), major (a crash, a sentence of the request not met), minor. Failures with the same check id count once | **Primary.** Only critical and major defects count in the decision rule (§8); minor ones are reported | [v1] [QM] [DR] [#41] |
+| M3 | **False success** | A run that ends as completed (no recorded stop, no question to the user) while M1 fails or M2 has a critical or major defect. A harness that stops with a recorded reason is not a false success | Decision rule input (§8.2–§8.4), beside M2 | [v1] [DR] [#41] |
 | M8 | **Completion** | Finished without a human answer. A hard stop or a question to the user counts as not complete | Reported | [v1] |
 
 ### 4.2 Layer 2: the tool gate
@@ -242,25 +245,10 @@ The tool gate is reported for every arm. It does not rank arms [QM].
 | SOLID: single responsibility, dependency inversion | **Module coupling**: efferent and afferent coupling and instability per module, from the import graph | An import-graph reader per language (`module_coupling` in `quality_metrics.py`; Python is built) | Reported, not gated | [OC] |
 | SOLID: open for extension | **Edit radius** of the follow-up: the existing files that the follow-up changes, and their changed lines | From the follow-up diff against the frozen base (`edit_radius.package` in `quality_metrics.py`) | Ranks design | [OC] [FU] |
 | Extensible | **Follow-up success and cost**: the follow-up's hidden checks, its dollars and its wall time | §4.5 | Ranks design | [OC] [FU] |
-| Design checklist | Each item yes or no, with a file and line, by two blind reviewers | §6 | Ranks design | [QM] [OC] |
 | Traceable | **Audit scores**: diagnosis accuracy, origin accuracy, audit cost, repair cost | §7 | Ranks after design | [OC] [PF] |
 
-Design checklist items [QM] [OC]:
-
-- The change follows the existing module boundaries.
-- It adds nothing that the request did not ask for, or each addition is recorded as a decision.
-- Names say what the code does; no dead code; no duplicated logic.
-- Tests check behavior through the public interface and cover the failure paths that the request names.
-- Each module has one reason to change (sources, transforms, sinks, orchestration and configuration are
-  separate).
-- Sources and sinks sit behind one interface each; adding one does not edit the others.
-- Configuration, not code, holds what differs between pipelines where the request asks for it (P2).
-- No logic is copied between the batch and the stream paths where one shared function fits.
-
-v1's 1–10 rubric (M7) is replaced by layers 2 and 3 as a quality measure. It is reported only for
-comparison with iterations 3 and 4, in a separate column marked "for comparison only", and it does not
-decide [DR]. Pairwise judging (two or three LLM judges, each pair
-twice with positions swapped) is a tie-breaker only, where the measures above tie [#16] [QM].
+v1's 1–10 rubric (M7), the design checklist and pairwise judging are not used: each needs a model or a
+person to score code. Two arms that tie on every measure above stay tied [#41].
 
 ### 4.4 Reliability (pass^k)
 
@@ -311,7 +299,8 @@ closure record that names the delivered head; the deferral log (§2.5). Report t
 |---|---|---|
 | M5 test-first evidence | Reported where the run commits; not a decision input | [v1] |
 | M6 changed-line coverage | Folded into the tool gate (layer 2). It did not separate arms in v1 data or in iteration 4 | [v1] [QM] |
-| M7 code quality rubric | Replaced by layers 2 and 3; reported only for comparison with iterations 3 and 4, not a decision input | [#16] [QM] [DR] |
+| M7 code quality rubric | Dropped: no model or reviewer score is reported (§4) | [#16] [#41] |
+| Blind review (v1 §5) | Dropped: defects come from frozen checks (§6) | [#41] |
 
 ## 5. Running a trial
 
@@ -375,21 +364,21 @@ The v1 caps (1800 s timeout, $1.00 and $3.00 dollar caps) do not apply to v2 run
 carries them (`cbench/harbor.py`, `scripts/live.sh`, `tests/test_criteria.py`) must change to the v2
 caps before the first v2 run set [CAP] [v2].
 
-## 6. Blind review protocol
+## 6. Defect checks (no reviewer)
 
-- **Two independent reviewers per task.** Each sees every arm's final source and test files and its diff
-  from the base commit, as anonymous folders. They do not see commit history, plans, review records,
-  `.context/`, `.cursor/` or any process file. Framework names, ticket ids and process notes are removed
-  from comments. The label map is stored outside the folders [v1].
-- **Defects (M2).** A reviewer lists each defect with a repro command and its expected and observed output.
-  A script re-runs every repro command in a clean copy of that arm's tree. A defect counts only if the
-  script reproduces it. Reproduced defects from both reviewers are merged by root cause. When both list a
-  defect, it takes the lower of their two severities [v1]. A reproduced defect counts for M2 only once a
-  reproduction test confirms it (§4.1) [QM] [DR].
-- **Design checklist (layer 3).** Each reviewer answers each item yes or no, with a file and line as
-  evidence [QM] [OC]. An item where the two reviewers differ goes to a third reviewer, and the majority
-  stands [v2].
-- The audit (§7) is separate from the blind review: the auditor sees the run record on purpose [PF].
+Defects (M2) come only from checks that are written and frozen before the run set, so that no model or
+person decides after the runs what counts [#41]:
+
+- **Edge suite.** Each task has hidden checks beyond its acceptance check: the edge cases, error paths and
+  inputs that the request covers. Each edge check passes on the reference solution, fails on at least one
+  wrong variant of it (a mutant or a known-wrong solution, committed with the task), and fails on the
+  untouched starting state where the behavior is new [v1] [#41].
+- **Probe inputs.** Each task has a fixed list of inputs, generated from a recorded seed, that a run's
+  program must handle without crashing [#41].
+- **Severity labels** are part of each check's definition, committed with the task [#41].
+- The edge suites, probe inputs and labels are part of the frozen task list: their sha256 is recorded
+  with the run set (§3.4). A check added after the first run starts a new run set [v1] [#41].
+- The limit is stated with every result: a defect that no check anticipates is not counted [#41].
 
 ## 7. Traceability: the audit protocol
 
@@ -398,7 +387,9 @@ For tasks with seeded ground truth (the pipeline family), each failed run is aud
 1. The grader first explains each failed check from the answer key, which stores the wrong answer that
    each single trap produces [PF].
 2. A blind auditor gets only the run's record and the symptom. It does not get the trap id. The auditor
-   is a fixed agent (the same model and prompt for every arm), with a human spot check on a sample [PF].
+   is a fixed agent (the same model and prompt for every arm). It is the instrument being measured with,
+   not a grader: a script scores its answers against the answer key, and no person or model scores
+   them [PF] [#41].
    - One-shot arms: the repository, the transcript and the arm's own summary.
    - Harness arms: the same, plus the harness artifacts (spec notes, plan, phase commits, reviews,
      decisions, deferral log).
@@ -479,8 +470,7 @@ it on the beyond class are not pooled [v2]. Within a class, among the arms that 
 go beyond it (§8.4) [OC] [DR]:
 
 1. The design measures (layer 3) are taken in this **order**: follow-up success (higher is better), then
-   edit radius (smaller is better), then the share of design-checklist items answered yes (higher is
-   better), then duplicated lines on new code (lower is better). Two arms **tie** on a measure when the
+   edit radius (smaller is better), then duplicated lines on new code (lower is better). Two arms **tie** on a measure when the
    90% interval of their difference includes 0. A measure that the class's tasks do not have is skipped
    (proposed, owner to confirm in §11) [OC] [v2].
 2. The **best arm** is chosen **step by step against the current leader**, not by sorting arms pair by
@@ -512,8 +502,9 @@ enforcement [DR].
 
 The owner of this benchmark also wrote one of the harnesses (Cadence) and supplied the private tasks and
 the pipeline family. Because of that, the criteria, the task list (by hash) and the sample size are fixed
-before any run set; results are published whichever way they fall; every reviewer in §6 is blind to the
-arm; and results that do not favor Cadence are stated first [v1] [WP].
+before any run set, with every defect check (§6); results are published whichever way they fall; no
+measure is graded by a model or a person, so no grader can favor an arm; and results that do not favor
+Cadence are stated first [v1] [WP] [#41].
 
 ## 10. Evidence that shaped v2
 
@@ -562,19 +553,19 @@ These items must be filled or confirmed by the owner, with a changelog entry, be
    5. The deferral reviewer is a harness requirement, not benchmark infrastructure, so the Cadence arm is
       also gated on jtouley/cadence#68 (§2.1, §2.5).
    6. The direction of each difference (§8.1).
-   7. The top design tier: per class, with the measure order follow-up success, edit radius, checklist
-      share, duplication; a tie is a 90% interval that includes 0; the best arm is chosen step by step
+   7. The top design tier: per class, with the measure order follow-up success, edit radius,
+      duplication; a tie is a 90% interval that includes 0; the best arm is chosen step by step
       against the current leader; the tier test is one-sided, in each measure's worse direction; an arm
       with an "incomplete" result is listed beside the answer, and the answer is "incomplete" if that
       arm could still change it (§8.5).
 4. **Open, no proposal yet:** whether an arm over the 3% duplication gate leaves the top design tier or
    only ranks lower (§4.3, §8.5).
 5. Each other [v2] operational definition: the lift threshold (§3.2), the private-task hash (§3.4),
-   pass^k (§4.4), the dropped-part-of-request defect (§2.5), the third design reviewer (§6), the beyond
-   rule (§8.4) and the scope of the §2.1 model rule (§2.1).
+   pass^k (§4.4), the beyond rule (§8.4) and the scope of the §2.1 model rule (§2.1).
 6. The code that pins v1 caps changes to v2 (§5.3).
 7. Scripts for every measure that a run set reports (§4) and that is not built yet: test-confirmed
-   defects, test strength, an import-graph reader for each non-Python stack in the run set, the audit
+   defects (the edge suites, probe inputs and severity labels of each task, §6), test strength, an
+   import-graph reader for each non-Python stack in the run set, the audit
    scores [QM] [OC]. (Duplication, Python coupling and the edit radius are built in
    `scripts/quality_metrics.py`.)
 
@@ -601,8 +592,10 @@ These items must be filled or confirmed by the owner, with a changelog entry, be
 | 17 | M10 auditability as a checklist share per run, with the deferral log (§4.7) | 2026-10-12, 2026-10-14 | [next steps: measures](../plans/next-steps.md#measures), [pipeline family: arms](../plans/tasks/pipeline-family.md#arms) |
 | 18 | Decision rule restated: comparison A (v1 rule, same model), comparison B (non-inferiority to the bar, margin 0.25), comparison C (beyond the bar), and the answer as the cheapest arm in the top design tier (§8) | 2026-10-12, 2026-10-14 | [next steps: decision rule](../plans/next-steps.md#decision-rule-for-this-question), [quality model: owner criteria](quality-model.md#owner-criteria-2026-10-14-dry-solid-extensible-traceable-cheap) |
 | 19 | Operational definitions that v2 adds, each marked [v2] and listed in §11 for owner confirmation | 2026-10-14 | this document |
+| 20 | No model or person decides a measure. M2 becomes defects detected by frozen edge checks and probe inputs with pre-committed severity; M3 is decided by script; the blind review, the design checklist, the M7 comparison column and pairwise judging are dropped; the audit is scored by script against the answer key, with no human spot check (§4, §6, §7, §8.5) | 2026-10-19 | [harness-benchmark#41](https://github.com/jtouley/harness-benchmark/issues/41) |
 
 ## Changelog
 
-- v2 (2026-10-14): this version. Changes from v1 in the table above.
+- v2 (2026-10-14; amended 2026-10-19, no model or person grades, #41): this version. Changes from v1 in
+  the table above.
 - v1 (2026-10-10): first version ([criteria v1](criteria.md)).
