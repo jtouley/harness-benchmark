@@ -135,7 +135,8 @@ From TASK-81; each is the owner's default for these first trials and may change.
   the arm did not ignore is graded with the delivery; `out/` and `lake/` are removed in any case. The
   runner also copies the working tree to `repo/` in the outputs, for audit and regrading.
 - **The agent's guard cap** (criteria-v2 §5.3, not a TASK-81 item): 7,200 s for the one-shot trials,
-  chosen for these first trials.
+  chosen for these first trials. A harness arm gets none: `pipeline_trial.py` passes it 0, and the runner
+  refuses a cap with `--plugin-dir`.
 - The other TASK-81 questions (the oracle map shape, the readings the key accepts, the traps that do not
   reproduce, the plaintext answers in the key, the P2 and P3 open points below, the §8.5 tier rule) are
   out of scope for the runner and stay open.

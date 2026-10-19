@@ -79,7 +79,10 @@ agent_vars=(PATH=/home/agent/.local/bin:/usr/local/bin:/usr/bin:/bin "${toolchai
   USER=agent TERM=dumb LANG=C.UTF-8 DISABLE_AUTOUPDATER=1 HB_OUTPUTS="$OUT/agent"
   HB_MODEL="${HB_MODEL:-}" HB_PERMISSION_MODE="${HB_PERMISSION_MODE:-auto}")
 
-log "agent start (model ${HB_MODEL:-unset}, timeout ${agent_timeout}s)"
+# A one-shot keeps a guard cap; a harness arm (timeout 0) is never cut off (criteria v2 section 5.3).
+limit=()
+[ "$agent_timeout" -gt 0 ] && limit=(timeout --kill-after=30 "$agent_timeout")
+log "agent start (model ${HB_MODEL:-unset}, timeout $([ "$agent_timeout" -gt 0 ] && echo "${agent_timeout}s" || echo none))"
 t0=$(now)
 # The subshell drops every inherited variable and exports only the agent's. `export` is a builtin, so
 # the key is in the environment of the agent process and in no process's arguments.
@@ -87,7 +90,7 @@ t0=$(now)
  while read -r name; do unset "$name" 2>/dev/null; done < <(compgen -e)
  export "${agent_vars[@]}"
  [ -z "$HB_API_KEY" ] || export ANTHROPIC_API_KEY="$HB_API_KEY"
- exec timeout --kill-after=30 "$agent_timeout" setpriv --reuid=agent --regid=agent --init-groups "$AGENT") \
+ exec "${limit[@]}" setpriv --reuid=agent --regid=agent --init-groups "$AGENT") \
   >"$OUT/transcript.jsonl" 2>"$OUT/agent.stderr"
 agent_rc=$?
 t_agent_end=$(now)

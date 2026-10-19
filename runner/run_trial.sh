@@ -17,7 +17,11 @@
 #                  directory, on localhost:8099 with --seed N (--replay-seed, default 0); stopped
 #                  before the grader runs
 #   --out          output directory on the host; must not exist or be empty
-#   --plugin-dir   the arm's Claude Code plugin (passed as `claude --plugin-dir`)
+#   --plugin-dir   the arm's Claude Code plugin (passed as `claude --plugin-dir`); an arm with a plugin is a
+#                  harness arm
+#   --agent-timeout  the one-shot guard cap in seconds (default 3600). A harness arm has no time cap
+#                  (criteria v2 section 5.3): with --plugin-dir the default is 0, which means none, and a
+#                  positive value is refused
 #   --agent-cmd    replaces Claude Code with this script (tests only; it runs as the agent would)
 #
 # ANTHROPIC_API_KEY is read from this process's environment and written to the container's standard
@@ -27,12 +31,12 @@
 # [REDACTED:ANTHROPIC_API_KEY]. The scan reads the key from the environment and never prints it.
 set -euo pipefail
 
-usage() { sed -n '2,28p' "$0" | sed 's/^# \{0,1\}//'; }
+usage() { sed -n '2,31p' "$0" | sed 's/^# \{0,1\}//'; }
 die() { printf 'run_trial: %s\n' "$*" >&2; exit 2; }
 
 IMAGE="${HB_RUNNER_IMAGE:-harness-benchmark/runner:local}"
 MODEL=claude-opus-5-5 PLUGIN="" SUFFIX="" REPO="" PROMPT="" GRADER="" OUT="" AGENT_CMD=""
-PERMISSION_MODE=auto AGENT_TIMEOUT=3600 GRADER_TIMEOUT=900 REPLAY="" REPLAY_SEED=0
+PERMISSION_MODE=auto AGENT_TIMEOUT="" GRADER_TIMEOUT=900 REPLAY="" REPLAY_SEED=0
 GRADER_ARGS=()
 NAME="hb-trial-$(date +%Y%m%d-%H%M%S)-$$"
 
@@ -67,6 +71,10 @@ done
 [ -z "$AGENT_CMD" ] || [ -f "$AGENT_CMD" ] || die "--agent-cmd must be a file"
 [ -z "$REPLAY" ] || [ -f "$REPLAY" ] || die "--replay must be a file"
 case "$REPLAY_SEED" in ''|*[!0-9]*) die "--replay-seed must be a number" ;; esac
+[ -n "$AGENT_TIMEOUT" ] || AGENT_TIMEOUT=$([ -n "$PLUGIN" ] && echo 0 || echo 3600)
+case "$AGENT_TIMEOUT" in *[!0-9]*) die "--agent-timeout must be a whole number of seconds" ;; esac
+[ -z "$PLUGIN" ] || [ "$AGENT_TIMEOUT" -eq 0 ] ||
+  die "--agent-timeout is a one-shot guard cap; a harness arm (--plugin-dir) has no time cap (criteria v2 section 5.3)"
 if [ -e "$OUT" ] && [ -n "$(ls -A "$OUT")" ]; then die "--out exists and is not empty: $OUT"; fi
 mkdir -p "$OUT"
 

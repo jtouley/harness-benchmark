@@ -103,17 +103,25 @@ def _session_span(run: Path) -> float | None:
     return (max(stamps) - min(stamps)).total_seconds() if stamps else None
 
 
-def outcome(run: Path, result: dict, timing: dict) -> str:
-    """graded, api_stall (not a model failure), guard_cap (attempted, not delivered) or infra_error."""
+def outcome(run: Path, result: dict, timing: dict, arm: str = "one-shot") -> str:
+    """graded, api_stall (not a model failure), guard_cap (attempted, not delivered) or infra_error.
+
+    Only a one-shot has a guard cap (criteria v2 section 5.3), so only a one-shot ended at its cap is a
+    guard_cap run. A session ended any other way from outside the agent (a harness arm killed by a
+    timeout or a signal, a one-shot killed before its cap) is an infrastructure error: not an attempted
+    run, and run again."""
     if not timing:
         return "infra_error"
     if result.get("is_error") and API_ERROR.search(str(result.get("result", ""))):
         return "api_stall"
-    if timing.get("agent_exit") in (124, 137):
+    rc, cap = timing.get("agent_exit"), timing.get("agent_timeout") or 0
+    if arm == "one-shot" and rc in (124, 137) and cap and timing.get("agent_seconds", 0) >= cap:
         span = _session_span(run)
         if span is not None and timing.get("agent_seconds", 0) - span > STALL_IDLE_SECONDS:
             return "api_stall"
         return "guard_cap"
+    if isinstance(rc, int) and (rc in (124, 137) or rc > 128):
+        return "infra_error"
     return "graded"
 
 
@@ -124,18 +132,18 @@ def summarize(run: Path, pricing: dict) -> dict:
         src = Path(meta["regrade_of"])
         src = src if src.is_absolute() else run.parent / src.name
         src_meta, result, src_timing = _load(src / "trial.json"), _load(src / "result.json"), _load(src / "timing.json")
-        meta = {**meta, "model": src_meta.get("model")}
+        meta = {**meta, "model": src_meta.get("model"), "arm": src_meta.get("arm", "one-shot")}
         timing = {**src_timing, "grader_seconds": timing.get("grader_seconds", 0)}
     cost, tokens = cost_and_tokens(result, pricing, meta.get("model"))
     kind = ("void" if meta.get("void") else "diagnostic" if meta.get("diagnostic")
-            else outcome(run, result, timing))
+            else outcome(run, result, timing, meta.get("arm", "one-shot")))
     builds = grade.get("build") or []
     first = builds[0]["seconds"] if builds else None
     wall = round(timing.get("agent_seconds", 0) + timing.get("grader_seconds", 0), 1) if timing else None
     reward = grade.get("reward", 0.0)
     return {
         "run": run.name, "run_path": str(run), "void": meta.get("void"), "superseded_by": None,
-        "diagnostic": meta.get("diagnostic"), "counted": kind not in ("void", "diagnostic"),
+        "diagnostic": meta.get("diagnostic"), "counted": kind not in ("void", "diagnostic", "infra_error"),
         "task": meta.get("task"), "mode": meta.get("mode", "agent"), "model": meta.get("model"),
         "outcome": kind,
         "counts_as_model_failure": {"graded": reward < 1.0, "guard_cap": True}.get(kind, False),
@@ -151,8 +159,8 @@ def summarize(run: Path, pricing: dict) -> dict:
 
 
 def summarize_all(runs: list[Path], pricing: dict) -> list[dict]:
-    """Rows for every run. A void run, and a run that a later regrade replaces, stay in the table with
-    `counted` false: neither is a result, and neither counts as a model failure."""
+    """Rows for every run. A void run, an infrastructure error, and a run that a later regrade replaces
+    stay in the table with `counted` false: none is a result, and none counts as a model failure."""
     rows = [summarize(run, pricing) for run in runs]
     by_path = {Path(r["run_path"]).resolve(): r for r in rows}
     for run, row in zip(runs, rows):
@@ -211,6 +219,10 @@ def run_trial(task: str, out: Path, *, mode: str, model: str | None, plugin_dir:
     from pipetask import assemble, bundle  # noqa: PLC0415 - builder code, hidden from arms
 
     task_caps = caps["tasks"][task]
+    # The guard cap is for one-shots only; a harness arm (an arm with a plugin) is never cut off
+    # (criteria v2 section 5.3). 0 tells the runner: no cap.
+    harness = mode == "agent" and plugin_dir is not None
+    agent_timeout = 0 if harness else caps["agent_timeout"]
     with tempfile.TemporaryDirectory(prefix=f"hb-{task}-") as tmp:
         tmp_path = Path(tmp)
         if mode == "regrade":
@@ -222,7 +234,7 @@ def run_trial(task: str, out: Path, *, mode: str, model: str | None, plugin_dir:
         cmd = [str(RUN_TRIAL), "--repo", str(repo), "--prompt", str(PIPELINE / task / "prompt.md"),
                "--grader", str(dist / "grader.pyz"), "--replay", str(dist / "replay.pyz"),
                "--replay-seed", str(replay_seed), "--out", str(out), "--image", task_caps["image"],
-               "--agent-timeout", str(caps["agent_timeout"]),
+               "--agent-timeout", str(agent_timeout),
                "--grader-timeout", str(task_caps["grader_timeout"])]
         grader_args = ["--make-user", "agent", "--make-env-file", "/opt/hb/toolchain.env",
                        "--logs", "/trial/out/grade-logs", "--snapshot-worktree"]
@@ -242,7 +254,7 @@ def run_trial(task: str, out: Path, *, mode: str, model: str | None, plugin_dir:
             env.pop("ANTHROPIC_API_KEY", None)
         meta = {"task": task, "mode": mode, "model": model if mode == "agent" else None,
                 "arm": "one-shot" if mode == "agent" and not plugin_dir else (plugin_dir.name if plugin_dir else mode),
-                "image": task_caps["image"], "agent_timeout": caps["agent_timeout"],
+                "image": task_caps["image"], "agent_timeout": agent_timeout or None,
                 "grader_timeout": task_caps["grader_timeout"], "grader_deadline": task_caps.get("grader_deadline"),
                 "replay_seed": replay_seed, "regrade_of": str(regrade_of) if regrade_of else None,
                 "started_at": datetime.now().astimezone().isoformat(timespec="seconds")}

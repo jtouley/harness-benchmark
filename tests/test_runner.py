@@ -55,6 +55,33 @@ def test_bad_arguments_fail_before_docker_is_called(args, tmp_path):
     assert "docker-called" not in r.stderr
 
 
+@pytest.mark.parametrize("args, message", [
+    (["--plugin-dir", "PLUGIN", "--agent-timeout", "60"], "a harness arm (--plugin-dir) has no time cap"),
+    (["--agent-timeout", "1h"], "--agent-timeout must be a whole number of seconds"),
+])
+def test_a_harness_arm_cannot_be_given_a_time_cap(args, message, tmp_path):
+    """Criteria v2 section 5.3: only a one-shot keeps a guard cap; the runner refuses one for a harness arm."""
+    env = {**os.environ, "PATH": f"{tmp_path}:{os.environ['PATH']}"}
+    (tmp_path / "docker").write_text("#!/bin/sh\necho docker-called >&2\nexit 99\n")
+    (tmp_path / "docker").chmod(0o755)
+    (tmp_path / "plugin").mkdir()
+    prompt = tmp_path / "prompt.md"
+    prompt.write_text("task")
+    args = [str(tmp_path / "plugin") if a == "PLUGIN" else a for a in args]
+    r = sh(str(RUN_TRIAL), "--repo", str(tmp_path), "--prompt", str(prompt), "--grader", str(RUN_TRIAL),
+           "--out", str(tmp_path / "out"), *args, check=False, env=env)
+    assert r.returncode == 2 and message in r.stderr
+    assert "docker-called" not in r.stderr
+
+
+def test_the_agent_runs_under_a_time_limit_only_when_it_has_one():
+    """entrypoint.sh wraps the agent in `timeout` only for a positive cap (HB_AGENT_TIMEOUT=0: none)."""
+    text = (RUNNER / "entrypoint.sh").read_text()
+    assert '[ "$agent_timeout" -gt 0 ] && limit=(timeout --kill-after=30 "$agent_timeout")' in text
+    assert 'exec "${limit[@]}" setpriv' in text
+    assert "exec timeout" not in text
+
+
 KEY_VARIABLES = ("ANTHROPIC_API_KEY", "HB_API_KEY")
 # Shell builtins: their arguments are in no process's command line.
 KEY_SAFE_BUILTINS = {"read", "export", "unset", "[", "printf"}
@@ -324,7 +351,8 @@ def test_default_agent_starts_claude_code_with_the_arms_plugin_and_no_key(image,
     out = tmp_path / "out"
     sh(str(RUN_TRIAL), "--repo", str(repo), "--prompt", str(prompt), "--grader", str(grader),
        "--plugin-dir", str(ROOT / "harnesses" / "reviewloop"), "--model", "claude-haiku-5-5",
-       "--agent-timeout", "120", "--out", str(out), "--image", image, env=env)
+       "--out", str(out), "--image", image, env=env)
+    assert json.loads((out / "timing.json").read_text())["agent_timeout"] == 0  # a harness arm: no cap
     events = [json.loads(line) for line in (out / "transcript.jsonl").read_text().splitlines()]
     init = events[0]
     assert init["type"] == "system" and init["model"] == "claude-haiku-5-5"

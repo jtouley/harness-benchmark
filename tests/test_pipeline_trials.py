@@ -90,6 +90,60 @@ def test_a_session_busy_until_the_guard_cap_is_a_guard_cap_run(tmp_path):
     assert row["outcome"] == "guard_cap" and row["counts_as_model_failure"] is True
 
 
+@pytest.mark.parametrize("rc", [124, 137, 143])
+def test_a_harness_session_ended_from_outside_is_an_infrastructure_error(tmp_path, rc):
+    """Criteria v2 section 5.3: a harness arm has no cap, so whatever ended its session was not the arm."""
+    run = write_run(tmp_path, timing={"agent_exit": rc, "agent_seconds": 7203.0, "agent_timeout": 0},
+                    session=["2026-10-19T04:46:00.000Z", "2026-10-19T06:46:00.000Z"], meta={"arm": "cadence-core"})
+    row = pt.summarize(run, PRICING)
+    assert row["outcome"] == "infra_error"
+    assert row["counted"] is False and row["counts_as_model_failure"] is False
+
+
+def test_a_one_shot_killed_before_its_cap_is_an_infrastructure_error_not_a_guard_cap_run(tmp_path):
+    run = write_run(tmp_path, timing={"agent_exit": 137, "agent_seconds": 300.0},
+                    session=["2026-10-15T10:00:00.000Z", "2026-10-15T10:05:00.000Z"])
+    row = pt.summarize(run, PRICING)
+    assert row["outcome"] == "infra_error" and row["counted"] is False
+
+
+def test_a_harness_session_that_exits_on_its_own_is_graded(tmp_path):
+    run = write_run(tmp_path, timing={"agent_exit": 0, "agent_timeout": 0}, meta={"arm": "cadence-core"})
+    assert pt.summarize(run, PRICING)["outcome"] == "graded"
+
+
+def test_a_regrade_of_a_harness_trial_keeps_the_harness_rule(tmp_path):
+    src = write_run(tmp_path / "a", timing={"agent_exit": 124, "agent_seconds": 7203.0, "agent_timeout": 0},
+                    meta={"arm": "cadence-core"})
+    regrade = write_run(tmp_path / "b", meta={"mode": "regrade", "regrade_of": str(src), "arm": "regrade"})
+    assert pt.summarize(regrade, PRICING)["outcome"] == "infra_error"
+
+
+@pytest.mark.parametrize("plugin, expected", [(False, "7200"), (True, "0")])
+def test_only_a_one_shot_gets_the_guard_cap(tmp_path, monkeypatch, plugin, expected):
+    """The runner gets --agent-timeout 0 (no cap) for a harness arm, the caps file's value for a one-shot."""
+    import sys
+    import types
+
+    def assemble(task, dest, with_reference=False):
+        dest.mkdir(parents=True)
+        return dest
+
+    pipetask = types.ModuleType("pipetask")
+    pipetask.assemble = types.SimpleNamespace(assemble=assemble)
+    pipetask.bundle = types.SimpleNamespace(bundle=lambda dist: None)
+    monkeypatch.setitem(sys.modules, "pipetask", pipetask)
+    calls = []
+    monkeypatch.setattr(pt.subprocess, "call", lambda cmd, env=None: calls.append(cmd) or 0)
+    caps = {"agent_timeout": 7200, "tasks": {"P1": {"image": "img", "grader_timeout": 900}}}
+    plugin_dir = tmp_path / "cadence-core" if plugin else None
+    out = tmp_path / "out"
+    pt.run_trial("P1", out, mode="agent", model="claude-haiku-5-5", plugin_dir=plugin_dir, replay_seed=0, caps=caps)
+    cmd = calls[0]
+    assert cmd[cmd.index("--agent-timeout") + 1] == expected
+    assert json.loads((out / "trial.json").read_text())["agent_timeout"] == (None if plugin else 7200)
+
+
 def test_the_grading_deadline_is_the_measured_worst_case_plus_half():
     grades = [{"grader_seconds": 100.0}, {"grader_seconds": 120.0}]
     caps = pt.caps_from_measurements(grades)

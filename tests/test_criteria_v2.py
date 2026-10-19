@@ -202,6 +202,15 @@ def test_guard_cap_hit_is_an_attempted_run():
     assert "a guard-cap run are attempted runs that are not delivered" in unit
 
 
+def test_a_session_ended_from_outside_never_ends_as_completed():
+    """#48: a harness arm has no cap, so an outside kill is an infrastructure error, never a false success."""
+    m3 = _flat(_section("### 4.1 Layer 1: it does what the request says"))
+    assert "A session ended from outside the agent (a time cap, a signal, a lost container) has not ended as completed" in m3
+    caps = _flat(_section("### 5.3 Caps and the run-set budget"))
+    assert "A harness session ended from outside the agent is an infrastructure error." in caps
+    assert "The runner gives a harness arm no time limit at all" in caps
+
+
 def test_reviewer_picks_await_owner_confirmation():
     """§11 lists every review pick as proposed, not decided."""
     open_items = _flat(_section("## 11. Open before the first v2 run set"))

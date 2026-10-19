@@ -1,5 +1,5 @@
 {
- "note": "Caps of the pipeline trials. agent_timeout: the one-shot guard cap (criteria-v2 5.3), chosen for these first trials; owner may change. Per task, grader_deadline: the whole grading run (grader.pyz --deadline), the measured worst case of the task's reference trials through the runner plus 50% (`pipeline_trial.py caps`; owner default from TASK-81, owner may change). grader_timeout: the runner's backstop (run_trial.sh --grader-timeout), the deadline plus 120 s so the grader reports first. Until a task is measured, it has no deadline and the grader's own per-step caps apply.",
+ "note": "Caps of the pipeline trials. agent_timeout: the one-shot guard cap (criteria-v2 5.3), chosen for these first trials; owner may change. One-shot arms only: a harness arm (a trial with --plugin-dir) gets no time cap, and pipeline_trial.py passes it 0. Per task, grader_deadline: the whole grading run (grader.pyz --deadline), the measured worst case of the task's reference trials through the runner plus 50% (`pipeline_trial.py caps`; owner default from TASK-81, owner may change). grader_timeout: the runner's backstop (run_trial.sh --grader-timeout), the deadline plus 120 s so the grader reports first. Until a task is measured, it has no deadline and the grader's own per-step caps apply.",
  "agent_timeout": 7200,
  "tasks": {
   "P1": {
