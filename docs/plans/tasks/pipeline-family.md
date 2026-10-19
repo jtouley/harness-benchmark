@@ -64,13 +64,13 @@ This is the measure the family exists for.
      `DECISIONS.md`).
 3. **The auditor answers four questions:**
    1. Which trap or cause (a cause class from the catalog, and the specific fact)?
-   2. Where did it first go wrong: the reading of the spec, the plan, a phase, a review that missed it, or
-      never considered?
+   2. Where did it first go wrong: the sha of the commit (uncommitted work counts as a last commit)?
    3. What is the cheapest fix point (the file or artifact to change)?
    4. How much of the delivered work must be redone (a list of tables or phases)?
 4. **Scores.**
    - Diagnosis accuracy: the cause matches the grader's trap id, or any id in its
-     [equivalence set](pipeline-traps.md#equivalent-traps) (questions 1 and 3).
+     [equivalence set](pipeline-traps.md#equivalent-traps) (question 1). Questions 3 and 4 are scored only
+     through the repair.
    - Origin accuracy: the commit the auditor names matches the first commit where the failing check gives
      the trap's wrong answer, found by running the grader on each commit (criteria v2 §7).
    - Audit cost: the auditor's wall time and tokens.

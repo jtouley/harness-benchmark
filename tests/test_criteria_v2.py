@@ -363,3 +363,9 @@ def test_no_measure_is_decided_by_judgment():
     assert "the first commit where the check gives the trap's stored wrong answer" in audit
     assert "spot check" not in audit
     assert "design-checklist" not in _flat(_section("### 8.5 The answer"))
+    # Every ranking and report beside the answer has a rule a script can apply.
+    answer = _flat(_section("### 8.5 The answer"))
+    assert "rank on traceability (§7), by the same step-by-step procedure and tie rule" in answer
+    assert "Origin accuracy is reported, not ranked" in answer
+    assert "A script reports which declared items exist" in _flat(_section("### 4.7 Auditability (M10)"))
+    assert "a kept test that fails on exactly the same runs as a frozen check is dropped" in checks

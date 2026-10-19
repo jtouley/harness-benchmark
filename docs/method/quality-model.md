@@ -37,7 +37,7 @@ These measure "good design" and "good tests" by outcome, not by inspection:
 
 | Measure | How | What it shows |
 |---|---|---|
-| **Follow-up task success** | After each trial, one fixed agent (the same model and prompt for every arm) gets a second task built on that trial's code, scored by its own hidden tests. Each golden task gains a `followup/` folder | Maintainability (ISO/IEC 25010 modifiability), measured directly: does the next change go well |
+| **Follow-up task success** | After each trial, the same arm gets a second task built on that trial's code in a new session ([criteria v2 §4.5](criteria-v2.md#45-follow-up-tasks)), scored by its own hidden tests. Each golden task gains a `followup/` folder | Maintainability (ISO/IEC 25010 modifiability), measured directly: does the next change go well |
 | **Hidden-suite pass fraction** | 30 or more hidden tests per task, including edge cases the spec implies and property-based tests; report the fraction passed, not only pass or fail | Functional correctness with more resolution than M1 |
 | **Detected defects, by code** | The form M2 takes in criteria v2: failures of each task's edge suite, crashes on its fixed probe inputs, and base checks that a follow-up breaks, written with severity labels before the run set; plus tests a fixed, blind reviewer proposes after the runs, kept only when they pass on the reference and fail on the trial, then run against every arm ([criteria v2 §6](criteria-v2.md#6-defect-checks)); count per trial, by severity | Faultlessness, with code deciding what counts |
 | **Test strength** | Run each arm's own tests against mutants of the reference solution; report the kill rate | Testability: tests that catch real faults, on one fixed set of mutants for every arm |

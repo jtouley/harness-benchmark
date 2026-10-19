@@ -209,8 +209,8 @@ side [QM].
 |---|---|---|---|---|
 | M1 | **Acceptance** | The hidden checks (or the oracle) on the delivered working tree, in the running system where the task has one | Gate: a run that fails M1 is not delivered | [v1] [TS] |
 | M1f | **Hidden-suite pass fraction** | The fraction of the hidden acceptance checks that pass (30 or more per task where the task has a suite). The edge suite (§6) is counted in M2, not here | Reported | [QM] |
-| M2 | **Detected defects** | Found by code (§6): each failing check of the task's edge suite; each crash (an uncaught exception or a non-zero exit with a traceback) on the task's fixed probe inputs; in a follow-up, each base check that no longer passes; and each failing reviewer-proposed test that code has confirmed. Severity comes from labels committed with the task before the run set, or by rule for reviewer-proposed tests (§6): critical (data loss, a wrong result reported as success), major (a crash, a sentence of the request not met), minor. Failures with the same check id count once | **Primary.** Only critical and major defects count in the decision rule (§8); minor ones are reported | [v1] [QM] [DR] [#41] |
-| M3 | **False success** | A run that ends as completed while M1 fails or M2 has a critical or major defect. A run ends as completed when its transcript has no call to the host's ask-the-user tool (in Claude Code, `AskUserQuestion`) and the arm's declared stop signal is absent. Each arm declares its stop signal (a file it writes, or an exit status) in `frameworks.lock.json` before the run set. A harness that stops with its signal is not a false success | Decision rule input (§8.2–§8.4), beside M2 | [v1] [DR] [#41] |
+| M2 | **Detected defects** | Found by code (§6): each failing check of the task's edge suite; each crash on the task's fixed probe inputs, by the task's crash signature (§6); in a follow-up run, each base check that no longer passes; and each failing reviewer-proposed test that code has confirmed. Severity comes from labels committed with the task before the run set, or by rule for reviewer-proposed tests (§6): critical (data loss, a wrong result reported as success), major (a crash, a sentence of the request not met), minor. Failures with the same check id count once | **Primary.** Only critical and major defects count in the decision rule (§8); minor ones are reported | [v1] [QM] [DR] [#41] |
+| M3 | **False success** | A run that ends as completed while M1 fails or M2 has a critical or major defect. A run ends as completed unless its session ends on a call to the host's ask-the-user tool (in Claude Code, `AskUserQuestion`) or the arm's declared stop signal is present. Each harness arm declares its stop signal (a file it writes, or an exit status) in `frameworks.lock.json` before the run set; one-shot arms have none. A harness that stops with its signal is not a false success | Decision rule input (§8.2–§8.4), beside M2 | [v1] [DR] [#41] |
 | M8 | **Completion** | Ends as completed (M3's script rule). A stop signal or an ask-the-user call counts as not complete | Reported | [v1] [#41] |
 
 ### 4.2 Layer 2: the tool gate
@@ -273,7 +273,8 @@ dashboard [FU].
 
 - The arm that built the base task gets the follow-up on its own delivered repository, in a new session,
   after the base task is graded [FU].
-- The base result is frozen first, so the follow-up cannot change the base score [FU].
+- The base result is frozen first, so the follow-up cannot change the base score. A base check that the
+  follow-up breaks is a defect of the follow-up run (M2, §6), not of the base run [FU] [#41].
 - The follow-up checks include every base check (no regression) and the edit radius [FU].
 
 ### 4.6 Cost (M9)
@@ -291,8 +292,12 @@ dashboard [FU].
 
 A checklist per run: a plan; a spec check; a plan review, an adversarial review and a PR review, each by
 an agent other than the implementer; a findings ledger where each must-fix finding has a verification; a
-closure record that names the delivered head; the deferral log (§2.5). Report the share of items present
-[DR] [PF]. M10 is reported per framework. It is not scored against one-shot arms [v1].
+closure record that names the delivered head; the deferral log (§2.5). Each harness arm declares in
+`frameworks.lock.json`, before the run set, the path of each item it produces. A script reports which
+declared items exist, and whether the closure record contains the delivered head's sha. Authorship by
+another agent counts only where the host records it (an attestation file); otherwise it is reported as
+not verifiable. Report the share of items present [DR] [PF] [#41]. M10 is reported per framework. It is
+not scored against one-shot arms [v1].
 
 ### 4.8 Measures that v2 drops
 
@@ -380,9 +385,13 @@ tests, and code decides whether each one counts. No model or person decides by j
 - **Probe inputs.** Each task has a fixed list of inputs, generated from a recorded seed, a fixed command
   that runs the program on them, a time limit per input, and a crash signature per stack (for Python an
   uncaught exception's traceback; for the JVM an uncaught exception's stack trace; for dbt a failed
-  model or test). A probe that matches the crash signature, or passes its time limit, finds a crash.
-  Crashes count once per distinct signature (the exception type and its innermost frame of the
-  candidate's code), so many probes hitting one bug count as one defect [#41].
+  model or test). A probe that matches the crash signature, or exceeds its time limit, finds a crash.
+  Every probe runs without a crash on the reference solution and on the second correct solution before
+  the run set. Crashes count once per distinct signature, so many probes hitting one bug count as one
+  defect: for an exception, its type and its innermost frame in the candidate's code; for dbt, the
+  failing model or test; all time-limit crashes of a run count as one [#41].
+- **Follow-up regressions.** In a follow-up run, each base check that no longer passes is a defect of the
+  follow-up run, with the base check's label (§4.5) [#41].
 - **Severity labels** are part of each check's definition, committed with the task; a probe crash is
   major [#41].
 - The edge suites, probe inputs, probe commands, crash signatures and labels are part of the frozen task
@@ -404,8 +413,12 @@ after every run of the run set, so an arm's count depends only on its own code a
   solution and on a second, independently written correct solution committed with the task, and fails 3
   of 3 times on the code of the arm it was written for, within its time limit. A test that errors (it
   cannot import, or it breaks before its assertions) does not count as failing [#41].
-- **Applied to every arm, counted once.** Every kept test runs against every arm's code. Tests that pass
-  and fail on exactly the same runs count as one defect, however many the reviewer wrote [#41].
+- **Applied to every arm, counted once.** Every kept test runs against every arm's code under the same
+  rules: 3 times, within the time limit pinned with the protocol, and it counts against a run only when
+  it fails 3 of 3 times without erroring (a test that fails on some of its 3 tries is reported as flaky
+  on that run and does not count). Tests that pass and fail on exactly the same runs count as one
+  defect, however many the reviewer wrote, and a kept test that fails on exactly the same runs as a
+  frozen check is dropped: that defect is counted once, under the frozen check [#41].
 - **Severity by rule.** A failing kept test is a major defect, never critical: critical comes only from
   a frozen check's label or an undelivered run (§8.1). The reviewer's own words about severity are not
   used [#41].
@@ -435,9 +448,10 @@ For tasks with seeded ground truth (the pipeline family), each failed run is aud
 4. Scores, each by script [PF] [#41]:
    - Diagnosis accuracy: the trap id matches the answer key's (or its equivalence set).
    - Origin accuracy: the commit matches the ground truth found by code: the grader runs the failing
-     check on each commit of the run in order, and the origin is the first commit where the check gives
-     the trap's stored wrong answer. A run with a single commit has no origin to find; its origin
-     accuracy is not reported.
+     check on each commit of the run in order, with uncommitted work as a last commit, and the origin is
+     the first commit where the check gives the trap's stored wrong answer. A run with a single commit
+     has no origin to find; its origin accuracy is reported as not applicable, and origin accuracy does
+     not rank arms (§8.5).
    - Audit cost: the auditor's wall time and tokens.
    - Repair cost: an arm-matched repair agent fixes the run from the auditor's answer; its time, tokens,
      and whether the checks then pass. The fix point and the work to redo are scored only through this.
@@ -447,7 +461,7 @@ For tasks with seeded ground truth (the pipeline family), each failed run is aud
 ### 8.1 Units and interval
 
 - **Units.** Every measure is per **attempted** run. A run that does not deliver (fails M1 or M8) counts as
-  one critical defect for M2 (its edge-check failures are not added), and as one false success for M3
+  one critical defect for M2 (its other detected defects are not added), and as one false success for M3
   if it ends as completed (§4.1). M3 is a per-run rate
   [v1].
 - **Attempted run.** A graded run (§5.2), a `contaminated` run (§5.2) and a one-shot run that hits the
@@ -530,7 +544,11 @@ go beyond it (§8.4) [OC] [DR]:
    value is worse for that measure; the arm stays in the tier when the **5th percentile of that interval
    is ≤ 0** for every measure. An arm that is better than the best arm on a later measure is never
    removed for it (proposed, owner to confirm in §11) [v2].
-4. Within the top design tier, rank on traceability (§7) [OC].
+4. Within the top design tier, rank on traceability (§7), by the same step-by-step procedure and tie rule
+   as step 2, on these measures in order: diagnosis accuracy (higher is better), the share of repairs
+   after which the checks pass (higher), repair cost in dollars (lower), audit cost in dollars (lower).
+   Origin accuracy is reported, not ranked, because single-commit runs have none. An arm with no failed
+   run has nothing to trace and ranks first on each of these measures [OC] [#41].
 5. **The answer is the cheapest arm in the top design tier**, by cost per defect-free delivered run
    (build + follow-up + repairs where the task has them). It is not the cheapest arm overall [OC].
 
@@ -604,13 +622,17 @@ These items must be filled or confirmed by the owner, with a changelog entry, be
       with an "incomplete" result is listed beside the answer, and the answer is "incomplete" if that
       arm could still change it (§8.5).
 4. **Open, no proposal yet:** whether an arm over the 3% duplication gate leaves the top design tier or
-   only ranks lower (§4.3, §8.5).
+   only ranks lower (§4.3, §8.5); the time limit for reviewer-proposed tests (§6); and a computed rule for
+   when an "incomplete" arm "could still change the answer" (§8.5), for example filling its missing runs
+   with the best and the worst outcomes.
 5. Each other [v2] operational definition: the lift threshold (§3.2), the private-task hash (§3.4),
    pass^k (§4.4), the beyond rule (§8.4) and the scope of the §2.1 model rule (§2.1).
 6. The code that pins v1 caps changes to v2 (§5.3).
 7. Scripts for every measure that a run set reports (§4) and that is not built yet: detected
    defects (the edge suites, probe inputs and severity labels of each task, and the reviewer's model,
-   prompt and budget, and a second, independent correct solution per task, §6), each arm's stop signal (M3), the origin bisect (§7), test strength, an
+   prompt and budget, and a second, independent correct solution per task, §6), each arm's stop signal (M3),
+   the M10 item paths (§4.7), the origin bisect (§7), the frozen-list hash over tasks, defect checks,
+   the reviewer and auditor pins and the stop signals (§3.4), test strength, an
    import-graph reader for each non-Python stack in the run set, the audit
    scores [QM] [OC]. (Duplication, Python coupling and the edit radius are built in
    `scripts/quality_metrics.py`.)
