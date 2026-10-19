@@ -1,0 +1,4 @@
+{
+  "slug": "pr-review-local-gate",
+  "RUN_BY_SCRIPT": "pr_review_local_gate.py"
+}

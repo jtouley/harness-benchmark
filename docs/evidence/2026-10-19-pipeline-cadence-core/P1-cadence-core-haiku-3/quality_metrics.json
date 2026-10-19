@@ -1,0 +1,113 @@
+{
+  "package_lines_added": 1348,
+  "tests_passed": null,
+  "tests_failed": null,
+  "new_code_coverage": null,
+  "cyclomatic_max": 18,
+  "cyclomatic_newly_over_10": [
+    "pipeline/stream_consumer.py:_parse_event=11",
+    "pipeline/stream_consumer.py:_read=15",
+    "pipeline/stream_consumer.py:run=18"
+  ],
+  "cognitive_max": 34,
+  "cognitive_newly_over_15": [
+    "pipeline/stream_consumer.py:_read=23",
+    "pipeline/stream_consumer.py:run=34"
+  ],
+  "maintainability_index": 57.9,
+  "lint_new_by_rule": {
+    "B007": 1,
+    "C901": 2,
+    "F401": 3,
+    "PLR0912": 1,
+    "PLR0913": 1,
+    "PLR0915": 1,
+    "PLR0917": 1,
+    "PLR2004": 4,
+    "PLW1510": 1,
+    "SIM115": 1,
+    "SIM117": 2,
+    "UP012": 1
+  },
+  "bug_findings_new": 1,
+  "smells_per_100_new_lines": 1.3,
+  "type_errors_new": 16,
+  "new_code_duplication": 0.0,
+  "duplication": {
+    "new_duplicated_lines": 0,
+    "new_lines": 1348,
+    "new_code_duplication": 0.0,
+    "duplicated_lines_total": 0
+  },
+  "module_coupling": {
+    "pipeline": {
+      "afferent": 0,
+      "efferent": 0,
+      "instability": null
+    },
+    "pipeline.batch": {
+      "afferent": 3,
+      "efferent": 0,
+      "instability": 0.0
+    },
+    "pipeline.stream_consumer": {
+      "afferent": 1,
+      "efferent": 1,
+      "instability": 0.5
+    },
+    "pipeline.tests": {
+      "afferent": 0,
+      "efferent": 0,
+      "instability": null
+    },
+    "pipeline.tests.fake_sse": {
+      "afferent": 1,
+      "efferent": 0,
+      "instability": 0.0
+    },
+    "pipeline.tests.test_batch": {
+      "afferent": 0,
+      "efferent": 1,
+      "instability": 1.0
+    },
+    "pipeline.tests.test_stream_consumer": {
+      "afferent": 0,
+      "efferent": 2,
+      "instability": 1.0
+    },
+    "pipeline.tests.test_stream_models": {
+      "afferent": 0,
+      "efferent": 0,
+      "instability": null
+    },
+    "pipeline.verify": {
+      "afferent": 0,
+      "efferent": 1,
+      "instability": 1.0
+    }
+  },
+  "gate": {
+    "tests_pass": false,
+    "new_code_coverage_at_least_80": false,
+    "no_function_newly_over_cyclomatic_10": false,
+    "no_function_newly_over_cognitive_15": false,
+    "no_new_bug_findings": false,
+    "no_new_type_errors": false,
+    "new_code_duplication_at_most_3": true
+  },
+  "gate_passed": false,
+  "tool_errors": {
+    "coverage": "uv run --quiet --no-project exited 2: ==============\nERROR pipeline/tests/test_batch.py\nERROR pipeline/tests/test_stream_consumer.py\nERROR pipeline/tests/test_stream_models.py\n!!!!!!!!!!!!!!!!!!! Interrupted: 3 errors during collection !!!!!!!!!!!!!!!!!!!!\n============================== 3 errors in 0.24s ===============================\n"
+  },
+  "tools": {
+    "ruff": "ruff==0.17.0",
+    "radon": "radon==6.0.1",
+    "complexipy": "complexipy==8.0.1",
+    "mypy": "mypy==2.4.0",
+    "pytest": "pytest==9.1.1",
+    "pytest-cov": "pytest-cov==7.1.0",
+    "coverage": "coverage==7.16.2",
+    "jscpd": "jscpd@5.4.1",
+    "node": "nodejs-wheel==24.19.0"
+  }
+}

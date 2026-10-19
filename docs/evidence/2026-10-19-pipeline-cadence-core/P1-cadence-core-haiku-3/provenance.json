@@ -1,0 +1,22 @@
+{
+  "cadence_sha": "f6011dfbc425a2224f36e5df0b1b5438392d806f",
+  "cadence_branch": "ccr-3d2e0c73-lr6bdt",
+  "claude_version": "2.1.303 (Claude Code)",
+  "model": "claude-haiku-5-5",
+  "arm": "cadence-core",
+  "task": "P1",
+  "isolation": "host (no Docker daemon here): clean HOME, no clean room, dev replay seed 0, grading seed 1",
+  "plugin_config": {
+    "adapter": "none",
+    "peer_models": {
+      "default": "model alias of the orchestrator"
+    },
+    "gated_prefixes_extra": [
+      "pipeline/",
+      "engine/",
+      "pipelines/",
+      "transform/",
+      "Makefile"
+    ]
+  }
+}

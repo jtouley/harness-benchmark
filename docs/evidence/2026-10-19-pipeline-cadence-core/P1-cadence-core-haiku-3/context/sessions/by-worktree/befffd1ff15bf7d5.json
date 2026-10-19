@@ -1,0 +1,41 @@
+{
+  "skill": "cadence",
+  "pipeline_run_id": "c3e98618-2811-4d93-a6d4-9efeb71c0d59",
+  "task_id": "cd-1",
+  "task_source": "branch:feature/gh-1-pipeline",
+  "task_description": "",
+  "branch": "feature/gh-1-pipeline",
+  "ticket_tokens": [
+    "1",
+    "cd-1",
+    "feature/gh-1-pipeline"
+  ],
+  "fresh_run": true,
+  "supersede_on_activate": false,
+  "superseded_paths": [],
+  "activated_at": "2026-10-19T07:33:01.772089+00:00",
+  "owner_session_id": "a08112b2-70f8-5c85-83c0-3c1d7290b3c5",
+  "orchestrator_agent_ids": [],
+  "orchestrator_source": "toplevel",
+  "host": "claude",
+  "base": "origin/main",
+  "workspace": "/tmp/claude-0/-home-user/a08112b2-70f8-5c85-83c0-3c1d7290b3c5/scratchpad/pipe/P1-cadence-core-haiku-3/repo",
+  "primary_checkout": "/tmp/claude-0/-home-user/a08112b2-70f8-5c85-83c0-3c1d7290b3c5/scratchpad/pipe/P1-cadence-core-haiku-3/repo",
+  "context_root": "/tmp/claude-0/-home-user/a08112b2-70f8-5c85-83c0-3c1d7290b3c5/scratchpad/pipe/P1-cadence-core-haiku-3/repo/.context",
+  "matching_artifacts": {},
+  "resume_slug": "activate-session",
+  "resume_block": "A1",
+  "resume_reason": "Fresh run \u2014 start at A1 (activate-session)",
+  "active_skill": null,
+  "registry_version": 1,
+  "env_exports": {},
+  "peer_models": {
+    "plan-create": "haiku",
+    "plan-review": "haiku",
+    "pr-review-local": "haiku"
+  },
+  "lean_record_by_hook": true,
+  "worktree_key": "befffd1ff15bf7d5",
+  "status": "completed",
+  "completed_at": "2026-10-19T09:14:31.516549+00:00"
+}

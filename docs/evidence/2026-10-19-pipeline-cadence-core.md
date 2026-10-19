@@ -21,7 +21,8 @@ with Haiku 5.5 as orchestrator and as every peer.
   on seed 1, after it. No clean room: the file system was not isolated, and the agent's environment
   came from the host's shell with `HOME`, `CADENCE_HOME` and the two variables below overridden.
 - **Arm.** Cadence on branch `ccr-3d2e0c73-lr6bdt` (`4935e83` for the Opus runs, `b1bbdcd` for the
-  first two Haiku runs, `f734888` for the P1 rerun; each run's `provenance.json` names its sha),
+  first two Haiku runs, `f734888` for the P1 rerun, `f6011df` for the third P1 run; each run's
+  `provenance.json` names its sha),
   loaded with `--plugin-dir` for the session only. Config: `adapter: none`, `peer_models: {"default": "haiku"}`. The task repository got
   a `.cadence.json` that gates `pipeline/`, `engine/`, `pipelines/`, `transform/` and the `Makefile`,
   so the edit guard applies to the task's code. Prompt: the lockfile's Cadence drive prompt around the
@@ -52,6 +53,7 @@ Same results as on the laptop (15 October), on a different architecture and OS.
 | **P1-cadence-core-haiku-1** | P1 | cadence-core | **Haiku 5.5** | **0.7143** | **5/7** | yes | yes | 9 | 3,062 | **$0.67** | $2.24 |
 | P2-cadence-core-haiku-1 | P2 | cadence-core | Haiku 5.5 | 0.1429 | 1/7 | yes | yes | 9 | 7,203 (guard cap) | $0.65 | none (killed) |
 | P1-cadence-core-haiku-2 | P1 | cadence-core | Haiku 5.5 | 0.0 | 0/7 | no | no | 0 | 1,496 | $0.30 | $0.32 |
+| P1-cadence-core-haiku-3 | P1 | cadence-core | Haiku 5.5 | 0.0 | 0/7 | no | yes | 14 | 6,117 | $0.90 | $3.00 |
 
 For comparison, the 15 October one-shots on P1 (isolated runner, Claude Code 2.1.287, regraded):
 
@@ -186,6 +188,52 @@ The tool measures have nothing to read (no lines added). The clean-room check re
 variable names, Cadence's own paths, `uv` cache paths, and a dlt source path the plan-create peer
 read under the virtual environment. None is a real contact.
 
+### P1-cadence-core-haiku-3 (the whole pipeline ran; the marts are not where the grader reads)
+
+The third P1 run, on the gate fix (`f6011df`). It is the first run of the core on this family that
+went through every block: plan, five review cycles (limit again), the entry invariant, nine
+implementation phases, the local PR record under `adapter: none`, five rounds of the local PR
+review (R1) with a fix commit after each of the first four, closure (R5: `must_fix: 0`), and the
+session summary (R7). No hard stop. 102 minutes, $0.90 at list price (planning $0.12,
+implementation $0.23, review rounds $0.28, the rest activation and closure).
+
+The grade is 0 of 7, and it comes from one decision. The spec says the marts are Parquet under
+`out/marts/`, one folder per mart, and the grader reads only those folders. This run let
+dbt-duckdb's `external` materialization write two files, `mart_obligations_monthly.parquet` and
+`mart_edit_windows_5min.parquet`, at the top of `out/marts/`, and kept the seven check models the
+oracle map names as views in `out/warehouse.duckdb`. The grader finds no folder, so every check
+fails with "no published mart named `chk_…` under `out/marts/`", and the idempotence check has no
+mart to digest. The first Haiku run wrote seven folders and passed five checks on the same spec.
+Both stream runs read the replay to the end over 5 connections.
+
+What the review rounds did instead: the nine must-fix items over four rounds were all about the
+stream consumer's handling of odd input (non-event JSON, a silent stream, field types, event-time
+and integer ranges, a namespace that fits the staging type), each fixed with a test. The review's
+end-to-end walk ran the unit suite and two probes and did not run `make build`; no round read the
+spec's publish rule against `out/marts/`. The review rigor contract asks for an end-to-end walk of
+each check; the reviewer walked the code paths, not the delivered files.
+
+A process note: the nine phase commits all carry the same timestamp (08:28:00). The orchestrator did
+the implementation in one 40-minute stretch and then wrote the commits in one shell command, one per
+phase, from the finished tree. The commit replay therefore shows phase-sized commits (largest 638
+lines, +105 complexity, the stream consumer) that were not phase-sized work.
+
+Tool measures (`quality_metrics.json`):
+
+| Measure | Value |
+|---|---|
+| Lines added in `pipeline/` | 1,348 |
+| Cyclomatic complexity, functions newly over 10 | `stream_consumer.py:run` 18, `_read` 15, `_parse_event` 11 |
+| Cognitive complexity, functions newly over 15 | `run` 34, `_read` 23 |
+| New bug-class findings / new type errors | 1 / 16 |
+| Code smells per 100 new lines | 1.3 |
+| Duplicated lines on new code | 0% |
+| Maintainability index | 58 |
+| New-code coverage | not measured (the same import failure as the other runs) |
+
+The consumer that four review rounds hardened is also the function that grew to 34 cognitive
+complexity. The clean-room check reports 23 contacts, all variable names and Cadence's own paths.
+
 ### P1-cadence-core-1 (Opus, no delivery)
 
 The orchestrator activated, wrote the local ticket and called the plan-create peer with
@@ -231,6 +279,15 @@ so does `runner/claude-agent.sh`. 17 minutes, $1.96, no plan file.
    orchestrator followed the rule (three peer runs, then a hard stop) rather than writing the mapping
    itself. Found by this run, fixed in Cadence `f6011df`. The one run that reached code (P1,
    the first Haiku run) passed the same gate because its fifth review named no earlier ids.
+9. **The full pipeline, with the local PR record and five review rounds, scored 0 of 7.** The third
+   P1 run is the process record this round was after: every block ran, R1 found nine defects and
+   each was fixed with a test. It also shows what that review did not do: read the delivered files
+   against the spec's publish rule. Four rounds hardened the stream consumer against odd input while
+   the marts sat in the wrong place. The 5 of 7 and the 0 of 7 came from the same arm, model and
+   spec; the difference is one publish decision that no gate reads. Two things follow. The review
+   contract's end-to-end walk should start from the delivered artifacts (here, `out/marts/`), not from
+   the code. And the benchmark's checks are the only grading of delivery here; a harness that is
+   never told what the grader reads cannot aim at it, which is the point of the hidden checks.
 
 ## Limits
 
@@ -238,6 +295,10 @@ so does `runner/claude-agent.sh`. 17 minutes, $1.96, no plan file.
   Claude Code 2.1.303 (the lockfile pins 2.1.294).
 - The P2 run was killed by the guard cap, so its cost comes from the transcript and its delivered tree
   is the snapshot of what the agent left, with six check views built but not exported.
+- Two of the four Haiku runs that reached code lost most or all of their checks to the publish
+  shape (views or files where the grader reads folders of Parquet under `out/marts/`). The spec
+  states the rule; the runs did not follow it. The grading is right to count that as not delivered,
+  and n = 1 per cell cannot say how often it happens.
 - The task repository got a `.cadence.json` (five gated prefixes) that the one-shot repositories did
   not have. It changes nothing for a one-shot.
 - The Opus arm has no result: one run died on the host defect, one was interrupted.
@@ -247,7 +308,8 @@ so does `runner/claude-agent.sh`. 17 minutes, $1.96, no plan file.
 ## Next
 
 - P3 needs the Docker image.
-- Rerun P1 on the gate fix, so the local PR record and R1 run on delivered code.
-- Rerun P2 with the time budget in the environment note, so the acceptance step fits.
+- Rerun P1 and P2 at n = 3 in the isolated runner, on Cadence `58f0919` or later, with the time
+  budget in the environment note.
+- In Cadence: make R1's end-to-end walk start from the delivered artifacts the spec names.
 - Rerun P1 in the isolated runner with the runner's new environment, n = 3, when a Docker host exists.
 - Fix the no-PR mode in Cadence, then rerun so R1 and R5 run on the delivered code.

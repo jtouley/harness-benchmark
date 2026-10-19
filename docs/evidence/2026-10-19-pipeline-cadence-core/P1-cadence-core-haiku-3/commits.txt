@@ -1,0 +1,16 @@
+7becba4 phase 9: acceptance run record
+c6ab925 R1 round 4: namespace fits the staging INTEGER type
+816461a R1 round 3: strict event time and bigint range, run-level tests for odd event shapes
+eb6c8ca R1 round 2: check event field types before the lake write
+c63310c R1 fixes: non-event JSON is skipped, a silent stream is an error, verify exits 1 on failure
+7714e7f phase 8: oracle map and decisions
+8d29a90 phase 7: make build and make stream, repeatability and restart checks
+5fd663c phase 6: stream models for question B
+1655343 phase 5: stream capture with resume and micro-batches
+285cb88 phase 4: monthly mart and question A checks
+8f022e0 phase 3: star schema for question A
+26d16b3 phase 2: dbt sources and staging
+7ee4ede phase 1: batch ingestion to the lake with dlt
+ae30ecd phase 0: execution plan for gh-1
+d07bfe3 task repository: gate the pipeline code for Cadence
+3d3393e P1 skeleton

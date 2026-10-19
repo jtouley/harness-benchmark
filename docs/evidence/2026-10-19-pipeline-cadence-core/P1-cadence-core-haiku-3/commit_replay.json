@@ -1,0 +1,202 @@
+{
+ "base": "d07bfe3b039fe0900660b3937031c0b81b4aed47",
+ "head": "7becba4daac88a11d6ebae48bdce211be64e2352",
+ "package": "pipeline",
+ "test_cmd": null,
+ "uncommitted_changes": false,
+ "commits": [
+  {
+   "sha": "ae30ecdf9233250221b68b549c9000fd7d8bf4b8",
+   "subject": "phase 0: execution plan for gh-1",
+   "lines_added": 0,
+   "lines_deleted": 0,
+   "complexity_added": 0,
+   "complexity_removed": 0,
+   "newly_over_10": [],
+   "unparsed": [],
+   "green": null,
+   "seconds_since_previous": 3315
+  },
+  {
+   "sha": "7ee4edeeea790f62436dfc03d9f86eff86993dd0",
+   "subject": "phase 1: batch ingestion to the lake with dlt",
+   "lines_added": 275,
+   "lines_deleted": 0,
+   "complexity_added": 37,
+   "complexity_removed": 0,
+   "newly_over_10": [],
+   "unparsed": [],
+   "green": null,
+   "seconds_since_previous": 0
+  },
+  {
+   "sha": "26d16b31d7277c60c4a5ca92a41c4deb1ab567cb",
+   "subject": "phase 2: dbt sources and staging",
+   "lines_added": 0,
+   "lines_deleted": 0,
+   "complexity_added": 0,
+   "complexity_removed": 0,
+   "newly_over_10": [],
+   "unparsed": [],
+   "green": null,
+   "seconds_since_previous": 0
+  },
+  {
+   "sha": "8f022e0ab0482db290e2ef9627ffa5e9448d713b",
+   "subject": "phase 3: star schema for question A",
+   "lines_added": 0,
+   "lines_deleted": 0,
+   "complexity_added": 0,
+   "complexity_removed": 0,
+   "newly_over_10": [],
+   "unparsed": [],
+   "green": null,
+   "seconds_since_previous": 0
+  },
+  {
+   "sha": "285cb88c14eb727f9c7eb9b295ee97cdcc170351",
+   "subject": "phase 4: monthly mart and question A checks",
+   "lines_added": 0,
+   "lines_deleted": 0,
+   "complexity_added": 0,
+   "complexity_removed": 0,
+   "newly_over_10": [],
+   "unparsed": [],
+   "green": null,
+   "seconds_since_previous": 0
+  },
+  {
+   "sha": "16553432c61bdac5395ffa899161b29d30ace22a",
+   "subject": "phase 5: stream capture with resume and micro-batches",
+   "lines_added": 638,
+   "lines_deleted": 0,
+   "complexity_added": 105,
+   "complexity_removed": 0,
+   "newly_over_10": [
+    "pipeline/stream_consumer.py:_read=16",
+    "pipeline/stream_consumer.py:run=17"
+   ],
+   "unparsed": [],
+   "green": null,
+   "seconds_since_previous": 1
+  },
+  {
+   "sha": "5fd663cde29975d035a5be0e75ec3f5fbf4586cd",
+   "subject": "phase 6: stream models for question B",
+   "lines_added": 171,
+   "lines_deleted": 0,
+   "complexity_added": 30,
+   "complexity_removed": 0,
+   "newly_over_10": [],
+   "unparsed": [],
+   "green": null,
+   "seconds_since_previous": 0
+  },
+  {
+   "sha": "8d29a90b489658752939c1f29f3546f9107f52da",
+   "subject": "phase 7: make build and make stream, repeatability and restart checks",
+   "lines_added": 110,
+   "lines_deleted": 0,
+   "complexity_added": 18,
+   "complexity_removed": 0,
+   "newly_over_10": [],
+   "unparsed": [],
+   "green": null,
+   "seconds_since_previous": 0
+  },
+  {
+   "sha": "7714e7f9a0538c455b179baa15ef692a2deaae10",
+   "subject": "phase 8: oracle map and decisions",
+   "lines_added": 0,
+   "lines_deleted": 0,
+   "complexity_added": 0,
+   "complexity_removed": 0,
+   "newly_over_10": [],
+   "unparsed": [],
+   "green": null,
+   "seconds_since_previous": 0
+  },
+  {
+   "sha": "c63310cb25cccf7f1f158709cf1c1eec6e6dbc5c",
+   "subject": "R1 fixes: non-event JSON is skipped, a silent stream is an error, verify exits 1 on failure",
+   "lines_added": 46,
+   "lines_deleted": 9,
+   "complexity_added": 10,
+   "complexity_removed": 1,
+   "newly_over_10": [],
+   "unparsed": [],
+   "green": null,
+   "seconds_since_previous": 844
+  },
+  {
+   "sha": "eb6c8ca308262eb8bee77df2c42f1ac587a38578",
+   "subject": "R1 round 2: check event field types before the lake write",
+   "lines_added": 57,
+   "lines_deleted": 3,
+   "complexity_added": 16,
+   "complexity_removed": 0,
+   "newly_over_10": [
+    "pipeline/stream_consumer.py:_parse_event=11"
+   ],
+   "unparsed": [],
+   "green": null,
+   "seconds_since_previous": 434
+  },
+  {
+   "sha": "816461a3bfa54cc441a937c89288a77f77475b36",
+   "subject": "R1 round 3: strict event time and bigint range, run-level tests for odd event shapes",
+   "lines_added": 66,
+   "lines_deleted": 5,
+   "complexity_added": 8,
+   "complexity_removed": 0,
+   "newly_over_10": [],
+   "unparsed": [],
+   "green": null,
+   "seconds_since_previous": 419
+  },
+  {
+   "sha": "c6ab925f8ce37da9ee7df64f1dc260e6ee360d0e",
+   "subject": "R1 round 4: namespace fits the staging INTEGER type",
+   "lines_added": 9,
+   "lines_deleted": 7,
+   "complexity_added": 1,
+   "complexity_removed": 1,
+   "newly_over_10": [],
+   "unparsed": [],
+   "green": null,
+   "seconds_since_previous": 551
+  },
+  {
+   "sha": "7becba4daac88a11d6ebae48bdce211be64e2352",
+   "subject": "phase 9: acceptance run record",
+   "lines_added": 0,
+   "lines_deleted": 0,
+   "complexity_added": 0,
+   "complexity_removed": 0,
+   "newly_over_10": [],
+   "unparsed": [],
+   "green": null,
+   "seconds_since_previous": 517
+  }
+ ],
+ "summary": {
+  "commits": 14,
+  "measurable": true,
+  "largest_commit_lines": 638,
+  "median_commit_lines": 35.5,
+  "total_lines_changed": 1396,
+  "largest_commit_complexity_added": 105,
+  "median_commit_complexity_added": 4.5,
+  "unparsed_commits": 0,
+  "green_share": null,
+  "cleanup_commits": 0,
+  "complexity_added_total": 225,
+  "complexity_removed_total": 2,
+  "seconds_base_to_head": 6081,
+  "final": {
+   "functions": 82,
+   "total_complexity": 223,
+   "functions_over_10": 3
+  }
+ }
+}
