@@ -134,8 +134,10 @@ needs a machine with more disk; no model trial has run. Results and data:
 
 [Criteria v2](../method/criteria-v2.md) is still a draft, so these can go in before any run set:
 
-- Done (19 October, #41): no model or person grades any measure. Defects (M2) come from edge checks and
-  probe inputs frozen before the runs; the rubric, the design checklist and pairwise judging are gone.
+- Done (19 October, #41): code decides every measure. Defects (M2) come from edge checks and probe
+  inputs frozen before the runs, and from tests a fixed, blind reviewer proposes, kept only when they
+  pass on the reference and fail on the arm; the rubric, the design checklist and pairwise judging are
+  gone.
 - Make layer 1 pass rates the primary outcome, the layer 3 gated pass rate the primary quality measure,
   and layer 2 the measure of quality under change.
 - Report layer 4 (the process, commit by commit, with its cost) next to them, never folded into a

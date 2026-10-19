@@ -340,14 +340,19 @@ def test_incomplete_arm_is_listed_beside_the_answer():
     assert 'If it could still change the answer, the answer is "incomplete"' in answer
 
 
-def test_no_measure_is_graded_by_a_model_or_a_person():
-    """#41: defects come from frozen checks; no reviewer, judge, rubric or spot check decides a result."""
+def test_no_measure_is_decided_by_judgment():
+    """#41: code decides every measure; a reviewer may only propose tests that code confirms."""
     measures = _flat(_section("## 4. Measures"))
-    assert "**No measure is decided by a model or a person**" in measures
+    assert "**No measure is decided by a model's or a person's judgment**" in measures
     assert "Blind reviewers" not in measures and "Pairwise judging (two or three LLM judges" not in measures
     assert "Design checklist |" not in measures
-    checks = _flat(_section("## 6. Defect checks (no reviewer)"))
+    checks = _flat(_section("## 6. Defect checks"))
     assert "fails on at least one wrong variant" in checks and "sha256 is recorded" in checks
+    # The reviewer is kept in line: tests only, confirmed by code, run against every arm, severity by rule.
+    assert "Its only output is executable reproduction tests" in checks
+    assert "passes on the reference solution and fails on the code of the arm it was written for" in checks
+    assert "Every kept test then runs against every arm's code" in checks
+    assert "The reviewer's own words about severity are not used" in checks
     audit = _flat(_section("## 7. Traceability: the audit protocol"))
     assert "a script scores its answers against the answer key" in audit
     assert "spot check" not in audit

@@ -38,10 +38,11 @@ These measure "good design" and "good tests" by outcome, not by inspection:
 |---|---|---|
 | **Follow-up task success** | After each trial, one fixed agent (the same model and prompt for every arm) gets a second task built on that trial's code, scored by its own hidden tests. Each golden task gains a `followup/` folder | Maintainability (ISO/IEC 25010 modifiability), measured directly: does the next change go well |
 | **Hidden-suite pass fraction** | 30 or more hidden tests per task, including edge cases the spec implies and property-based tests; report the fraction passed, not only pass or fail | Functional correctness with more resolution than M1 |
-| **Detected defects, from frozen checks** | The form M2 takes in criteria v2: failures of each task's edge suite, crashes on its fixed probe inputs, and base checks that a follow-up breaks, all written with severity labels before the run set ([criteria v2 §6](criteria-v2.md#6-defect-checks-no-reviewer)); count per trial, by severity | Faultlessness, with no model or person deciding what counts |
+| **Detected defects, by code** | The form M2 takes in criteria v2: failures of each task's edge suite, crashes on its fixed probe inputs, and base checks that a follow-up breaks, written with severity labels before the run set; plus tests a fixed, blind reviewer proposes after the runs, kept only when they pass on the reference and fail on the trial, then run against every arm ([criteria v2 §6](criteria-v2.md#6-defect-checks)); count per trial, by severity | Faultlessness, with code deciding what counts |
 | **Test strength** | Run each arm's own tests against mutants of the reference solution; report the kill rate | Testability: tests that catch real faults, on one fixed set of mutants for every arm |
 
-None of these is a model's or a person's score: criteria v2 grades only by script
+None of these is a model's or a person's score: criteria v2 grades by code, and a model may act only as
+a reviewer that proposes tests for code to confirm
 ([harness-benchmark#41](https://github.com/jtouley/harness-benchmark/issues/41)). Pairwise judging by
 LLMs, proposed here earlier as a tie-breaker, is dropped; arms that tie stay tied.
 
@@ -74,8 +75,8 @@ only files under `--package`, and `edit_radius.repo` counts every file, tests an
 owner criterion ("the existing files the follow-up change has to modify") reads `package`, so that plan,
 ledger or docs files an arm writes do not enlarge its radius; `repo` is kept beside it for context.
 
-A design checklist scored by two blind reviewers was proposed here; it is not used, because criteria v2
-has no model or person grade (#41). What it asked about single responsibility and interfaces is measured
+A design checklist scored by two blind reviewers was proposed here; it is not used, because its yes or no
+answers are opinions that no test can confirm (#41). What it asked about single responsibility and interfaces is measured
 by module coupling and the follow-up's edit radius instead.
 
 **Ranking.** Arms that pass the checks (layer 1) are ranked on design (follow-up success, edit radius,
@@ -86,7 +87,7 @@ cheapest arm in the top design tier, not the cheapest overall.
 
 A solution is **great code** for this benchmark when all three layers hold:
 
-1. **It does what the spec says.** Every hidden test passes (M1), and the frozen defect checks find no
+1. **It does what the spec says.** Every hidden test passes (M1), and the defect checks find no
    critical or major defect (M2).
 2. **It passes the tool gate.** New-code coverage ≥ 80%, no function that the change takes over
    cognitive complexity 15 or cyclomatic complexity 10, no new bug-class finding, no new type error,
@@ -101,8 +102,8 @@ A solution is **great code** for this benchmark when all three layers hold:
 No layer replaces another. Iteration 4 shows why: Haiku 4.5's multi-currency solution passes the tool
 gate, but its monthly report never converts currencies (a spec failure, layer 1). And on budgets, every
 one-shot passes the hidden tests but ships crashes that only a reviewer found in iteration 4. Criteria
-v2 has no reviewer, so its edge checks and probe inputs, written before the runs, must cover such inputs
-(layer 1, M2).
+v2 catches such inputs with edge checks and probe inputs written before the runs, and with tests a
+reviewer proposes that code confirms (layer 1, M2).
 
 ## Iteration 4, measured this way
 
@@ -148,7 +149,7 @@ before the next run set, with a changelog entry, as [criteria v1](criteria.md) r
 
 1. Pin the tools (ruff, radon, complexipy, mypy, coverage.py, and a mutation tool that runs on this
    code, such as cosmic-ray or a diff-scoped runner) in the lockfile, so the numbers reproduce.
-2. Each task's edge suite, probe inputs and severity labels for M2, frozen before the run set
-   ([criteria v2 §6](criteria-v2.md#6-defect-checks-no-reviewer)).
+2. Each task's edge suite, probe inputs and severity labels for M2, frozen before the run set, and the
+   reviewer's fixed model, prompt and budget ([criteria v2 §6](criteria-v2.md#6-defect-checks)).
 3. Decide how the layers report: one table per arm with the three layers side by side, and no single
    blended score, so a reader sees where a solution falls short.

@@ -23,7 +23,7 @@ v2 run set.
 | [CR] | [process: clean room](process.md#clean-room) | 2026-10-12 |
 | [#16] | [harness-benchmark#16](https://github.com/jtouley/harness-benchmark/issues/16): adopt the quality model as criteria v2 | 2026-10-13 |
 | [QM] | [quality model](quality-model.md) (adopted by [#16]) | 2026-10-13 |
-| [#41] | [harness-benchmark#41](https://github.com/jtouley/harness-benchmark/issues/41): no model or person grades; defects from frozen checks | 2026-10-19 |
+| [#41] | [harness-benchmark#41](https://github.com/jtouley/harness-benchmark/issues/41): grading by code; a reviewer only proposes tests that code confirms | 2026-10-19 |
 | [OC] | [quality model: owner criteria](quality-model.md#owner-criteria-2026-10-14-dry-solid-extensible-traceable-cheap) | 2026-10-14 |
 | [PF] | [pipeline family](../plans/tasks/pipeline-family.md): success criteria, arms, deferral review, prompt hygiene, isolation, audit protocol | 2026-10-14 |
 | [FU] | [follow-up task](../plans/tasks/pipeline-followup.md) | 2026-10-14 |
@@ -194,8 +194,9 @@ contents are not published [TS] [v2].
 ## 4. Measures
 
 Each measure is computed by a script in this repository on the state that the run leaves [v1]. **No
-measure is decided by a model or a person**: no reviewer, judge or rubric score enters a measure, a
-ranking or a tie-break (§6) [#41]. Claims in an agent's own summary are never evidence for a measure
+measure is decided by a model's or a person's judgment**: no judge or rubric score enters a measure, a
+ranking or a tie-break. A model may act only as a reviewer kept in line, proposing tests that code then
+confirms (§6) [#41]. Claims in an agent's own summary are never evidence for a measure
 [v1]. A measure that has no script at the start of a run set is not reported for that run set [v1].
 
 The quality measure is the [quality model](quality-model.md), in three layers [#16] [QM]. No layer
@@ -208,7 +209,7 @@ side [QM].
 |---|---|---|---|---|
 | M1 | **Acceptance** | The hidden checks (or the oracle) on the delivered working tree, in the running system where the task has one | Gate: a run that fails M1 is not delivered | [v1] [TS] |
 | M1f | **Hidden-suite pass fraction** | The fraction of the hidden checks that pass (30 or more per task where the task has a suite) | Reported | [QM] |
-| M2 | **Detected defects** | Found by the task's frozen defect checks (§6), never by a reviewer: each failing check of the task's edge suite; each crash (an uncaught exception or a non-zero exit with a traceback) on the task's fixed probe inputs; in a follow-up, each base check that no longer passes. Severity comes from labels committed with the task before the run set: critical (data loss, a wrong result reported as success), major (a crash, a sentence of the request not met), minor. Failures with the same check id count once | **Primary.** Only critical and major defects count in the decision rule (§8); minor ones are reported | [v1] [QM] [DR] [#41] |
+| M2 | **Detected defects** | Found by code (§6): each failing check of the task's edge suite; each crash (an uncaught exception or a non-zero exit with a traceback) on the task's fixed probe inputs; in a follow-up, each base check that no longer passes; and each failing reviewer-proposed test that code has confirmed. Severity comes from labels committed with the task before the run set, or by rule for reviewer-proposed tests (§6): critical (data loss, a wrong result reported as success), major (a crash, a sentence of the request not met), minor. Failures with the same check id count once | **Primary.** Only critical and major defects count in the decision rule (§8); minor ones are reported | [v1] [QM] [DR] [#41] |
 | M3 | **False success** | A run that ends as completed (no recorded stop, no question to the user) while M1 fails or M2 has a critical or major defect. A harness that stops with a recorded reason is not a false success | Decision rule input (§8.2–§8.4), beside M2 | [v1] [DR] [#41] |
 | M8 | **Completion** | Finished without a human answer. A hard stop or a question to the user counts as not complete | Reported | [v1] |
 
@@ -247,8 +248,8 @@ The tool gate is reported for every arm. It does not rank arms [QM].
 | Extensible | **Follow-up success and cost**: the follow-up's hidden checks, its dollars and its wall time | §4.5 | Ranks design | [OC] [FU] |
 | Traceable | **Audit scores**: diagnosis accuracy, origin accuracy, audit cost, repair cost | §7 | Ranks after design | [OC] [PF] |
 
-v1's 1–10 rubric (M7), the design checklist and pairwise judging are not used: each needs a model or a
-person to score code. Two arms that tie on every measure above stay tied [#41].
+v1's 1–10 rubric (M7), the design checklist and pairwise judging are not used: each is a model's or a
+person's opinion of code that no test can confirm. Two arms that tie on every measure above stay tied [#41].
 
 ### 4.4 Reliability (pass^k)
 
@@ -300,7 +301,7 @@ closure record that names the delivered head; the deferral log (§2.5). Report t
 | M5 test-first evidence | Reported where the run commits; not a decision input | [v1] |
 | M6 changed-line coverage | Folded into the tool gate (layer 2). It did not separate arms in v1 data or in iteration 4 | [v1] [QM] |
 | M7 code quality rubric | Dropped: no model or reviewer score is reported (§4) | [#16] [#41] |
-| Blind review (v1 §5) | Dropped: defects come from frozen checks (§6) | [#41] |
+| Blind review (v1 §5) | Replaced: frozen checks, and a reviewer that may only propose tests, which code confirms (§6) | [#41] |
 
 ## 5. Running a trial
 
@@ -364,10 +365,13 @@ The v1 caps (1800 s timeout, $1.00 and $3.00 dollar caps) do not apply to v2 run
 carries them (`cbench/harbor.py`, `scripts/live.sh`, `tests/test_criteria.py`) must change to the v2
 caps before the first v2 run set [CAP] [v2].
 
-## 6. Defect checks (no reviewer)
+## 6. Defect checks
 
-Defects (M2) come only from checks that are written and frozen before the run set, so that no model or
-person decides after the runs what counts [#41]:
+Defects (M2) come from code. A model may help find them only as a reviewer kept in line: it proposes
+tests, and code decides whether each one counts. No model or person decides by judgment what counts
+[#41].
+
+**Frozen checks**, written before the run set:
 
 - **Edge suite.** Each task has hidden checks beyond its acceptance check: the edge cases, error paths and
   inputs that the request covers. Each edge check passes on the reference solution, fails on at least one
@@ -378,7 +382,24 @@ person decides after the runs what counts [#41]:
 - **Severity labels** are part of each check's definition, committed with the task [#41].
 - The edge suites, probe inputs and labels are part of the frozen task list: their sha256 is recorded
   with the run set (§3.4). A check added after the first run starts a new run set [v1] [#41].
-- The limit is stated with every result: a defect that no check anticipates is not counted [#41].
+
+**Reviewer-proposed checks**, after the runs, to find defects that no frozen check anticipated [#41]:
+
+- **A fixed instrument.** One reviewer model, prompt and token budget for every arm, recorded with the run
+  set before the first run. It sees each arm's final source, tests and diff as anonymous folders, as v1's
+  blind review did, and no process files [v1] [#41].
+- **Tests only.** Its only output is executable reproduction tests. Prose, verdicts and scores are not
+  read [#41].
+- **Code confirms each test.** A proposed test is kept only when it passes on the reference solution and
+  fails on the code of the arm it was written for. Every kept test then runs against every arm's code,
+  so an arm is never penalized because the reviewer looked at it longer [#41].
+- **Severity by rule.** A failing kept test is a major defect; it is critical when the run also ended as
+  completed (M3). The reviewer's own words about severity are not used [#41].
+- Kept tests are committed with the run set's results, and their defects are reported in a column of
+  their own beside the frozen-check defects; both count in M2 [#41].
+
+The limit is stated with every result: a defect that neither a frozen check nor a kept test catches is not
+counted [#41].
 
 ## 7. Traceability: the audit protocol
 
@@ -503,7 +524,8 @@ enforcement [DR].
 The owner of this benchmark also wrote one of the harnesses (Cadence) and supplied the private tasks and
 the pipeline family. Because of that, the criteria, the task list (by hash) and the sample size are fixed
 before any run set, with every defect check (§6); results are published whichever way they fall; no
-measure is graded by a model or a person, so no grader can favor an arm; and results that do not favor
+measure is decided by a model's or a person's judgment, and the one reviewer (§6) can only propose
+tests that code confirms and that run against every arm; and results that do not favor
 Cadence are stated first [v1] [WP] [#41].
 
 ## 10. Evidence that shaped v2
@@ -564,7 +586,8 @@ These items must be filled or confirmed by the owner, with a changelog entry, be
    pass^k (§4.4), the beyond rule (§8.4) and the scope of the §2.1 model rule (§2.1).
 6. The code that pins v1 caps changes to v2 (§5.3).
 7. Scripts for every measure that a run set reports (§4) and that is not built yet: test-confirmed
-   defects (the edge suites, probe inputs and severity labels of each task, §6), test strength, an
+   defects (the edge suites, probe inputs and severity labels of each task, and the reviewer's model,
+   prompt and budget, §6), test strength, an
    import-graph reader for each non-Python stack in the run set, the audit
    scores [QM] [OC]. (Duplication, Python coupling and the edit radius are built in
    `scripts/quality_metrics.py`.)
@@ -592,10 +615,10 @@ These items must be filled or confirmed by the owner, with a changelog entry, be
 | 17 | M10 auditability as a checklist share per run, with the deferral log (§4.7) | 2026-10-12, 2026-10-14 | [next steps: measures](../plans/next-steps.md#measures), [pipeline family: arms](../plans/tasks/pipeline-family.md#arms) |
 | 18 | Decision rule restated: comparison A (v1 rule, same model), comparison B (non-inferiority to the bar, margin 0.25), comparison C (beyond the bar), and the answer as the cheapest arm in the top design tier (§8) | 2026-10-12, 2026-10-14 | [next steps: decision rule](../plans/next-steps.md#decision-rule-for-this-question), [quality model: owner criteria](quality-model.md#owner-criteria-2026-10-14-dry-solid-extensible-traceable-cheap) |
 | 19 | Operational definitions that v2 adds, each marked [v2] and listed in §11 for owner confirmation | 2026-10-14 | this document |
-| 20 | No model or person decides a measure. M2 becomes defects detected by frozen edge checks and probe inputs with pre-committed severity; M3 is decided by script; the blind review, the design checklist, the M7 comparison column and pairwise judging are dropped; the audit is scored by script against the answer key, with no human spot check (§4, §6, §7, §8.5) | 2026-10-19 | [harness-benchmark#41](https://github.com/jtouley/harness-benchmark/issues/41) |
+| 20 | No model or person decides a measure by judgment. M2 becomes defects detected by code: frozen edge checks and probe inputs with pre-committed severity, plus tests a fixed, blind reviewer proposes, kept only when they pass on the reference and fail on the arm, run against every arm, with severity by rule; M3 is decided by script; the design checklist, the M7 comparison column and pairwise judging are dropped; the audit is scored by script against the answer key, with no human spot check (§4, §6, §7, §8.5) | 2026-10-19 | [harness-benchmark#41](https://github.com/jtouley/harness-benchmark/issues/41) |
 
 ## Changelog
 
-- v2 (2026-10-14; amended 2026-10-19, no model or person grades, #41): this version. Changes from v1 in
+- v2 (2026-10-14; amended 2026-10-19, grading by code, a reviewer only proposes tests, #41): this version. Changes from v1 in
   the table above.
 - v1 (2026-10-10): first version ([criteria v1](criteria.md)).
