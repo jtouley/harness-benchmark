@@ -99,6 +99,8 @@ budget that covers the worst case: see [`docs/method/live-tier.md`](docs/method/
 A harness is two data entries: its pinned install in `frameworks.lock.json` and its probe fixtures in
 `golden/probes/states.json`. The code does not change. [Add a harness](docs/method/add-a-harness.md)
 gives the steps and the commands, and a prompt that asks Claude Code to do it for you.
+To make your harness block what the probes test, the [enforcement spec](docs/method/enforcement-spec.md)
+lists the rules: the gate contract, the findings ledger and the hook points, for any host.
 
 ## Limitations
 
@@ -118,6 +120,7 @@ Reading:
 - [Evidence](docs/evidence/README.md): each experiment round with its sample size, status and data
 - [How results are graded](docs/method/grading.md): what decides each number, and where a model's judgment does
 - [Add a harness](docs/method/add-a-harness.md): the lockfile entry, probe fixtures and commands
+- [Enforcement spec](docs/method/enforcement-spec.md): the host-neutral rules behind the hook probes
 - [Method](docs/method/): pre-registered criteria ([v1, in force](docs/method/criteria.md);
   [v2, draft](docs/method/criteria-v2.md)), [methodology](docs/method/methodology.md),
   [how rounds were run](docs/method/process.md), [what "good code" means](docs/method/quality-model.md)
