@@ -172,9 +172,8 @@ def test_top_design_tier_has_an_order_and_a_scope():
     answer = _flat(_section("### 8.5 The answer"))
     assert "The answer is computed **per class**" in answer
     assert (
-        "follow-up success (higher is better), then edit radius (smaller is better), then the share of "
-        "design-checklist items answered yes (higher is better), then duplicated lines on new code "
-        "(lower is better)"
+        "follow-up success (higher is better), then edit radius (smaller is better), then duplicated "
+        "lines on new code (lower is better)"
     ) in answer
     assert "Two arms **tie** on a measure when the 90% interval of their difference includes 0." in answer  # NEW-6
 
@@ -339,3 +338,34 @@ def test_incomplete_arm_is_listed_beside_the_answer():
     answer = _flat(_section("### 8.5 The answer"))
     assert 'It is listed beside the answer as "incomplete".' in answer
     assert 'If it could still change the answer, the answer is "incomplete"' in answer
+
+
+def test_no_measure_is_decided_by_judgment():
+    """#41: code decides every measure; a reviewer may only propose tests that code confirms."""
+    measures = _flat(_section("## 4. Measures"))
+    assert "**No measure is decided by a model's or a person's judgment**" in measures
+    assert "Blind reviewers" not in measures and "Pairwise judging (two or three LLM judges" not in measures
+    assert "Design checklist |" not in measures
+    checks = _flat(_section("## 6. Defect checks"))
+    assert "fails on at least one wrong variant" in checks and "sha256 is recorded" in checks
+    # The reviewer is kept in line: tests only, confirmed by code, run against every arm, severity by rule.
+    assert "Its only output is executable reproduction tests" in checks
+    assert "use the task's public interface" in checks and "does not count as failing" in checks
+    assert "a second, independently written correct solution committed with the task" in checks
+    assert "Every kept test runs against every arm's code" in checks
+    assert "count as one defect, however many the reviewer wrote" in checks
+    assert "A failing kept test is a major defect, never critical" in checks
+    assert "The reviewer's own words about severity are not used" in checks
+    assert "test-confirmed" not in _flat(_section("### 4.4 Reliability (pass^k)"))
+    assert "reports success" not in _flat(_section("### 8.1 Units and interval"))
+    audit = _flat(_section("## 7. Traceability: the audit protocol"))
+    assert "a script scores its answers, and no person or model scores them" in audit
+    assert "the first commit where the check gives the trap's stored wrong answer" in audit
+    assert "spot check" not in audit
+    assert "design-checklist" not in _flat(_section("### 8.5 The answer"))
+    # Every ranking and report beside the answer has a rule a script can apply.
+    answer = _flat(_section("### 8.5 The answer"))
+    assert "rank on traceability (§7), by the same step-by-step procedure and tie rule" in answer
+    assert "Origin accuracy is reported, not ranked" in answer
+    assert "A script reports which declared items exist" in _flat(_section("### 4.7 Auditability (M10)"))
+    assert "a kept test that fails on exactly the same runs as a frozen check is dropped" in checks
