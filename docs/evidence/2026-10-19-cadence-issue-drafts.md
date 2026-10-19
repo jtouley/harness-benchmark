@@ -5,6 +5,8 @@ Evidence is on harness-benchmark branch `ccr-3d2e0c73-lr6bdt` at `abb8c07`, unde
 [here](2026-10-19-cadence-core-postmortem.md). Two defects the runs found are already fixed and are left
 out: the P9 gate counting applied must-fix ids (`f6011df`), and no PR record without a forge (`f734888`).
 
+Filed on 19 October: A as [cadence#190](https://github.com/jtouley/cadence/issues/190), B as a comment on [cadence#153](https://github.com/jtouley/cadence/issues/153#issuecomment-6279088236), C as a comment on [cadence#70](https://github.com/jtouley/cadence/issues/70#issuecomment-6279089971).
+
 The owner reviewed the first drafts. Four drafts were dropped or redirected, and two stand:
 
 | Draft | Decision | Why |
