@@ -1,0 +1,6 @@
+{"prompt_tokens": 58880, "decision": "ok", "mode": "shadow", "source": "session", "warn_tokens": 60000, "max_tokens": 90000, "tool_use_id": "toolu_01UUzDecKbLTWVztbeV3PoQ3", "agent_id": null, "at": 1792450316.527991}
+{"prompt_tokens": 63427, "decision": "warn", "mode": "shadow", "source": "session", "warn_tokens": 60000, "max_tokens": 90000, "tool_use_id": "toolu_01UZsycysAfoKrYdmi5JB9uD", "agent_id": null, "at": 1792450561.7217574}
+{"prompt_tokens": 65927, "decision": "warn", "mode": "shadow", "source": "session", "warn_tokens": 60000, "max_tokens": 90000, "tool_use_id": "toolu_01WK1q2RPJavDJqpPHi1xkj6", "agent_id": null, "at": 1792450662.0352924}
+{"prompt_tokens": 69953, "decision": "warn", "mode": "shadow", "source": "session", "warn_tokens": 60000, "max_tokens": 90000, "tool_use_id": "toolu_016hs9X6RsJB89dKy12SxLFK", "agent_id": null, "at": 1792450746.0409155}
+{"prompt_tokens": 71755, "decision": "warn", "mode": "shadow", "source": "session", "warn_tokens": 60000, "max_tokens": 90000, "tool_use_id": "toolu_01CgS8jXJUTG2UdwiiXVqhoS", "agent_id": null, "at": 1792450876.3350086}
+{"prompt_tokens": 383269, "decision": "warn", "mode": "shadow", "source": "session", "warn_tokens": 60000, "max_tokens": 90000, "tool_use_id": "toolu_01CpsdtQwRmGfGYoQMjEWmEj", "agent_id": null, "at": 1792454111.4178789}

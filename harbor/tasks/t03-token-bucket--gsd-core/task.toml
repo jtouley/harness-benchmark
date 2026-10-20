@@ -9,7 +9,7 @@ keywords = ["harness-benchmark", "gsd-core", "T03-token-bucket"]
 task = "T03-token-bucket"
 arm = "gsd-core"
 framework_sha = "83aba44627ba43aff77588894f7b81a9a7437e75"
-lock_sha256 = "e7ee024b641002664d796cedf8f3b0119460032df8a29bf79b32f341b089fd9f"
+lock_sha256 = "7853f49ab1e2dae6d2d17b65c7398ec75ef7d0fa3934b5d27916c1267f237c02"
 
 [verifier]
 timeout_sec = 300.0

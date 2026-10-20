@@ -1,0 +1,134 @@
+{
+  "package_lines_added": 1063,
+  "tests_passed": null,
+  "tests_failed": null,
+  "new_code_coverage": null,
+  "cyclomatic_max": 19,
+  "cyclomatic_newly_over_10": [
+    "pipeline/oracle.py:main=19",
+    "pipeline/stream.py:consume=16"
+  ],
+  "cognitive_max": 33,
+  "cognitive_newly_over_15": [
+    "pipeline/oracle.py:main=18",
+    "pipeline/stream.py:consume=33"
+  ],
+  "maintainability_index": 69.2,
+  "lint_new_by_rule": {
+    "C901": 1,
+    "PLR0912": 1,
+    "PLR0913": 1,
+    "PLR0917": 1,
+    "PLR2004": 1,
+    "PLW0603": 1,
+    "PLW1510": 4,
+    "SIM114": 1,
+    "UP012": 1
+  },
+  "bug_findings_new": 0,
+  "smells_per_100_new_lines": 1.1,
+  "type_errors_new": 7,
+  "new_code_duplication": 1.1,
+  "duplication": {
+    "new_duplicated_lines": 12,
+    "new_lines": 1063,
+    "new_code_duplication": 1.1,
+    "duplicated_lines_total": 6
+  },
+  "module_coupling": {
+    "pipeline": {
+      "afferent": 0,
+      "efferent": 0,
+      "instability": null
+    },
+    "pipeline.batch": {
+      "afferent": 1,
+      "efferent": 1,
+      "instability": 0.5
+    },
+    "pipeline.check_marts": {
+      "afferent": 0,
+      "efferent": 0,
+      "instability": null
+    },
+    "pipeline.lake": {
+      "afferent": 2,
+      "efferent": 0,
+      "instability": 0.0
+    },
+    "pipeline.oracle": {
+      "afferent": 0,
+      "efferent": 1,
+      "instability": 1.0
+    },
+    "pipeline.sse": {
+      "afferent": 2,
+      "efferent": 0,
+      "instability": 0.0
+    },
+    "pipeline.stream": {
+      "afferent": 2,
+      "efferent": 2,
+      "instability": 0.5
+    },
+    "pipeline.tests": {
+      "afferent": 0,
+      "efferent": 0,
+      "instability": null
+    },
+    "pipeline.tests.fake_replay": {
+      "afferent": 1,
+      "efferent": 0,
+      "instability": 0.0
+    },
+    "pipeline.tests.stream_kill": {
+      "afferent": 0,
+      "efferent": 1,
+      "instability": 1.0
+    },
+    "pipeline.tests.test_batch": {
+      "afferent": 0,
+      "efferent": 1,
+      "instability": 1.0
+    },
+    "pipeline.tests.test_dbt_guards": {
+      "afferent": 0,
+      "efferent": 0,
+      "instability": null
+    },
+    "pipeline.tests.test_marts_published": {
+      "afferent": 0,
+      "efferent": 0,
+      "instability": null
+    },
+    "pipeline.tests.test_stream": {
+      "afferent": 0,
+      "efferent": 2,
+      "instability": 1.0
+    }
+  },
+  "gate": {
+    "tests_pass": false,
+    "new_code_coverage_at_least_80": false,
+    "no_function_newly_over_cyclomatic_10": false,
+    "no_function_newly_over_cognitive_15": false,
+    "no_new_bug_findings": true,
+    "no_new_type_errors": false,
+    "new_code_duplication_at_most_3": true
+  },
+  "gate_passed": false,
+  "tool_errors": {
+    "coverage": "uv run --quiet --no-project exited 2: ============= short test summary info ============================\nERROR pipeline/tests/test_batch.py\nERROR pipeline/tests/test_stream.py\n!!!!!!!!!!!!!!!!!!! Interrupted: 2 errors during collection !!!!!!!!!!!!!!!!!!!!\n============================== 2 errors in 0.36s ===============================\n"
+  },
+  "tools": {
+    "ruff": "ruff==0.17.0",
+    "radon": "radon==6.0.1",
+    "complexipy": "complexipy==8.0.1",
+    "mypy": "mypy==2.4.0",
+    "pytest": "pytest==9.1.1",
+    "pytest-cov": "pytest-cov==7.1.0",
+    "coverage": "coverage==7.16.2",
+    "jscpd": "jscpd@5.4.1",
+    "node": "nodejs-wheel==24.19.0"
+  }
+}

@@ -1,0 +1,6 @@
+{"tool_use_id": "toolu_01UUzDecKbLTWVztbeV3PoQ3", "stage": "plan-create", "model_slug": "plan-create", "model": "haiku", "decision": "allow", "run_id": "c86befd2-6ec7-4c02-aa2e-d1de6bf2d165", "at": 1792450316.5479422}
+{"tool_use_id": "toolu_01UZsycysAfoKrYdmi5JB9uD", "stage": "plan-review", "model_slug": "plan-review", "model": "haiku", "decision": "allow", "run_id": "c86befd2-6ec7-4c02-aa2e-d1de6bf2d165", "at": 1792450561.7407744}
+{"tool_use_id": "toolu_01WK1q2RPJavDJqpPHi1xkj6", "stage": "plan-update", "model_slug": null, "model": "haiku", "decision": "allow", "run_id": "c86befd2-6ec7-4c02-aa2e-d1de6bf2d165", "at": 1792450662.0556464}
+{"tool_use_id": "toolu_016hs9X6RsJB89dKy12SxLFK", "stage": "plan-review", "model_slug": "plan-review", "model": "haiku", "decision": "allow", "run_id": "c86befd2-6ec7-4c02-aa2e-d1de6bf2d165", "at": 1792450746.0614796}
+{"tool_use_id": "toolu_01CgS8jXJUTG2UdwiiXVqhoS", "stage": "plan-update", "model_slug": null, "model": "haiku", "decision": "allow", "run_id": "c86befd2-6ec7-4c02-aa2e-d1de6bf2d165", "at": 1792450876.3535104}
+{"tool_use_id": "toolu_01CpsdtQwRmGfGYoQMjEWmEj", "stage": "pr-review-local", "model_slug": "pr-review-local", "model": "haiku", "decision": "allow", "run_id": "c86befd2-6ec7-4c02-aa2e-d1de6bf2d165", "at": 1792454111.4375372}

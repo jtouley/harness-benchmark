@@ -1,0 +1,44 @@
+# Each analyst check, and the published table and column (or view) that answers it.
+# Downstream readers use only out/marts/.
+checks:
+  - check: 1
+    question: FY2024 net obligations per awarding agency
+    table: out/marts/mart_fy2024_monthly_county_agency/mart_fy2024_monthly_county_agency.parquet
+    columns: [awarding_agency_code, awarding_agency_name, net_obligations]
+    how: sum net_obligations by awarding_agency_code
+
+  - check: 2
+    question: The ten counties with the highest FY2024 obligations per person
+    view: out/marts/view_fy2024_county_per_person_top10/view_fy2024_county_per_person_top10.parquet
+    columns: [county_rank, county_fips, county_name, state_name, net_obligations, population, obligations_per_person]
+    how: rows ordered by county_rank, ranks 1 to 10
+
+  - check: 3
+    question: The number of awards with a net negative obligation in FY2024
+    table: out/marts/mart_fy2024_award_net/mart_fy2024_award_net.parquet
+    columns: [award_key, net_obligations, is_net_negative]
+    how: count rows where is_net_negative is true
+
+  - check: 4
+    question: For one month, county totals add up to state totals, and state totals add up to the source total
+    table: out/marts/mart_fy2024_monthly_county_agency/mart_fy2024_monthly_county_agency.parquet
+    columns: [month_start, state_code, county_fips, net_obligations]
+    how: for one month, sum by state_code and by county_fips; the total of all rows is the source total. Singular test: transform/tests/check4_county_state_source_reconcile.sql
+
+  - check: 5
+    question: For the stream, edits and net bytes per wiki for the replayed hour, split human and bot, late events included
+    view: out/marts/fct_edit/fct_edit.parquet
+    columns: [wiki, actor_type, meta_id, bytes_added]
+    how: group by wiki and actor_type; count rows for edits; sum bytes_added for net bytes. Singular test: transform/tests/fct_edit_counts_match_oracle.sql
+
+  - check: 6
+    question: For the stream, the 5-minute windows with the most edits on en.wikipedia.org (on-time edits only)
+    table: out/marts/mart_edit_window_5min/mart_edit_window_5min.parquet
+    columns: [window_start, wiki, edit_count]
+    how: filter wiki = enwiki (the dbname of en.wikipedia.org); order by edit_count descending
+
+  - check: 7
+    question: For the stream, the count of late events
+    table: out/marts/late_events/late_events.parquet
+    columns: [meta_id, window_start, watermark_before]
+    how: count rows. Singular test: transform/tests/late_events_match_oracle.sql

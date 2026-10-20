@@ -74,9 +74,12 @@ what produced each number, and the [whitepaper](../whitepaper.md) draws them tog
   commit with a local PR record stopped at the entry gate with no code (0 of 7, $0.30): the gate
   counted applied review items as open, a Cadence defect fixed from this run. A third P1 run on the fix
   went through every block, including the local PR record and five review rounds, and scored 0 of 7
-  ($0.90): its oracle map named seven views that stayed in the warehouse, unpublished. An Opus run
-  died on a host defect (a peer started in the background), now fixed in the runner. Corrected after
-  the owner's review (#55).
+  ($0.90): its oracle map named seven views that stayed in the warehouse, unpublished. A fourth P1 run
+  on the two-cycle review rule (ADR-0009) planned in ten minutes, built and published the pipeline,
+  and was cut off by the operator's shell limit during its first R1 fix round; the tree it left fails
+  every check on one unquoted colon in its oracle map (recorded, not scored). An Opus run died on a
+  host defect (a peer started in the background), now fixed in the runner. Corrected after the
+  owner's review (#55).
 - Read: [write-up](2026-10-19-pipeline-cadence-core.md), [data](2026-10-19-pipeline-cadence-core/)
 
 ## Smoke check on Harbor (18 October): no model

@@ -1,0 +1,47 @@
+{
+  "skill": "cadence",
+  "pipeline_run_id": "c86befd2-6ec7-4c02-aa2e-d1de6bf2d165",
+  "task_id": "cd-1",
+  "task_source": "branch:feature/gh-1-pipeline",
+  "task_description": "",
+  "branch": "feature/gh-1-pipeline",
+  "ticket_tokens": [
+    "1",
+    "cd-1",
+    "feature/gh-1-pipeline"
+  ],
+  "fresh_run": true,
+  "supersede_on_activate": false,
+  "superseded_paths": [],
+  "activated_at": "2026-10-19T22:51:28.026858+00:00",
+  "owner_session_id": "a08112b2-70f8-5c85-83c0-3c1d7290b3c5",
+  "orchestrator_agent_ids": [],
+  "orchestrator_source": "toplevel",
+  "host": "claude",
+  "base": "origin/main",
+  "workspace": "/tmp/claude-0/-home-user/a08112b2-70f8-5c85-83c0-3c1d7290b3c5/scratchpad/pipe/P1-cadence-core-haiku-4/repo",
+  "primary_checkout": "/tmp/claude-0/-home-user/a08112b2-70f8-5c85-83c0-3c1d7290b3c5/scratchpad/pipe/P1-cadence-core-haiku-4/repo",
+  "context_root": "/tmp/claude-0/-home-user/a08112b2-70f8-5c85-83c0-3c1d7290b3c5/scratchpad/pipe/P1-cadence-core-haiku-4/repo/.context",
+  "matching_artifacts": {},
+  "resume_slug": "activate-session",
+  "resume_block": "A1",
+  "resume_reason": "Fresh run \u2014 start at A1 (activate-session)",
+  "active_skill": "cadence",
+  "registry_version": 1,
+  "env_exports": {
+    "CURSOR_ACTIVE_SKILL": "cadence",
+    "CADENCE_TASK_ID": "cd-1",
+    "CADENCE_FRESH_RUN": "1",
+    "CADENCE_PIPELINE_RUN_ID": "c86befd2-6ec7-4c02-aa2e-d1de6bf2d165",
+    "CADENCE_HOME": "/tmp/claude-0/-home-user/a08112b2-70f8-5c85-83c0-3c1d7290b3c5/scratchpad/pipe/P1-cadence-core-haiku-4/cadence"
+  },
+  "peer_models": {
+    "plan-create": "haiku",
+    "plan-review": "haiku",
+    "pr-review-local": "haiku"
+  },
+  "lean_record_by_hook": true,
+  "worktree_key": "53e78cb1d380ada4",
+  "stop_refusals": 1,
+  "stop_refusal_slug": "draft-pr"
+}

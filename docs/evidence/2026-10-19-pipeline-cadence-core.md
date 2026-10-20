@@ -24,8 +24,8 @@ with Haiku 5.5 as orchestrator and as every peer.
   on seed 1, after it. No clean room: the file system was not isolated, and the agent's environment
   came from the host's shell with `HOME`, `CADENCE_HOME` and the two variables below overridden.
 - **Arm.** Cadence on branch `ccr-3d2e0c73-lr6bdt` (`4935e83` for the Opus runs, `b1bbdcd` for the
-  first two Haiku runs, `f734888` for the P1 rerun, `f6011df` for the third P1 run; each run's
-  `provenance.json` names its sha),
+  first two Haiku runs, `f734888` for the P1 rerun, `f6011df` for the third P1 run, `4af76ac` for the
+  fourth; each run's `provenance.json` names its sha),
   loaded with `--plugin-dir` for the session only. Config: `adapter: none`, `peer_models: {"default": "haiku"}`. The task repository got
   a `.cadence.json` that gates `pipeline/`, `engine/`, `pipelines/`, `transform/` and the `Makefile`,
   so the edit guard applies to the task's code. Prompt: the lockfile's Cadence drive prompt around the
@@ -57,6 +57,7 @@ Same results as on the laptop (15 October), on a different architecture and OS.
 | P2-cadence-core-haiku-1 | P2 | cadence-core | Haiku 5.5 | cut off: not a scored run (grader read 1/7 of the tree it left) | | yes | yes | 9 | 7,203 (host guard) | $0.65 | none (killed) |
 | P1-cadence-core-haiku-2 | P1 | cadence-core | Haiku 5.5 | 0.0 | 0/7 | no | no | 0 | 1,496 | $0.30 | $0.32 |
 | P1-cadence-core-haiku-3 | P1 | cadence-core | Haiku 5.5 | 0.0 | 0/7 | no (grader bug #49) | yes | 14 | 6,117 | $0.90 | $3.00 |
+| P1-cadence-core-haiku-4 | P1 | cadence-core | Haiku 5.5 | cut off: not a scored run (grader read 0/7 of the tree it left) | | yes | yes | 8 | 7,108 (operator's shell limit) | $0.72 | none (killed) |
 
 For comparison, the 15 October one-shots on P1 (isolated runner, Claude Code 2.1.287, regraded):
 
@@ -273,6 +274,38 @@ full `.context/` (#55):
 Peer handoffs, from the four transcripts: 55 Agent calls, every one a one-line slash command (longest
 165 characters, a path). The handoff logs under `context/handoff/` are committed.
 
+### P1-cadence-core-haiku-4 (ADR-0009: two review cycles; cut off during the R1 fix round)
+
+The fourth P1 run, on Cadence `4af76ac`, the commit that limits plan review to two cycles and routes
+mechanism gaps to tests ([ADR-0009](https://github.com/jtouley/cadence/blob/ccr-3d2e0c73-lr6bdt/docs/adr/0009-edge-cases-go-to-tests-two-review-cycles.md)).
+It is recorded, not scored: the operator's shell limit (two hours) ended the session at 00:49, 92
+seconds before the run's own guard would have, while the orchestrator was fixing the first R1 round.
+The same §5.3 rule as for the P2 run applies (#48). The grade below is what the grader read of the
+tree the agent left.
+
+The process record, which is what this run was for:
+
+| Time (UTC) | Step |
+|---|---|
+| 22:51 to 23:01 | Plan, two review cycles, two updates. Ten minutes, against 19 to 20 minutes and five cycles on the earlier runs. Cycle 2 returned three must-fix items, all tagged `[requirement without a phase]`, and five `## Tests to write` lines |
+| 23:01 to 23:55 | Seven implementation phases, each a commit. Plan-update had copied the review's test lines into the phases as `Tests from review`; the phase commits carry 15 tests, among them `test_marts_published.py` |
+| 23:55 | E4 under adapter none: the branch pushed to the local origin, the PR text at `outputs/PR.md`, the local PR record written. R1 started as a peer |
+| 23:55 to 00:49 | R1 returned `CHANGES REQUESTED` with five must-fix items, the first a real defect (the stream consumer stalls at event 15,839). The orchestrator was fixing when the session was cut |
+
+What the grader found: both builds gave the same outputs, both stream runs read the replay to the
+end, and `out/marts/` holds six published folders, among them the check views. Every check fails
+with one message: `oracle_map.yml` is not valid YAML. Three `how:` lines hold an unquoted string
+with a colon in it ("Singular test: transform/tests/…"), which YAML reads as a second mapping key.
+The file has been in that state since the phase 6 commit at 23:46. The run's own
+`test_marts_published.py` checks the six published folders by name and never reads the map, so its
+15 tests passed; the R1 round caught five other things and not this one. A diagnostic regrade with those three strings quoted (not a result) is recorded below when it lands.
+
+Tool measures: 1,063 lines added in `pipeline/`; `oracle.py:main` 19 cyclomatic and 18 cognitive,
+`stream.py:consume` 16 and 33; no new bug finding, 7 new type errors; duplication 1.1%;
+maintainability index 69; coverage not measured, as on every run. Commit replay: 8 commits, the
+largest 337 lines, median 147; the phases were committed as the work went, two to fourteen minutes
+apart. Peer calls: 6, all one-line slash commands.
+
 ### P1-cadence-core-1 (Opus, no delivery)
 
 The orchestrator activated, wrote the local ticket and called the plan-create peer with
@@ -311,12 +344,17 @@ so does `runner/claude-agent.sh`. 17 minutes, $1.96, no plan file.
    verdict `READY WITH CHANGES`, and each cycle found new must-fix items in the text the previous cycle
    added. The limit, not the reviewer, ended the loop. On P2 that cost 20 minutes and $0.15 of the
    run; on the P1 rerun, 19 minutes and most of its $0.30.
-8. **The P1 rerun died on a gate defect, not on the task.** The entry invariant counted every
+8. **Two review cycles were enough.** The fourth run, on ADR-0009, planned in ten minutes with two
+   cycles, carried the reviewer's test lines into the phases, and reached R1 with the pipeline built
+   and published. What it lost, it lost to one unquoted colon in the grader's interface file, which
+   none of its 15 tests or its first review round read with a YAML parser, and to the operator's
+   shell limit. The review loop is no longer where this arm spends its time.
+9. **The P1 rerun died on a gate defect, not on the task.** The entry invariant counted every
    `MF-n` in the review as open, including the applied ones, so no plan update could satisfy it. The
    orchestrator followed the rule (three peer runs, then a hard stop) rather than writing the mapping
    itself. Found by this run, fixed in Cadence `f6011df`. The one run that reached code (P1,
    the first Haiku run) passed the same gate because its fifth review named no earlier ids.
-9. **The full pipeline, with the local PR record and five review rounds, scored 0 of 7.** The third
+10. **The full pipeline, with the local PR record and five review rounds, scored 0 of 7.** The third
    P1 run is the process record this round was after: every block ran, R1 found nine defects and
    each was fixed with a test. It also shows what that review did not do: hold the delivery to the
    ticket's own sentences. Four rounds hardened the stream consumer against odd input while the seven
@@ -359,8 +397,9 @@ so does `runner/claude-agent.sh`. 17 minutes, $1.96, no plan file.
 ## Next
 
 - P3 needs the Docker image.
-- Rerun P1 and P2 at n = 3 in the isolated runner, on Cadence `58f0919` or later, with no time cap on
-  the harness arm (#48) and the request handed over by reference (#56).
+- Rerun P1 and P2 at n = 3 in the isolated runner, on Cadence `4af76ac` or later, with no time cap on
+  the harness arm (#48) and the request handed over by reference (#56). Two of five runs here were
+  cut off by a cap or a shell limit; nothing about this arm can be measured until that stops.
 - In Cadence: a requirement list quoted from the ticket, traced and gated to closure (the generic
   form of what the third run missed).
 - Rerun P1 in the isolated runner with the runner's new environment, n = 3, when a Docker host exists.

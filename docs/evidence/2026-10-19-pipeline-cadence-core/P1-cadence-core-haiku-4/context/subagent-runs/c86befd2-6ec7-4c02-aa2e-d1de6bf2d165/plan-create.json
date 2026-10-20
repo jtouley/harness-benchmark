@@ -1,0 +1,12 @@
+{
+  "stage": "plan-create",
+  "command": "/plan-create .context/issues/gh-1.md",
+  "pipeline_run_id": "c86befd2-6ec7-4c02-aa2e-d1de6bf2d165",
+  "status": "running",
+  "source": "PreToolUse",
+  "started_at": "2026-10-19T22:51:56.541637+00:00",
+  "completed_at": "",
+  "artifact_path": "",
+  "manifest_entry_id": "",
+  "tool_use_id": "toolu_01UUzDecKbLTWVztbeV3PoQ3"
+}

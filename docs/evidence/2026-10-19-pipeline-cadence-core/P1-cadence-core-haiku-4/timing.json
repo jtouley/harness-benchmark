@@ -1,0 +1,5 @@
+{
+ "agent_seconds": 7108,
+ "grader_seconds": 480,
+ "cut_off": "the host shell limit ended the session at 00:49, 92 s before its own 7,200 s guard"
+}

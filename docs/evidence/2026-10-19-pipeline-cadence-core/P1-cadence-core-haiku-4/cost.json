@@ -1,0 +1,17 @@
+{
+  "by_model": {
+    "claude-haiku-5-5": {
+      "input": 602,
+      "output": 2316,
+      "cache_write": 881816,
+      "cache_read": 60456563,
+      "usd": "0.7160"
+    }
+  },
+  "usd_total": "0.7160",
+  "host_reported_usd": null,
+  "num_turns": null,
+  "is_error": null,
+  "source": "token counts summed from the session transcript; the host wrote no result because the operator's shell limit ended the session (a lower bound: base rate for every token)",
+  "assistant_messages": 297
+}

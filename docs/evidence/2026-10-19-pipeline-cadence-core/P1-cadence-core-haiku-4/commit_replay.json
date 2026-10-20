@@ -1,0 +1,129 @@
+{
+ "base": "9c4e0373aa155a74c7a55785c9d82c3d5445f41c",
+ "head": "c32372422b8d1bc4b2e616e7b762e56c8c92f5d5",
+ "package": "pipeline",
+ "test_cmd": null,
+ "uncommitted_changes": false,
+ "commits": [
+  {
+   "sha": "09743a8b47f9fa04cf1f538908961b562f2ab42c",
+   "subject": "phase 1: discovery and oracle",
+   "lines_added": 225,
+   "lines_deleted": 0,
+   "complexity_added": 58,
+   "complexity_removed": 0,
+   "newly_over_10": [
+    "pipeline/oracle.py:main=17"
+   ],
+   "unparsed": [],
+   "green": null,
+   "seconds_since_previous": 1746
+  },
+  {
+   "sha": "7c5dc07bf75460787aa93df027c4280348d02ed2",
+   "subject": "phase 2: batch lake",
+   "lines_added": 168,
+   "lines_deleted": 0,
+   "complexity_added": 16,
+   "complexity_removed": 0,
+   "newly_over_10": [],
+   "unparsed": [],
+   "green": null,
+   "seconds_since_previous": 120
+  },
+  {
+   "sha": "ba3925f796fac7e72f6b4e3c8ba6c50f46f6320b",
+   "subject": "phase 3: batch star schema",
+   "lines_added": 89,
+   "lines_deleted": 0,
+   "complexity_added": 6,
+   "complexity_removed": 0,
+   "newly_over_10": [],
+   "unparsed": [],
+   "green": null,
+   "seconds_since_previous": 272
+  },
+  {
+   "sha": "b45b5013cf01e1e9968906a796b7a0f557b35df6",
+   "subject": "phase 4: batch marts and publish (question a)",
+   "lines_added": 62,
+   "lines_deleted": 0,
+   "complexity_added": 7,
+   "complexity_removed": 0,
+   "newly_over_10": [],
+   "unparsed": [],
+   "green": null,
+   "seconds_since_previous": 173
+  },
+  {
+   "sha": "08ee52d3a81a2d8576e2a90219b32318fce8a2bc",
+   "subject": "phase 5: stream consumer",
+   "lines_added": 337,
+   "lines_deleted": 0,
+   "complexity_added": 52,
+   "complexity_removed": 0,
+   "newly_over_10": [
+    "pipeline/stream.py:consume=14"
+   ],
+   "unparsed": [],
+   "green": null,
+   "seconds_since_previous": 190
+  },
+  {
+   "sha": "b767a83bd4da96ad508e2bc83a99eb9e5eb1d313",
+   "subject": "phase 6: stream models (question b)",
+   "lines_added": 114,
+   "lines_deleted": 12,
+   "complexity_added": 25,
+   "complexity_removed": 7,
+   "newly_over_10": [],
+   "unparsed": [],
+   "green": null,
+   "seconds_since_previous": 807
+  },
+  {
+   "sha": "aefc53ecf28e2390c1f876b8a5388e7c87dbbcd5",
+   "subject": "phase 7: evidence and hand-off",
+   "lines_added": 18,
+   "lines_deleted": 0,
+   "complexity_added": 0,
+   "complexity_removed": 0,
+   "newly_over_10": [],
+   "unparsed": [],
+   "green": null,
+   "seconds_since_previous": 528
+  },
+  {
+   "sha": "c32372422b8d1bc4b2e616e7b762e56c8c92f5d5",
+   "subject": "the working tree the agent left",
+   "lines_added": 117,
+   "lines_deleted": 55,
+   "complexity_added": 11,
+   "complexity_removed": 0,
+   "newly_over_10": [],
+   "unparsed": [],
+   "green": null,
+   "seconds_since_previous": 3413
+  }
+ ],
+ "summary": {
+  "commits": 8,
+  "measurable": true,
+  "largest_commit_lines": 337,
+  "median_commit_lines": 147.0,
+  "total_lines_changed": 1197,
+  "largest_commit_complexity_added": 58,
+  "median_commit_complexity_added": 13.5,
+  "unparsed_commits": 0,
+  "green_share": null,
+  "cleanup_commits": 0,
+  "complexity_added_total": 175,
+  "complexity_removed_total": 7,
+  "seconds_base_to_head": 7249,
+  "final": {
+   "functions": 61,
+   "total_complexity": 168,
+   "functions_over_10": 2
+  }
+ }
+}

@@ -1,0 +1,10 @@
+c323724 the working tree the agent left
+aefc53e phase 7: evidence and hand-off
+b767a83 phase 6: stream models (question b)
+08ee52d phase 5: stream consumer
+b45b501 phase 4: batch marts and publish (question a)
+ba3925f phase 3: batch star schema
+7c5dc07 phase 2: batch lake
+09743a8 phase 1: discovery and oracle
+9c4e037 task repository: gate the pipeline code for Cadence
+e1091a8 P1 skeleton
