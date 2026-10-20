@@ -86,6 +86,7 @@ case "$AGENT_TIMEOUT" in *[!0-9]*) die "--agent-timeout must be a whole number o
   die "--agent-timeout 0 is for a harness arm; a one-shot keeps a guard cap (criteria v2 section 5.3)"
 case "$AGENT_BACKSTOP" in ''|*[!0-9]*) die "--agent-backstop must be a whole number of seconds" ;; esac
 [ -z "$MAX_BUDGET_USD" ] || [[ "$MAX_BUDGET_USD" =~ ^[0-9]+(\.[0-9]+)?$ ]] || die "--max-budget-usd must be a number"
+AGENT_TIMEOUT=$((10#$AGENT_TIMEOUT)) AGENT_BACKSTOP=$((10#$AGENT_BACKSTOP))  # 00 is 0 (entrypoint compares numbers)
 [ -n "$PLUGIN" ] || { [ "$AGENT_BACKSTOP" -eq 0 ] && [ -z "$MAX_BUDGET_USD" ]; } ||
   die "--agent-backstop and --max-budget-usd are for a harness arm (--plugin-dir); a one-shot has its guard cap"
 if [ -e "$OUT" ] && [ -n "$(ls -A "$OUT")" ]; then die "--out exists and is not empty: $OUT"; fi

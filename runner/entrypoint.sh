@@ -85,7 +85,7 @@ agent_vars=(PATH=/home/agent/.local/bin:/usr/local/bin:/usr/bin:/bin "${toolchai
 
 # A one-shot stops at its guard cap; a harness arm (timeout 0) only at its backstop, if it has one.
 agent_backstop="${HB_AGENT_BACKSTOP:-0}"
-agent_cap=$([ "$agent_timeout" = 0 ] && echo "$agent_backstop" || echo "$agent_timeout")
+agent_cap=$([ "$agent_timeout" -eq 0 ] 2>/dev/null && echo "$agent_backstop" || echo "$agent_timeout")
 limit_words=$(agent_limit "$agent_cap") || { log "HB_AGENT_TIMEOUT or HB_AGENT_BACKSTOP is not a whole number: $agent_cap"; exit 94; }
 mapfile -t limit <<<"$limit_words"
 [ -n "$limit_words" ] || limit=()

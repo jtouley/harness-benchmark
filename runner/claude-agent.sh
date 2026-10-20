@@ -6,7 +6,8 @@ args=(-p "$(cat /trial/prompt.txt)" --model "${HB_MODEL:?HB_MODEL is required}"
   --output-format stream-json --verbose)
 if [ -n "$(ls -A /trial/plugin 2>/dev/null)" ]; then args+=(--plugin-dir /trial/plugin); fi
 # A harness arm's dollar backstop (criteria v2 section 5.3), on Claude Code's own cost figure. Unset after
-# reading, so the agent's tools cannot see it: the arm is not told its limit.
+# reading so it is not in the environment the agent's tools inherit. It is still on Claude Code's command
+# line, which a process of the same user can read: the arm is not told its limit, but can find it.
 budget="${HB_MAX_BUDGET_USD:-}"; unset HB_MAX_BUDGET_USD
 if [ -n "$budget" ]; then args+=(--max-budget-usd "$budget"); fi
 exec claude "${args[@]}"

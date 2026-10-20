@@ -86,7 +86,7 @@ def test_only_a_one_shot_has_a_guard_cap_and_only_a_harness_a_backstop(args, mes
 
 # The lines of entrypoint.sh that turn HB_AGENT_TIMEOUT into the agent's command prefix (exit 94: not a number).
 ENTRYPOINT_LIMIT_LINES = [
-    'agent_cap=$([ "$agent_timeout" = 0 ] && echo "$agent_backstop" || echo "$agent_timeout")',
+    'agent_cap=$([ "$agent_timeout" -eq 0 ] 2>/dev/null && echo "$agent_backstop" || echo "$agent_timeout")',
     'limit_words=$(agent_limit "$agent_cap") || { log "HB_AGENT_TIMEOUT or HB_AGENT_BACKSTOP is not a whole number: $agent_cap"; exit 94; }',
     'mapfile -t limit <<<"$limit_words"',
     '[ -n "$limit_words" ] || limit=()',
@@ -106,7 +106,8 @@ def test_agent_limit_gives_a_cap_only_for_a_positive_whole_number(seconds, words
     assert (r.returncode, " ".join(r.stdout.split())) == (rc, words)
 
 
-@pytest.mark.parametrize("timeout, backstop, rc", [("1", "0", 124), ("0", "1", 124), ("0", "0", 0)])
+@pytest.mark.parametrize("timeout, backstop, rc", [("1", "0", 124), ("0", "1", 124), ("00", "1", 124),
+                                                   ("0", "0", 0)])
 def test_the_agent_limit_stops_at_the_cap_or_the_backstop(timeout, backstop, rc):
     """The same prefix entrypoint.sh puts before the agent: a 1 s one-shot cap, or a 1 s harness backstop,
     stops a 2 s session; neither lets it end."""
@@ -402,10 +403,15 @@ def test_default_agent_starts_claude_code_with_the_arms_plugin_and_no_key(image,
     grader.chmod(0o755)
     env = {k: v for k, v in os.environ.items() if k != "ANTHROPIC_API_KEY"}
     out = tmp_path / "out"
-    sh(str(RUN_TRIAL), "--repo", str(repo), "--prompt", str(prompt), "--grader", str(grader),
-       "--plugin-dir", str(ROOT / "harnesses" / "reviewloop"), "--model", "claude-haiku-5-5",
-       "--out", str(out), "--image", image, env=env, timeout=900)  # the arm has no cap; the test does
-    assert json.loads((out / "timing.json").read_text())["agent_timeout"] == 0  # a harness arm: no cap
+    name = f"hb-test-plugin-{uuid.uuid4().hex[:8]}"
+    try:  # the runner's own backstop bounds the session, so its cleanup trap still runs
+        sh(str(RUN_TRIAL), "--repo", str(repo), "--prompt", str(prompt), "--grader", str(grader),
+           "--plugin-dir", str(ROOT / "harnesses" / "reviewloop"), "--model", "claude-haiku-5-5",
+           "--agent-backstop", "120", "--name", name, "--out", str(out), "--image", image, env=env, timeout=900)
+    finally:
+        sh("docker", "rm", "-f", "-v", name, check=False)
+    timing = json.loads((out / "timing.json").read_text())
+    assert (timing["agent_timeout"], timing["agent_backstop"]) == (0, 120)  # a harness arm: a backstop, no cap
     events = [json.loads(line) for line in (out / "transcript.jsonl").read_text().splitlines()]
     init = events[0]
     assert init["type"] == "system" and init["model"] == "claude-haiku-5-5"

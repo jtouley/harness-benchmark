@@ -112,29 +112,40 @@ def test_a_harness_run_at_its_backstop_is_attempted_and_not_delivered(tmp_path, 
     assert row["outcome"] == "backstop" and row["counted"] is True and row["counts_as_model_failure"] is True
 
 
-def _harness_rows(seconds, costs, arm="cadence-core", outcome="graded"):
-    return [{"counted": True, "outcome": outcome, "arm": arm, "agent_seconds": s, "host_cost_usd": c}
-            for s, c in zip(seconds, costs)]
+def _harness_rows(seconds, costs, harness=True, outcome="graded"):
+    return [{"counted": True, "outcome": outcome, "harness": harness, "agent_seconds": s, "host_cost_usd": c,
+             "run_path": f"runs/r{i}"} for i, (s, c) in enumerate(zip(seconds, costs))]
 
 
 def test_the_backstop_is_the_mean_plus_two_standard_deviations_of_time_and_cost():
     rows = _harness_rows([100, 200, 300, 400, 500], [1.0, 2.0, 3.0, 4.0, 5.0])
-    rows += _harness_rows([99999] * 3, [99.0] * 3, arm="one-shot")  # not a harness run
+    rows += _harness_rows([99999] * 3, [99.0] * 3, harness=False)  # a one-shot, a reference or a skeleton run
     rows += _harness_rows([99999], [99.0], outcome="backstop")  # did not end on its own
     backstop = pt.backstop_from_rows(rows, min_runs=5)
     # mean 300, sample SD 158.11 -> 616.2 -> 617 s; mean 3.0, SD 1.5811 -> 6.16
     assert (backstop["seconds"], backstop["usd"], backstop["measured"]["n"]) == (617, 6.16, 5)
+    assert backstop["from_runs"] == [f"runs/r{i}" for i in range(5)]  # only the runs used
+
+
+def test_reference_and_skeleton_trials_are_not_harness_runs():
+    assert not pt.is_harness({"mode": "reference", "arm": "reference"})
+    assert not pt.is_harness({"mode": "skeleton", "arm": "skeleton"})
+    assert not pt.is_harness({"mode": "agent", "arm": "one-shot"})
+    assert pt.is_harness({"mode": "agent", "arm": "cadence-core"})  # an older trial.json
+    assert pt.is_harness({"harness": True, "mode": "regrade", "arm": "regrade"})
 
 
 def test_a_backstop_needs_enough_runs_and_drops_a_cost_it_cannot_measure():
     with pytest.raises(ValueError, match="needs 5"):
         pt.backstop_from_rows(_harness_rows([1, 2, 3, 4], [1, 1, 1, 1]), min_runs=5)
+    with pytest.raises(ValueError, match="needs 2"):  # a standard deviation needs two, whatever min_runs says
+        pt.backstop_from_rows(_harness_rows([1], [1]), min_runs=1)
     assert pt.backstop_from_rows(_harness_rows([1, 2, 3, 4, 5], [1, 1, None, 1, 1]), min_runs=5)["usd"] is None
 
 
 def test_the_backstop_command_writes_the_class(tmp_path, monkeypatch):
     caps = tmp_path / "caps.json"
-    caps.write_text(json.dumps({"agent_timeout": 7200, "tasks": {},
+    caps.write_text(json.dumps({"agent_timeout": 7200, "tasks": {"P1": {"class": "lift"}},
                                 "harness_backstop": {"min_runs": 2, "default": {"seconds": 86400, "usd": None},
                                                      "classes": {}}}))
     monkeypatch.setattr(pt, "CAPS", caps)
@@ -143,7 +154,39 @@ def test_the_backstop_command_writes_the_class(tmp_path, monkeypatch):
             for i, (s, c) in enumerate([(100.0, 1.0), (300.0, 3.0)])]
     assert pt.main(["backstop", "lift", *map(str, runs)]) == 0
     lift = json.loads(caps.read_text())["harness_backstop"]["classes"]["lift"]
-    assert lift["seconds"] == 483 and lift["usd"] == 4.83 and lift["from_runs"] == ["run", "run"]
+    assert lift["seconds"] == 483 and lift["usd"] == 4.83 and lift["tasks"] == ["P1"]
+    assert lift["from_runs"] == [str(r) for r in runs]
+
+
+def test_the_backstop_command_refuses_a_class_no_task_has(tmp_path, monkeypatch):
+    caps = tmp_path / "caps.json"
+    caps.write_text(json.dumps({"agent_timeout": 7200, "tasks": {"P1": {}},
+                                "harness_backstop": {"min_runs": 2, "default": {}, "classes": {}}}))
+    monkeypatch.setattr(pt, "CAPS", caps)
+    with pytest.raises(SystemExit, match="no task in caps.json has class 'lift'"):
+        pt.main(["backstop", "lift", str(tmp_path)])
+
+
+def test_a_harness_run_stopped_at_the_runners_guard_cap_is_an_infrastructure_error(tmp_path):
+    """Section 5.3 gives a harness no guard cap; a cap the runner recorded and applied is not the arm's."""
+    run = write_run(tmp_path, timing={"agent_exit": 124, "agent_seconds": 7203.0, "agent_timeout": 7200},
+                    session=["2026-10-19T04:46:00.000Z", "2026-10-19T06:46:00.000Z"], meta={"arm": "cadence-core"})
+    row = pt.summarize(run, PRICING)
+    assert row["outcome"] == "infra_error" and row["counted"] is False
+
+
+def test_a_harness_session_idle_long_before_its_backstop_is_a_stall(tmp_path):
+    run = write_run(tmp_path, timing={"agent_exit": 124, "agent_seconds": 9001.0, "agent_timeout": 0,
+                                      "agent_backstop": 9000},
+                    session=["2026-10-20T10:00:00.000Z", "2026-10-20T10:20:00.000Z"], meta={"arm": "cadence-core"})
+    assert pt.summarize(run, PRICING)["outcome"] == "api_stall"
+
+
+def test_a_regrade_of_an_infrastructure_error_is_not_counted(tmp_path):
+    src = write_run(tmp_path / "a", meta={"arm": "cadence-core", "infra_error": "host guard"})
+    regrade = write_run(tmp_path / "b", meta={"mode": "regrade", "regrade_of": str(src), "arm": "regrade"})
+    row = pt.summarize(regrade, PRICING)
+    assert row["outcome"] == "infra_error" and row["counted"] is False
 
 
 def test_a_one_shot_killed_before_its_cap_is_graded_not_a_guard_cap_run(tmp_path):

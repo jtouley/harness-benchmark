@@ -110,31 +110,45 @@ def _session_span(run: Path) -> float | None:
     return (max(stamps) - min(stamps)).total_seconds() if stamps else None
 
 
-def outcome(run: Path, result: dict, timing: dict, arm: str = "one-shot") -> str:
+def is_harness(meta: dict) -> bool:
+    """A trial of a harness arm. Recorded by run_trial; for an older trial, an agent run with a named arm
+    (reference, skeleton and regrade trials have no agent of their own)."""
+    if "harness" in meta:
+        return bool(meta["harness"])
+    return meta.get("mode", "agent") == "agent" and meta.get("arm", "one-shot") != "one-shot"
+
+
+def outcome(run: Path, result: dict, timing: dict, harness: bool = False) -> str:
     """graded, api_stall (not a model failure), guard_cap or backstop (attempted, not delivered), or
     infra_error.
 
     A one-shot that ran to its guard cap is a guard_cap run; a harness arm that ran to its backstop (the
-    time, or Claude Code's spend limit) is a backstop run (criteria v2 section 5.3). Any other exit status
-    is the arm's own: a session that crashed or killed itself is graded on what it left. An exit status
-    cannot tell a kill from outside (a lost container, an operator) from the arm's own, so an
-    infrastructure error is never inferred from it: it is a run with no timing record, or one marked with
-    the `infra` command."""
+    time, or Claude Code's spend limit) is a backstop run (criteria v2 section 5.3). A session idle long
+    before either limit was stalled on the API. A harness session the runner stopped at a guard cap,
+    which section 5.3 does not give a harness, is an infrastructure error. Any other exit status is the
+    arm's own: a session that crashed or killed itself is graded on what it left. An exit status cannot
+    tell a kill from outside (a lost container, an operator) from the arm's own, so that infrastructure
+    error is not inferred: it is a run with no timing record, or one marked with the `infra` command."""
     if not timing:
         return "infra_error"
     if result.get("is_error") and API_ERROR.search(str(result.get("result", ""))):
         return "api_stall"
-    if arm != "one-shot":
-        backstop = timing.get("agent_backstop") or 0
-        at_time = timing.get("agent_exit") in (124, 137) and backstop and timing.get("agent_seconds", 0) >= backstop
-        return "backstop" if at_time or result.get("subtype") == "error_max_budget_usd" else "graded"
+    seconds, rc = timing.get("agent_seconds", 0), timing.get("agent_exit")
     cap = timing.get("agent_timeout") or 0
-    if arm == "one-shot" and timing.get("agent_exit") in (124, 137) and cap and timing.get("agent_seconds", 0) >= cap:
-        span = _session_span(run)
-        if span is not None and timing.get("agent_seconds", 0) - span > STALL_IDLE_SECONDS:
-            return "api_stall"
-        return "guard_cap"
-    return "graded"
+    backstop = (timing.get("agent_backstop") or 0) if harness else 0
+
+    def stopped_at(limit: float) -> bool:
+        return bool(limit) and rc in (124, 137) and seconds >= limit
+
+    over_budget = harness and result.get("subtype") == "error_max_budget_usd"
+    if not (stopped_at(cap) or stopped_at(backstop) or over_budget):
+        return "graded"
+    span = _session_span(run)
+    if span is not None and seconds - span > STALL_IDLE_SECONDS:
+        return "api_stall"
+    if harness and stopped_at(cap):
+        return "infra_error"
+    return "backstop" if harness else "guard_cap"
 
 
 def summarize(run: Path, pricing: dict) -> dict:
@@ -144,12 +158,15 @@ def summarize(run: Path, pricing: dict) -> dict:
         src = Path(meta["regrade_of"])
         src = src if src.is_absolute() else run.parent / src.name
         src_meta, result, src_timing = _load(src / "trial.json"), _load(src / "result.json"), _load(src / "timing.json")
-        meta = {**meta, "model": src_meta.get("model"), "arm": src_meta.get("arm", "one-shot")}
+        meta = {**meta, "model": src_meta.get("model"), "arm": src_meta.get("arm", "one-shot"),
+                "harness": is_harness(src_meta)}
+        if src_meta.get("infra_error") and not meta.get("infra_error"):  # a regrade is no result either
+            meta["infra_error"] = src_meta["infra_error"]
         timing = {**src_timing, "grader_seconds": timing.get("grader_seconds", 0)}
     cost, tokens = cost_and_tokens(result, pricing, meta.get("model"))
     kind = ("void" if meta.get("void") else "diagnostic" if meta.get("diagnostic")
             else "infra_error" if meta.get("infra_error")
-            else outcome(run, result, timing, meta.get("arm", "one-shot")))
+            else outcome(run, result, timing, is_harness(meta)))
     builds = grade.get("build") or []
     first = builds[0]["seconds"] if builds else None
     wall = round(timing.get("agent_seconds", 0) + timing.get("grader_seconds", 0), 1) if timing else None
@@ -164,7 +181,7 @@ def summarize(run: Path, pricing: dict) -> dict:
         "reward": reward, "checks": f"{grade.get('passed', 0)}/{grade.get('total', 7)}",
         "idempotent": grade.get("idempotent"), "stream_ok": grade.get("stream_ok"), "error": grade.get("error"),
         "tokens": tokens, "cost_usd": format(cost.quantize(Decimal("0.000001")), "f"),
-        "host_cost_usd": result.get("total_cost_usd"), "arm": meta.get("arm", "one-shot"),
+        "host_cost_usd": result.get("total_cost_usd"), "arm": meta.get("arm", "one-shot"), "harness": is_harness(meta),
         "num_turns": result.get("num_turns"),
         "agent_seconds": timing.get("agent_seconds"), "grader_seconds": timing.get("grader_seconds"),
         "first_build_seconds": first, "wall_seconds": wall,
@@ -215,15 +232,18 @@ def caps_from_measurements(grades: list[dict]) -> dict:
 def backstop_from_rows(rows: list[dict], min_runs: int) -> dict:
     """A task class's harness backstop (criteria v2 section 5.3): the mean plus 2 standard deviations of
     the wall time and of Claude Code's own cost of counted harness runs that ended on their own. The
-    seconds round up; a cost is left out when any run lacks Claude Code's figure."""
-    used = [r for r in rows if r["counted"] and r["outcome"] == "graded" and r["arm"] != "one-shot"]
+    seconds round up; a cost is left out when any run lacks Claude Code's figure. `from_runs` names the
+    runs used."""
+    min_runs = max(min_runs, 2)  # a standard deviation needs two
+    used = [r for r in rows if r["counted"] and r["outcome"] == "graded" and r["harness"]]
     if len(used) < min_runs:
         raise ValueError(f"{len(used)} harness runs that ended on their own; the backstop needs {min_runs}")
     seconds = [r["agent_seconds"] for r in used]
     costs = [r["host_cost_usd"] for r in used]
     backstop = {"seconds": math.ceil(statistics.mean(seconds) + 2 * statistics.stdev(seconds)), "usd": None,
                 "measured": {"n": len(used), "seconds_mean": round(statistics.mean(seconds), 1),
-                             "seconds_sd": round(statistics.stdev(seconds), 1)}}
+                             "seconds_sd": round(statistics.stdev(seconds), 1)},
+                "from_runs": [r["run_path"] for r in used]}
     if all(isinstance(c, (int, float)) for c in costs):
         backstop["usd"] = round(statistics.mean(costs) + 2 * statistics.stdev(costs), 2)
         backstop["measured"].update(usd_mean=round(statistics.mean(costs), 4), usd_sd=round(statistics.stdev(costs), 4))
@@ -300,7 +320,7 @@ def run_trial(task: str, out: Path, *, mode: str, model: str | None, plugin_dir:
         meta = {"task": task, "mode": mode, "model": model if mode == "agent" else None,
                 "arm": plugin_dir.name if harness else "one-shot" if mode == "agent" else mode,
                 "image": task_caps["image"], "agent_timeout": agent_timeout or None,
-                "backstop_seconds": backstop["seconds"] or None, "backstop_usd": backstop.get("usd"),
+                "harness": harness, "backstop_seconds": backstop["seconds"] or None, "backstop_usd": backstop.get("usd"),
                 "backstop_source": backstop_source,
                 "grader_timeout": task_caps["grader_timeout"], "grader_deadline": task_caps.get("grader_deadline"),
                 "replay_seed": replay_seed, "regrade_of": str(regrade_of) if regrade_of else None,
@@ -383,11 +403,15 @@ def main(argv: list[str] | None = None) -> int:
     pricing = json.loads(PRICING.read_text(encoding="utf-8"))
     if args.cmd == "backstop":
         hb = caps["harness_backstop"]
+        tasks = sorted(t for t, c in caps["tasks"].items() if c.get("class") == args.task_class)
+        if not tasks:
+            sys.exit(f"no task in {CAPS.name} has class {args.task_class!r}: set tasks.<task>.class first "
+                     "(criteria v2 section 3.2), or the backstop is never applied")
         try:
             backstop = backstop_from_rows(summarize_all(args.runs, pricing), hb["min_runs"])
         except ValueError as exc:
             sys.exit(str(exc))
-        hb["classes"][args.task_class] = {**backstop, "from_runs": [run.name for run in args.runs]}
+        hb["classes"][args.task_class] = {**backstop, "tasks": tasks}
         CAPS.write_text(json.dumps(caps, indent=1) + "\n", encoding="utf-8")
         print(json.dumps(hb["classes"][args.task_class], indent=1))
         return 0
