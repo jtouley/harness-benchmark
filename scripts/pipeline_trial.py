@@ -137,8 +137,8 @@ def outcome(run: Path, result: dict, timing: dict, harness: bool = False) -> str
     cap = timing.get("agent_timeout") or 0
     backstop = (timing.get("agent_backstop") or 0) if harness else 0
 
-    def stopped_at(limit: float) -> bool:
-        return bool(limit) and rc in (124, 137) and seconds >= limit
+    def stopped_at(limit: float) -> bool:  # 5 s of slack: agent_seconds is wall-clock time, rounded
+        return bool(limit) and rc in (124, 137) and seconds >= limit - 5
 
     if harness and result.get("subtype") == "error_max_budget_usd":
         return "backstop"  # Claude Code's spend limit: spent, not stalled
@@ -185,7 +185,7 @@ def summarize(run: Path, pricing: dict) -> dict:
         "idempotent": grade.get("idempotent"), "stream_ok": grade.get("stream_ok"), "error": grade.get("error"),
         "tokens": tokens, "cost_usd": format(cost.quantize(Decimal("0.000001")), "f"),
         "host_cost_usd": result.get("total_cost_usd"), "arm": meta.get("arm", "one-shot"), "harness": is_harness(meta),
-        "backstop_source": meta.get("backstop_source"), "agent_exit_status": timing.get("agent_exit"),
+        "backstop_source": meta.get("backstop_source"),
         "num_turns": result.get("num_turns"),
         "agent_seconds": timing.get("agent_seconds"), "grader_seconds": timing.get("grader_seconds"),
         "first_build_seconds": first, "wall_seconds": wall,
@@ -245,7 +245,7 @@ def backstop_from_rows(rows: list[dict], min_runs: int, tasks: list[str] | None 
     min_runs = max(min_runs, 2)  # a standard deviation needs two
     used = list({Path(r["run_path"]).resolve(): r for r in rows
                  if r["counted"] and r["outcome"] == "graded" and r["harness"]
-                 and isinstance(r.get("agent_exit_status"), int) and 0 <= r["agent_exit_status"] < 124
+                 and isinstance(r.get("agent_exit"), int) and 0 <= r["agent_exit"] < 124
                  and r.get("backstop_source") == "default" and (tasks is None or r["task"] in tasks)}.values())
     if len(used) < min_runs:
         raise ValueError(f"{len(used)} harness runs that ended on their own; the backstop needs {min_runs}")
@@ -265,7 +265,8 @@ def harness_backstop(caps: dict, task: str) -> tuple[dict, str]:
     """The backstop for a harness trial of `task`, and where it came from: its class's, or the default."""
     hb = caps.get("harness_backstop") or {}
     cls = caps["tasks"][task].get("class")
-    if cls and cls in hb.get("classes", {}):
+    # Only for the tasks it was measured on: a task that joins the class later waits for a new backstop.
+    if cls and task in hb.get("classes", {}).get(cls, {}).get("tasks", []):
         return hb["classes"][cls], f"class {cls}"
     return hb.get("default") or {"seconds": 0, "usd": None}, "default"
 

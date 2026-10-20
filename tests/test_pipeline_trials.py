@@ -114,7 +114,7 @@ def test_a_harness_run_at_its_backstop_is_attempted_and_not_delivered(tmp_path, 
 
 def _harness_rows(seconds, costs, harness=True, outcome="graded", task="P1", source="default", rc=0, name="r"):
     return [{"counted": True, "outcome": outcome, "harness": harness, "agent_seconds": s, "host_cost_usd": c,
-             "run_path": f"runs/{name}{i}", "task": task, "backstop_source": source, "agent_exit_status": rc}
+             "run_path": f"runs/{name}{i}", "task": task, "backstop_source": source, "agent_exit": rc}
             for i, (s, c) in enumerate(zip(seconds, costs))]
 
 
@@ -255,7 +255,7 @@ def test_a_regrade_keeps_its_source_trials_arm(tmp_path):
     assert pt.summarize(regrade, PRICING)["outcome"] == "guard_cap"
 
 
-def _run_trial_cmd(tmp_path, monkeypatch, plugin_dir, caps):
+def _run_trial_cmd(tmp_path, monkeypatch, plugin_dir, caps, mode="agent", regrade_of=None):
     import sys
     import types
 
@@ -269,8 +269,10 @@ def _run_trial_cmd(tmp_path, monkeypatch, plugin_dir, caps):
     monkeypatch.setitem(sys.modules, "pipetask", pipetask)
     calls = []
     monkeypatch.setattr(pt.subprocess, "call", lambda cmd, env=None: calls.append(cmd) or 0)
+    monkeypatch.setattr(pt, "repo_from_saved", lambda saved, out: out.mkdir(parents=True) or out)
     out = tmp_path / "out"
-    pt.run_trial("P1", out, mode="agent", model="claude-haiku-5-5", plugin_dir=plugin_dir, replay_seed=0, caps=caps)
+    pt.run_trial("P1", out, mode=mode, model="claude-haiku-5-5" if mode == "agent" else None, plugin_dir=plugin_dir,
+                 replay_seed=0, caps=caps, regrade_of=regrade_of)
     return calls[0], json.loads((out / "trial.json").read_text())
 
 
@@ -280,26 +282,27 @@ def _flag(cmd, name):
 
 CAPS = {"agent_timeout": 7200, "tasks": {"P1": {"image": "img", "grader_timeout": 900}},
         "harness_backstop": {"min_runs": 5, "default": {"seconds": 86400, "usd": None},
-                             "classes": {"lift": {"seconds": 9000, "usd": 4.5}}}}
+                             "classes": {"lift": {"seconds": 9000, "usd": 4.5, "tasks": ["P1"]}}}}
+
+
+def test_a_class_backstop_applies_only_to_the_tasks_it_was_measured_on():
+    caps = json.loads(json.dumps(CAPS))
+    caps["tasks"]["P2"] = {"image": "img", "grader_timeout": 900, "class": "lift"}  # joined the class later
+    assert pt.harness_backstop(caps, "P2") == ({"seconds": 86400, "usd": None}, "default")
+
+
+def test_a_kill_a_moment_short_of_the_cap_on_the_wall_clock_is_still_the_cap(tmp_path):
+    run = write_run(tmp_path, timing={"agent_exit": 124, "agent_seconds": 7199.9},
+                    session=["2026-10-15T10:00:00.000Z", "2026-10-15T11:59:00.000Z"])
+    assert pt.summarize(run, PRICING)["outcome"] == "guard_cap"
 
 
 def test_a_regrade_of_a_harness_trial_is_recorded_as_one_but_keeps_the_runners_cap(tmp_path, monkeypatch):
-    import sys
-    import types
-
     src = write_run(tmp_path / "src", meta={"arm": "cadence-core", "harness": True})
     (src / "repo").mkdir()
-    monkeypatch.setattr(pt, "repo_from_saved", lambda saved, out: out.mkdir(parents=True) or out)
-    pipetask = types.ModuleType("pipetask")
-    pipetask.assemble = types.SimpleNamespace(assemble=lambda *a, **k: None)
-    pipetask.bundle = types.SimpleNamespace(bundle=lambda dist: None)
-    monkeypatch.setitem(sys.modules, "pipetask", pipetask)
-    calls = []
-    monkeypatch.setattr(pt.subprocess, "call", lambda cmd, env=None: calls.append(cmd) or 0)
-    out = tmp_path / "out"
-    pt.run_trial("P1", out, mode="regrade", model=None, plugin_dir=None, replay_seed=0, caps=CAPS, regrade_of=src)
-    assert json.loads((out / "trial.json").read_text())["harness"] is True
-    assert _flag(calls[0], "--agent-timeout") == "7200"  # the stub agent is not a harness session
+    cmd, meta = _run_trial_cmd(tmp_path, monkeypatch, None, CAPS, mode="regrade", regrade_of=src)
+    assert meta["harness"] is True
+    assert _flag(cmd, "--agent-timeout") == "7200"  # the stub agent is not a harness session
 
 
 def test_a_one_shot_gets_the_guard_cap_and_no_backstop(tmp_path, monkeypatch):

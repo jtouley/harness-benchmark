@@ -63,6 +63,7 @@ def test_bad_arguments_fail_before_docker_is_called(args, tmp_path):
     (["--agent-backstop", "600"], "are for a harness arm (--plugin-dir)"),
     (["--max-budget-usd", "2.5"], "are for a harness arm (--plugin-dir)"),
     (["--plugin-dir", "PLUGIN", "--agent-backstop", "10m"], "--agent-backstop must be a whole number of seconds"),
+    (["--plugin-dir", "PLUGIN", "--agent-backstop", "0"], "a harness arm always has a backstop"),
     (["--plugin-dir", "PLUGIN", "--max-budget-usd", "$5"], "--max-budget-usd must be a number"),
 ])
 def test_only_a_one_shot_has_a_guard_cap_and_only_a_harness_a_backstop(args, message, tmp_path):
@@ -112,6 +113,8 @@ def test_the_limit_stops_a_session_at_the_cap_or_the_backstop(timeout, backstop,
 def test_entrypoint_starts_the_agent_under_agent_limit():
     text = (RUNNER / "entrypoint.sh").read_text()
     assert re.search(r'^agent_limit "\$agent_timeout" "\$agent_backstop" \|\|', text, re.M)
+    # checked before the inner daemon starts, so a bad value fails at once
+    assert text.index('agent_limit "$agent_timeout"') < text.index("# 1. The trial's own Docker daemon")
     assert re.search(r'^ exec "\$\{limit\[@\]\}" setpriv', text, re.M)
 
 

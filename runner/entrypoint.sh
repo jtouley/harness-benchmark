@@ -45,6 +45,11 @@ HB_API_KEY=""
 IFS= read -r -t 10 HB_API_KEY || true
 exec </dev/null
 
+# Checked before anything starts, so a bad value costs nothing.
+agent_timeout="${HB_AGENT_TIMEOUT:-3600}" agent_backstop="${HB_AGENT_BACKSTOP:-0}"
+agent_limit "$agent_timeout" "$agent_backstop" ||
+  { log "HB_AGENT_TIMEOUT or HB_AGENT_BACKSTOP is not a whole number: $agent_timeout, $agent_backstop"; exit 94; }
+
 # 1. The trial's own Docker daemon. Its storage is the container's anonymous volume.
 log "starting the inner Docker daemon"
 dind dockerd --host=unix:///var/run/docker.sock >"$OUT/dockerd.log" 2>&1 &
@@ -84,14 +89,10 @@ chown -R agent:agent /trial/repo "$OUT/agent" /home/agent
 AGENT=/opt/hb/claude-agent.sh
 [ -f /trial/agent.sh ] && { chmod 0755 /trial/agent.sh; AGENT=/trial/agent.sh; log "agent command replaced by /trial/agent.sh"; }
 
-agent_timeout="${HB_AGENT_TIMEOUT:-3600}"
 agent_vars=(PATH=/home/agent/.local/bin:/usr/local/bin:/usr/bin:/bin "${toolchain[@]}" HOME=/home/agent
   USER=agent TERM=dumb LANG=C.UTF-8 DISABLE_AUTOUPDATER=1 HB_OUTPUTS="$OUT/agent"
   HB_MODEL="${HB_MODEL:-}" HB_PERMISSION_MODE="${HB_PERMISSION_MODE:-auto}" HB_MAX_BUDGET_USD="${HB_MAX_BUDGET_USD:-}")
 
-agent_backstop="${HB_AGENT_BACKSTOP:-0}"
-agent_limit "$agent_timeout" "$agent_backstop" ||
-  { log "HB_AGENT_TIMEOUT or HB_AGENT_BACKSTOP is not a whole number: $agent_timeout, $agent_backstop"; exit 94; }
 log "agent start (model ${HB_MODEL:-unset}, stops after $([ "$agent_cap" -gt 0 ] && echo "${agent_cap}s" || echo never))"
 t0=$(now)
 # The subshell drops every inherited variable and exports only the agent's. `export` is a builtin, so

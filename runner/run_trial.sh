@@ -24,7 +24,7 @@
 #                  (criteria v2 section 5.3): with --plugin-dir the default is 0, which means none, and a
 #                  positive value is refused; without it, 0 is refused
 #   --agent-backstop  harness arms only: seconds after which the session is stopped as a runaway (criteria
-#                  v2 section 5.3, the backstop; default none)
+#                  v2 section 5.3, the backstop; default 86400)
 #   --max-budget-usd  harness arms only: Claude Code's own spend limit for the session (its --max-budget-usd)
 #   --agent-cmd    replaces Claude Code with this script (tests only; it runs as the agent would)
 #
@@ -40,7 +40,7 @@ die() { printf 'run_trial: %s\n' "$*" >&2; exit 2; }
 
 IMAGE="${HB_RUNNER_IMAGE:-harness-benchmark/runner:local}"
 MODEL=claude-opus-5-5 PLUGIN="" SUFFIX="" REPO="" PROMPT="" GRADER="" OUT="" AGENT_CMD=""
-PERMISSION_MODE=auto AGENT_TIMEOUT="" AGENT_BACKSTOP=0 MAX_BUDGET_USD="" GRADER_TIMEOUT=900 REPLAY="" REPLAY_SEED=0
+PERMISSION_MODE=auto AGENT_TIMEOUT="" AGENT_BACKSTOP="" MAX_BUDGET_USD="" GRADER_TIMEOUT=900 REPLAY="" REPLAY_SEED=0
 GRADER_ARGS=()
 NAME="hb-trial-$(date +%Y%m%d-%H%M%S)-$$"
 
@@ -85,9 +85,12 @@ case "$AGENT_TIMEOUT" in *[!0-9]*) die "--agent-timeout must be a whole number o
   die "--agent-timeout is a one-shot guard cap; a harness arm (--plugin-dir) has no guard cap, only --agent-backstop (criteria v2 section 5.3)"
 [ -n "$PLUGIN" ] || [ "$AGENT_TIMEOUT" -gt 0 ] ||
   die "--agent-timeout 0 is for a harness arm; a one-shot keeps a guard cap (criteria v2 section 5.3)"
-case "$AGENT_BACKSTOP" in ''|*[!0-9]*) die "--agent-backstop must be a whole number of seconds" ;; esac
+# A harness arm always has a backstop: the default is criteria v2 section 5.3's (runner/pipeline/caps.json).
+[ -n "$AGENT_BACKSTOP" ] || AGENT_BACKSTOP=$([ -n "$PLUGIN" ] && echo 86400 || echo 0)
+case "$AGENT_BACKSTOP" in *[!0-9]*) die "--agent-backstop must be a whole number of seconds" ;; esac
 [ -z "$MAX_BUDGET_USD" ] || [[ "$MAX_BUDGET_USD" =~ ^[0-9]+(\.[0-9]+)?$ ]] || die "--max-budget-usd must be a number"
 AGENT_TIMEOUT=$((10#$AGENT_TIMEOUT)) AGENT_BACKSTOP=$((10#$AGENT_BACKSTOP))  # 00 is 0 (entrypoint compares numbers)
+[ -z "$PLUGIN" ] || [ "$AGENT_BACKSTOP" -gt 0 ] || die "--agent-backstop 0: a harness arm always has a backstop"
 [ -n "$PLUGIN" ] || { [ "$AGENT_BACKSTOP" -eq 0 ] && [ -z "$MAX_BUDGET_USD" ]; } ||
   die "--agent-backstop and --max-budget-usd are for a harness arm (--plugin-dir); a one-shot has its guard cap"
 if [ -e "$OUT" ] && [ -n "$(ls -A "$OUT")" ]; then die "--out exists and is not empty: $OUT"; fi
