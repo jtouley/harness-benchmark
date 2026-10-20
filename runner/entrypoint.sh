@@ -30,7 +30,8 @@
 set -uo pipefail
 OUT=/trial/out
 log() { printf '[trial %s] %s\n' "$(date -u +%H:%M:%S)" "$*"; }
-now() { date +%s.%N; }
+# Seconds on a monotonic clock (the one `timeout` uses), so a clock step cannot move a measured duration.
+now() { cut -d' ' -f1 /proc/uptime; }
 # agent_limit TIMEOUT BACKSTOP sets `limit`, the command prefix that stops the agent (criteria v2 section
 # 5.3): a one-shot at its guard cap TIMEOUT; a harness arm (TIMEOUT 0) at its BACKSTOP, or never for 0. Sets
 # `agent_cap` to the seconds used. Fails, leaving both unset, on a value that is not a whole number.

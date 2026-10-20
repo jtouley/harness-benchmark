@@ -291,10 +291,11 @@ def test_a_class_backstop_applies_only_to_the_tasks_it_was_measured_on():
     assert pt.harness_backstop(caps, "P2") == ({"seconds": 86400, "usd": None}, "default")
 
 
-def test_a_kill_a_moment_short_of_the_cap_on_the_wall_clock_is_still_the_cap(tmp_path):
-    run = write_run(tmp_path, timing={"agent_exit": 124, "agent_seconds": 7199.9},
-                    session=["2026-10-15T10:00:00.000Z", "2026-10-15T11:59:00.000Z"])
-    assert pt.summarize(run, PRICING)["outcome"] == "guard_cap"
+def test_a_harness_trial_with_no_default_backstop_is_an_error():
+    caps = json.loads(json.dumps(CAPS))
+    caps["harness_backstop"]["default"] = {}  # and P1 has no class
+    with pytest.raises(KeyError, match="a harness arm always has a backstop"):
+        pt.harness_backstop(caps, "P1")
 
 
 def test_a_regrade_of_a_harness_trial_is_recorded_as_one_but_keeps_the_runners_cap(tmp_path, monkeypatch):

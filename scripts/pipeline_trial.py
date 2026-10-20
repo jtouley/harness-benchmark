@@ -137,8 +137,8 @@ def outcome(run: Path, result: dict, timing: dict, harness: bool = False) -> str
     cap = timing.get("agent_timeout") or 0
     backstop = (timing.get("agent_backstop") or 0) if harness else 0
 
-    def stopped_at(limit: float) -> bool:  # 5 s of slack: agent_seconds is wall-clock time, rounded
-        return bool(limit) and rc in (124, 137) and seconds >= limit - 5
+    def stopped_at(limit: float) -> bool:
+        return bool(limit) and rc in (124, 137) and seconds >= limit
 
     if harness and result.get("subtype") == "error_max_budget_usd":
         return "backstop"  # Claude Code's spend limit: spent, not stalled
@@ -268,7 +268,9 @@ def harness_backstop(caps: dict, task: str) -> tuple[dict, str]:
     # Only for the tasks it was measured on: a task that joins the class later waits for a new backstop.
     if cls and task in hb.get("classes", {}).get(cls, {}).get("tasks", []):
         return hb["classes"][cls], f"class {cls}"
-    return hb.get("default") or {"seconds": 0, "usd": None}, "default"
+    if not (hb.get("default") or {}).get("seconds"):
+        raise KeyError(f"{CAPS.name} has no harness_backstop.default.seconds; a harness arm always has a backstop")
+    return hb["default"], "default"
 
 
 # --- running ---------------------------------------------------------------------------------------

@@ -64,7 +64,8 @@ def test_bad_arguments_fail_before_docker_is_called(args, tmp_path):
     (["--max-budget-usd", "2.5"], "are for a harness arm (--plugin-dir)"),
     (["--plugin-dir", "PLUGIN", "--agent-backstop", "10m"], "--agent-backstop must be a whole number of seconds"),
     (["--plugin-dir", "PLUGIN", "--agent-backstop", "0"], "a harness arm always has a backstop"),
-    (["--plugin-dir", "PLUGIN", "--max-budget-usd", "$5"], "--max-budget-usd must be a number"),
+    (["--plugin-dir", "PLUGIN"], "--agent-backstop is required for a harness arm"),
+    (["--plugin-dir", "PLUGIN", "--agent-backstop", "600", "--max-budget-usd", "$5"], "--max-budget-usd must be a number"),
 ])
 def test_only_a_one_shot_has_a_guard_cap_and_only_a_harness_a_backstop(args, message, tmp_path):
     """Criteria v2 section 5.3: a one-shot keeps a guard cap, a harness arm only a backstop; the runner refuses
