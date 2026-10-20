@@ -46,7 +46,9 @@ summary file should name that path.
 The container exits 0 once the grader has run, also when the agent timed out (`agent_exit` 124) or the
 grader failed. Read the result from `timing.json` and `grade.json`, not from the exit code of
 `run_trial.sh`. Its own exit codes: 2 (bad arguments), 3 (an output file could not be scanned for the
-API key), 90 (the inner daemon did not start), 91 (the grader was not delivered), 130 (interrupted).
+API key), 90 (the inner daemon did not start), 91 (the grader was not delivered), 92 (the dev replay did not
+start), 93 (a bad line in the toolchain file), 94 (a guard cap or backstop that is not a whole number),
+130 (interrupted).
 `results/runs/` is in `.gitignore`.
 
 ## What happens in a trial
@@ -54,8 +56,9 @@ API key), 90 (the inner daemon did not start), 91 (the grader was not delivered)
 1. `run_trial.sh` creates the container (no bind mount, no published port), copies the inputs in, and
    starts it with the API key on standard input.
 2. `entrypoint.sh` starts the inner `dockerd`; its storage is the container's anonymous volume.
-3. The agent runs as user `agent` (in the `docker` group) under a timeout, with the key in its
-   environment only.
+3. The agent runs as user `agent` (in the `docker` group), with the key in its environment only. A
+   one-shot runs under its guard cap (`--agent-timeout`); a harness arm (`--plugin-dir`) has none, only a
+   backstop against a runaway (`--agent-backstop` seconds and `--max-budget-usd`, criteria v2 §5.3).
    With `--replay`, a dev service (`replay.pyz`) runs as root on `localhost:8099` during the agent's
    session; the agent can use it but not read its files.
 4. Every process of user `agent` in the trial's own PID namespace is killed (repeated until none is

@@ -210,7 +210,7 @@ side [QM].
 | M1 | **Acceptance** | The hidden checks (or the oracle) on the delivered working tree, in the running system where the task has one | Gate: a run that fails M1 is not delivered | [v1] [TS] |
 | M1f | **Hidden-suite pass fraction** | The fraction of the hidden acceptance checks that pass (30 or more per task where the task has a suite). The edge suite (§6) is counted in M2, not here | Reported | [QM] |
 | M2 | **Detected defects** | Found by code (§6): each failing check of the task's edge suite; each crash on the task's fixed probe inputs, by the task's crash signature (§6); in a follow-up run, each base check that no longer passes; and each failing reviewer-proposed test that code has confirmed. Severity comes from labels committed with the task before the run set, or by rule for reviewer-proposed tests (§6): critical (data loss, a wrong result reported as success), major (a crash, a sentence of the request not met), minor. Failures with the same check id count once | **Primary.** Only critical and major defects count in the decision rule (§8); minor ones are reported | [v1] [QM] [DR] [#41] |
-| M3 | **False success** | A run that ends as completed while M1 fails or M2 has a critical or major defect. A run ends as completed unless its session ends on a call to the host's ask-the-user tool (in Claude Code, `AskUserQuestion`) or the arm's declared stop signal is present. Each harness arm declares its stop signal (a file it writes, or an exit status) in `frameworks.lock.json` before the run set; one-shot arms have none. A harness that stops with its signal is not a false success | Decision rule input (§8.2–§8.4), beside M2 | [v1] [DR] [#41] |
+| M3 | **False success** | A run that ends as completed while M1 fails or M2 has a critical or major defect. A run ends as completed unless its session ends on a call to the host's ask-the-user tool (in Claude Code, `AskUserQuestion`) or the arm's declared stop signal is present. Each harness arm declares its stop signal (a file it writes, or an exit status) in `frameworks.lock.json` before the run set; one-shot arms have none. A harness that stops with its signal is not a false success. A session ended from outside the agent (a time cap, a signal, a lost container) has not ended as completed: a one-shot ended at its guard cap, or a harness at its backstop, is an attempted run that is not delivered (§8.1), and any other such session is an infrastructure error (§5.3) | Decision rule input (§8.2–§8.4), beside M2 | [v1] [DR] [#41] |
 | M8 | **Completion** | Ends as completed (M3's script rule). A stop signal or an ask-the-user call counts as not complete | Reported | [v1] [#41] |
 
 ### 4.2 Layer 2: the tool gate
@@ -355,16 +355,19 @@ A run counts only if it saw and used nothing but its own arm's tools [CR]:
 
 | Rule | Source |
 |---|---|
-| **Harness arms have no per-trial time cap and no per-trial dollar cap. A harness run is never cut off** | [OD] [CAP] |
+| **Harness arms have no guard cap, only a backstop against a runaway** (owner, 2026-10-20; replaces "a harness run is never cut off"). The backstop is the mean plus 2 standard deviations of the session time (the agent's, without grading) and of the cost of past counted harness runs that ended on their own in the task's class (§3.2), whichever is hit first; the cost is the host's own figure, the one its spend limit enforces (Claude Code's `--max-budget-usd`). It is set once per class from at least 5 such runs made under the default, then fixed (runs it cuts short would otherwise shrink it each time it was set again); until then the default below applies. A harness run that hits it is an **attempted run that is not delivered** (§8.1), tallied separately, so slow runs stay in the results instead of being run again | [OD] [CAP] [v2] |
 | Spend is controlled by **one budget for the whole run set**. Its value is recorded in this section before the first run. When the budget is spent, the run set stops scheduling new trials. It never stops a trial in progress | [CAP] |
 | **Round-robin scheduling.** Run k of every cell starts before run k+1 of any cell, so a budget stop leaves every arm short by at most one run per cell, whatever its cost | [v2] |
 | One-shot arms keep a generous time cap, only as a guard against a hung session. Its value is recorded in this section before the first run. A one-shot that hits it is an **attempted run that is not delivered** (§8.1). It is also reported separately, not mixed with other failures | [OD] [v2] |
 | A trial lost to the infrastructure (for example the container runtime fails) is recorded as an infrastructure error, not as a failure, and is run again. It shares the cell's 2 reruns of §5.2 | [WP] [v2] |
+| **A harness session ended from outside the agent, other than at its backstop, is an infrastructure error.** A timeout, a signal or a lost container that ends it is the infrastructure's, not the arm's: recorded as an infrastructure error, not as a run that ended as completed (§4.1), and run again. An exit status cannot tell such a kill from the arm's own crash, which is graded, so the operator records it (`scripts/pipeline_trial.py infra`). The runner gives a harness arm only its backstop and a one-shot always its guard cap (`runner/run_trial.sh` refuses anything else) | [OD] [CAP] [v2] |
 
 Values, to be filled before the first v2 run set and then fixed:
 
 - Run-set budget: **not yet recorded**.
 - One-shot guard time cap: **not yet recorded**.
+- Harness backstop until a class has 5 runs: **86,400 s, no dollar limit** (proposed, owner to confirm;
+  `runner/pipeline/caps.json`).
 
 The v1 caps (1800 s timeout, $1.00 and $3.00 dollar caps) do not apply to v2 run sets. The code that
 carries them (`cbench/harbor.py`, `scripts/live.sh`, `tests/test_criteria.py`) must change to the v2
@@ -464,9 +467,9 @@ For tasks with seeded ground truth (the pipeline family), each failed run is aud
   one critical defect for M2 (its other detected defects are not added), and as one false success for M3
   if it ends as completed (§4.1). M3 is a per-run rate
   [v1].
-- **Attempted run.** A graded run (§5.2), a `contaminated` run (§5.2) and a one-shot run that hits the
-  guard time cap (§5.3). A `contaminated` run and a guard-cap run are attempted runs that are not
-  delivered; each is also tallied separately. Runs set aside as infrastructure errors (§5.2, §5.3) are
+- **Attempted run.** A graded run (§5.2), a `contaminated` run (§5.2), a one-shot run that hits the
+  guard time cap (§5.3) and a harness run that hits its backstop (§5.3). A `contaminated` run, a guard-cap run
+  and a backstop run are attempted runs that are not delivered; each is also tallied separately. Runs set aside as infrastructure errors (§5.2, §5.3) are
   not attempted runs [WP] [v2].
 - **Interval.** For a difference between two arms, resample runs with replacement within each (task, arm)
   cell, 10,000 times, seed 20261010. Report the 5th and 95th percentiles (a 90% percentile interval).
@@ -599,7 +602,8 @@ Cadence are stated first [v1] [WP] [#41].
 
 These items must be filled or confirmed by the owner, with a changelog entry, before the first run:
 
-1. The run-set budget and the one-shot guard time cap (§5.3) [CAP] [OD].
+1. The run-set budget and the one-shot guard time cap (§5.3) [CAP] [OD]; the harness backstop's default
+   (86,400 s, no dollar limit) and its minimum of 5 runs per class (§5.3) [CAP] [OD].
 2. The non-inferiority margin of 0.25 (§8.3). It was proposed, not decided [DR].
 3. **Proposed, owner to confirm** (from the PR #20 review):
    1. The calibration try count of 5 per arm and per task (§3.1), and the beyond threshold of at most 2 of
@@ -661,9 +665,12 @@ These items must be filled or confirmed by the owner, with a changelog entry, be
 | 18 | Decision rule restated: comparison A (v1 rule, same model), comparison B (non-inferiority to the bar, margin 0.25), comparison C (beyond the bar), and the answer as the cheapest arm in the top design tier (§8) | 2026-10-12, 2026-10-14 | [next steps: decision rule](../plans/next-steps.md#decision-rule-for-this-question), [quality model: owner criteria](quality-model.md#owner-criteria-2026-10-14-dry-solid-extensible-traceable-cheap) |
 | 19 | Operational definitions that v2 adds, each marked [v2] and listed in §11 for owner confirmation | 2026-10-14 | this document |
 | 20 | No model or person decides a measure by judgment. M2 becomes defects detected by code: frozen edge checks and probe inputs with pre-committed severity, plus tests a fixed, blind reviewer proposes, kept only when they pass on the reference and fail on the arm, run against every arm, with severity by rule; M3 is decided by script; the design checklist, the M7 comparison column and pairwise judging are dropped; the audit answers in a fixed form and is scored by script, its origin found by a bisect over the run's commits, with no human spot check or adjudication; M3 and M8 are read from the transcript and a declared stop signal (§4, §6, §7, §8.5) | 2026-10-19 | [harness-benchmark#41](https://github.com/jtouley/harness-benchmark/issues/41) |
+| 21 | A session ended from outside the agent never ends as completed: a one-shot at its guard cap is attempted and not delivered, anything else is an infrastructure error, and a harness arm gets no time limit from the runner (§4.1, §5.3) | 2026-10-19 | [harness-benchmark#48](https://github.com/jtouley/harness-benchmark/issues/48) |
+| 22 | Harness arms get a backstop instead of no limit: the mean plus 2 standard deviations of time and of cost of past harness runs of the task's class, whichever is hit first; a run that hits it is attempted and not delivered (§5.3, §8.1) | 2026-10-20 | owner, on [#59](https://github.com/jtouley/harness-benchmark/pull/59) |
 
 ## Changelog
 
-- v2 (2026-10-14; amended 2026-10-19, grading by code, a reviewer only proposes tests, #41): this version. Changes from v1 in
+- v2 (2026-10-14; amended 2026-10-19, grading by code, a reviewer only proposes tests, #41; no guard cap on
+  harness arms, only a backstop, #48): this version. Changes from v1 in
   the table above.
 - v1 (2026-10-10): first version ([criteria v1](criteria.md)).

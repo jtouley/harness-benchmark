@@ -1,5 +1,5 @@
 {
- "note": "Caps of the pipeline trials. agent_timeout: the one-shot guard cap (criteria-v2 5.3), chosen for these first trials; owner may change. Per task, grader_deadline: the whole grading run (grader.pyz --deadline), the measured worst case of the task's reference trials through the runner plus 50% (`pipeline_trial.py caps`; owner default from TASK-81, owner may change). grader_timeout: the runner's backstop (run_trial.sh --grader-timeout), the deadline plus 120 s so the grader reports first. Until a task is measured, it has no deadline and the grader's own per-step caps apply.",
+ "note": "Caps of the pipeline trials. agent_timeout: the one-shot guard cap (criteria-v2 5.3), chosen for these first trials; owner may change. One-shot arms only: a harness arm (a trial with --plugin-dir) gets no guard cap (pipeline_trial.py passes it 0), only the backstop in harness_backstop. Per task, grader_deadline: the whole grading run (grader.pyz --deadline), the measured worst case of the task's reference trials through the runner plus 50% (`pipeline_trial.py caps`; owner default from TASK-81, owner may change). grader_timeout: the runner's backstop (run_trial.sh --grader-timeout), the deadline plus 120 s so the grader reports first. Until a task is measured, it has no deadline and the grader's own per-step caps apply.",
  "agent_timeout": 7200,
  "tasks": {
   "P1": {
@@ -50,5 +50,14 @@
     "P3-ref-2"
    ]
   }
+ },
+ "harness_backstop": {
+  "note": "Criteria v2 section 5.3 (owner, 2026-10-20). A harness arm has no guard cap, only a backstop against a runaway: the mean plus 2 standard deviations of the session time (agent_seconds) and of Claude Code's own cost (total_cost_usd, the figure its --max-budget-usd enforces) of past counted harness runs of the class's tasks that ended on their own under the default, whichever is hit first. A run that hits it is attempted and not delivered. Set once per class with `pipeline_trial.py backstop CLASS RUN...` from at least min_runs runs (tasks.<task>.class names the class), then fixed; a task with no class, or a class with no backstop yet, gets the default (owner may change).",
+  "min_runs": 5,
+  "default": {
+   "seconds": 86400,
+   "usd": null
+  },
+  "classes": {}
  }
 }

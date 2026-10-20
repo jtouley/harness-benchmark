@@ -55,6 +55,83 @@ def test_bad_arguments_fail_before_docker_is_called(args, tmp_path):
     assert "docker-called" not in r.stderr
 
 
+@pytest.mark.parametrize("args, message", [
+    (["--plugin-dir", "PLUGIN", "--agent-timeout", "60"], "a harness arm (--plugin-dir) has no guard cap"),
+    (["--agent-timeout", "0"], "a one-shot keeps a guard cap"),
+    (["--agent-timeout", "1h"], "--agent-timeout must be a whole number of seconds"),
+    (["--plugin-dir", "EMPTY"], "--plugin-dir is empty"),
+    (["--agent-backstop", "600"], "are for a harness arm (--plugin-dir)"),
+    (["--max-budget-usd", "2.5"], "are for a harness arm (--plugin-dir)"),
+    (["--plugin-dir", "PLUGIN", "--agent-backstop", "10m"], "--agent-backstop must be a whole number of seconds"),
+    (["--plugin-dir", "PLUGIN", "--agent-backstop", "0"], "a harness arm always has a backstop"),
+    (["--plugin-dir", "PLUGIN"], "--agent-backstop is required for a harness arm"),
+    (["--plugin-dir", "PLUGIN", "--agent-backstop", "600", "--max-budget-usd", "$5"], "--max-budget-usd must be a number"),
+])
+def test_only_a_one_shot_has_a_guard_cap_and_only_a_harness_a_backstop(args, message, tmp_path):
+    """Criteria v2 section 5.3: a one-shot keeps a guard cap, a harness arm only a backstop; the runner refuses
+    anything else, and an empty plugin (which would run as an uncapped one-shot)."""
+    env = {**os.environ, "PATH": f"{tmp_path}:{os.environ['PATH']}"}
+    (tmp_path / "docker").write_text("#!/bin/sh\necho docker-called >&2\nexit 99\n")
+    (tmp_path / "docker").chmod(0o755)
+    (tmp_path / "plugin").mkdir()
+    (tmp_path / "plugin" / "plugin.json").write_text("{}")
+    (tmp_path / "empty").mkdir()
+    prompt = tmp_path / "prompt.md"
+    prompt.write_text("task")
+    paths = {"PLUGIN": str(tmp_path / "plugin"), "EMPTY": str(tmp_path / "empty")}
+    args = [paths.get(a, a) for a in args]
+    r = sh(str(RUN_TRIAL), "--repo", str(tmp_path), "--prompt", str(prompt), "--grader", str(RUN_TRIAL),
+           "--out", str(tmp_path / "out"), *args, check=False, env=env)
+    assert r.returncode == 2 and message in r.stderr
+    assert "docker-called" not in r.stderr
+
+
+def _agent_limit() -> str:
+    """entrypoint.sh's agent_limit function, as written there."""
+    text = (RUNNER / "entrypoint.sh").read_text()
+    return re.search(r"^agent_limit\(\) \{\n.*?^\}$", text, re.M | re.S).group(0)
+
+
+@pytest.mark.parametrize("timeout, backstop, prefix", [
+    ("7200", "0", "timeout --kill-after=30 7200"), ("0", "9000", "timeout --kill-after=30 9000"),
+    ("00", "9000", "timeout --kill-after=30 9000"), ("0", "0", ""), ("", "0", None), ("1h", "0", None),
+    ("0", "x", None),
+])
+def test_agent_limit_is_the_guard_cap_or_the_backstop(timeout, backstop, prefix):
+    """A one-shot stops at its guard cap, a harness arm (timeout 0) at its backstop; a non-number fails."""
+    r = sh("bash", "-c", f'{_agent_limit()}\nagent_limit "$1" "$2" || exit 9\necho "${{limit[*]}}"',
+           "_", timeout, backstop, check=False)
+    assert (r.returncode, r.stdout.strip()) == ((9, "") if prefix is None else (0, prefix))
+
+
+@pytest.mark.parametrize("timeout, backstop, rc", [("1", "0", 124), ("0", "1", 124), ("0", "0", 0)])
+def test_the_limit_stops_a_session_at_the_cap_or_the_backstop(timeout, backstop, rc):
+    """A 1 s one-shot cap, or a 1 s harness backstop, stops a 2 s session; neither lets it end."""
+    script = f'{_agent_limit()}\nagent_limit "$1" "$2"\nexec "${{limit[@]}}" sleep 2'
+    assert sh("bash", "-c", script, "_", timeout, backstop, check=False, timeout=30).returncode == rc
+
+
+def test_entrypoint_starts_the_agent_under_agent_limit():
+    text = (RUNNER / "entrypoint.sh").read_text()
+    assert re.search(r'^agent_limit "\$agent_timeout" "\$agent_backstop" \|\|', text, re.M)
+    # checked before the inner daemon starts, so a bad value fails at once
+    assert text.index('agent_limit "$agent_timeout"') < text.index("# 1. The trial's own Docker daemon")
+    assert re.search(r'^ exec "\$\{limit\[@\]\}" setpriv', text, re.M)
+
+
+@pytest.mark.parametrize("budget, expected", [("4.5", ["--max-budget-usd", "4.5"]), ("", [])])
+def test_claude_gets_the_spend_limit_only_when_there_is_one(tmp_path, budget, expected):
+    """claude-agent.sh passes a harness arm's dollar backstop to Claude Code (its --max-budget-usd)."""
+    (tmp_path / "claude").write_text('#!/bin/sh\nprintf "%s\\n" "$@"\necho "env:${HB_MAX_BUDGET_USD-unset}"\n')
+    (tmp_path / "claude").chmod(0o755)
+    env = {"PATH": f"{tmp_path}:/usr/bin:/bin", "HB_MODEL": "m", "HB_OUTPUTS": str(tmp_path),
+           "HB_MAX_BUDGET_USD": budget}
+    args = sh("bash", str(RUNNER / "claude-agent.sh"), env=env).stdout.splitlines()
+    assert args.pop() == "env:unset"  # not in the environment the agent's tools inherit
+    tail = args[args.index("--verbose") + 1:]
+    assert [a for a in tail if a != "--plugin-dir" and a != "/trial/plugin"] == expected
+
+
 KEY_VARIABLES = ("ANTHROPIC_API_KEY", "HB_API_KEY")
 # Shell builtins: their arguments are in no process's command line.
 KEY_SAFE_BUILTINS = {"read", "export", "unset", "[", "printf"}
@@ -322,9 +399,15 @@ def test_default_agent_starts_claude_code_with_the_arms_plugin_and_no_key(image,
     grader.chmod(0o755)
     env = {k: v for k, v in os.environ.items() if k != "ANTHROPIC_API_KEY"}
     out = tmp_path / "out"
-    sh(str(RUN_TRIAL), "--repo", str(repo), "--prompt", str(prompt), "--grader", str(grader),
-       "--plugin-dir", str(ROOT / "harnesses" / "reviewloop"), "--model", "claude-haiku-5-5",
-       "--agent-timeout", "120", "--out", str(out), "--image", image, env=env)
+    name = f"hb-test-plugin-{uuid.uuid4().hex[:8]}"
+    try:  # the runner's own backstop bounds the session, so its cleanup trap still runs
+        sh(str(RUN_TRIAL), "--repo", str(repo), "--prompt", str(prompt), "--grader", str(grader),
+           "--plugin-dir", str(ROOT / "harnesses" / "reviewloop"), "--model", "claude-haiku-5-5",
+           "--agent-backstop", "120", "--name", name, "--out", str(out), "--image", image, env=env, timeout=900)
+    finally:
+        sh("docker", "rm", "-f", "-v", name, check=False)
+    timing = json.loads((out / "timing.json").read_text())
+    assert (timing["agent_timeout"], timing["agent_backstop"]) == (0, 120)  # a harness arm: a backstop, no cap
     events = [json.loads(line) for line in (out / "transcript.jsonl").read_text().splitlines()]
     init = events[0]
     assert init["type"] == "system" and init["model"] == "claude-haiku-5-5"

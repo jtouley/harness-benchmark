@@ -5,7 +5,8 @@
 # Usage:
 #   runner/run_trial.sh --repo DIR --prompt FILE --grader FILE --out DIR
 #                       [--model ID] [--plugin-dir DIR] [--suffix TEXT] [--permission-mode MODE]
-#                       [--agent-timeout SEC] [--grader-timeout SEC] [--image IMAGE] [--name NAME]
+#                       [--agent-timeout SEC | --agent-backstop SEC [--max-budget-usd USD]]
+#                       [--grader-timeout SEC] [--image IMAGE] [--name NAME]
 #                       [--agent-cmd FILE] [--replay FILE [--replay-seed N]] [--grader-arg ARG]...
 #
 #   --repo         task repository; copied into the container (the host copy is not changed)
@@ -17,7 +18,14 @@
 #                  directory, on localhost:8099 with --seed N (--replay-seed, default 0); stopped
 #                  before the grader runs
 #   --out          output directory on the host; must not exist or be empty
-#   --plugin-dir   the arm's Claude Code plugin (passed as `claude --plugin-dir`)
+#   --plugin-dir   the arm's Claude Code plugin (passed as `claude --plugin-dir`); an arm with a plugin is a
+#                  harness arm
+#   --agent-timeout  the one-shot guard cap in seconds (default 3600). A harness arm has no time cap
+#                  (criteria v2 section 5.3): with --plugin-dir the default is 0, which means none, and a
+#                  positive value is refused; without it, 0 is refused
+#   --agent-backstop  harness arms only, and required for them: seconds after which the session is stopped
+#                  as a runaway (criteria v2 section 5.3, the backstop)
+#   --max-budget-usd  harness arms only: Claude Code's own spend limit for the session (its --max-budget-usd)
 #   --agent-cmd    replaces Claude Code with this script (tests only; it runs as the agent would)
 #
 # ANTHROPIC_API_KEY is read from this process's environment and written to the container's standard
@@ -27,12 +35,12 @@
 # [REDACTED:ANTHROPIC_API_KEY]. The scan reads the key from the environment and never prints it.
 set -euo pipefail
 
-usage() { sed -n '2,28p' "$0" | sed 's/^# \{0,1\}//'; }
+usage() { sed -n '2,35p' "$0" | sed 's/^# \{0,1\}//'; }
 die() { printf 'run_trial: %s\n' "$*" >&2; exit 2; }
 
 IMAGE="${HB_RUNNER_IMAGE:-harness-benchmark/runner:local}"
 MODEL=claude-opus-5-5 PLUGIN="" SUFFIX="" REPO="" PROMPT="" GRADER="" OUT="" AGENT_CMD=""
-PERMISSION_MODE=auto AGENT_TIMEOUT=3600 GRADER_TIMEOUT=900 REPLAY="" REPLAY_SEED=0
+PERMISSION_MODE=auto AGENT_TIMEOUT="" AGENT_BACKSTOP="" MAX_BUDGET_USD="" GRADER_TIMEOUT=900 REPLAY="" REPLAY_SEED=0
 GRADER_ARGS=()
 NAME="hb-trial-$(date +%Y%m%d-%H%M%S)-$$"
 
@@ -47,6 +55,8 @@ while [ $# -gt 0 ]; do
     --suffix) SUFFIX="${2-}"; shift 2 ;;
     --permission-mode) PERMISSION_MODE="${2:?}"; shift 2 ;;
     --agent-timeout) AGENT_TIMEOUT="${2:?}"; shift 2 ;;
+    --agent-backstop) AGENT_BACKSTOP="${2:?}"; shift 2 ;;
+    --max-budget-usd) MAX_BUDGET_USD="${2:?}"; shift 2 ;;
     --grader-timeout) GRADER_TIMEOUT="${2:?}"; shift 2 ;;
     --image) IMAGE="${2:?}"; shift 2 ;;
     --name) NAME="${2:?}"; shift 2 ;;
@@ -64,9 +74,27 @@ done
 [ -f "$GRADER" ] && [ -x "$GRADER" ] || die "--grader must be an executable file"
 [ -n "$OUT" ] || die "--out is required"
 [ -z "$PLUGIN" ] || [ -d "$PLUGIN" ] || die "--plugin-dir must be a directory"
+# An empty plugin is not loaded (claude-agent.sh), so it would be a one-shot that the rules below leave uncapped.
+[ -z "$PLUGIN" ] || [ -n "$(ls -A "$PLUGIN")" ] || die "--plugin-dir is empty"
 [ -z "$AGENT_CMD" ] || [ -f "$AGENT_CMD" ] || die "--agent-cmd must be a file"
 [ -z "$REPLAY" ] || [ -f "$REPLAY" ] || die "--replay must be a file"
 case "$REPLAY_SEED" in ''|*[!0-9]*) die "--replay-seed must be a number" ;; esac
+[ -n "$AGENT_TIMEOUT" ] || AGENT_TIMEOUT=$([ -n "$PLUGIN" ] && echo 0 || echo 3600)
+case "$AGENT_TIMEOUT" in *[!0-9]*) die "--agent-timeout must be a whole number of seconds" ;; esac
+[ -z "$PLUGIN" ] || [ "$AGENT_TIMEOUT" -eq 0 ] ||
+  die "--agent-timeout is a one-shot guard cap; a harness arm (--plugin-dir) has no guard cap, only --agent-backstop (criteria v2 section 5.3)"
+[ -n "$PLUGIN" ] || [ "$AGENT_TIMEOUT" -gt 0 ] ||
+  die "--agent-timeout 0 is for a harness arm; a one-shot keeps a guard cap (criteria v2 section 5.3)"
+# A harness arm always has a backstop, chosen by the caller (criteria v2 section 5.3; the pipeline trials
+# take it from runner/pipeline/caps.json). A one-shot has none.
+[ -n "$AGENT_BACKSTOP" ] || [ -n "$PLUGIN" ] || AGENT_BACKSTOP=0
+[ -n "$AGENT_BACKSTOP" ] || die "--agent-backstop is required for a harness arm (--plugin-dir)"
+case "$AGENT_BACKSTOP" in *[!0-9]*) die "--agent-backstop must be a whole number of seconds" ;; esac
+[ -z "$MAX_BUDGET_USD" ] || [[ "$MAX_BUDGET_USD" =~ ^[0-9]+(\.[0-9]+)?$ ]] || die "--max-budget-usd must be a number"
+AGENT_TIMEOUT=$((10#$AGENT_TIMEOUT)) AGENT_BACKSTOP=$((10#$AGENT_BACKSTOP))  # 00 is 0 (entrypoint compares numbers)
+[ -z "$PLUGIN" ] || [ "$AGENT_BACKSTOP" -gt 0 ] || die "--agent-backstop 0: a harness arm always has a backstop"
+[ -n "$PLUGIN" ] || { [ "$AGENT_BACKSTOP" -eq 0 ] && [ -z "$MAX_BUDGET_USD" ]; } ||
+  die "--agent-backstop and --max-budget-usd are for a harness arm (--plugin-dir); a one-shot has its guard cap"
 if [ -e "$OUT" ] && [ -n "$(ls -A "$OUT")" ]; then die "--out exists and is not empty: $OUT"; fi
 mkdir -p "$OUT"
 
@@ -120,7 +148,8 @@ trap 'exit 130' INT TERM
 # The container has no bind mount and no published port: inputs go in and outputs come out by copy.
 docker create --name "$NAME" --label hb.runner=trial --privileged --interactive \
   -e HB_MODEL="$MODEL" -e HB_PERMISSION_MODE="$PERMISSION_MODE" \
-  -e HB_AGENT_TIMEOUT="$AGENT_TIMEOUT" -e HB_GRADER_TIMEOUT="$GRADER_TIMEOUT" -e HB_REPLAY_SEED="$REPLAY_SEED" \
+  -e HB_AGENT_TIMEOUT="$AGENT_TIMEOUT" -e HB_AGENT_BACKSTOP="$AGENT_BACKSTOP" -e HB_MAX_BUDGET_USD="$MAX_BUDGET_USD" \
+  -e HB_GRADER_TIMEOUT="$GRADER_TIMEOUT" -e HB_REPLAY_SEED="$REPLAY_SEED" \
   "$IMAGE" >/dev/null
 docker cp -q "$REPO/." "$NAME:/trial/repo"
 docker cp -q "$STAGE/prompt.txt" "$NAME:/trial/prompt.txt"

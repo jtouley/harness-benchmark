@@ -16,7 +16,8 @@
 # /trial/grader-ready. It runs as root as `grader /trial/repo [ARG...]` and prints the grade JSON on
 # stdout. While it runs, processes of user `agent` (the candidate's make, when the grader drops to that
 # user) have no network beyond loopback.
-# Environment: HB_MODEL, HB_PERMISSION_MODE, HB_AGENT_TIMEOUT, HB_GRADER_TIMEOUT (seconds), HB_REPLAY_SEED.
+# Environment: HB_MODEL, HB_PERMISSION_MODE, HB_AGENT_TIMEOUT, HB_AGENT_BACKSTOP, HB_GRADER_TIMEOUT (seconds),
+# HB_MAX_BUDGET_USD, HB_REPLAY_SEED.
 # Standard input: one line, the Anthropic API key (may be empty). It is held in a shell variable and
 # given to the agent process only: never to the daemon or the grader, never to a file.
 #
@@ -29,11 +30,26 @@
 set -uo pipefail
 OUT=/trial/out
 log() { printf '[trial %s] %s\n' "$(date -u +%H:%M:%S)" "$*"; }
-now() { date +%s.%N; }
+# Seconds on a monotonic clock (the one `timeout` uses), so a clock step cannot move a measured duration.
+now() { cut -d' ' -f1 /proc/uptime; }
+# agent_limit TIMEOUT BACKSTOP sets `limit`, the command prefix that stops the agent (criteria v2 section
+# 5.3): a one-shot at its guard cap TIMEOUT; a harness arm (TIMEOUT 0) at its BACKSTOP, or never for 0. Sets
+# `agent_cap` to the seconds used. Fails, leaving both unset, on a value that is not a whole number.
+agent_limit() {
+  local t
+  for t in "$1" "$2"; do case "$t" in ''|*[!0-9]*) return 1 ;; esac; done
+  agent_cap=$(( 10#$1 > 0 ? 10#$1 : 10#$2 )); limit=()
+  [ "$agent_cap" -eq 0 ] || limit=(timeout --kill-after=30 "$agent_cap")
+}
 
 HB_API_KEY=""
 IFS= read -r -t 10 HB_API_KEY || true
 exec </dev/null
+
+# Checked before anything starts, so a bad value costs nothing.
+agent_timeout="${HB_AGENT_TIMEOUT:-3600}" agent_backstop="${HB_AGENT_BACKSTOP:-0}"
+agent_limit "$agent_timeout" "$agent_backstop" ||
+  { log "HB_AGENT_TIMEOUT or HB_AGENT_BACKSTOP is not a whole number: $agent_timeout, $agent_backstop"; exit 94; }
 
 # 1. The trial's own Docker daemon. Its storage is the container's anonymous volume.
 log "starting the inner Docker daemon"
@@ -74,12 +90,11 @@ chown -R agent:agent /trial/repo "$OUT/agent" /home/agent
 AGENT=/opt/hb/claude-agent.sh
 [ -f /trial/agent.sh ] && { chmod 0755 /trial/agent.sh; AGENT=/trial/agent.sh; log "agent command replaced by /trial/agent.sh"; }
 
-agent_timeout="${HB_AGENT_TIMEOUT:-3600}"
 agent_vars=(PATH=/home/agent/.local/bin:/usr/local/bin:/usr/bin:/bin "${toolchain[@]}" HOME=/home/agent
   USER=agent TERM=dumb LANG=C.UTF-8 DISABLE_AUTOUPDATER=1 HB_OUTPUTS="$OUT/agent"
-  HB_MODEL="${HB_MODEL:-}" HB_PERMISSION_MODE="${HB_PERMISSION_MODE:-auto}")
+  HB_MODEL="${HB_MODEL:-}" HB_PERMISSION_MODE="${HB_PERMISSION_MODE:-auto}" HB_MAX_BUDGET_USD="${HB_MAX_BUDGET_USD:-}")
 
-log "agent start (model ${HB_MODEL:-unset}, timeout ${agent_timeout}s)"
+log "agent start (model ${HB_MODEL:-unset}, stops after $([ "$agent_cap" -gt 0 ] && echo "${agent_cap}s" || echo never))"
 t0=$(now)
 # The subshell drops every inherited variable and exports only the agent's. `export` is a builtin, so
 # the key is in the environment of the agent process and in no process's arguments.
@@ -87,7 +102,7 @@ t0=$(now)
  while read -r name; do unset "$name" 2>/dev/null; done < <(compgen -e)
  export "${agent_vars[@]}"
  [ -z "$HB_API_KEY" ] || export ANTHROPIC_API_KEY="$HB_API_KEY"
- exec timeout --kill-after=30 "$agent_timeout" setpriv --reuid=agent --regid=agent --init-groups "$AGENT") \
+ exec "${limit[@]}" setpriv --reuid=agent --regid=agent --init-groups "$AGENT") \
   >"$OUT/transcript.jsonl" 2>"$OUT/agent.stderr"
 agent_rc=$?
 t_agent_end=$(now)
@@ -162,7 +177,7 @@ fi
 # agent_seconds ends when the agent exits; the kill step, result extraction and the wait for the
 # grader are postprocess_seconds.
 python3 - "$t0" "$t_agent_end" "$t_grade_start" "$t2" "$agent_rc" "$grade_rc" "$stray" "$left" \
-  "$agent_timeout" "$grader_timeout" "$agent_network" "${replay_pid:+1}" >"$OUT/timing.json" <<'PY'
+  "$agent_timeout" "$grader_timeout" "$agent_network" "${replay_pid:+1}" "$agent_backstop" >"$OUT/timing.json" <<'PY'
 import json, sys
 t0, t_agent_end, t_grade_start, t2 = map(float, sys.argv[1:5])
 print(json.dumps({"agent_seconds": round(t_agent_end - t0, 1),
@@ -172,6 +187,7 @@ print(json.dumps({"agent_seconds": round(t_agent_end - t0, 1),
                   "leftover_agent_processes_killed": int(sys.argv[7]),
                   "agent_processes_left_after_kill": int(sys.argv[8]),
                   "agent_timeout": int(sys.argv[9]), "grader_timeout": int(sys.argv[10]),
-                  "agent_network_during_grading": sys.argv[11], "dev_replay": sys.argv[12] == "1"}))
+                  "agent_network_during_grading": sys.argv[11], "dev_replay": sys.argv[12] == "1",
+                  "agent_backstop": int(sys.argv[13])}))
 PY
 exit 0
