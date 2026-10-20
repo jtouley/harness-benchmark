@@ -91,12 +91,59 @@ def test_a_session_busy_until_the_guard_cap_is_a_guard_cap_run(tmp_path):
 
 
 @pytest.mark.parametrize("rc", [124, 137, 143])
-def test_a_harness_session_has_no_cap_so_its_exit_status_is_its_own(tmp_path, rc):
-    """Criteria v2 section 5.3: no cap to hit, so a crash or self-kill is graded on what the arm left."""
-    run = write_run(tmp_path, timing={"agent_exit": rc, "agent_seconds": 7203.0, "agent_timeout": 0},
+def test_a_harness_session_ended_before_its_backstop_is_its_own(tmp_path, rc):
+    """Criteria v2 section 5.3: short of the backstop, a crash or self-kill is graded on what the arm left."""
+    run = write_run(tmp_path, timing={"agent_exit": rc, "agent_seconds": 7203.0, "agent_timeout": 0,
+                                      "agent_backstop": 86400},
                     session=["2026-10-19T04:46:00.000Z", "2026-10-19T06:46:00.000Z"], meta={"arm": "cadence-core"})
     row = pt.summarize(run, PRICING)
     assert row["outcome"] == "graded" and row["counted"] is True and row["counts_as_model_failure"] is True
+
+
+@pytest.mark.parametrize("timing, result", [
+    ({"agent_exit": 124, "agent_seconds": 9001.0, "agent_backstop": 9000}, {}),
+    ({"agent_exit": 1, "agent_seconds": 600.0, "agent_backstop": 9000}, {"subtype": "error_max_budget_usd"}),
+])
+def test_a_harness_run_at_its_backstop_is_attempted_and_not_delivered(tmp_path, timing, result):
+    """Owner, 2026-10-20: time or Claude Code's spend limit, whichever first; counted, a model failure."""
+    run = write_run(tmp_path, timing={"agent_timeout": 0, **timing}, result=result, grade={"reward": 1.0},
+                    meta={"arm": "cadence-core"})
+    row = pt.summarize(run, PRICING)
+    assert row["outcome"] == "backstop" and row["counted"] is True and row["counts_as_model_failure"] is True
+
+
+def _harness_rows(seconds, costs, arm="cadence-core", outcome="graded"):
+    return [{"counted": True, "outcome": outcome, "arm": arm, "agent_seconds": s, "host_cost_usd": c}
+            for s, c in zip(seconds, costs)]
+
+
+def test_the_backstop_is_the_mean_plus_two_standard_deviations_of_time_and_cost():
+    rows = _harness_rows([100, 200, 300, 400, 500], [1.0, 2.0, 3.0, 4.0, 5.0])
+    rows += _harness_rows([99999] * 3, [99.0] * 3, arm="one-shot")  # not a harness run
+    rows += _harness_rows([99999], [99.0], outcome="backstop")  # did not end on its own
+    backstop = pt.backstop_from_rows(rows, min_runs=5)
+    # mean 300, sample SD 158.11 -> 616.2 -> 617 s; mean 3.0, SD 1.5811 -> 6.16
+    assert (backstop["seconds"], backstop["usd"], backstop["measured"]["n"]) == (617, 6.16, 5)
+
+
+def test_a_backstop_needs_enough_runs_and_drops_a_cost_it_cannot_measure():
+    with pytest.raises(ValueError, match="needs 5"):
+        pt.backstop_from_rows(_harness_rows([1, 2, 3, 4], [1, 1, 1, 1]), min_runs=5)
+    assert pt.backstop_from_rows(_harness_rows([1, 2, 3, 4, 5], [1, 1, None, 1, 1]), min_runs=5)["usd"] is None
+
+
+def test_the_backstop_command_writes_the_class(tmp_path, monkeypatch):
+    caps = tmp_path / "caps.json"
+    caps.write_text(json.dumps({"agent_timeout": 7200, "tasks": {},
+                                "harness_backstop": {"min_runs": 2, "default": {"seconds": 86400, "usd": None},
+                                                     "classes": {}}}))
+    monkeypatch.setattr(pt, "CAPS", caps)
+    runs = [write_run(tmp_path / str(i), timing={"agent_seconds": s, "agent_timeout": 0},
+                      result={"total_cost_usd": c}, meta={"arm": "cadence-core"})
+            for i, (s, c) in enumerate([(100.0, 1.0), (300.0, 3.0)])]
+    assert pt.main(["backstop", "lift", *map(str, runs)]) == 0
+    lift = json.loads(caps.read_text())["harness_backstop"]["classes"]["lift"]
+    assert lift["seconds"] == 483 and lift["usd"] == 4.83 and lift["from_runs"] == ["run", "run"]
 
 
 def test_a_one_shot_killed_before_its_cap_is_graded_not_a_guard_cap_run(tmp_path):
@@ -129,9 +176,7 @@ def test_a_regrade_keeps_its_source_trials_arm(tmp_path):
     assert pt.summarize(regrade, PRICING)["outcome"] == "guard_cap"
 
 
-@pytest.mark.parametrize("plugin, expected", [(False, "7200"), (True, "0")])
-def test_only_a_one_shot_gets_the_guard_cap(tmp_path, monkeypatch, plugin, expected):
-    """The runner gets --agent-timeout 0 (no cap) for a harness arm, the caps file's value for a one-shot."""
+def _run_trial_cmd(tmp_path, monkeypatch, plugin_dir, caps):
     import sys
     import types
 
@@ -145,13 +190,36 @@ def test_only_a_one_shot_gets_the_guard_cap(tmp_path, monkeypatch, plugin, expec
     monkeypatch.setitem(sys.modules, "pipetask", pipetask)
     calls = []
     monkeypatch.setattr(pt.subprocess, "call", lambda cmd, env=None: calls.append(cmd) or 0)
-    caps = {"agent_timeout": 7200, "tasks": {"P1": {"image": "img", "grader_timeout": 900}}}
-    plugin_dir = tmp_path / "cadence-core" if plugin else None
     out = tmp_path / "out"
     pt.run_trial("P1", out, mode="agent", model="claude-haiku-5-5", plugin_dir=plugin_dir, replay_seed=0, caps=caps)
-    cmd = calls[0]
-    assert cmd[cmd.index("--agent-timeout") + 1] == expected
-    assert json.loads((out / "trial.json").read_text())["agent_timeout"] == (None if plugin else 7200)
+    return calls[0], json.loads((out / "trial.json").read_text())
+
+
+def _flag(cmd, name):
+    return cmd[cmd.index(name) + 1] if name in cmd else None
+
+
+CAPS = {"agent_timeout": 7200, "tasks": {"P1": {"image": "img", "grader_timeout": 900}},
+        "harness_backstop": {"min_runs": 5, "default": {"seconds": 86400, "usd": None},
+                             "classes": {"lift": {"seconds": 9000, "usd": 4.5}}}}
+
+
+def test_a_one_shot_gets_the_guard_cap_and_no_backstop(tmp_path, monkeypatch):
+    cmd, meta = _run_trial_cmd(tmp_path, monkeypatch, None, CAPS)
+    assert _flag(cmd, "--agent-timeout") == "7200" and "--agent-backstop" not in cmd and "--max-budget-usd" not in cmd
+    assert meta["agent_timeout"] == 7200 and meta["backstop_seconds"] is None
+
+
+@pytest.mark.parametrize("task_class, seconds, usd, source", [(None, "86400", None, "default"),
+                                                              ("lift", "9000", "4.5", "class lift")])
+def test_a_harness_arm_gets_its_class_backstop_or_the_default(tmp_path, monkeypatch, task_class, seconds, usd, source):
+    caps = json.loads(json.dumps(CAPS))
+    if task_class:
+        caps["tasks"]["P1"]["class"] = task_class
+    cmd, meta = _run_trial_cmd(tmp_path, monkeypatch, tmp_path / "cadence-core", caps)
+    assert _flag(cmd, "--agent-timeout") == "0"
+    assert (_flag(cmd, "--agent-backstop"), _flag(cmd, "--max-budget-usd")) == (seconds, usd)
+    assert meta["agent_timeout"] is None and meta["backstop_source"] == source
 
 
 def test_the_grading_deadline_is_the_measured_worst_case_plus_half():

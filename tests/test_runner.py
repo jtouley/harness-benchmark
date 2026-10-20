@@ -56,13 +56,17 @@ def test_bad_arguments_fail_before_docker_is_called(args, tmp_path):
 
 
 @pytest.mark.parametrize("args, message", [
-    (["--plugin-dir", "PLUGIN", "--agent-timeout", "60"], "a harness arm (--plugin-dir) has no time cap"),
+    (["--plugin-dir", "PLUGIN", "--agent-timeout", "60"], "a harness arm (--plugin-dir) has no guard cap"),
     (["--agent-timeout", "0"], "a one-shot keeps a guard cap"),
     (["--agent-timeout", "1h"], "--agent-timeout must be a whole number of seconds"),
     (["--plugin-dir", "EMPTY"], "--plugin-dir is empty"),
+    (["--agent-backstop", "600"], "are for a harness arm (--plugin-dir)"),
+    (["--max-budget-usd", "2.5"], "are for a harness arm (--plugin-dir)"),
+    (["--plugin-dir", "PLUGIN", "--agent-backstop", "10m"], "--agent-backstop must be a whole number of seconds"),
+    (["--plugin-dir", "PLUGIN", "--max-budget-usd", "$5"], "--max-budget-usd must be a number"),
 ])
-def test_only_a_one_shot_has_a_time_cap(args, message, tmp_path):
-    """Criteria v2 section 5.3: a one-shot keeps a guard cap, a harness arm has none; the runner refuses
+def test_only_a_one_shot_has_a_guard_cap_and_only_a_harness_a_backstop(args, message, tmp_path):
+    """Criteria v2 section 5.3: a one-shot keeps a guard cap, a harness arm only a backstop; the runner refuses
     anything else, and an empty plugin (which would run as an uncapped one-shot)."""
     env = {**os.environ, "PATH": f"{tmp_path}:{os.environ['PATH']}"}
     (tmp_path / "docker").write_text("#!/bin/sh\necho docker-called >&2\nexit 99\n")
@@ -82,7 +86,8 @@ def test_only_a_one_shot_has_a_time_cap(args, message, tmp_path):
 
 # The lines of entrypoint.sh that turn HB_AGENT_TIMEOUT into the agent's command prefix (exit 94: not a number).
 ENTRYPOINT_LIMIT_LINES = [
-    'limit_words=$(agent_limit "$agent_timeout") || { log "HB_AGENT_TIMEOUT is not a whole number: $agent_timeout"; exit 94; }',
+    'agent_cap=$([ "$agent_timeout" = 0 ] && echo "$agent_backstop" || echo "$agent_timeout")',
+    'limit_words=$(agent_limit "$agent_cap") || { log "HB_AGENT_TIMEOUT or HB_AGENT_BACKSTOP is not a whole number: $agent_cap"; exit 94; }',
     'mapfile -t limit <<<"$limit_words"',
     '[ -n "$limit_words" ] || limit=()',
 ]
@@ -101,11 +106,26 @@ def test_agent_limit_gives_a_cap_only_for_a_positive_whole_number(seconds, words
     assert (r.returncode, " ".join(r.stdout.split())) == (rc, words)
 
 
-@pytest.mark.parametrize("seconds, rc", [("1", 124), ("0", 0)])
-def test_the_agent_limit_stops_a_one_shot_and_leaves_a_harness_running(seconds, rc):
-    """The same prefix entrypoint.sh puts before the agent: a 1 s cap stops a 2 s session; none lets it end."""
-    script = "\n".join([_agent_limit(), 'agent_timeout="$1"', *ENTRYPOINT_LIMIT_LINES, 'exec "${limit[@]}" sleep 2'])
-    assert sh("bash", "-c", script, "_", seconds, check=False, timeout=30).returncode == rc
+@pytest.mark.parametrize("timeout, backstop, rc", [("1", "0", 124), ("0", "1", 124), ("0", "0", 0)])
+def test_the_agent_limit_stops_at_the_cap_or_the_backstop(timeout, backstop, rc):
+    """The same prefix entrypoint.sh puts before the agent: a 1 s one-shot cap, or a 1 s harness backstop,
+    stops a 2 s session; neither lets it end."""
+    script = "\n".join([_agent_limit(), 'agent_timeout="$1" agent_backstop="$2"', *ENTRYPOINT_LIMIT_LINES,
+                        'exec "${limit[@]}" sleep 2'])
+    assert sh("bash", "-c", script, "_", timeout, backstop, check=False, timeout=30).returncode == rc
+
+
+@pytest.mark.parametrize("budget, expected", [("4.5", ["--max-budget-usd", "4.5"]), ("", [])])
+def test_claude_gets_the_spend_limit_only_when_there_is_one(tmp_path, budget, expected):
+    """claude-agent.sh passes a harness arm's dollar backstop to Claude Code (its --max-budget-usd)."""
+    (tmp_path / "claude").write_text('#!/bin/sh\nprintf "%s\\n" "$@"\necho "env:${HB_MAX_BUDGET_USD-unset}"\n')
+    (tmp_path / "claude").chmod(0o755)
+    env = {"PATH": f"{tmp_path}:/usr/bin:/bin", "HB_MODEL": "m", "HB_OUTPUTS": str(tmp_path),
+           "HB_MAX_BUDGET_USD": budget}
+    args = sh("bash", str(RUNNER / "claude-agent.sh"), env=env).stdout.splitlines()
+    assert args.pop() == "env:unset"  # the agent's tools cannot read the limit
+    tail = args[args.index("--verbose") + 1:]
+    assert [a for a in tail if a != "--plugin-dir" and a != "/trial/plugin"] == expected
 
 
 def test_entrypoint_runs_the_agent_under_agent_limit():

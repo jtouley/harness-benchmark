@@ -55,8 +55,8 @@ API key), 90 (the inner daemon did not start), 91 (the grader was not delivered)
    starts it with the API key on standard input.
 2. `entrypoint.sh` starts the inner `dockerd`; its storage is the container's anonymous volume.
 3. The agent runs as user `agent` (in the `docker` group), with the key in its environment only. A
-   one-shot runs under its guard cap (`--agent-timeout`); a harness arm (`--plugin-dir`) has no time limit
-   (criteria v2 §5.3).
+   one-shot runs under its guard cap (`--agent-timeout`); a harness arm (`--plugin-dir`) has none, only a
+   backstop against a runaway (`--agent-backstop` seconds and `--max-budget-usd`, criteria v2 §5.3).
    With `--replay`, a dev service (`replay.pyz`) runs as root on `localhost:8099` during the agent's
    session; the agent can use it but not read its files.
 4. Every process of user `agent` in the trial's own PID namespace is killed (repeated until none is
