@@ -112,16 +112,19 @@ def test_a_harness_run_at_its_backstop_is_attempted_and_not_delivered(tmp_path, 
     assert row["outcome"] == "backstop" and row["counted"] is True and row["counts_as_model_failure"] is True
 
 
-def _harness_rows(seconds, costs, harness=True, outcome="graded", task="P1", source="default"):
+def _harness_rows(seconds, costs, harness=True, outcome="graded", task="P1", source="default", rc=0, name="r"):
     return [{"counted": True, "outcome": outcome, "harness": harness, "agent_seconds": s, "host_cost_usd": c,
-             "run_path": f"runs/r{i}", "task": task, "backstop_source": source}
+             "run_path": f"runs/{name}{i}", "task": task, "backstop_source": source, "agent_exit_status": rc}
             for i, (s, c) in enumerate(zip(seconds, costs))]
 
 
 def test_a_backstop_uses_only_its_classes_tasks_and_runs_made_under_the_default():
     rows = _harness_rows([100, 200, 300, 400, 500], [1.0, 2.0, 3.0, 4.0, 5.0])
-    rows += _harness_rows([99999] * 3, [99.0] * 3, task="P2")  # another class
-    rows += _harness_rows([99999] * 3, [99.0] * 3, source="class lift")  # cut by the class backstop it would set
+    rows += _harness_rows([99999] * 3, [99.0] * 3, task="P2", name="p2-")  # another class
+    rows += _harness_rows([99999] * 3, [99.0] * 3, source="class lift", name="c")  # under the class backstop
+    rows += _harness_rows([99999] * 3, [99.0] * 3, source=None, name="old")  # before backstops: a guard cap
+    rows += _harness_rows([3000] * 3, [9.0] * 3, rc=137, name="k")  # killed from outside, not marked infra
+    rows += _harness_rows([100, 200], [1.0, 2.0])  # the same runs listed again
     assert pt.backstop_from_rows(rows, min_runs=5, tasks=["P1"])["seconds"] == 617
 
 
@@ -162,12 +165,15 @@ def test_the_backstop_command_writes_the_class(tmp_path, monkeypatch):
                                                      "classes": {}}}))
     monkeypatch.setattr(pt, "CAPS", caps)
     runs = [write_run(tmp_path / str(i), timing={"agent_seconds": s, "agent_timeout": 0},
-                      result={"total_cost_usd": c}, meta={"arm": "cadence-core"})
+                      result={"total_cost_usd": c}, meta={"arm": "cadence-core", "backstop_source": "default"})
             for i, (s, c) in enumerate([(100.0, 1.0), (300.0, 3.0)])]
     assert pt.main(["backstop", "lift", *map(str, runs)]) == 0
     lift = json.loads(caps.read_text())["harness_backstop"]["classes"]["lift"]
     assert lift["seconds"] == 483 and lift["usd"] == 4.83 and lift["tasks"] == ["P1"]
     assert lift["from_runs"] == [str(r) for r in runs]
+    with pytest.raises(SystemExit, match="set once and then fixed"):
+        pt.main(["backstop", "lift", *map(str, runs)])
+    assert pt.main(["backstop", "lift", "--replace", *map(str, runs)]) == 0
 
 
 def test_the_backstop_command_refuses_a_class_no_task_has(tmp_path, monkeypatch):
@@ -200,6 +206,16 @@ def test_a_harness_session_idle_long_before_its_backstop_is_a_stall(tmp_path):
                                       "agent_backstop": 9000},
                     session=["2026-10-20T10:00:00.000Z", "2026-10-20T10:20:00.000Z"], meta={"arm": "cadence-core"})
     assert pt.summarize(run, PRICING)["outcome"] == "api_stall"
+
+
+def test_a_regrade_keeps_its_sources_backstop_record_and_stall(tmp_path):
+    src = write_run(tmp_path / "a", timing={"agent_exit": 124, "agent_seconds": 9001.0, "agent_timeout": 0,
+                                            "agent_backstop": 9000},
+                    session=["2026-10-20T10:00:00.000Z", "2026-10-20T10:20:00.000Z"],
+                    meta={"arm": "cadence-core", "harness": True, "backstop_source": "class lift"})
+    regrade = write_run(tmp_path / "b", meta={"mode": "regrade", "regrade_of": str(src), "arm": "regrade"})
+    row = pt.summarize(regrade, PRICING)
+    assert row["outcome"] == "api_stall" and row["backstop_source"] == "class lift"
 
 
 def test_a_regrade_of_an_infrastructure_error_is_not_counted(tmp_path):
