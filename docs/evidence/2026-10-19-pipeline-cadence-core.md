@@ -298,7 +298,13 @@ with one message: `oracle_map.yml` is not valid YAML. Three `how:` lines hold an
 with a colon in it ("Singular test: transform/tests/…"), which YAML reads as a second mapping key.
 The file has been in that state since the phase 6 commit at 23:46. The run's own
 `test_marts_published.py` checks the six published folders by name and never reads the map, so its
-15 tests passed; the R1 round caught five other things and not this one. A diagnostic regrade with those three strings quoted (not a result) is recorded below when it lands.
+15 tests passed; the R1 round caught five other things and not this one. A diagnostic regrade with only those three strings quoted
+(`diagnostic-yaml-quoted.grade.json`, not a result, as with the 15 October regrade of the Haiku P2
+map) reads 2 of 7: checks 1 and 2 pass from the published batch marts; check 3 counts 7,918 awards
+against 1,122 (no trap matches); check 4 is the reconciliation reading again; checks 5 and 6 find no
+column the key can read in the stream marts; check 7 finds no late events, which traps F4, F5 and S3
+explain, and which is the stall R1 had just reported. The batch half was partly right and the stream
+half was the defect the run was fixing when it was cut.
 
 Tool measures: 1,063 lines added in `pipeline/`; `oracle.py:main` 19 cyclomatic and 18 cognitive,
 `stream.py:consume` 16 and 33; no new bug finding, 7 new type errors; duplication 1.1%;

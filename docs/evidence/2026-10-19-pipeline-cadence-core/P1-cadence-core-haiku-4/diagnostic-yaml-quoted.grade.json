@@ -1,0 +1,104 @@
+{
+ "build": [
+  {
+   "cmd": "make build",
+   "exit": 0,
+   "log": "build-1.log",
+   "seconds": 26.3
+  },
+  {
+   "cmd": "make build",
+   "exit": 0,
+   "log": "build-2.log",
+   "seconds": 20.4
+  }
+ ],
+ "build_timeout": 1800,
+ "changed_by_second_build": [],
+ "checks": {
+  "1": {
+   "interpretation": "primary",
+   "pass": true,
+   "reading": "awarding_agency_code -> net_obligations",
+   "source": "table mart_fy2024_monthly_county_agency"
+  },
+  "2": {
+   "interpretation": "primary",
+   "pass": true,
+   "reading": "county_fips -> obligations_per_person",
+   "source": "table view_fy2024_county_per_person_top10"
+  },
+  "3": {
+   "expected": "1122",
+   "got": "7918",
+   "pass": false,
+   "source": "table mart_fy2024_award_net",
+   "traps": [],
+   "unexplained": true
+  },
+  "4": {
+   "expected": "{\"counties\": {\"01069\": \"75000.00\", \"02016\": \"15996.00\", \"02020\": \"196993.00\", \"02050\": \"29878.00\", \"02063\": \"10000.00\", \"02066\": \"10000.00\", \"02068\": \"7025.00\", \"02070\": \"10000.00\", \"02090\": \"0.00\", \"02100\": \"10000.00\", \"02110\": \"190000.00\", \"02122\": \"27466.00\", \"02150\": \"29971.00\", \"02158\": \"10000.00\", \"02164\": \"50000.00\", \"02195\": \"20000.00\", \"02198\": \"20000.00\", \"02240\": \"10000.00\", \"02275\": \"1...",
+   "got": "{\"counties\": {\"02021\": \"148710.00\", \"02024\": \"74046974.72\"}, \"month\": \"2024-07\", \"states\": {\"01\": \"204004.17\", \"02\": \"2586242.00\", \"04\": \"11707289.98\", \"05\": \"4748653.00\", \"06\": \"9005420.18\", \"08\": \"14055693.00\", \"09\": \"5907487.00\", \"10\": \"800768.00\", \"11\": \"10899436.11\", \"12\": \"24364885.19\", \"13\": \"4292416.96\", \"15\": \"1435464.24\", \"16\": \"4156616.00\", \"17\": \"-178746.01\", \"18\": \"1707409.12\", \"19\": ...",
+   "pass": false,
+   "source": "table mart_fy2024_monthly_county_agency",
+   "traps": [],
+   "unexplained": true
+  },
+  "5": {
+   "error": "no wiki, actor and two count columns found",
+   "pass": false,
+   "source": "table fct_edit"
+  },
+  "6": {
+   "error": "no window start column and edit count column found",
+   "pass": false,
+   "source": "table mart_edit_window_5min"
+  },
+  "7": {
+   "got": "0",
+   "pass": false,
+   "reading": "row count",
+   "source": "table late_events",
+   "traps": [
+    "F4",
+    "F5",
+    "S3",
+    "S3-drops"
+   ]
+  }
+ },
+ "deadline": 600.0,
+ "deadline_hit": false,
+ "durations": [
+  30,
+  90
+ ],
+ "idempotent": true,
+ "keepalive": 5.0,
+ "make_fresh_home": false,
+ "make_user": null,
+ "passed": 2,
+ "reward": 0.2857,
+ "seed": 1,
+ "speed": 60.0,
+ "stream": [
+  {
+   "cmd": "make stream DURATION=30",
+   "exit": 0,
+   "log": "stream-1.log",
+   "seconds": 31.5
+  },
+  {
+   "cmd": "make stream DURATION=90",
+   "exit": -9,
+   "log": "stream-2.log",
+   "seconds": 390.0
+  }
+ ],
+ "stream_connections": 5,
+ "stream_grace": 300,
+ "stream_ok": true,
+ "stream_positions_needed": 11774,
+ "stream_positions_served": 21503,
+ "total": 7
+}
