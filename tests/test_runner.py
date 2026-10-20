@@ -84,36 +84,35 @@ def test_only_a_one_shot_has_a_guard_cap_and_only_a_harness_a_backstop(args, mes
     assert "docker-called" not in r.stderr
 
 
-# The lines of entrypoint.sh that turn HB_AGENT_TIMEOUT into the agent's command prefix (exit 94: not a number).
-ENTRYPOINT_LIMIT_LINES = [
-    'agent_cap=$([ "$agent_timeout" -eq 0 ] 2>/dev/null && echo "$agent_backstop" || echo "$agent_timeout")',
-    'limit_words=$(agent_limit "$agent_cap") || { log "HB_AGENT_TIMEOUT or HB_AGENT_BACKSTOP is not a whole number: $agent_cap"; exit 94; }',
-    'mapfile -t limit <<<"$limit_words"',
-    '[ -n "$limit_words" ] || limit=()',
-]
-
-
 def _agent_limit() -> str:
     """entrypoint.sh's agent_limit function, as written there."""
-    line = next(l for l in (RUNNER / "entrypoint.sh").read_text().splitlines() if l.startswith("agent_limit() "))
-    return line
+    text = (RUNNER / "entrypoint.sh").read_text()
+    return re.search(r"^agent_limit\(\) \{\n.*?^\}$", text, re.M | re.S).group(0)
 
 
-@pytest.mark.parametrize("seconds, words, rc", [("0", "", 0), ("7200", "timeout --kill-after=30 7200", 0),
-                                                ("", "", 1), ("1h", "", 1)])
-def test_agent_limit_gives_a_cap_only_for_a_positive_whole_number(seconds, words, rc):
-    r = sh("bash", "-c", f'{_agent_limit()}\nagent_limit "$1"', "_", seconds, check=False)
-    assert (r.returncode, " ".join(r.stdout.split())) == (rc, words)
+@pytest.mark.parametrize("timeout, backstop, prefix", [
+    ("7200", "0", "timeout --kill-after=30 7200"), ("0", "9000", "timeout --kill-after=30 9000"),
+    ("00", "9000", "timeout --kill-after=30 9000"), ("0", "0", ""), ("", "0", None), ("1h", "0", None),
+    ("0", "x", None),
+])
+def test_agent_limit_is_the_guard_cap_or_the_backstop(timeout, backstop, prefix):
+    """A one-shot stops at its guard cap, a harness arm (timeout 0) at its backstop; a non-number fails."""
+    r = sh("bash", "-c", f'{_agent_limit()}\nagent_limit "$1" "$2" || exit 9\necho "${{limit[*]}}"',
+           "_", timeout, backstop, check=False)
+    assert (r.returncode, r.stdout.strip()) == ((9, "") if prefix is None else (0, prefix))
 
 
-@pytest.mark.parametrize("timeout, backstop, rc", [("1", "0", 124), ("0", "1", 124), ("00", "1", 124),
-                                                   ("0", "0", 0)])
-def test_the_agent_limit_stops_at_the_cap_or_the_backstop(timeout, backstop, rc):
-    """The same prefix entrypoint.sh puts before the agent: a 1 s one-shot cap, or a 1 s harness backstop,
-    stops a 2 s session; neither lets it end."""
-    script = "\n".join([_agent_limit(), 'agent_timeout="$1" agent_backstop="$2"', *ENTRYPOINT_LIMIT_LINES,
-                        'exec "${limit[@]}" sleep 2'])
+@pytest.mark.parametrize("timeout, backstop, rc", [("1", "0", 124), ("0", "1", 124), ("0", "0", 0)])
+def test_the_limit_stops_a_session_at_the_cap_or_the_backstop(timeout, backstop, rc):
+    """A 1 s one-shot cap, or a 1 s harness backstop, stops a 2 s session; neither lets it end."""
+    script = f'{_agent_limit()}\nagent_limit "$1" "$2"\nexec "${{limit[@]}}" sleep 2'
     assert sh("bash", "-c", script, "_", timeout, backstop, check=False, timeout=30).returncode == rc
+
+
+def test_entrypoint_starts_the_agent_under_agent_limit():
+    text = (RUNNER / "entrypoint.sh").read_text()
+    assert re.search(r'^agent_limit "\$agent_timeout" "\$agent_backstop" \|\|', text, re.M)
+    assert re.search(r'^ exec "\$\{limit\[@\]\}" setpriv', text, re.M)
 
 
 @pytest.mark.parametrize("budget, expected", [("4.5", ["--max-budget-usd", "4.5"]), ("", [])])
@@ -124,16 +123,9 @@ def test_claude_gets_the_spend_limit_only_when_there_is_one(tmp_path, budget, ex
     env = {"PATH": f"{tmp_path}:/usr/bin:/bin", "HB_MODEL": "m", "HB_OUTPUTS": str(tmp_path),
            "HB_MAX_BUDGET_USD": budget}
     args = sh("bash", str(RUNNER / "claude-agent.sh"), env=env).stdout.splitlines()
-    assert args.pop() == "env:unset"  # the agent's tools cannot read the limit
+    assert args.pop() == "env:unset"  # not in the environment the agent's tools inherit
     tail = args[args.index("--verbose") + 1:]
     assert [a for a in tail if a != "--plugin-dir" and a != "/trial/plugin"] == expected
-
-
-def test_entrypoint_runs_the_agent_under_agent_limit():
-    lines = (RUNNER / "entrypoint.sh").read_text().splitlines()
-    for line in ENTRYPOINT_LIMIT_LINES:
-        assert line in lines
-    assert any(l.strip().startswith('exec "${limit[@]}" setpriv') for l in lines)
 
 
 KEY_VARIABLES = ("ANTHROPIC_API_KEY", "HB_API_KEY")

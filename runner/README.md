@@ -46,7 +46,9 @@ summary file should name that path.
 The container exits 0 once the grader has run, also when the agent timed out (`agent_exit` 124) or the
 grader failed. Read the result from `timing.json` and `grade.json`, not from the exit code of
 `run_trial.sh`. Its own exit codes: 2 (bad arguments), 3 (an output file could not be scanned for the
-API key), 90 (the inner daemon did not start), 91 (the grader was not delivered), 130 (interrupted).
+API key), 90 (the inner daemon did not start), 91 (the grader was not delivered), 92 (the dev replay did not
+start), 93 (a bad line in the toolchain file), 94 (a guard cap or backstop that is not a whole number),
+130 (interrupted).
 `results/runs/` is in `.gitignore`.
 
 ## What happens in a trial

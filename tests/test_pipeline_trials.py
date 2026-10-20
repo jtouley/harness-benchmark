@@ -112,9 +112,21 @@ def test_a_harness_run_at_its_backstop_is_attempted_and_not_delivered(tmp_path, 
     assert row["outcome"] == "backstop" and row["counted"] is True and row["counts_as_model_failure"] is True
 
 
-def _harness_rows(seconds, costs, harness=True, outcome="graded"):
+def _harness_rows(seconds, costs, harness=True, outcome="graded", task="P1", source="default"):
     return [{"counted": True, "outcome": outcome, "harness": harness, "agent_seconds": s, "host_cost_usd": c,
-             "run_path": f"runs/r{i}"} for i, (s, c) in enumerate(zip(seconds, costs))]
+             "run_path": f"runs/r{i}", "task": task, "backstop_source": source}
+            for i, (s, c) in enumerate(zip(seconds, costs))]
+
+
+def test_a_backstop_uses_only_its_classes_tasks_and_runs_made_under_the_default():
+    rows = _harness_rows([100, 200, 300, 400, 500], [1.0, 2.0, 3.0, 4.0, 5.0])
+    rows += _harness_rows([99999] * 3, [99.0] * 3, task="P2")  # another class
+    rows += _harness_rows([99999] * 3, [99.0] * 3, source="class lift")  # cut by the class backstop it would set
+    assert pt.backstop_from_rows(rows, min_runs=5, tasks=["P1"])["seconds"] == 617
+
+
+def test_a_cost_of_nothing_sets_no_dollar_backstop():
+    assert pt.backstop_from_rows(_harness_rows([1, 2], [0.0, 0.0]), min_runs=2)["usd"] is None
 
 
 def test_the_backstop_is_the_mean_plus_two_standard_deviations_of_time_and_cost():
@@ -122,8 +134,8 @@ def test_the_backstop_is_the_mean_plus_two_standard_deviations_of_time_and_cost(
     rows += _harness_rows([99999] * 3, [99.0] * 3, harness=False)  # a one-shot, a reference or a skeleton run
     rows += _harness_rows([99999], [99.0], outcome="backstop")  # did not end on its own
     backstop = pt.backstop_from_rows(rows, min_runs=5)
-    # mean 300, sample SD 158.11 -> 616.2 -> 617 s; mean 3.0, SD 1.5811 -> 6.16
-    assert (backstop["seconds"], backstop["usd"], backstop["measured"]["n"]) == (617, 6.16, 5)
+    # mean 300, sample SD 158.11 -> 616.2 -> 617 s; mean 3.0, SD 1.5811 -> 6.162 -> $6.17 (both round up)
+    assert (backstop["seconds"], backstop["usd"], backstop["measured"]["n"]) == (617, 6.17, 5)
     assert backstop["from_runs"] == [f"runs/r{i}" for i in range(5)]  # only the runs used
 
 
@@ -173,6 +185,14 @@ def test_a_harness_run_stopped_at_the_runners_guard_cap_is_an_infrastructure_err
                     session=["2026-10-19T04:46:00.000Z", "2026-10-19T06:46:00.000Z"], meta={"arm": "cadence-core"})
     row = pt.summarize(run, PRICING)
     assert row["outcome"] == "infra_error" and row["counted"] is False
+
+
+def test_a_spend_limit_stop_is_a_backstop_even_after_an_idle_spell(tmp_path):
+    run = write_run(tmp_path, timing={"agent_exit": 1, "agent_seconds": 3000.0, "agent_timeout": 0,
+                                      "agent_backstop": 9000},
+                    result={"subtype": "error_max_budget_usd", "is_error": True},
+                    session=["2026-10-20T10:00:00.000Z", "2026-10-20T10:10:00.000Z"], meta={"arm": "cadence-core"})
+    assert pt.summarize(run, PRICING)["outcome"] == "backstop"
 
 
 def test_a_harness_session_idle_long_before_its_backstop_is_a_stall(tmp_path):
@@ -245,6 +265,25 @@ def _flag(cmd, name):
 CAPS = {"agent_timeout": 7200, "tasks": {"P1": {"image": "img", "grader_timeout": 900}},
         "harness_backstop": {"min_runs": 5, "default": {"seconds": 86400, "usd": None},
                              "classes": {"lift": {"seconds": 9000, "usd": 4.5}}}}
+
+
+def test_a_regrade_of_a_harness_trial_is_recorded_as_one_but_keeps_the_runners_cap(tmp_path, monkeypatch):
+    import sys
+    import types
+
+    src = write_run(tmp_path / "src", meta={"arm": "cadence-core", "harness": True})
+    (src / "repo").mkdir()
+    monkeypatch.setattr(pt, "repo_from_saved", lambda saved, out: out.mkdir(parents=True) or out)
+    pipetask = types.ModuleType("pipetask")
+    pipetask.assemble = types.SimpleNamespace(assemble=lambda *a, **k: None)
+    pipetask.bundle = types.SimpleNamespace(bundle=lambda dist: None)
+    monkeypatch.setitem(sys.modules, "pipetask", pipetask)
+    calls = []
+    monkeypatch.setattr(pt.subprocess, "call", lambda cmd, env=None: calls.append(cmd) or 0)
+    out = tmp_path / "out"
+    pt.run_trial("P1", out, mode="regrade", model=None, plugin_dir=None, replay_seed=0, caps=CAPS, regrade_of=src)
+    assert json.loads((out / "trial.json").read_text())["harness"] is True
+    assert _flag(calls[0], "--agent-timeout") == "7200"  # the stub agent is not a harness session
 
 
 def test_a_one_shot_gets_the_guard_cap_and_no_backstop(tmp_path, monkeypatch):

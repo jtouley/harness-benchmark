@@ -216,7 +216,7 @@ def test_a_harness_arm_has_a_backstop_not_a_guard_cap():
     """Owner, 2026-10-20: mean + 2 SD of time and of cost per task class, whichever first; not delivered."""
     caps = _flat(_section("### 5.3 Caps and the run-set budget"))
     assert "Harness arms have no guard cap, only a backstop against a runaway" in caps
-    assert "the mean plus 2 standard deviations of the wall time and of the cost" in caps
+    assert "the mean plus 2 standard deviations of the session time" in caps
     assert "whichever is hit first" in caps
     assert "A harness run that hits it is an **attempted run that is not delivered** (§8.1)" in caps
     assert "A harness run is never cut off**" not in caps

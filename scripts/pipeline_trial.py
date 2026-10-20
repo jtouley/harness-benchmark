@@ -140,8 +140,9 @@ def outcome(run: Path, result: dict, timing: dict, harness: bool = False) -> str
     def stopped_at(limit: float) -> bool:
         return bool(limit) and rc in (124, 137) and seconds >= limit
 
-    over_budget = harness and result.get("subtype") == "error_max_budget_usd"
-    if not (stopped_at(cap) or stopped_at(backstop) or over_budget):
+    if harness and result.get("subtype") == "error_max_budget_usd":
+        return "backstop"  # Claude Code's spend limit: spent, not stalled
+    if not (stopped_at(cap) or stopped_at(backstop)):
         return "graded"
     span = _session_span(run)
     if span is not None and seconds - span > STALL_IDLE_SECONDS:
@@ -182,6 +183,7 @@ def summarize(run: Path, pricing: dict) -> dict:
         "idempotent": grade.get("idempotent"), "stream_ok": grade.get("stream_ok"), "error": grade.get("error"),
         "tokens": tokens, "cost_usd": format(cost.quantize(Decimal("0.000001")), "f"),
         "host_cost_usd": result.get("total_cost_usd"), "arm": meta.get("arm", "one-shot"), "harness": is_harness(meta),
+        "backstop_source": meta.get("backstop_source"),
         "num_turns": result.get("num_turns"),
         "agent_seconds": timing.get("agent_seconds"), "grader_seconds": timing.get("grader_seconds"),
         "first_build_seconds": first, "wall_seconds": wall,
@@ -229,13 +231,16 @@ def caps_from_measurements(grades: list[dict]) -> dict:
             "measured": {"grader_seconds": seconds, "worst": max(seconds)}}
 
 
-def backstop_from_rows(rows: list[dict], min_runs: int) -> dict:
+def backstop_from_rows(rows: list[dict], min_runs: int, tasks: list[str] | None = None) -> dict:
     """A task class's harness backstop (criteria v2 section 5.3): the mean plus 2 standard deviations of
-    the wall time and of Claude Code's own cost of counted harness runs that ended on their own. The
-    seconds round up; a cost is left out when any run lacks Claude Code's figure. `from_runs` names the
-    runs used."""
+    the session time (agent_seconds) and of Claude Code's own cost of counted harness runs of the class's
+    tasks that ended on their own under the default backstop. Runs made under a class backstop are left
+    out: a backstop fitted to runs it cut short would shrink each time it was set again. Both values round
+    up (seconds, cents); a cost is left out when any run lacks Claude Code's figure or comes to nothing.
+    `from_runs` names the runs used."""
     min_runs = max(min_runs, 2)  # a standard deviation needs two
-    used = [r for r in rows if r["counted"] and r["outcome"] == "graded" and r["harness"]]
+    used = [r for r in rows if r["counted"] and r["outcome"] == "graded" and r["harness"]
+            and r.get("backstop_source") in (None, "default") and (tasks is None or r["task"] in tasks)]
     if len(used) < min_runs:
         raise ValueError(f"{len(used)} harness runs that ended on their own; the backstop needs {min_runs}")
     seconds = [r["agent_seconds"] for r in used]
@@ -244,8 +249,8 @@ def backstop_from_rows(rows: list[dict], min_runs: int) -> dict:
                 "measured": {"n": len(used), "seconds_mean": round(statistics.mean(seconds), 1),
                              "seconds_sd": round(statistics.stdev(seconds), 1)},
                 "from_runs": [r["run_path"] for r in used]}
-    if all(isinstance(c, (int, float)) for c in costs):
-        backstop["usd"] = round(statistics.mean(costs) + 2 * statistics.stdev(costs), 2)
+    if all(isinstance(c, (int, float)) for c in costs) and statistics.mean(costs) > 0:
+        backstop["usd"] = math.ceil(100 * (statistics.mean(costs) + 2 * statistics.stdev(costs))) / 100
         backstop["measured"].update(usd_mean=round(statistics.mean(costs), 4), usd_sd=round(statistics.stdev(costs), 4))
     return backstop
 
@@ -283,9 +288,13 @@ def run_trial(task: str, out: Path, *, mode: str, model: str | None, plugin_dir:
     task_caps = caps["tasks"][task]
     # The guard cap is for one-shots only; a harness arm (an arm with a plugin) is never cut off
     # (criteria v2 section 5.3). 0 tells the runner: no cap.
-    harness = mode == "agent" and plugin_dir is not None
-    agent_timeout = 0 if harness else caps["agent_timeout"]
-    backstop, backstop_source = harness_backstop(caps, task) if harness else ({"seconds": 0, "usd": None}, None)
+    # A regrade has no agent of its own; it is a harness trial when the run it regrades was one.
+    harness = (mode == "agent" and plugin_dir is not None) or (
+        mode == "regrade" and is_harness(_load(regrade_of / "trial.json")))
+    harness_agent = mode == "agent" and plugin_dir is not None  # this trial runs a harness session
+    agent_timeout = 0 if harness_agent else caps["agent_timeout"]
+    backstop, backstop_source = (harness_backstop(caps, task) if harness_agent
+                                 else ({"seconds": 0, "usd": None}, None))
     with tempfile.TemporaryDirectory(prefix=f"hb-{task}-") as tmp:
         tmp_path = Path(tmp)
         if mode == "regrade":
@@ -318,7 +327,7 @@ def run_trial(task: str, out: Path, *, mode: str, model: str | None, plugin_dir:
             cmd += ["--agent-cmd", str(stub), "--model", "none"]
             env.pop("ANTHROPIC_API_KEY", None)
         meta = {"task": task, "mode": mode, "model": model if mode == "agent" else None,
-                "arm": plugin_dir.name if harness else "one-shot" if mode == "agent" else mode,
+                "arm": plugin_dir.name if harness_agent else "one-shot" if mode == "agent" else mode,
                 "image": task_caps["image"], "agent_timeout": agent_timeout or None,
                 "harness": harness, "backstop_seconds": backstop["seconds"] or None, "backstop_usd": backstop.get("usd"),
                 "backstop_source": backstop_source,
@@ -408,7 +417,7 @@ def main(argv: list[str] | None = None) -> int:
             sys.exit(f"no task in {CAPS.name} has class {args.task_class!r}: set tasks.<task>.class first "
                      "(criteria v2 section 3.2), or the backstop is never applied")
         try:
-            backstop = backstop_from_rows(summarize_all(args.runs, pricing), hb["min_runs"])
+            backstop = backstop_from_rows(summarize_all(args.runs, pricing), hb["min_runs"], tasks)
         except ValueError as exc:
             sys.exit(str(exc))
         hb["classes"][args.task_class] = {**backstop, "tasks": tasks}

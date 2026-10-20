@@ -5,7 +5,8 @@
 # Usage:
 #   runner/run_trial.sh --repo DIR --prompt FILE --grader FILE --out DIR
 #                       [--model ID] [--plugin-dir DIR] [--suffix TEXT] [--permission-mode MODE]
-#                       [--agent-timeout SEC] [--grader-timeout SEC] [--image IMAGE] [--name NAME]
+#                       [--agent-timeout SEC | --agent-backstop SEC [--max-budget-usd USD]]
+#                       [--grader-timeout SEC] [--image IMAGE] [--name NAME]
 #                       [--agent-cmd FILE] [--replay FILE [--replay-seed N]] [--grader-arg ARG]...
 #
 #   --repo         task repository; copied into the container (the host copy is not changed)
@@ -34,7 +35,7 @@
 # [REDACTED:ANTHROPIC_API_KEY]. The scan reads the key from the environment and never prints it.
 set -euo pipefail
 
-usage() { sed -n '2,34p' "$0" | sed 's/^# \{0,1\}//'; }
+usage() { sed -n '2,35p' "$0" | sed 's/^# \{0,1\}//'; }
 die() { printf 'run_trial: %s\n' "$*" >&2; exit 2; }
 
 IMAGE="${HB_RUNNER_IMAGE:-harness-benchmark/runner:local}"

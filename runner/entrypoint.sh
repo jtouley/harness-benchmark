@@ -31,9 +31,15 @@ set -uo pipefail
 OUT=/trial/out
 log() { printf '[trial %s] %s\n' "$(date -u +%H:%M:%S)" "$*"; }
 now() { date +%s.%N; }
-# The command prefix that caps the agent at $1 seconds, one word per line; none for 0, a harness arm, which
-# is never cut off (criteria v2 section 5.3). A value that is not a whole number fails.
-agent_limit() { case "$1" in ''|*[!0-9]*) return 1 ;; 0) return 0 ;; *) printf '%s\n' timeout --kill-after=30 "$1" ;; esac; }
+# agent_limit TIMEOUT BACKSTOP sets `limit`, the command prefix that stops the agent (criteria v2 section
+# 5.3): a one-shot at its guard cap TIMEOUT; a harness arm (TIMEOUT 0) at its BACKSTOP, or never for 0. Sets
+# `agent_cap` to the seconds used. Fails, leaving both unset, on a value that is not a whole number.
+agent_limit() {
+  local t
+  for t in "$1" "$2"; do case "$t" in ''|*[!0-9]*) return 1 ;; esac; done
+  agent_cap=$(( 10#$1 > 0 ? 10#$1 : 10#$2 )); limit=()
+  [ "$agent_cap" -eq 0 ] || limit=(timeout --kill-after=30 "$agent_cap")
+}
 
 HB_API_KEY=""
 IFS= read -r -t 10 HB_API_KEY || true
@@ -83,13 +89,10 @@ agent_vars=(PATH=/home/agent/.local/bin:/usr/local/bin:/usr/bin:/bin "${toolchai
   USER=agent TERM=dumb LANG=C.UTF-8 DISABLE_AUTOUPDATER=1 HB_OUTPUTS="$OUT/agent"
   HB_MODEL="${HB_MODEL:-}" HB_PERMISSION_MODE="${HB_PERMISSION_MODE:-auto}" HB_MAX_BUDGET_USD="${HB_MAX_BUDGET_USD:-}")
 
-# A one-shot stops at its guard cap; a harness arm (timeout 0) only at its backstop, if it has one.
 agent_backstop="${HB_AGENT_BACKSTOP:-0}"
-agent_cap=$([ "$agent_timeout" -eq 0 ] 2>/dev/null && echo "$agent_backstop" || echo "$agent_timeout")
-limit_words=$(agent_limit "$agent_cap") || { log "HB_AGENT_TIMEOUT or HB_AGENT_BACKSTOP is not a whole number: $agent_cap"; exit 94; }
-mapfile -t limit <<<"$limit_words"
-[ -n "$limit_words" ] || limit=()
-log "agent start (model ${HB_MODEL:-unset}, timeout $([ ${#limit[@]} -gt 0 ] && echo "${agent_cap}s" || echo none))"
+agent_limit "$agent_timeout" "$agent_backstop" ||
+  { log "HB_AGENT_TIMEOUT or HB_AGENT_BACKSTOP is not a whole number: $agent_timeout, $agent_backstop"; exit 94; }
+log "agent start (model ${HB_MODEL:-unset}, stops after $([ "$agent_cap" -gt 0 ] && echo "${agent_cap}s" || echo never))"
 t0=$(now)
 # The subshell drops every inherited variable and exports only the agent's. `export` is a builtin, so
 # the key is in the environment of the agent process and in no process's arguments.
