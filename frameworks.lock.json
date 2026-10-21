@@ -21,9 +21,8 @@
   "ignore": [
     "^home/\\.claude\\.json$",
     "^home/\\.claude/backups/",
-    "^home/\\.claude/policy-limits\\.json\\.stamp\\.json$",
-    "^home/\\.claude/policy-limits\\.json$",
-    "^home/\\.claude/remote-settings\\.json$"
+    "^home/\\.claude/policy-limits\\.json(\\..+)?$",
+    "^home/\\.claude/remote-settings\\.json(\\..+)?$"
   ],
   "frameworks": {
     "baseline": {
@@ -70,6 +69,38 @@
       },
       "drive_prompt": "Use the cadence skill to ship this change end to end through R7.\n\nIssue (ticket gh-1):\n{issue}",
       "install_note": "Only the host directories exist before install (no skills dirs): the first-install case. Pinned to the current jtouley/cadence main; the whole repo is the installed skill root, so anything in that repo ships in the skill."
+    },
+    "cadence-core": {
+      "title": "Cadence core",
+      "repo": "https://github.com/jtouley/cadence-core",
+      "sha": "29315c4e64ff318a80a1a7d2c809beb4b3c15611",
+      "build": [],
+      "install": [
+        {
+          "op": "mkdir",
+          "path": "{home}/.claude"
+        },
+        {
+          "op": "mkdir",
+          "path": "{home}/.cursor"
+        },
+        {
+          "op": "run",
+          "cwd": "{src}",
+          "argv": [
+            "bash",
+            "./install.sh"
+          ]
+        }
+      ],
+      "plugin_dirs": [],
+      "workflow": {
+        "source": "derived: skill `cadence`, then every slash-command stage in stages.json order, resolved through references/bundled-peers.json",
+        "derive": "cadence-stages",
+        "steps": []
+      },
+      "drive_prompt": "Use the cadence skill to ship this change end to end through R7.\n\nIssue (ticket gh-1):\n{issue}",
+      "install_note": "The public successor of jtouley/cadence, installed the same way as the cadence entry (install.sh, the Cursor and headless route in docs/quickstart.md), so the two rows compare. Only the host directories exist before install: the first-install case."
     },
     "superpowers": {
       "title": "Superpowers",

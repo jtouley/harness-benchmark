@@ -209,8 +209,8 @@ def _sort_manifest_files(text: str) -> str:
     return json.dumps(data, indent=2) + "\n"
 
 
-def fingerprint(sb: Sandbox, lock: Lock) -> dict:
-    """Tree hash of the installed sandbox after declared normalization."""
+def _tree_rows(sb: Sandbox, lock: Lock) -> list[tuple[str, str]]:
+    """(logical path, digest) of every installed file after declared normalization, sorted."""
     norm = normalizer(lock)
     ignored = [re.compile(r) for r in lock.ignore]
     rows = []
@@ -230,15 +230,32 @@ def fingerprint(sb: Sandbox, lock: Lock) -> dict:
                 digest = sha256_bytes(text.encode("utf-8"))
             rows.append((logical, digest))
     rows.sort()
+    return rows
+
+
+def _tree_hash(rows: list[tuple[str, str]]) -> dict:
     listing = "".join(f"{p}\t{d}\n" for p, d in rows)
     return {"files": len(rows), "tree_sha256": sha256_bytes(listing.encode("utf-8"))}
 
 
+def fingerprint(sb: Sandbox, lock: Lock) -> dict:
+    """Tree hash of the installed sandbox after declared normalization."""
+    return _tree_hash(_tree_rows(sb, lock))
+
+
 def install_twice_check(fw: Framework, lock: Lock) -> dict:
-    """Install twice from scratch; the normalized tree hashes must match."""
-    first = fingerprint(install(fw, lock), lock)
-    second = fingerprint(install(fw, lock), lock)
-    return {"first": first, "second": second, "deterministic": first == second}
+    """Install twice from scratch; the normalized tree hashes must match.
+
+    When they do not, ``differs`` lists the paths that changed between the two
+    installs: the candidates for a lockfile ``normalize`` or ``ignore`` rule.
+    """
+    first = dict(_tree_rows(install(fw, lock), lock))
+    second = dict(_tree_rows(install(fw, lock), lock))
+    res = {"first": _tree_hash(sorted(first.items())), "second": _tree_hash(sorted(second.items()))}
+    res["deterministic"] = res["first"] == res["second"]
+    if not res["deterministic"]:
+        res["differs"] = sorted(p for p in first.keys() | second.keys() if first.get(p) != second.get(p))
+    return res
 
 
 def describe(sb: Sandbox) -> str:

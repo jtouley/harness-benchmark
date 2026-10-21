@@ -1,0 +1,176 @@
+{
+  "frameworks": {
+    "cadence-core": {
+      "always_on": {
+        "listing_tokens": 444,
+        "memory_tokens": 0,
+        "session_start": [
+          {
+            "command": "python3 \"${CADENCE_SKILL_ROOT:-$HOME/.claude/skills/cadence}/hooks/session_start.py\"",
+            "context_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+            "exit": 0,
+            "origin": "home/.claude/settings.json",
+            "tokens": 0
+          }
+        ],
+        "session_start_tokens": 0,
+        "total_tokens": 444
+      },
+      "claude_code_hooks": {
+        "PostToolUse": 1,
+        "PreToolUse": 4,
+        "SessionStart": 1,
+        "Stop": 1,
+        "SubagentStart": 1,
+        "SubagentStop": 1
+      },
+      "corpus_tokens": 18304,
+      "cost_usd": {
+        "claude-fable-5-1": {
+          "always_on_100_requests_cached": "0.016539",
+          "always_on_per_request_cache_read": "0.000111",
+          "always_on_per_request_uncached": "0.004440",
+          "workflow_load_lower": "0.163640",
+          "workflow_load_upper": "1.386060"
+        },
+        "claude-haiku-4-5": {
+          "always_on_100_requests_cached": "0.004951",
+          "always_on_per_request_cache_read": "0.000044",
+          "always_on_per_request_uncached": "0.000444",
+          "workflow_load_lower": "0.016364",
+          "workflow_load_upper": "0.138606"
+        },
+        "claude-haiku-5-5": {
+          "always_on_100_requests_cached": "0.000496",
+          "always_on_per_request_cache_read": "0.000004",
+          "always_on_per_request_uncached": "0.000044",
+          "workflow_load_lower": "0.001636",
+          "workflow_load_upper": "0.013861"
+        },
+        "claude-opus-5-5": {
+          "always_on_100_requests_cached": "0.011011",
+          "always_on_per_request_cache_read": "0.000089",
+          "always_on_per_request_uncached": "0.001776",
+          "workflow_load_lower": "0.065456",
+          "workflow_load_upper": "0.554424"
+        },
+        "claude-sonnet-5-5": {
+          "always_on_100_requests_cached": "0.009901",
+          "always_on_per_request_cache_read": "0.000089",
+          "always_on_per_request_uncached": "0.000888",
+          "workflow_load_lower": "0.032728",
+          "workflow_load_upper": "0.277212"
+        }
+      },
+      "framework": "cadence-core",
+      "install": {
+        "files": 823,
+        "tree_sha256": "3ecff68cb44048c281662536a46ef4e497c3708b85fecacecf1879962a55d1c8"
+      },
+      "items": {
+        "command": 8,
+        "skill": 4
+      },
+      "sha": "29315c4e64ff318a80a1a7d2c809beb4b3c15611",
+      "title": "Cadence core",
+      "workflow": {
+        "lower_tokens": 16364,
+        "source": "derived: skill `cadence`, then every slash-command stage in stages.json order, resolved through references/bundled-peers.json",
+        "steps": [
+          {
+            "at_includes": 0,
+            "lower_tokens": 6364,
+            "origin": "user",
+            "ref": "skill:cadence",
+            "resolved_name": "cadence",
+            "upper_tokens": 128606
+          },
+          {
+            "at_includes": 0,
+            "lower_tokens": 723,
+            "origin": "user",
+            "ref": "skill:vibe-test",
+            "resolved_name": "vibe-test",
+            "upper_tokens": 723
+          },
+          {
+            "at_includes": 0,
+            "lower_tokens": 768,
+            "origin": "user",
+            "ref": "command:plan-create",
+            "resolved_name": "plan-create",
+            "upper_tokens": 768
+          },
+          {
+            "at_includes": 0,
+            "lower_tokens": 1528,
+            "origin": "user",
+            "ref": "command:plan-review",
+            "resolved_name": "plan-review",
+            "upper_tokens": 1528
+          },
+          {
+            "at_includes": 0,
+            "lower_tokens": 656,
+            "origin": "user",
+            "ref": "skill:de-adversarial-reviewer",
+            "resolved_name": "de-adversarial-reviewer",
+            "upper_tokens": 656
+          },
+          {
+            "at_includes": 0,
+            "lower_tokens": 1518,
+            "origin": "user",
+            "ref": "skill:test-benchmark",
+            "resolved_name": "test-benchmark",
+            "upper_tokens": 1518
+          },
+          {
+            "at_includes": 0,
+            "lower_tokens": 1672,
+            "origin": "user",
+            "ref": "command:spec-driven",
+            "resolved_name": "spec-driven",
+            "upper_tokens": 1672
+          },
+          {
+            "at_includes": 0,
+            "lower_tokens": 549,
+            "origin": "user",
+            "ref": "command:commit-push-pr",
+            "resolved_name": "commit-push-pr",
+            "upper_tokens": 549
+          },
+          {
+            "at_includes": 0,
+            "lower_tokens": 1068,
+            "origin": "user",
+            "ref": "command:pr-review-local",
+            "resolved_name": "pr-review-local",
+            "upper_tokens": 1068
+          },
+          {
+            "at_includes": 0,
+            "lower_tokens": 1518,
+            "origin": "user",
+            "ref": "skill:test-benchmark",
+            "resolved_name": "test-benchmark",
+            "upper_tokens": 1518
+          }
+        ],
+        "upper_tokens": 138606
+      }
+    }
+  },
+  "pricing_as_of": "2026-10-08",
+  "provenance": {
+    "canonical_root": "/tmp/cbench",
+    "lockfile_sha256": "842937d40c01561c259ca99fe9e9d018c60a22c9cc5038dbab5ad988d850f314",
+    "pricing_sha256": "7af66e689754689850c47229da79af75d229e3882a798826de3f50317f292139",
+    "tokenizer": {
+      "id": "anthropic==0.37.1:anthropic/tokenizer.json",
+      "kind": "deterministic-proxy",
+      "sha256": "c241737df24b4e7f7c9af4fdcee29a0ca903dcb288a8b753bc346a3092911767"
+    }
+  }
+}

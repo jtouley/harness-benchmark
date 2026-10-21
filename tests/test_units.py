@@ -191,3 +191,33 @@ def test_git_init_turns_off_background_maintenance(tmp_path):
     def get(key):
         return run(["git", "config", "--get", key], cwd=tmp_path, env=env).stdout.strip()
     assert (get("gc.auto"), get("maintenance.auto")) == ("0", "false")
+
+
+def test_install_check_names_the_files_that_differ_between_installs(monkeypatch, tmp_path):
+    """A non-deterministic install says which files changed, so the fix is a lockfile rule, not a hunt."""
+    import dataclasses
+    from cbench.install import install_twice_check
+    from cbench.lock import Framework
+
+    monkeypatch.setenv("CBENCH_CACHE", str(tmp_path / "cache"))
+    fw = Framework(name="fake", title="Fake", repo=None, sha=None, build=[], plugin_dirs=[], workflow={},
+                   drive_prompt="{issue}", install=[
+                       {"op": "run", "cwd": "{proj}", "argv": ["sh", "-c", "date +%s%N > {home}/stamp"]},
+                       {"op": "run", "cwd": "{proj}", "argv": ["sh", "-c", "echo same > {home}/fixed"]}])
+    lock = dataclasses.replace(load_lock(), canonical_root=tmp_path / "root", frameworks={"fake": fw})
+    res = install_twice_check(fw, lock)
+    assert (res["deterministic"], res["differs"]) == (False, ["home/stamp"])
+    lock = dataclasses.replace(lock, ignore=[*lock.ignore, "^home/stamp$"])
+    res = install_twice_check(fw, lock)
+    assert res["deterministic"] and "differs" not in res
+
+
+def test_lockfile_ignores_claude_codes_account_cache_files():
+    """Claude Code 2.1.306 writes these on `claude plugin install` when logged in; they differ every run."""
+    import re
+    ignore = [re.compile(r) for r in load_lock().ignore]
+    for path in ("home/.claude/policy-limits.json", "home/.claude/policy-limits.json.stamp.json",
+                 "home/.claude/policy-limits.json.signature.json", "home/.claude/remote-settings.json",
+                 "home/.claude/remote-settings.json.synced-at"):
+        assert any(r.search(path) for r in ignore), path
+    assert not any(r.search("home/.claude/settings.json") for r in ignore)

@@ -52,6 +52,8 @@ def cmd_install_check(args) -> int:
         out[fw.name] = res
         ok &= res["deterministic"]
         print(f"{fw.name:12} files={res['first']['files']:5} deterministic={res['deterministic']}", flush=True)
+        for path in res.get("differs", []):
+            print(f"  differs between installs: {path}", flush=True)
     if args.write:
         write_json(RESULTS_DIR / "install.json", {"provenance": provenance(lock), "frameworks": out})
     return 0 if ok else 1

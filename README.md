@@ -54,6 +54,7 @@ Each harness is installed the way its own README says, at a pinned commit, then 
 | Harness | Pinned commit | Always-on tokens | Workflow tokens (lower–upper) | Hook probes meeting intent |
 |---|---|---|---|---|
 | `cadence` (see note) | `jtouley/cadence@e5c3a92` | 671 | 9,078 – 62,141 | 7/9 |
+| `cadence-core` (see note) | `jtouley/cadence-core@29315c4` | 444 | 16,364 – 138,606 | 9/9 |
 | `gsd-core` | `open-gsd/gsd-core@83aba44` | 3,457 | 4,701 – 124,702 | 4/9 |
 | `superpowers` | `obra/superpowers@8ca22db` | 1,483 | 21,696 – 33,518 | 2/7 |
 | `spec-kit` | `github/spec-kit@b9e08bf` | 291 | 15,889 | 2/9 |
@@ -68,6 +69,13 @@ Note on Cadence: it is a private repository, so CI and outside readers cannot fe
 measured on macOS with Claude Code 2.1.287. Cadence has also changed since this pin
 ([what changed](docs/whitepaper.md#41-cadence-after-the-benchmarks-pin-status-16-october-2026)).
 Cadence is in private beta: DM [@jtouley](https://github.com/jtouley) if you want to beta test it.
+
+Note on cadence-core: Cadence's public successor, measured on Linux with Claude Code 2.1.306 and
+installed the same way as the `cadence` row. Its row is not in `results/REPORT.md` yet, because the
+private `cadence` pin blocks regenerating `results/`; the numbers and raw JSON are in
+[its write-up](docs/evidence/2026-10-21-cadence-core-tiers-1-2.md). Its 9/9 adds blocking `.env` reads
+and plan overwrites to what the `cadence` pin blocks. About half of its upper workflow count is the
+repository's own `docs/`, which install with the skill.
 
 What the table says: only Cadence's hooks block a forged approval, a self-certified verdict, a shell edit before
 plan approval and a stop mid-run; GSD Core blocks reading `.env` and overwriting the plan, which Cadence
@@ -88,7 +96,10 @@ uv run --frozen --with tokenizers python -m cbench verify   # recompute everythi
 
 `verify` prints `VERIFIED` when every footprint number, probe verdict and the report reproduce exactly,
 and each install reproduces identically twice. It needs every framework, so without Cadence access run
-`cbench install-check` on the public ones instead (that is what CI does). Installs use the fixed root
+`cbench install-check` on the public ones instead (that is what CI does). `fetch` with no names stops at
+the first repository it cannot reach, so without Cadence access name the public frameworks:
+`cbench fetch superpowers spec-kit openspec gsd-core bmad cadence-core`. A newer Claude Code is fine
+for tiers 1 and 2: on 2.1.306 every public row reproduced byte for byte. Installs use the fixed root
 `/tmp/cbench`: do not run two `cbench` commands at once.
 
 Other commands: `python -m cbench --help`. The live tier spends money and refuses to start without a

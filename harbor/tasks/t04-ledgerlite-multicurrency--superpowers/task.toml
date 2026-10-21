@@ -9,7 +9,7 @@ keywords = ["harness-benchmark", "superpowers", "T04-ledgerlite-multicurrency"]
 task = "T04-ledgerlite-multicurrency"
 arm = "superpowers"
 framework_sha = "8ca22dba9a94f28898bbce59f2537ff4d87c747d"
-lock_sha256 = "24356f84dbf1684b78efe304f248d1800507b7628431190be1f756781246d2b6"
+lock_sha256 = "842937d40c01561c259ca99fe9e9d018c60a22c9cc5038dbab5ad988d850f314"
 
 [verifier]
 timeout_sec = 300.0

@@ -9,7 +9,7 @@ keywords = ["harness-benchmark", "bmad", "T01-slugify-bugfix"]
 task = "T01-slugify-bugfix"
 arm = "bmad"
 framework_sha = "bda3c5929f672019b90f39a3ea27259d35d00974"
-lock_sha256 = "24356f84dbf1684b78efe304f248d1800507b7628431190be1f756781246d2b6"
+lock_sha256 = "842937d40c01561c259ca99fe9e9d018c60a22c9cc5038dbab5ad988d850f314"
 
 [verifier]
 timeout_sec = 300.0

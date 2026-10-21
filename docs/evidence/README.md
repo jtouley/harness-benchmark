@@ -82,6 +82,17 @@ what produced each number, and the [whitepaper](../whitepaper.md) draws them tog
   measured on pipeline tasks, and Haiku costs ignore the long-prompt price, so they are lower bounds.
 - Read: [postmortem](2026-10-19-cadence-core-postmortem.md)
 
+## cadence-core in tiers 1 and 2 (21 October): measured, no model
+
+- Question: what do cadence-core's context footprint and hooks measure, and can a new repository be
+  added by following [Add a harness](../method/add-a-harness.md) on a fresh machine?
+- Sample: tiers 1 and 2 only, which are deterministic; both hosts (Claude Code, Cursor). Not in
+  `results/`: the private `cadence` pin blocks the full regeneration.
+- Result: 444 always-on tokens, 16,364 to 138,606 workflow tokens, 9 of 9 hook probes met on both
+  hosts. The six public rows in `results/` reproduced byte for byte on Claude Code 2.1.306. Six
+  frictions found in the add-a-harness path: three fixed, three documented.
+- Read: [write-up](2026-10-21-cadence-core-tiers-1-2.md), [data](2026-10-21-cadence-core-tiers-1-2/)
+
 ## Scripts kept with the data
 
 The scripts beside each round's data (`grade.py`, `run_arm.sh` and others) are the exact ones used for that

@@ -1,0 +1,691 @@
+diff --git a/README.md b/README.md
+index b08c312..6c4773e 100644
+--- a/README.md
++++ b/README.md
+@@ -9,6 +9,39 @@ python -m ledgerlite.cli --store ledger.json tx add checking 2026-01-05 -42.50 g
+ python -m ledgerlite.cli --store ledger.json import checking statement.csv
+ python -m ledgerlite.cli --store ledger.json report balances
+ python -m ledgerlite.cli --store ledger.json report monthly 2026-01
++python -m ledgerlite.cli --store ledger.json audit
++python -m ledgerlite.cli --store ledger.json undo
++python -m ledgerlite.cli --store ledger.json undo 2
+ ```
+ 
++## Audit log and undo
++
++Each command that changes the ledger (`account add`, `tx add`, `import`, `undo`) adds one
++entry to the audit log in the store. Each entry has a sequence number (from 1), a UTC ISO
++timestamp, the command, and the change. `report` and `audit` do not change the store.
++
++`audit` prints the entries oldest first, one for each line, as `SEQ COMMAND SUMMARY`:
++
++```
++1 account add checking
++2 tx add checking 2026-01-05 -42.50 groceries
++3 import checking 2 rows
++4 undo 3
++```
++
++The COMMAND field can contain a space (`tx add`). The line is for people, not for a parser.
++
++`undo` reverts the most recent change that is not yet undone. `undo N` reverts the last N
++changes, newest first. An import is one change: undo removes all of its rows. Each undo adds
++one `undo` entry, and undo never reverts an `undo` entry. If fewer than N changes can be
++undone, or the store does not match the log, `undo` exits with code 2 and changes nothing.
++
++Limits:
++
++- Rows from a store made before the audit log (format version 1) cannot be undone.
++- If you edit the store file by hand and remove a row or an account that a log entry names,
++  `undo` stops at that entry. The error names the entry.
++- An older ledgerlite drops the audit log the first time it runs any command on a version 2
++  store, `report` included.
++
+ Run tests: `python -m pytest`.
+diff --git a/ledgerlite/audit.py b/ledgerlite/audit.py
+new file mode 100644
+index 0000000..00865dd
+--- /dev/null
++++ b/ledgerlite/audit.py
+@@ -0,0 +1,83 @@
++"""Audit log: record each change to the ledger, print the log, and undo changes."""
++
++from __future__ import annotations
++
++from collections.abc import Callable
++from datetime import datetime
++from decimal import Decimal
++from typing import Any
++
++from ledgerlite.models import AuditEntry, Ledger, LedgerError, Transaction
++
++Clock = Callable[[], datetime]
++
++
++def _field(text: str) -> str:
++    """One summary field on one line: collapse each whitespace run (newlines too) to one space."""
++    return " ".join(str(text).split())
++
++
++def record(ledger: Ledger, command: str, summary: str, change: dict[str, Any], now: Clock) -> AuditEntry:
++    seq = ledger.audit[-1].seq + 1 if ledger.audit else 1
++    entry = AuditEntry(seq, now().isoformat(timespec="seconds"), command, summary, change)
++    ledger.audit.append(entry)
++    return entry
++
++
++def record_account_add(ledger: Ledger, name: str, now: Clock) -> AuditEntry:
++    return record(ledger, "account add", _field(name), {"account": name}, now)
++
++
++def record_tx_add(ledger: Ledger, tx: Transaction, now: Clock) -> AuditEntry:
++    summary = " ".join(_field(f) for f in (tx.account, tx.on, _amount(tx.amount), tx.category))
++    return record(ledger, "tx add", summary, {"account": tx.account, "tx_ids": [tx.id]}, now)
++
++
++def record_import(ledger: Ledger, account: str, csv: str, added: list[Transaction], now: Clock) -> AuditEntry:
++    change = {"account": account, "csv": csv, "tx_ids": [t.id for t in added]}
++    return record(ledger, "import", f"{_field(account)} {len(added)} rows", change, now)
++
++
++def format_entry(entry: AuditEntry) -> str:
++    return f"{entry.seq} {entry.command} {entry.summary}"
++
++
++def undoable(ledger: Ledger) -> list[AuditEntry]:
++    """Entries that undo can still revert, oldest first. An undo entry is never undoable."""
++    undone = {seq for e in ledger.audit if e.command == "undo" for seq in e.change["reverted"]}
++    return [e for e in ledger.audit if e.command != "undo" and e.seq not in undone]
++
++
++def undo(ledger: Ledger, n: int, now: Clock) -> list[AuditEntry]:
++    """Revert the last ``n`` undoable entries, newest first, and record one undo entry.
++
++    Changes happen in memory only. The caller saves once, so a failure leaves the store as it was.
++    """
++    if n < 1:
++        raise LedgerError(f"undo needs a count of at least 1, got {n}")
++    candidates = undoable(ledger)
++    if len(candidates) < n:
++        noun = "change" if n == 1 else "changes"
++        raise LedgerError(f"cannot undo {n} {noun}: only {len(candidates)} can be undone")
++    targets = candidates[::-1][:n]
++    for entry in targets:
++        try:
++            _revert(ledger, entry)
++        except LedgerError as exc:
++            raise LedgerError(f"cannot undo {format_entry(entry)}: {exc}") from exc
++    reverted = [e.seq for e in targets]
++    record(ledger, "undo", " ".join(map(str, reverted)), {"reverted": reverted}, now)
++    return targets
++
++
++def _revert(ledger: Ledger, entry: AuditEntry) -> None:
++    if entry.command == "account add":
++        ledger.remove_account(entry.change["account"])
++    elif entry.command in ("tx add", "import"):
++        ledger.remove_transactions(entry.change["account"], entry.change["tx_ids"])
++    else:
++        raise LedgerError(f"unknown command {entry.command!r}")
++
++
++def _amount(amount: Decimal) -> str:
++    return format(amount, "f")
+diff --git a/ledgerlite/cli.py b/ledgerlite/cli.py
+index 5e631a2..1bf34f8 100644
+--- a/ledgerlite/cli.py
++++ b/ledgerlite/cli.py
+@@ -4,10 +4,11 @@ from __future__ import annotations
+ 
+ import argparse
+ import sys
++from datetime import datetime, timezone
+ from decimal import Decimal, InvalidOperation
+ from pathlib import Path
+ 
+-from ledgerlite import reports, storage
++from ledgerlite import audit, reports, storage
+ from ledgerlite.importers import import_csv
+ from ledgerlite.models import LedgerError, Transaction
+ 
+@@ -33,6 +34,10 @@ def build_parser() -> argparse.ArgumentParser:
+     imp.add_argument("account")
+     imp.add_argument("csv")
+ 
++    sub.add_parser("audit")
++    undo = sub.add_parser("undo")
++    undo.add_argument("n", nargs="?", type=int, default=1)
++
+     report = sub.add_parser("report").add_subparsers(dest="kind", required=True)
+     report.add_parser("balances")
+     monthly = report.add_parser("monthly")
+@@ -40,13 +45,24 @@ def build_parser() -> argparse.ArgumentParser:
+     return parser
+ 
+ 
+-def run(argv: list[str]) -> list[str]:
++def _utc_now() -> datetime:
++    return datetime.now(timezone.utc)
++
++
++def run(argv: list[str], *, now: audit.Clock | None = None) -> list[str]:
++    now = now or _utc_now
+     args = build_parser().parse_args(argv)
+     path = Path(args.store)
+     ledger = storage.load(path)
++    # Read-only commands return before save, so they never rewrite or create the store.
++    if args.command == "report":
++        return reports.balances(ledger) if args.kind == "balances" else reports.monthly(ledger, args.month)
++    if args.command == "audit":
++        return [audit.format_entry(entry) for entry in ledger.audit]
+     out: list[str] = []
+     if args.command == "account":
+         ledger.add_account(args.name)
++        audit.record_account_add(ledger, args.name, now)
+         out.append(f"added account {args.name}")
+     elif args.command == "tx":
+         try:
+@@ -54,12 +70,14 @@ def run(argv: list[str]) -> list[str]:
+         except InvalidOperation as exc:
+             raise LedgerError(f"bad amount {args.amount!r}") from exc
+         tx = ledger.add_transaction(Transaction(args.account, args.on, amount, args.category, args.memo))
++        audit.record_tx_add(ledger, tx, now)
+         out.append(f"added {tx.id}")
+     elif args.command == "import":
+         added = import_csv(ledger, args.account, Path(args.csv))
++        audit.record_import(ledger, args.account, args.csv, added, now)
+         out.append(f"imported {len(added)} transactions")
+-    elif args.command == "report":
+-        out.extend(reports.balances(ledger) if args.kind == "balances" else reports.monthly(ledger, args.month))
++    elif args.command == "undo":
++        out.extend(f"undid {audit.format_entry(entry)}" for entry in audit.undo(ledger, args.n, now))
+     storage.save(ledger, path)
+     return out
+ 
+diff --git a/ledgerlite/models.py b/ledgerlite/models.py
+index a5d3016..449d587 100644
+--- a/ledgerlite/models.py
++++ b/ledgerlite/models.py
+@@ -5,6 +5,7 @@ from __future__ import annotations
+ from dataclasses import dataclass, field
+ from datetime import date
+ from decimal import Decimal
++from typing import Any
+ from uuid import uuid4
+ 
+ 
+@@ -43,9 +44,21 @@ class Account:
+         return sum((t.amount for t in self.transactions), Decimal("0"))
+ 
+ 
++@dataclass(frozen=True)
++class AuditEntry:
++    """One change to the ledger. Entries are append-only: no entry changes after it is written."""
++
++    seq: int
++    at: str
++    command: str
++    summary: str
++    change: dict[str, Any]
++
++
+ @dataclass
+ class Ledger:
+     accounts: dict[str, Account] = field(default_factory=dict)
++    audit: list[AuditEntry] = field(default_factory=list)
+ 
+     def add_account(self, name: str) -> Account:
+         if not name or name in self.accounts:
+@@ -63,5 +76,20 @@ class Ledger:
+         self.account(tx.account).transactions.append(tx)
+         return tx
+ 
++    def remove_account(self, name: str) -> None:
++        if self.account(name).transactions:
++            raise LedgerError(f"account {name!r} still holds transactions")
++        del self.accounts[name]
++
++    def remove_transactions(self, account: str, ids: list[str]) -> None:
++        """Remove the rows with these ids. Check every id first, so a mismatch removes nothing."""
++        rows = self.account(account).transactions
++        present = {t.id for t in rows}
++        for tx_id in ids:
++            if tx_id not in present:
++                raise LedgerError(f"no transaction {tx_id!r} in account {account!r}")
++        doomed = set(ids)
++        rows[:] = [t for t in rows if t.id not in doomed]
++
+     def all_transactions(self) -> list[Transaction]:
+         return [t for a in self.accounts.values() for t in a.transactions]
+diff --git a/ledgerlite/storage.py b/ledgerlite/storage.py
+index 5b02008..21f60b7 100644
+--- a/ledgerlite/storage.py
++++ b/ledgerlite/storage.py
+@@ -7,9 +7,9 @@ import os
+ from decimal import Decimal
+ from pathlib import Path
+ 
+-from ledgerlite.models import Account, Ledger, Transaction
++from ledgerlite.models import Account, AuditEntry, Ledger, LedgerError, Transaction
+ 
+-FORMAT_VERSION = 1
++FORMAT_VERSION = 2
+ 
+ 
+ def load(path: Path) -> Ledger:
+@@ -32,9 +32,21 @@ def load(path: Path) -> Ledger:
+                 )
+             )
+         ledger.accounts[name] = account
++    # A version 1 store has no "audit" key: it loads with an empty log.
++    ledger.audit.extend(_load_audit(data.get("audit", [])))
+     return ledger
+ 
+ 
++def _load_audit(raw: object) -> list[AuditEntry]:
++    try:
++        entries = [AuditEntry(e["seq"], e["at"], e["command"], e["summary"], e["change"]) for e in raw]
++    except (KeyError, TypeError) as exc:
++        raise LedgerError(f"bad audit log in store: {exc!r}") from exc
++    if not all(isinstance(e.seq, int) and isinstance(e.change, dict) for e in entries):
++        raise LedgerError("bad audit log in store: seq must be a number and change an object")
++    return entries
++
++
+ def save(ledger: Ledger, path: Path) -> None:
+     path = Path(path)
+     data = {
+@@ -48,6 +60,10 @@ def save(ledger: Ledger, path: Path) -> None:
+             }
+             for name, account in ledger.accounts.items()
+         },
++        "audit": [
++            {"seq": e.seq, "at": e.at, "command": e.command, "summary": e.summary, "change": e.change}
++            for e in ledger.audit
++        ],
+     }
+     tmp = path.with_suffix(path.suffix + ".tmp")
+     tmp.write_text(json.dumps(data, indent=2) + "\n", encoding="utf-8")
+diff --git a/tests/conftest.py b/tests/conftest.py
+index 26f7b2c..1ba1883 100644
+--- a/tests/conftest.py
++++ b/tests/conftest.py
+@@ -1,17 +1,29 @@
++import json
++from datetime import datetime, timezone
+ from pathlib import Path
+ 
+ import pytest
+ 
+ from ledgerlite.cli import run
+ 
++FIXED_NOW = datetime(2026, 10, 9, 12, 0, 0, 123456, tzinfo=timezone.utc)
++
+ 
+ @pytest.fixture
+ def ledger(tmp_path: Path):
+     store = tmp_path / "ledger.json"
+ 
+     def call(*args: str) -> list[str]:
+-        return run(["--store", str(store), *args])
++        return run(["--store", str(store), *args], now=lambda: FIXED_NOW)
++
++    def write_csv(name: str, text: str) -> Path:
++        path = tmp_path / name
++        path.write_text(text)
++        return path
+ 
+     call.store = store
+     call.tmp = tmp_path
++    call.read_store = lambda: json.loads(store.read_text())
++    call.write_store = lambda data: store.write_text(json.dumps(data))
++    call.write_csv = write_csv
+     return call
+diff --git a/tests/test_audit.py b/tests/test_audit.py
+new file mode 100644
+index 0000000..48e81ce
+--- /dev/null
++++ b/tests/test_audit.py
+@@ -0,0 +1,342 @@
++import json
++from decimal import Decimal
++
++import pytest
++
++from ledgerlite import storage
++from ledgerlite.cli import main
++from ledgerlite.cli import run
++from ledgerlite.models import AuditEntry, Ledger, LedgerError, Transaction
++
++
++def test_audit_log_round_trips_through_save_and_load(tmp_path):
++    store = tmp_path / "ledger.json"
++    ledger = Ledger()
++    ledger.add_account("checking")
++    entries = [
++        AuditEntry(1, "2026-01-01T00:00:00+00:00", "account add", "checking", {"account": "checking"}),
++        AuditEntry(2, "2026-01-01T00:00:01+00:00", "undo", "1", {"reverted": [1]}),
++    ]
++    ledger.audit.extend(entries)
++    storage.save(ledger, store)
++    assert storage.load(store).audit == entries
++    assert json.loads(store.read_text())["version"] == 2
++
++
++def test_store_without_audit_key_loads_and_records_from_seq_1(ledger):
++    ledger.store.write_text(json.dumps({"version": 1, "accounts": {"checking": {"transactions": []}}}))
++    ledger("tx", "add", "checking", "2026-01-05", "-1", "x")
++    audit = json.loads(ledger.store.read_text())["audit"]
++    assert [e["seq"] for e in audit] == [1]
++
++
++TWO_ROWS = "date,amount,category,memo\n2026-01-01,-3.10,coffee,cafe\n2026-01-02,1200,salary,\n"
++
++
++def _tx_ids(ledger, account="checking"):
++    return [t["id"] for t in ledger.read_store()["accounts"][account]["transactions"]]
++
++
++MUTATIONS = {
++    "account add": lambda ledger: ledger("account", "add", "savings"),
++    "tx add": lambda ledger: ledger("tx", "add", "checking", "2026-01-05", "-42.50", "groceries", "corner shop"),
++    "import": lambda ledger: ledger("import", "checking", str(ledger.write_csv("s.csv", TWO_ROWS))),
++}
++
++
++@pytest.mark.parametrize("command", sorted(MUTATIONS))
++def test_each_mutating_command_appends_one_entry(ledger, command):
++    ledger("account", "add", "checking")
++    MUTATIONS[command](ledger)
++    assert [(e["seq"], e["command"]) for e in ledger.read_store()["audit"]] == [(1, "account add"), (2, command)]
++
++
++@pytest.mark.parametrize("command", sorted(MUTATIONS))
++def test_entry_holds_seq_iso_utc_timestamp_command_and_change(ledger, command):
++    ledger("account", "add", "checking")
++    MUTATIONS[command](ledger)
++    entry = ledger.read_store()["audit"][-1]
++    expected_change = {
++        "account add": {"account": "savings"},
++        "tx add": {"account": "checking", "tx_ids": _tx_ids(ledger)},
++        "import": {"account": "checking", "csv": str(ledger.tmp / "s.csv"), "tx_ids": _tx_ids(ledger)},
++    }[command]
++    assert entry["seq"] == 2
++    assert entry["at"] == "2026-10-09T12:00:00+00:00"
++    assert entry["command"] == command
++    assert entry["change"] == expected_change
++
++
++READ_ONLY = [("report", "balances"), ("report", "monthly", "2026-01"), ("audit",)]
++
++
++@pytest.mark.parametrize("args", READ_ONLY, ids=" ".join)
++def test_read_only_commands_append_no_entry(ledger, args):
++    ledger("account", "add", "checking")
++    before = ledger.store.read_bytes()
++    ledger(*args)
++    assert ledger.store.read_bytes() == before
++
++
++def test_report_keeps_existing_audit_log(ledger):
++    ledger("account", "add", "checking")
++    ledger("report", "balances")
++    assert [e["summary"] for e in ledger.read_store()["audit"]] == ["checking"]
++
++
++def test_report_on_missing_store_creates_no_file(ledger):
++    ledger("report", "balances")
++    assert not ledger.store.exists()
++
++
++def test_failed_mutating_command_appends_no_entry(ledger):
++    ledger("account", "add", "checking")
++    with pytest.raises(LedgerError):
++        ledger("account", "add", "checking")
++    assert len(ledger.read_store()["audit"]) == 1
++
++
++def test_empty_import_is_audited_with_zero_rows(ledger):
++    ledger("account", "add", "checking")
++    assert ledger("import", "checking", str(ledger.write_csv("e.csv", "date,amount,category\n"))) == ["imported 0 transactions"]
++    entry = ledger.read_store()["audit"][-1]
++    assert (entry["command"], entry["summary"], entry["change"]["tx_ids"]) == ("import", "checking 0 rows", [])
++
++
++def test_audit_prints_entries_oldest_first_in_seq_command_summary_form(ledger):
++    ledger("account", "add", "checking")
++    ledger("tx", "add", "checking", "2026-01-05", "-42.50", "groceries", "corner shop")
++    ledger("tx", "add", "checking", "2026-01-06", "1e3", "salary")
++    ledger("import", "checking", str(ledger.write_csv("s.csv", TWO_ROWS)))
++    ledger("import", "checking", str(ledger.write_csv("e.csv", "date,amount,category\n")))
++    assert ledger("audit") == [
++        "1 account add checking",
++        "2 tx add checking 2026-01-05 -42.50 groceries",
++        "3 tx add checking 2026-01-06 1000 salary",
++        "4 import checking 2 rows",
++        "5 import checking 0 rows",
++    ]
++
++
++def test_tx_add_summary_leaves_out_memo(ledger):
++    ledger("account", "add", "checking")
++    ledger("tx", "add", "checking", "2026-01-05", "-1", "x", "line one\nline two")
++    assert ledger("audit")[-1] == "2 tx add checking 2026-01-05 -1 x"
++
++
++def test_summary_fields_with_newlines_print_on_one_line(ledger):
++    ledger("account", "add", "checking")
++    ledger("tx", "add", "checking", "2026-01-05", "-1", " eating\n out ")
++    assert ledger("audit")[-1] == "2 tx add checking 2026-01-05 -1 eating out"
++
++
++def test_audit_on_empty_log_prints_nothing(ledger):
++    assert ledger("audit") == []
++    assert not ledger.store.exists()
++
++
++def _accounts(ledger):
++    return {name: [t["id"] for t in a["transactions"]] for name, a in ledger.read_store()["accounts"].items()}
++
++
++def test_undo_reverts_most_recent_change(ledger):
++    ledger("account", "add", "checking")
++    ledger("tx", "add", "checking", "2026-01-05", "-1", "x")
++    assert ledger("undo") == ["undid 2 tx add checking 2026-01-05 -1 x"]
++    assert _accounts(ledger) == {"checking": []}
++
++
++def test_undo_n_reverts_last_n_changes_newest_first(ledger):
++    ledger("account", "add", "checking")
++    ledger("import", "checking", str(ledger.write_csv("s.csv", TWO_ROWS)))
++    assert ledger("undo", "2") == ["undid 2 import checking 2 rows", "undid 1 account add checking"]
++    assert _accounts(ledger) == {}
++
++
++def test_undo_n_beyond_undoable_count_exits_2_and_keeps_store_bytes(ledger, capsys):
++    ledger("account", "add", "checking")
++    ledger("tx", "add", "checking", "2026-01-05", "-1", "x")
++    ledger("undo")
++    before = ledger.store.read_bytes()
++    assert main(["--store", str(ledger.store), "undo", "2"]) == 2
++    assert ledger.store.read_bytes() == before
++    assert "cannot undo 2 changes: only 1 can be undone" in capsys.readouterr().err
++
++
++def test_undo_error_uses_singular_for_one_change(ledger):
++    with pytest.raises(LedgerError, match="cannot undo 1 change: only 0 can be undone"):
++        ledger("undo")
++
++
++def test_undo_of_import_removes_all_its_rows(ledger):
++    ledger("account", "add", "checking")
++    ledger("tx", "add", "checking", "2026-01-05", "-1", "x")
++    kept = _accounts(ledger)["checking"]
++    ledger("import", "checking", str(ledger.write_csv("s.csv", TWO_ROWS)))
++    assert len(_accounts(ledger)["checking"]) == 3
++    ledger("undo")
++    assert _accounts(ledger) == {"checking": kept}
++
++
++def test_undo_appends_one_undo_entry_listing_reverted_seqs(ledger):
++    ledger("account", "add", "checking")
++    ledger("tx", "add", "checking", "2026-01-05", "-1", "x")
++    ledger("import", "checking", str(ledger.write_csv("s.csv", TWO_ROWS)))
++    ledger("undo", "2")
++    entry = ledger.read_store()["audit"][-1]
++    assert (entry["seq"], entry["command"], entry["change"]) == (4, "undo", {"reverted": [3, 2]})
++    assert ledger("audit")[-1] == "4 undo 3 2"
++
++
++def test_second_undo_skips_undo_entries_and_reverts_next_change(ledger):
++    ledger("account", "add", "checking")
++    ledger("tx", "add", "checking", "2026-01-05", "-1", "x")
++    ledger("undo")
++    assert ledger("undo") == ["undid 1 account add checking"]
++    assert _accounts(ledger) == {}
++    assert ledger("audit")[2:] == ["3 undo 2", "4 undo 1"]
++
++
++def test_bare_undo_with_nothing_undoable_exits_2(ledger):
++    assert main(["--store", str(ledger.store), "undo"]) == 2
++    assert not ledger.store.exists()
++    ledger("account", "add", "checking")
++    ledger("undo")
++    before = ledger.store.read_bytes()
++    assert main(["--store", str(ledger.store), "undo"]) == 2
++    assert ledger.store.read_bytes() == before
++
++
++@pytest.mark.parametrize("n", ["0", "-1"])
++def test_undo_rejects_n_below_1(ledger, n):
++    ledger("account", "add", "checking")
++    with pytest.raises(LedgerError, match="at least 1"):
++        ledger("undo", n)
++    assert _accounts(ledger) == {"checking": []}
++
++
++def test_undo_rejects_non_integer_n(ledger):
++    with pytest.raises(SystemExit) as exc:
++        ledger("undo", "two")
++    assert exc.value.code == 2
++
++
++def _drop_first_imported_row(ledger):
++    data = ledger.read_store()
++    data["accounts"]["checking"]["transactions"].pop(0)
++    ledger.write_store(data)
++    return "cannot undo 2 import checking 2 rows: no transaction"
++
++
++def _drop_account(ledger):
++    data = ledger.read_store()
++    del data["accounts"]["checking"]
++    ledger.write_store(data)
++    return "cannot undo 1 account add checking: no account 'checking'"
++
++
++def _drop_account_of_tx(ledger):
++    data = ledger.read_store()
++    data["accounts"]["checking"]["transactions"].clear()
++    del data["accounts"]["checking"]
++    ledger.write_store(data)
++    return "cannot undo 2 tx add checking 2026-01-05 -1 x: no account 'checking'"
++
++
++def _rename_command(ledger):
++    data = ledger.read_store()
++    data["audit"][0]["command"] = "account rename"
++    ledger.write_store(data)
++    return "cannot undo 1 account rename checking: unknown command 'account rename'"
++
++
++def _add_row_by_hand(ledger):
++    data = ledger.read_store()
++    data["accounts"]["checking"]["transactions"].append(
++        {"id": "handmade0001", "on": "2026-01-01", "amount": "1", "category": "x", "memo": ""}
++    )
++    ledger.write_store(data)
++    return "cannot undo 1 account add checking: account 'checking' still holds transactions"
++
++
++@pytest.mark.parametrize(
++    "setup, edit",
++    [
++        (lambda l: l("import", "checking", str(l.write_csv("s.csv", TWO_ROWS))), _drop_first_imported_row),
++        (lambda l: None, _drop_account),
++        (lambda l: None, _add_row_by_hand),
++        (lambda l: l("tx", "add", "checking", "2026-01-05", "-1", "x"), _drop_account_of_tx),
++        (lambda l: None, _rename_command),
++    ],
++    ids=[
++        "missing transaction",
++        "missing account",
++        "account holds transactions",
++        "missing account of transaction",
++        "unknown command",
++    ],
++)
++def test_undo_fails_when_target_does_not_match_store_and_changes_nothing(ledger, setup, edit):
++    ledger("account", "add", "checking")
++    setup(ledger)
++    message = edit(ledger)
++    before = ledger.store.read_bytes()
++    with pytest.raises(LedgerError, match=message):
++        ledger("undo")
++    assert ledger.store.read_bytes() == before
++
++
++def test_undo_never_reverts_rows_from_before_the_log(ledger):
++    row = {"id": "legacy000001", "on": "2026-01-01", "amount": "5", "category": "x", "memo": ""}
++    ledger.write_store({"version": 1, "accounts": {"checking": {"transactions": [row]}}})
++    with pytest.raises(LedgerError, match="only 0 can be undone"):
++        ledger("undo")
++    assert _accounts(ledger) == {"checking": ["legacy000001"]}
++
++
++def test_undo_after_new_change_reverts_the_new_change(ledger):
++    ledger("account", "add", "a")
++    ledger("undo")
++    ledger("account", "add", "b")
++    assert ledger("undo") == ["undid 3 account add b"]
++    assert _accounts(ledger) == {}
++
++
++def test_remove_transactions_checks_every_id_before_it_removes_any():
++    ledger = Ledger()
++    ledger.add_account("checking")
++    tx = ledger.add_transaction(Transaction("checking", "2026-01-01", Decimal("1"), "x"))
++    with pytest.raises(LedgerError, match="no transaction 'missing'"):
++        ledger.remove_transactions("checking", [tx.id, "missing"])
++    assert ledger.account("checking").transactions == [tx]
++
++
++def test_default_clock_writes_utc_timestamp_in_seconds(tmp_path):
++    store = tmp_path / "ledger.json"
++    run(["--store", str(store), "account", "add", "checking"])
++    at = json.loads(store.read_text())["audit"][0]["at"]
++    assert at.endswith("+00:00")
++    assert len(at) == len("2026-10-09T12:00:00+00:00")
++
++
++def test_new_entry_seq_follows_last_seq_not_log_length(ledger):
++    ledger("account", "add", "a")
++    ledger("account", "add", "b")
++    data = ledger.read_store()
++    del data["audit"][0]
++    ledger.write_store(data)
++    ledger("account", "add", "c")
++    assert [e["seq"] for e in ledger.read_store()["audit"]] == [2, 3]
++
++
++@pytest.mark.parametrize(
++    "audit",
++    [None, [{"seq": 1}], [{"seq": 1, "at": "x", "command": "undo", "summary": "", "change": None}]],
++    ids=["null log", "entry missing keys", "change not an object"],
++)
++def test_malformed_audit_log_is_a_ledger_error(ledger, audit):
++    ledger.write_store({"version": 2, "accounts": {}, "audit": audit})
++    before = ledger.store.read_bytes()
++    with pytest.raises(LedgerError, match="bad audit log"):
++        ledger("audit")
++    assert ledger.store.read_bytes() == before

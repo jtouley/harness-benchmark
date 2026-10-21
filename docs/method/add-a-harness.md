@@ -22,7 +22,10 @@ you ran, their results, and any step you could not run and why.
 
 The same as "Reproduce everything" in the [README](../../README.md#reproduce-everything): Linux or
 macOS, Python 3.11+, uv, Node.js 22+, git and Claude Code 2.1.294. The harness must be in a public git
-repository, so CI can fetch it.
+repository, so CI can fetch it. A newer Claude Code also works: on 2.1.306 every public row in
+`results/` reproduced byte for byte ([cadence-core round](../evidence/2026-10-21-cadence-core-tiers-1-2.md)).
+If a newer version writes a cache file that `install-check` flags, add it to the lockfile's `ignore`
+list (step 3).
 
 Every command below runs as `uv run --frozen python -m cbench ...`. Installs use the fixed root
 `/tmp/cbench/<name>`, because installers write absolute paths into files whose tokens are counted. Do
@@ -59,6 +62,7 @@ command and result:
 | `install` | Steps that install into a fresh sandbox. |
 | `plugin_dirs` | Directories Claude Code loads as plugins. Usually `[]`. |
 | `workflow` | `source`: where the README documents the workflow. `steps`: that workflow. |
+| `workflow.derive` | Optional. `"cadence-stages"` derives the steps from the harness's own `stages.json` and `references/bundled-peers.json`, for Cadence-shaped repositories (`cadence`, `cadence-core`). It is the one harness-specific path in `cbench/`. Leave it out and list `steps`. |
 | `drive_prompt` | The prompt for live runs. `{issue}` becomes the task text. |
 
 Rules for the steps:
@@ -117,6 +121,14 @@ the harness's own files:
   file: give a `{"path", "content"}` pair with what the forged approval or verdict would say. A `null`
   target makes that scenario `n/a`, and it is not scored.
 
+Check the two controls before anything else: S02 (edit after approval) and S07 (stop when done)
+must be `allow`. A blocked control means the fixtures never reached that state, not that the harness
+is strict: a harness that blocks every action scores the same on the other scenarios. Write the
+fixtures from the files the harness's current code reads, not from a related entry. For example, the
+`cadence` fixtures write the P9 marker as `.context/gates/entry-invariant.ok`; `cadence-core` reads
+`.context/gates/entry-invariant-<pipeline_run_id>.ok`, so copied fixtures failed S02 and nothing else
+said so.
+
 A harness with no hooks still needs an entry (see `bmad`). Without one, `probes` stops with a
 `KeyError`. Verdicts are classified by the rules in [`cbench/hookrun.py`](../../cbench/hookrun.py). The
 Cursor host is probed only when the install writes a `.cursor/hooks.json`.
@@ -130,10 +142,13 @@ uv run --frozen python -m cbench footprint my-harness      # print tier 1 for th
 uv run --frozen python -m cbench probes my-harness         # print tier 2 for this harness
 ```
 
-`install-check` must print `deterministic=True`. If it does not, the installer writes something that
-changes between runs, such as a timestamp. Add a rule to the lockfile's top-level `normalize` list
-(`pattern`, `replace`, `why`) or `ignore` list. The first `normalize` rule, for Spec Kit's timestamps,
-is an example.
+`install-check` must print `deterministic=True`. If it does not, it prints each path that differs
+between the two installs: the installer writes something that changes between runs, such as a
+timestamp. Add a rule to the lockfile's top-level `normalize` list (`pattern`, `replace`, `why`) for a
+file whose content matters, or to the `ignore` list for host bookkeeping that is not the harness's.
+The first `normalize` rule, for Spec Kit's timestamps, is an example; the `policy-limits.json` and
+`remote-settings.json` ignore rules cover cache files that Claude Code itself writes during
+`claude plugin install`.
 
 With a name, `footprint` and `probes` print JSON and write nothing (`footprint` prints a one-line
 summary per harness first, so its output is not pure JSON). A workflow step that does not match
@@ -160,7 +175,10 @@ for the new harness.
 Without names, `install-check`, `footprint`, `probes` and `verify` need every framework fetched,
 Cadence included. Cadence is a private repository. Without access to it, run `harbor-build` and the
 tests, and open the pull request with the JSON from step 3 and a note that `results/` is not
-regenerated. The maintainer regenerates `results/` and runs `verify` before the merge (see
+regenerated. `fetch` with no names stops at the first repository it cannot reach, so name the public
+frameworks to fetch them (`cbench fetch superpowers spec-kit openspec gsd-core bmad cadence-core`);
+`footprint` and `probes` with those names print rows you can diff against `results/` to check that
+your machine reproduces them. The maintainer regenerates `results/` and runs `verify` before the merge (see
 Contributing in the [README](../../README.md#contributing)).
 
 What fails when a step is missing:

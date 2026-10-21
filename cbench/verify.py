@@ -45,6 +45,8 @@ def verify(args) -> int:
             res = install_twice_check(fw, lock)
             installs[fw.name] = res
             print(f"{'ok  ' if res['deterministic'] else 'FAIL'} install {fw.name} installs identically twice")
+            for path in res.get("differs", []):
+                print(f"       differs between installs: {path}")
             ok &= res["deterministic"]
         # REPORT.md reads install.json; a stale file would print the old trees' result.
         ok &= _compare("install.json", canonical_json({"provenance": provenance(lock), "frameworks": installs}))
