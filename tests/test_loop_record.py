@@ -375,6 +375,18 @@ def test_a_fresh_home_that_exists_and_is_not_empty_is_refused(tmp_path, plugin):
 
 # --- timing: the same fields for a one-shot and a Cadence run
 
+def test_the_record_has_time_per_block_from_the_runs_context(tmp_path, plugin):
+    ctx = tmp_path / "ctx"
+    (ctx / "attest").mkdir(parents=True)
+    (ctx / "attest" / "r.calls.jsonl").write_text('{"tool_use_id": "t", "stage": "plan-review", "decision": "allow"}\n')
+    (ctx / "attest" / "r.joins.jsonl").write_text('{"tool_use_id": "t", "agent_id": "a"}\n')
+    (ctx / "attest" / "r.agents.jsonl").write_text('{"agent_id": "a", "event": "start", "at": 10}\n'
+                                                   '{"agent_id": "a", "event": "stop", "at": 70}\n')
+    rc, run = _drive(tmp_path, plugin, extra=["--context", str(ctx)])
+    blocks = json.loads((run / "record.json").read_text())["timing"]["blocks"]
+    assert blocks == {"plan-review": {"seconds": 60.0, "calls": 1, "unfinished": 0}}
+
+
 def test_the_record_has_wall_agent_and_active_time(tmp_path, plugin):
     timing = tmp_path / "timing.json"
     timing.write_text('{"agent_seconds": 61.5}')
