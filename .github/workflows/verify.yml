@@ -1,9 +1,8 @@
 name: verify
 
+# Manual only for now: billing blocks every GitHub-hosted runner. Before each push, run
+# scripts/ci_local.sh (the test and report steps below) and paste its last lines into the PR.
 on:
-  push:
-    branches: [main]
-  pull_request:
   workflow_dispatch:
 
 jobs:
