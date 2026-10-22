@@ -17,11 +17,11 @@ import json
 import sys
 from pathlib import Path
 
-from loop import findings, record
+from loop import findings, record, scoreboard
 
 ROOT = Path(__file__).resolve().parents[1]
 STATUSES = ("VERIFIED", "CLAIMED", "CONTRADICTED")
-SECTIONS = ("Summary", "Timeline", "Evidence ledger", "Root causes", "Decisions", "Actions")
+SECTIONS = ("Summary", "Timeline", "Speed", "Evidence ledger", "Root causes", "Decisions", "Actions")
 
 
 class PostmortemError(Exception):
@@ -85,6 +85,8 @@ def generate(batch: str, runs: Path, notes: dict, findings_path: Path = findings
                    f"{sp['reason'] or '—'} | {got} | {'yes' if rec['counts']['counts'] else 'no: ' + rec['counts']['why']} |")
     out.append("")
 
+    out += _speed(rows, runs)
+
     out += ["## Evidence ledger", "", "| Status | Claim | Runs |", "|---|---|---|"]
     for rec, score in counted:
         tree = (score["grader"].get("tree") or "unknown")[:7]
@@ -107,6 +109,39 @@ def generate(batch: str, runs: Path, notes: dict, findings_path: Path = findings
         out += [f"- {i['text'].rstrip('.')}. Runs: {_cite(i['run_ids'])}." for i in notes.get(key, [])] or ["- None recorded."]
         out.append("")
     return "\n".join(out)
+
+
+def _speed(rows: list[tuple[dict, dict | None]], runs: Path) -> list[str]:
+    """Agent time per run against the one-shot of the same task and model, the slowest runs, and time per
+    block when the record has it."""
+    out = ["## Speed", "",
+           f"Agent session per run, and its ratio to the mean one-shot session of the same task and model "
+           f"(stretch goal: at most {scoreboard.STRETCH_RATIO}).", "",
+           "| Run | Task | Model | Agent min | One-shot min | Ratio | Stop |", "|---|---|---|---|---|---|---|"]
+    timed = []
+    for rec, _ in rows:
+        seconds = rec["timing"]["agent_wall_seconds"]
+        base = scoreboard.oneshot_seconds(runs, rec["task"], rec["model_requested"])
+        ratio = scoreboard.time_ratio(runs, rec)
+        if seconds is not None:
+            timed.append((seconds, rec["run_id"]))
+        out.append(f"| `{rec['run_id']}` | {rec['task']} | {rec['model_requested']} | "
+                   f"{f'{seconds / 60:.1f}' if seconds is not None else 'not recorded'} | "
+                   f"{f'{base / 60:.1f}' if base else '—'} | {f'{ratio:.2f}' if ratio is not None else '—'} | "
+                   f"{rec['stop_point']['block'] or '—'} |")
+    slowest = sorted(timed, reverse=True)[:3]
+    out += ["", "Slowest runs: " + (", ".join(f"`{rid}` ({s / 60:.1f} min)" for s, rid in slowest) or "none timed") + "."]
+    blocks: dict[str, float] = {}
+    for rec, _ in rows:
+        for block, seconds in (rec["timing"]["blocks"] or {}).items():
+            blocks[block] = blocks.get(block, 0.0) + float(seconds)
+    if blocks:
+        top = sorted(blocks.items(), key=lambda kv: -kv[1])[:5]
+        out.append("Time per block (all runs): " + ", ".join(f"{b} {s / 60:.1f} min" for b, s in top) + ".")
+    else:
+        out.append("Time per block: not measured in these records (the driver records it from B2 on).")
+    out.append("")
+    return out
 
 
 def main(argv: list[str] | None = None) -> int:

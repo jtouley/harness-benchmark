@@ -62,7 +62,7 @@ def test_the_baselines_are_the_15_october_one_shots():
 
 def test_the_gate_fails_cadence_core_29315c4_on_haiku():
     ok, lines = scoreboard.gate(RUNS, "claude-haiku-5-5", "29315c4")
-    assert not ok and all("FAIL" in line for line in lines)
+    assert not ok and all("FAIL" in line for line in lines if "/7" in line)
 
 
 def test_the_gate_needs_n_runs_per_task():
@@ -84,7 +84,9 @@ def _scored(runs: Path, run_id: str, task: str, passed: int) -> None:
         "model_requested": "claude-haiku-5-5", "models_served": ["claude-haiku-5-5"], "command": None,
         "started_at": None, "ended_at": None, "exit_code": 0, "cost": {"list_usd": None, "reported_usd": None},
         "stop_point": {"block": "R7", "reason": None}, "transcript": {"sha256": None, "missing": "t"},
-        "tree": {"sha256": None, "missing": "t"}, "counts": {"counts": True, "why": "t"}})
+        "tree": {"sha256": None, "missing": "t"}, "counts": {"counts": True, "why": "t"},
+        "timing": {"agent_wall_seconds": None, "run_wall_seconds": None, "agent_active_seconds": None, "blocks": None},
+        "isolation": None})
     record.append_score(runs, {"run_id": run_id, "grader": {"repo": "jtouley/harness-benchmark", "commit": "abc1234",
                                                           "tree": "b" * 40}, "reward": passed / 7, "passed": passed,
                                "total": 7, "idempotent": True, "stream_ok": True, "error": None, "source": "driver",
@@ -106,3 +108,36 @@ def test_the_gate_compares_the_mean_with_sonnet_and_opus(tmp_path, p1, p2, ok):
 
 def test_the_committed_scoreboard_is_what_the_generator_writes():
     assert scoreboard.table(RUNS) == (ROOT / "scoreboard.md").read_text(encoding="utf-8")
+
+
+# --- speed: agent time against the one-shot of the same task and model
+
+def test_the_one_shot_time_is_the_mean_agent_session_of_the_counted_baseline_runs():
+    assert scoreboard.oneshot_seconds(RUNS, "P1", "claude-haiku-5-5") == 1882.6
+    assert scoreboard.oneshot_seconds(RUNS, "P2", "claude-opus-5-5") == 2465.2
+    assert scoreboard.oneshot_seconds(RUNS, "P1", "claude-fable-5-1") is None
+
+
+def test_the_time_ratio_of_a_cadence_run():
+    rec = record.load(RUNS / "20261021-P2-cadence-core-haiku-2")
+    assert scoreboard.time_ratio(RUNS, rec) == pytest.approx(3864.0 / 1596.9, abs=1e-3)
+    assert scoreboard.time_ratio(RUNS, record.load(RUNS / "20261021-P1-cadence-core-haiku-0-killed")) is None
+
+
+def test_the_scoreboard_shows_the_time_ratio_beside_the_score():
+    text = scoreboard.table(RUNS)
+    assert "Agent min" in text and "Time ÷ one-shot" in text
+    row = next(line for line in text.splitlines() if "cadence-core@29315c4" in line and line.startswith("| 2026-10-21"))
+    assert "1.2" in row or "x" in row  # a ratio is shown for the cell
+
+
+def test_the_gate_reports_the_time_ratio_against_the_stretch_goal():
+    _, lines = scoreboard.gate(RUNS, "claude-haiku-5-5", "29315c4")
+    assert any("time" in line and "1.25" in line for line in lines)
+
+
+def test_the_postmortem_has_a_speed_section_with_each_run_and_the_slowest():
+    text = postmortem.generate(BATCH, RUNS, {})
+    speed = text.split("## Speed", 1)[1].split("\n## ", 1)[0]
+    assert "`20261022-P2-cadence-core-haiku-3`" in speed and "3.06" in speed
+    assert "Slowest" in speed and "per block" in speed
