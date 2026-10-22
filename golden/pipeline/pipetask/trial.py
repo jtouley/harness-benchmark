@@ -115,17 +115,21 @@ class MakeRunner:
 
 
 def mart_digests(repo: Path) -> dict[str, str]:
-    """An order-independent digest of each published mart's rows."""
+    """An order-independent digest of each published mart's rows: the marts oracle.py reads, a folder or
+    a single Parquet file at the top of out/marts/ (#49). A file is read after a folder of the same name,
+    as in oracle.py, so it is the one digested."""
     out = {}
     marts = repo / "out" / "marts"
     if not marts.is_dir():
         return out
     con = duckdb.connect()
-    for folder in sorted(p for p in marts.iterdir() if p.is_dir() and any(p.rglob("*.parquet"))):
-        glob = sql_string((folder / "**" / "*.parquet").as_posix())
+    sources = [(p.name, sql_string((p / "**" / "*.parquet").as_posix()) + ", union_by_name=true")
+               for p in sorted(marts.iterdir()) if p.is_dir() and any(p.rglob("*.parquet"))]
+    sources += [(p.stem, sql_string(p.as_posix())) for p in sorted(marts.glob("*.parquet"))]
+    for name, source in sources:
         row = con.execute(f"select count(*), coalesce(md5(string_agg(h, '' order by h)), '') from "
-                          f"(select md5(t::varchar) as h from read_parquet({glob}, union_by_name=true) t)").fetchone()
-        out[folder.name] = f"{row[0]}:{row[1]}"
+                          f"(select md5(t::varchar) as h from read_parquet({source}) t)").fetchone()
+        out[name] = f"{row[0]}:{row[1]}"
     return out
 
 
