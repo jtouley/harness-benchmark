@@ -4,7 +4,7 @@
   "additionalProperties": false,
   "required": ["schema", "run_id", "kind", "batch", "provenance", "task", "request_id", "arm", "cadence",
                "model_requested", "models_served", "command", "started_at", "ended_at", "exit_code", "cost",
-               "stop_point", "transcript", "tree", "counts"],
+               "stop_point", "transcript", "tree", "counts", "timing", "isolation"],
   "properties": {
     "schema": {"enum": [1]},
     "run_id": {"type": "string", "pattern": "^[0-9]{8}-[A-Za-z0-9]+(-[A-Za-z0-9]+)*$"},
@@ -55,6 +55,28 @@
     },
     "transcript": {"$ref": "#/definitions/blob"},
     "tree": {"$ref": "#/definitions/blob"},
+    "timing": {
+      "$comment": "agent_wall_seconds: the agent session from start to exit, the figure that compares a Cadence run with a one-shot. run_wall_seconds: the driver's whole command (setup and grading too). agent_active_seconds: the sum of the transcript's result durations. blocks: seconds per Cadence block (A1 to R7), or null when not measured.",
+      "type": "object", "additionalProperties": false,
+      "required": ["agent_wall_seconds", "run_wall_seconds", "agent_active_seconds", "blocks"],
+      "properties": {
+        "agent_wall_seconds": {"type": ["number", "null"], "minimum": 0},
+        "run_wall_seconds": {"type": ["number", "null"], "minimum": 0},
+        "agent_active_seconds": {"type": ["number", "null"], "minimum": 0},
+        "blocks": {"type": ["object", "null"]}
+      }
+    },
+    "isolation": {
+      "$comment": "What the run could reach: its working directory, its HOME, whether HOME was fresh, and every other Cadence checkout found under them (the driver refuses a run with one). Null when not recorded (backfill).",
+      "type": ["object", "null"], "additionalProperties": false,
+      "required": ["cwd", "home", "fresh_home", "other_cadence_checkouts"],
+      "properties": {
+        "cwd": {"type": "string"},
+        "home": {"type": "string"},
+        "fresh_home": {"type": "boolean"},
+        "other_cadence_checkouts": {"type": "array", "items": {"type": "string"}}
+      }
+    },
     "counts": {
       "type": "object", "additionalProperties": false, "required": ["counts", "why"],
       "properties": {

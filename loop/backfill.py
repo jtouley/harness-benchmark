@@ -103,6 +103,9 @@ def _base(run_id, batch, evidence, task, arm, model, cadence, **over) -> dict:
         "transcript": store.missing("not kept in git or in the store"),
         "tree": store.missing("not kept in git or in the store"),
         "counts": {"counts": False, "why": ""},
+        # agent_wall_seconds is the agent session the round's timing recorded; no round recorded the rest.
+        "timing": {"agent_wall_seconds": None, "run_wall_seconds": None, "agent_active_seconds": None, "blocks": None},
+        "isolation": None,
     }
     rec.update(over)
     return rec
@@ -147,6 +150,7 @@ def oct15() -> list[tuple[dict, list[dict]]]:
         rec = _base(run_id, "2026-10-15-pipeline-trials", evidence, r["task"], "baseline", r["model"], None,
                     cost={"list_usd": r["cost_usd"], "reported_usd": None, "tokens": r["tokens"]},
                     exit_code=r.get("agent_exit"), counts=counts,
+                    timing=_timing(r.get("agent_seconds")),
                     transcript=store.missing("kept outside git on the operator's laptop (results/runs/, gitignored); "
                                              "no sha256 was recorded"),
                     tree=store.missing("the saved tree is on the operator's laptop (results/runs/, gitignored)"))
@@ -159,6 +163,10 @@ def oct15() -> list[tuple[dict, list[dict]]]:
             scores.append(_score(run_id, regrade, grader, "counted regrade with the fixed grader"))
         out.append((rec, scores))
     return out
+
+
+def _timing(agent_seconds) -> dict:
+    return {"agent_wall_seconds": agent_seconds, "run_wall_seconds": None, "agent_active_seconds": None, "blocks": None}
 
 
 def _cadence(repo: str, sha: str | None, branch: str | None) -> dict | None:
@@ -179,6 +187,7 @@ def _facts(commit: str, folder: str) -> dict:
     except ValueError:  # result lines, one per wake-up
         lines = text.splitlines()
     facts = transcript_facts(lines)
+    facts.pop("agent_active_seconds", None)  # a saved result line covers one wake-up, not the session
     return {k: v for k, v in facts.items() if v is not None}
 
 
@@ -201,6 +210,7 @@ def oct19() -> list[tuple[dict, list[dict]]]:
                     transcript=store.missing("not committed (19 Oct write-up, amended per #55)"),
                     tree=store.missing("not kept; the host container is gone"))
         rec.update({k: v for k, v in facts.items() if k in ("models_served", "session_id")})
+        rec["timing"] = _timing((_json(commit, f"{d}/timing.json") or {}).get("agent_seconds"))
         rec["cost"] = facts.get("cost", rec["cost"])
         if cost:
             rec["cost"]["list_usd"] = cost["usd_total"]
@@ -244,6 +254,7 @@ def oct21() -> list[tuple[dict, list[dict]]]:
                                      "tree was clean was not recorded, and peers also read a second copy at "
                                      "/home/user/cadence-core (same commit) (21 Oct, Findings 5)")
         rec.update({k: v for k, v in facts.items() if k in ("models_served", "session_id")})
+        rec["timing"] = _timing(row.get("agent_seconds"))
         rec["cost"] = {"list_usd": row["cost_usd"] if row["outcome"] != "infra_error" else None,
                        "reported_usd": row.get("host_cost_usd"), **({"tokens": row["tokens"]} if counts else {})}
         grade = _json(commit, f"{d}/grade.json")
