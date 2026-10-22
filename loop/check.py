@@ -54,7 +54,7 @@ def append_only(repo: Path, base: str, runs: str = "runs") -> list[str]:
     for rel in listed:
         now = repo / rel
         before = _show(repo, base, rel)
-        if rel.endswith("/record.json"):
+        if rel.endswith("/record.json") or rel.endswith("/blocks.json"):
             if not now.exists():
                 problems.append(f"{rel}: deleted (records are append-only)")
             elif now.read_text(encoding="utf-8") != before:

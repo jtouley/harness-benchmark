@@ -1,0 +1,102 @@
+{
+ "ledger": [
+  {
+   "status": "CONTRADICTED",
+   "claim": "Dev sessions on 21–22 Oct cited about 50 live runs as proof that Cadence on Haiku delivers. One session ran and graded them all with its own examples/feedback-probe/probe.py (edited the same day), on one request, some on hand-patched code; no record of them exists outside its container, so none counts. The only independent measurement, these six counted runs at cadence-core 29315c4, scored 0/7 each",
+   "run_ids": [
+    "20261021-P1-cadence-core-haiku-1",
+    "20261021-P1-cadence-core-haiku-2",
+    "20261022-P1-cadence-core-haiku-3",
+    "20261021-P2-cadence-core-haiku-1",
+    "20261021-P2-cadence-core-haiku-2",
+    "20261022-P2-cadence-core-haiku-3"
+   ]
+  },
+  {
+   "status": "CONTRADICTED",
+   "claim": "The 21 Oct write-up (Findings 4) says grader bug #49 zeroed the two runs that built a pipeline. Both runs passed 0 of 7 checks, and reward is 0 whenever passed is 0, so #49 did not change their scores (harness-benchmark PR #60)",
+   "run_ids": [
+    "20261022-P1-cadence-core-haiku-3",
+    "20261021-P2-cadence-core-haiku-2"
+   ]
+  },
+  {
+   "status": "CONTRADICTED",
+   "claim": "The 19 Oct best Haiku run (5/7 on P1 at jtouley/cadence b1bbdcd) shows that the core delivers on P1. It was not reproduced at cadence-core 29315c4: three P1 runs scored 0/7",
+   "run_ids": [
+    "20261019-P1-cadence-core-haiku-1",
+    "20261021-P1-cadence-core-haiku-1",
+    "20261021-P1-cadence-core-haiku-2",
+    "20261022-P1-cadence-core-haiku-3"
+   ]
+  },
+  {
+   "status": "CLAIMED",
+   "claim": "No session read the benchmark's key, grader, reference or replay code (checked by path in every transcript, 21 Oct write-up Findings 5). The transcripts were not kept, so this cannot be checked again",
+   "run_ids": [
+    "20261021-P1-cadence-core-haiku-1",
+    "20261021-P1-cadence-core-haiku-2",
+    "20261022-P1-cadence-core-haiku-3",
+    "20261021-P2-cadence-core-haiku-1",
+    "20261021-P2-cadence-core-haiku-2",
+    "20261022-P2-cadence-core-haiku-3"
+   ]
+  }
+ ],
+ "root_causes": [
+  {
+   "text": "Two of eight sessions were lost to the cloud host (container reclaimed while idle; worker restarted while busy). A cloud session is not a place for multi-hour trials",
+   "run_ids": [
+    "20261021-P1-cadence-core-haiku-0-killed",
+    "20261021-P2-cadence-core-haiku-2a-killed"
+   ]
+  }
+ ],
+ "decisions": [
+  {
+   "text": "The two lost sessions are infrastructure losses (criteria v2 §5.3) and do not count",
+   "run_ids": [
+    "20261021-P1-cadence-core-haiku-0-killed",
+    "20261021-P2-cadence-core-haiku-2a-killed"
+   ]
+  },
+  {
+   "text": "The grader commit was not recorded; these scores name grader tree 423b34a as inferred, and the runs cannot be regraded after #49 because their trees were not kept",
+   "run_ids": [
+    "20261021-P1-cadence-core-haiku-1",
+    "20261021-P1-cadence-core-haiku-2",
+    "20261022-P1-cadence-core-haiku-3",
+    "20261021-P2-cadence-core-haiku-1",
+    "20261021-P2-cadence-core-haiku-2",
+    "20261022-P2-cadence-core-haiku-3"
+   ]
+  }
+ ],
+ "actions": [
+  {
+   "text": "Fix #49 so single-file marts are checked for a second build (harness-benchmark PR #60)",
+   "run_ids": [
+    "20261022-P1-cadence-core-haiku-3",
+    "20261021-P2-cadence-core-haiku-2"
+   ]
+  },
+  {
+   "text": "Add a local PR record under adapter none in jtouley/cadence (F-1)",
+   "run_ids": [
+    "20261022-P1-cadence-core-haiku-3",
+    "20261021-P2-cadence-core-haiku-2"
+   ]
+  },
+  {
+   "text": "Start every later run with python -m loop.driver, so the plugin commit, the served model, the grader tree, the transcript and the delivered tree are recorded",
+   "run_ids": [
+    "20261021-P1-cadence-core-haiku-1",
+    "20261021-P1-cadence-core-haiku-2",
+    "20261022-P1-cadence-core-haiku-3",
+    "20261021-P2-cadence-core-haiku-1",
+    "20261021-P2-cadence-core-haiku-2",
+    "20261022-P2-cadence-core-haiku-3"
+   ]
+  }
+ ]
+}

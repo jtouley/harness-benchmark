@@ -38,16 +38,16 @@ def _sha(repo: Path, back: int) -> str:
 
 def _run(runs: Path, run_id: str, *, sha: str, source="driver", block="R7", reason="done", reward=0.5,
          passed=4, kind="benchmark", task="P1", request="gh-1", started="2026-10-23T00:00:00Z",
-         counts=True, clean=True) -> None:
+         counts=True, clean=True, arm="cadence", model="claude-haiku-5-5", seconds=None) -> None:
     record.write_record(runs, {
         "schema": 1, "run_id": run_id, "kind": kind, "batch": "2026-10-23-test",
-        "provenance": {"source": source, "evidence": []}, "task": task, "request_id": request, "arm": "cadence",
-        "cadence": {"repo": "x", "sha": sha, "tree_clean": clean}, "model_requested": "claude-haiku-5-5",
+        "provenance": {"source": source, "evidence": []}, "task": task, "request_id": request, "arm": arm,
+        "cadence": {"repo": "x", "sha": sha, "tree_clean": clean} if sha else None, "model_requested": model,
         "models_served": ["claude-haiku-5-5"], "command": None, "started_at": started, "ended_at": None,
         "exit_code": 0, "cost": {"list_usd": None, "reported_usd": None},
         "stop_point": {"block": block, "reason": reason}, "transcript": {"sha256": None, "missing": "test"},
         "tree": {"sha256": None, "missing": "test"}, "counts": {"counts": counts, "why": "test"},
-        "timing": {"agent_wall_seconds": None, "run_wall_seconds": None, "agent_active_seconds": None, "blocks": None},
+        "timing": {"agent_wall_seconds": seconds, "run_wall_seconds": None, "agent_active_seconds": None, "blocks": None},
         "isolation": None})
     record.append_score(runs, {"run_id": run_id, "grader": {"repo": "jtouley/harness-benchmark", "commit": "abc1234",
                                                           "tree": "a" * 40},
@@ -167,3 +167,21 @@ def test_the_committed_findings_resolve_to_records_and_are_open_without_a_fix():
     assert rows, "findings.jsonl is empty"
     assert [p for row in rows for p in findings.row_problems(row, ROOT / "runs")] == []
     assert findings.check(findings.FINDINGS, ROOT / "runs", None) == []
+
+
+@pytest.mark.parametrize(("seconds", "status"), [(1200.0, "closed"), (1500.0, "open"), (None, "open")])
+def test_a_speed_finding_closes_only_when_the_agent_time_is_within_the_ratio(tmp_path, cadence, seconds, status):
+    runs = tmp_path / "runs4"
+    _run(runs, "20261015-P1-haiku-1", sha=None, arm="baseline", seconds=1000.0, started="2026-10-15T00:00:00Z")
+    _run(runs, FOUND, sha=_sha(cadence, 2), seconds=3000.0, started="2026-10-22T00:00:00Z")
+    _run(runs, "20261023-P1-cadence-haiku-1", sha=_sha(cadence, 0), seconds=seconds)
+    row = {**ROW, "gone_when": {"max_time_ratio": 1.25}}
+    assert findings.compute(row, runs, cadence)[0] == status
+
+
+def test_a_fast_run_that_stopped_early_does_not_close_a_speed_finding(tmp_path, cadence):
+    runs = tmp_path / "runs5"
+    _run(runs, "20261015-P1-haiku-1", sha=None, arm="baseline", seconds=1000.0, started="2026-10-15T00:00:00Z")
+    _run(runs, FOUND, sha=_sha(cadence, 2), seconds=3000.0, started="2026-10-22T00:00:00Z")
+    _run(runs, "20261023-P1-cadence-haiku-1", sha=_sha(cadence, 0), seconds=300.0, block="P4", passed=0, reward=0.5)
+    assert findings.compute({**ROW, "gone_when": {"max_time_ratio": 1.25}}, runs, cadence)[0] == "open"

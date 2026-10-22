@@ -1,0 +1,40 @@
+{
+ "blocks": {
+  "de-adversarial-reviewer": {
+   "calls": 3,
+   "seconds": 337.723,
+   "unfinished": 0
+  },
+  "plan-create": {
+   "calls": 1,
+   "seconds": 143.493,
+   "unfinished": 0
+  },
+  "plan-review": {
+   "calls": 5,
+   "seconds": 521.259,
+   "unfinished": 0
+  },
+  "plan-update": {
+   "calls": 10,
+   "seconds": 1028.274,
+   "unfinished": 0
+  },
+  "session-summary": {
+   "calls": 1,
+   "seconds": 55.735,
+   "unfinished": 0
+  },
+  "test-benchmark-plan": {
+   "calls": 3,
+   "seconds": 298.087,
+   "unfinished": 0
+  },
+  "vibe-test": {
+   "calls": 1,
+   "seconds": 47.978,
+   "unfinished": 0
+  }
+ },
+ "source": "d8b9611:docs/evidence/2026-10-21-pipeline-cadence-core-subscription/P2-cadence-core-haiku-1/context/attest"
+}

@@ -15,9 +15,10 @@ import argparse
 import json
 import subprocess
 import sys
+import tempfile
 from pathlib import Path
 
-from loop import record, store
+from loop import blocks, record, store
 from loop.driver import transcript_facts
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -169,6 +170,20 @@ def _timing(agent_seconds) -> dict:
     return {"agent_wall_seconds": agent_seconds, "run_wall_seconds": None, "agent_active_seconds": None, "blocks": None}
 
 
+def _blocks(commit: str, folder: str) -> dict | None:
+    """Time per block from the run's committed attest logs (loop.blocks), or None when none were kept."""
+    listed = subprocess.run(["git", "ls-tree", "--name-only", f"{commit}:{folder}/context/attest"], cwd=ROOT,
+                            capture_output=True, text=True)
+    if listed.returncode != 0:
+        return None
+    with tempfile.TemporaryDirectory() as tmp:
+        attest = Path(tmp) / "attest"
+        attest.mkdir()
+        for name in listed.stdout.split():
+            (attest / name).write_text(_show(commit, f"{folder}/context/attest/{name}") or "", encoding="utf-8")
+        return blocks.peer_time(Path(tmp))
+
+
 def _cadence(repo: str, sha: str | None, branch: str | None) -> dict | None:
     if not sha:
         return None
@@ -266,6 +281,25 @@ def build() -> list[tuple[dict, list[dict]]]:
     return oct15() + oct19() + oct21()
 
 
+def block_times() -> dict[str, dict]:
+    """runs/<run_id>/blocks.json of the backfilled runs whose attest logs were committed. The records are
+    written once and were written before loop.blocks existed, so the time per block is a file of its own."""
+    out = {}
+    for (commit, folder), names, date in ((OCT19, RUNS19, None), (OCT21, RUNS21, "trial")):
+        for name in names:
+            d = f"{folder}/{name}"
+            found = _blocks(commit, d)
+            if found is None:
+                continue
+            if date:
+                started = (_json(commit, f"{d}/trial.json") or {}).get("started_at") or ""
+                run_id = f"{started[:10].replace('-', '')}-{name}"
+            else:
+                run_id = f"20261019-{name}"
+            out[run_id] = {"source": f"{commit[:7]}:{d}/context/attest", "blocks": found}
+    return out
+
+
 def main(argv: list[str] | None = None) -> int:
     ap = argparse.ArgumentParser(prog="python -m loop.backfill", description=__doc__.split("\n\n")[0])
     ap.add_argument("--runs", type=Path, default=ROOT / "runs")
@@ -282,7 +316,12 @@ def main(argv: list[str] | None = None) -> int:
         for s in scores:
             record.append_score(args.runs, s)
         written += 1
-    print(f"{written} record(s) written to {args.runs}")
+    for run_id, body in block_times().items():
+        path = args.runs / run_id / "blocks.json"
+        if (args.runs / run_id).is_dir() and not path.exists():
+            path.write_text(json.dumps(body, indent=1, sort_keys=True) + "\n", encoding="utf-8")
+            written += 1
+    print(f"{written} file(s) written to {args.runs}")
     return 0
 
 

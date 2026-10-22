@@ -17,7 +17,8 @@ closed when there are later runs that:
 - all meet `gone_when`, and their mean reward is not lower than the mean reward of the finding's runs.
 
 `gone_when` keys (all given ones must hold for each run): `stop_block_not` (list of block ids),
-`stop_reason_excludes` (text), `min_passed` (checks passed, from the latest score).
+`stop_reason_excludes` (text), `min_passed` (checks passed, from the latest score), `max_time_ratio` (the
+run's agent session over the one-shot's of the same task and model, loop.scoreboard.time_ratio).
 """
 
 from __future__ import annotations
@@ -36,7 +37,7 @@ FINDINGS = ROOT / "findings.jsonl"
 TASKS = ("P1", "P2")
 FINDING_ID = re.compile(r"F-[1-9][0-9]*")
 KEYS = {"id", "title", "run_ids", "root_cause", "component", "gone_when", "status"}
-GONE_KEYS = {"stop_block_not", "stop_reason_excludes", "min_passed"}
+GONE_KEYS = {"stop_block_not", "stop_reason_excludes", "min_passed", "max_time_ratio"}
 
 
 def load(path: Path = FINDINGS) -> list[dict]:
@@ -95,7 +96,7 @@ def _latest(run: Path) -> dict | None:
     return scores[-1] if scores else None
 
 
-def _gone(rec: dict, score: dict, gone: dict) -> bool:
+def _gone(rec: dict, score: dict, gone: dict, runs: Path) -> bool:
     block = rec["stop_point"].get("block")
     reason = rec["stop_point"].get("reason") or ""
     if "stop_block_not" in gone and block in gone["stop_block_not"]:
@@ -104,6 +105,12 @@ def _gone(rec: dict, score: dict, gone: dict) -> bool:
         return False
     if "min_passed" in gone and (score.get("passed") or 0) < gone["min_passed"]:
         return False
+    if "max_time_ratio" in gone:
+        from loop.scoreboard import time_ratio
+
+        ratio = time_ratio(runs, rec)
+        if ratio is None or ratio > gone["max_time_ratio"]:
+            return False
     return True
 
 
@@ -134,7 +141,7 @@ def compute(row: dict, runs: Path, cadence: Path | None) -> tuple[str, str]:
         candidates.append((rec, score))
     if not candidates:
         return "open", "no later counted benchmark run on a clean cadence commit with the fix"
-    still = [rec["run_id"] for rec, score in candidates if not _gone(rec, score, row["gone_when"])]
+    still = [rec["run_id"] for rec, score in candidates if not _gone(rec, score, row["gone_when"], runs)]
     if still:
         return "open", f"the failure is still there in {', '.join(still)}"
     before = _mean([(_latest(runs / rid) or {}).get("reward", 0.0) for rid, r in found.items() if r["counts"]["counts"]])

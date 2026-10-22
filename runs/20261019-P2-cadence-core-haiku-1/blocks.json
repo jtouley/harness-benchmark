@@ -1,0 +1,20 @@
+{
+ "blocks": {
+  "plan-create": {
+   "calls": 1,
+   "seconds": 128.519,
+   "unfinished": 0
+  },
+  "plan-review": {
+   "calls": 5,
+   "seconds": 566.853,
+   "unfinished": 0
+  },
+  "plan-update": {
+   "calls": 6,
+   "seconds": 378.19,
+   "unfinished": 0
+  }
+ },
+ "source": "d4f9b00:docs/evidence/2026-10-19-pipeline-cadence-core/P2-cadence-core-haiku-1/context/attest"
+}
