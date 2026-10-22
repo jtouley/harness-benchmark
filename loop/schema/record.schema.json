@@ -1,0 +1,100 @@
+{
+  "$comment": "runs/<run_id>/record.json. Written once by loop.driver or loop.backfill and never changed (loop.check). Validated by loop.record.validate, which implements the JSON Schema keywords used here.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema", "run_id", "kind", "batch", "provenance", "task", "request_id", "arm", "cadence",
+               "model_requested", "models_served", "command", "started_at", "ended_at", "exit_code", "cost",
+               "stop_point", "transcript", "tree", "counts", "timing", "isolation"],
+  "properties": {
+    "schema": {"enum": [1]},
+    "run_id": {"type": "string", "pattern": "^[0-9]{8}-[A-Za-z0-9]+(-[A-Za-z0-9]+)*$"},
+    "kind": {"enum": ["benchmark", "live", "stub"]},
+    "batch": {"type": "string", "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}-[a-z0-9-]+$"},
+    "provenance": {
+      "type": "object", "additionalProperties": false, "required": ["source", "evidence"],
+      "properties": {
+        "source": {"enum": ["driver", "backfill"]},
+        "evidence": {"type": "array", "items": {"type": "string"}},
+        "note": {"type": "string"}
+      }
+    },
+    "task": {"type": ["string", "null"]},
+    "request_id": {"type": ["string", "null"]},
+    "arm": {"type": "string"},
+    "cadence": {
+      "type": ["object", "null"], "additionalProperties": false, "required": ["repo", "sha", "tree_clean"],
+      "properties": {
+        "repo": {"type": "string"},
+        "sha": {"type": "string", "pattern": "^[0-9a-f]{7,40}$"},
+        "tree_clean": {"type": ["boolean", "null"]},
+        "published_in": {"type": "array", "items": {"type": "string"}}
+      }
+    },
+    "model_requested": {"type": ["string", "null"]},
+    "models_served": {"type": ["array", "null"], "items": {"type": "string"}},
+    "session_id": {"type": ["string", "null"]},
+    "claude_version": {"type": ["string", "null"]},
+    "command": {"type": ["array", "null"], "items": {"type": "string"}},
+    "started_at": {"type": ["string", "null"]},
+    "ended_at": {"type": ["string", "null"]},
+    "exit_code": {"type": ["integer", "null"]},
+    "cost": {
+      "type": "object", "additionalProperties": false, "required": ["list_usd", "reported_usd"],
+      "properties": {
+        "list_usd": {"type": ["string", "null"]},
+        "reported_usd": {"type": ["number", "null"]},
+        "tokens": {"type": "object"}
+      }
+    },
+    "stop_point": {
+      "type": "object", "additionalProperties": false, "required": ["block", "reason"],
+      "properties": {
+        "block": {"type": ["string", "null"]},
+        "reason": {"type": ["string", "null"]}
+      }
+    },
+    "transcript": {"$ref": "#/definitions/blob"},
+    "tree": {"$ref": "#/definitions/blob"},
+    "timing": {
+      "$comment": "agent_wall_seconds: the agent session from start to exit, the figure that compares a Cadence run with a one-shot. run_wall_seconds: the driver's whole command (setup and grading too). agent_active_seconds: the sum of the transcript's result durations. blocks: seconds per Cadence block (A1 to R7), or null when not measured.",
+      "type": "object", "additionalProperties": false,
+      "required": ["agent_wall_seconds", "run_wall_seconds", "agent_active_seconds", "blocks"],
+      "properties": {
+        "agent_wall_seconds": {"type": ["number", "null"], "minimum": 0},
+        "run_wall_seconds": {"type": ["number", "null"], "minimum": 0},
+        "agent_active_seconds": {"type": ["number", "null"], "minimum": 0},
+        "blocks": {"type": ["object", "null"]}
+      }
+    },
+    "isolation": {
+      "$comment": "What the run could reach: its working directory, its HOME, whether HOME was fresh, and every other Cadence checkout found under them (the driver refuses a run with one). Null when not recorded (backfill).",
+      "type": ["object", "null"], "additionalProperties": false,
+      "required": ["cwd", "home", "fresh_home", "other_cadence_checkouts"],
+      "properties": {
+        "cwd": {"type": "string"},
+        "home": {"type": "string"},
+        "fresh_home": {"type": "boolean"},
+        "other_cadence_checkouts": {"type": "array", "items": {"type": "string"}}
+      }
+    },
+    "counts": {
+      "type": "object", "additionalProperties": false, "required": ["counts", "why"],
+      "properties": {
+        "counts": {"type": "boolean"},
+        "why": {"type": "string"}
+      }
+    }
+  },
+  "definitions": {
+    "blob": {
+      "type": "object", "additionalProperties": false, "required": ["sha256"],
+      "properties": {
+        "sha256": {"type": ["string", "null"], "pattern": "^[0-9a-f]{64}$"},
+        "bytes": {"type": "integer", "minimum": 0},
+        "store": {"type": "string"},
+        "path": {"type": "string"},
+        "missing": {"type": "string"}
+      }
+    }
+  }
+}
