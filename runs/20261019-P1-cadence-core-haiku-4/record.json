@@ -1,0 +1,59 @@
+{
+ "arm": "cadence-core",
+ "batch": "2026-10-19-pipeline-cadence-core",
+ "cadence": {
+  "published_in": [
+   "origin/ccr-3d2e0c73-lr6bdt"
+  ],
+  "repo": "https://github.com/jtouley/cadence",
+  "sha": "4af76ac7c26de279a066195f1e39993e7f0d093e",
+  "tree_clean": null
+ },
+ "claude_version": "2.1.304 (Claude Code)",
+ "command": null,
+ "cost": {
+  "list_usd": "0.7160",
+  "reported_usd": null
+ },
+ "counts": {
+  "counts": false,
+  "why": "cut off from outside: recorded, not scored (19 Oct, 'P1-cadence-core-haiku-4'; #48)"
+ },
+ "ended_at": null,
+ "exit_code": null,
+ "isolation": null,
+ "kind": "benchmark",
+ "model_requested": "claude-haiku-5-5",
+ "models_served": null,
+ "provenance": {
+  "evidence": [
+   "d4f9b00:docs/evidence/2026-10-19-pipeline-cadence-core/P1-cadence-core-haiku-4",
+   "d4f9b00:docs/evidence/2026-10-19-pipeline-cadence-core.md"
+  ],
+  "source": "backfill"
+ },
+ "request_id": "gh-1",
+ "run_id": "20261019-P1-cadence-core-haiku-4",
+ "schema": 1,
+ "session_id": null,
+ "started_at": null,
+ "stop_point": {
+  "block": "R1",
+  "reason": "cut off by the operator's two-hour shell limit during the R1 fix round"
+ },
+ "task": "P1",
+ "timing": {
+  "agent_active_seconds": null,
+  "agent_wall_seconds": 7108,
+  "blocks": null,
+  "run_wall_seconds": null
+ },
+ "transcript": {
+  "missing": "not committed (19 Oct write-up, amended per #55)",
+  "sha256": null
+ },
+ "tree": {
+  "missing": "not kept; the host container is gone",
+  "sha256": null
+ }
+}

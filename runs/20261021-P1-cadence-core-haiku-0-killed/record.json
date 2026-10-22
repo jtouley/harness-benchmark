@@ -1,0 +1,61 @@
+{
+ "arm": "cadence-core",
+ "batch": "2026-10-21-cadence-core-subscription",
+ "cadence": {
+  "repo": "https://github.com/jtouley/cadence-core",
+  "sha": "29315c4e64ff318a80a1a7d2c809beb4b3c15611",
+  "tree_clean": null
+ },
+ "claude_version": "2.1.306 (Claude Code)",
+ "command": [
+  "docs/evidence/2026-10-21-pipeline-cadence-core-subscription/host_trial.sh",
+  "P1",
+  "P1-cadence-core-haiku-0-killed"
+ ],
+ "cost": {
+  "list_usd": null,
+  "reported_usd": null
+ },
+ "counts": {
+  "counts": false,
+  "why": "infrastructure loss, not scored (21 Oct write-up, Results; criteria v2 §5.3)"
+ },
+ "ended_at": "2026-10-21T13:04:23Z",
+ "exit_code": null,
+ "isolation": null,
+ "kind": "benchmark",
+ "model_requested": "claude-haiku-5-5",
+ "models_served": null,
+ "provenance": {
+  "evidence": [
+   "d8b9611:docs/evidence/2026-10-21-pipeline-cadence-core-subscription/P1-cadence-core-haiku-0-killed",
+   "d8b9611:docs/evidence/2026-10-21-pipeline-cadence-core-subscription.md"
+  ],
+  "note": "plugin tree: cadence-core at the commit above via --plugin-dir; whether the tree was clean was not recorded, and peers also read a second copy at /home/user/cadence-core (same commit) (21 Oct, Findings 5)",
+  "source": "backfill"
+ },
+ "request_id": "gh-1",
+ "run_id": "20261021-P1-cadence-core-haiku-0-killed",
+ "schema": 1,
+ "session_id": null,
+ "started_at": "2026-10-21T13:04:23+00:00",
+ "stop_point": {
+  "block": "E1",
+  "reason": "infrastructure loss: the cloud container was reclaimed while idle"
+ },
+ "task": "P1",
+ "timing": {
+  "agent_active_seconds": null,
+  "agent_wall_seconds": null,
+  "blocks": null,
+  "run_wall_seconds": null
+ },
+ "transcript": {
+  "missing": "not committed (5 to 9 MB each, host paths); the host container is gone",
+  "sha256": null
+ },
+ "tree": {
+  "missing": "not committed; the host container is gone",
+  "sha256": null
+ }
+}
