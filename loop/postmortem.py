@@ -131,15 +131,26 @@ def _speed(rows: list[tuple[dict, dict | None]], runs: Path) -> list[str]:
                    f"{rec['stop_point']['block'] or '—'} |")
     slowest = sorted(timed, reverse=True)[:3]
     out += ["", "Slowest runs: " + (", ".join(f"`{rid}` ({s / 60:.1f} min)" for s, rid in slowest) or "none timed") + "."]
-    blocks: dict[str, float] = {}
+    stages: dict[str, dict] = {}
     for rec, _ in rows:
-        for block, seconds in (rec["timing"]["blocks"] or {}).items():
-            blocks[block] = blocks.get(block, 0.0) + float(seconds)
-    if blocks:
-        top = sorted(blocks.items(), key=lambda kv: -kv[1])[:5]
-        out.append("Time per block (all runs): " + ", ".join(f"{b} {s / 60:.1f} min" for b, s in top) + ".")
+        for stage, t in (rec["timing"]["blocks"] or {}).items():
+            agg = stages.setdefault(stage, {"seconds": 0.0, "calls": 0, "runs": 0})
+            agg["seconds"] += t["seconds"]
+            agg["calls"] += t["calls"]
+            agg["runs"] += 1
+    if not stages:
+        out.append("Time per block: not measured in these records (loop.blocks, from the run's attest logs).")
     else:
-        out.append("Time per block: not measured in these records (the driver records it from B2 on).")
+        out += ["", "Peer time per block, all runs (loop.blocks; orchestrator time between peers is in no block). "
+                "Repeat rounds are peer calls beyond one per run.", "",
+                "| Block (stage) | Peer min | Peer calls | Runs | Repeat rounds |", "|---|---|---|---|---|"]
+        for stage, agg in sorted(stages.items(), key=lambda kv: -kv[1]["seconds"]):
+            out.append(f"| {stage} | {agg['seconds'] / 60:.1f} | {agg['calls']} | {agg['runs']} | "
+                       f"{agg['calls'] - agg['runs']} |")
+        loops = sum(agg["calls"] - agg["runs"] for agg in stages.values())
+        loop_min = sum(agg["seconds"] * (agg["calls"] - agg["runs"]) / agg["calls"] for agg in stages.values() if agg["calls"])
+        out += ["", f"Time in loops (repeat rounds, at each block's mean peer time): about {loop_min / 60:.1f} min "
+                f"over {loops} repeat calls."]
     out.append("")
     return out
 

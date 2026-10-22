@@ -15,9 +15,10 @@ import argparse
 import json
 import subprocess
 import sys
+import tempfile
 from pathlib import Path
 
-from loop import record, store
+from loop import blocks, record, store
 from loop.driver import transcript_facts
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -169,6 +170,20 @@ def _timing(agent_seconds) -> dict:
     return {"agent_wall_seconds": agent_seconds, "run_wall_seconds": None, "agent_active_seconds": None, "blocks": None}
 
 
+def _blocks(commit: str, folder: str) -> dict | None:
+    """Time per block from the run's committed attest logs (loop.blocks), or None when none were kept."""
+    listed = subprocess.run(["git", "ls-tree", "--name-only", f"{commit}:{folder}/context/attest"], cwd=ROOT,
+                            capture_output=True, text=True)
+    if listed.returncode != 0:
+        return None
+    with tempfile.TemporaryDirectory() as tmp:
+        attest = Path(tmp) / "attest"
+        attest.mkdir()
+        for name in listed.stdout.split():
+            (attest / name).write_text(_show(commit, f"{folder}/context/attest/{name}") or "", encoding="utf-8")
+        return blocks.peer_time(Path(tmp))
+
+
 def _cadence(repo: str, sha: str | None, branch: str | None) -> dict | None:
     if not sha:
         return None
@@ -211,6 +226,7 @@ def oct19() -> list[tuple[dict, list[dict]]]:
                     tree=store.missing("not kept; the host container is gone"))
         rec.update({k: v for k, v in facts.items() if k in ("models_served", "session_id")})
         rec["timing"] = _timing((_json(commit, f"{d}/timing.json") or {}).get("agent_seconds"))
+        rec["timing"]["blocks"] = _blocks(commit, d)
         rec["cost"] = facts.get("cost", rec["cost"])
         if cost:
             rec["cost"]["list_usd"] = cost["usd_total"]
@@ -255,6 +271,7 @@ def oct21() -> list[tuple[dict, list[dict]]]:
                                      "/home/user/cadence-core (same commit) (21 Oct, Findings 5)")
         rec.update({k: v for k, v in facts.items() if k in ("models_served", "session_id")})
         rec["timing"] = _timing(row.get("agent_seconds"))
+        rec["timing"]["blocks"] = _blocks(commit, d)
         rec["cost"] = {"list_usd": row["cost_usd"] if row["outcome"] != "infra_error" else None,
                        "reported_usd": row.get("host_cost_usd"), **({"tokens": row["tokens"]} if counts else {})}
         grade = _json(commit, f"{d}/grade.json")

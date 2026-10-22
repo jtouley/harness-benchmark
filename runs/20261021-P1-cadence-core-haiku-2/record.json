@@ -55,7 +55,28 @@
  "timing": {
   "agent_active_seconds": null,
   "agent_wall_seconds": 1236.4,
-  "blocks": null,
+  "blocks": {
+   "plan-create": {
+    "calls": 2,
+    "seconds": 231.771,
+    "unfinished": 0
+   },
+   "plan-review": {
+    "calls": 2,
+    "seconds": 336.205,
+    "unfinished": 0
+   },
+   "plan-update": {
+    "calls": 2,
+    "seconds": 363.731,
+    "unfinished": 0
+   },
+   "vibe-test": {
+    "calls": 1,
+    "seconds": 60.419,
+    "unfinished": 0
+   }
+  },
   "run_wall_seconds": null
  },
  "transcript": {

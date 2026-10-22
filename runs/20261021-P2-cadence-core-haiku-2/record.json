@@ -55,7 +55,38 @@
  "timing": {
   "agent_active_seconds": null,
   "agent_wall_seconds": 3864.0,
-  "blocks": null,
+  "blocks": {
+   "commit-push-pr": {
+    "calls": 1,
+    "seconds": 24.883,
+    "unfinished": 0
+   },
+   "plan-create": {
+    "calls": 1,
+    "seconds": 197.956,
+    "unfinished": 0
+   },
+   "plan-review": {
+    "calls": 4,
+    "seconds": 315.493,
+    "unfinished": 0
+   },
+   "plan-update": {
+    "calls": 3,
+    "seconds": 158.504,
+    "unfinished": 0
+   },
+   "session-summary": {
+    "calls": 1,
+    "seconds": 54.98,
+    "unfinished": 0
+   },
+   "spec-driven": {
+    "calls": 1,
+    "seconds": 3003.633,
+    "unfinished": 0
+   }
+  },
   "run_wall_seconds": null
  },
  "transcript": {

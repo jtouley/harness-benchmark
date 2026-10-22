@@ -37,7 +37,22 @@ Agent session per run, and its ratio to the mean one-shot session of the same ta
 | `20261022-P2-cadence-core-haiku-3` | P2 | claude-haiku-5-5 | 81.3 | 26.6 | 3.06 | P7 |
 
 Slowest runs: `20261022-P2-cadence-core-haiku-3` (81.3 min), `20261021-P2-cadence-core-haiku-2` (64.4 min), `20261022-P1-cadence-core-haiku-3` (51.6 min).
-Time per block: not measured in these records (the driver records it from B2 on).
+
+Peer time per block, all runs (loop.blocks; orchestrator time between peers is in no block). Repeat rounds are peer calls beyond one per run.
+
+| Block (stage) | Peer min | Peer calls | Runs | Repeat rounds |
+|---|---|---|---|---|
+| spec-driven | 84.0 | 4 | 3 | 1 |
+| plan-review | 49.9 | 28 | 6 | 22 |
+| plan-update | 44.8 | 35 | 5 | 30 |
+| plan-create | 21.2 | 8 | 6 | 2 |
+| de-adversarial-reviewer | 14.4 | 9 | 2 | 7 |
+| test-benchmark-plan | 12.5 | 8 | 2 | 6 |
+| vibe-test | 6.4 | 5 | 4 | 1 |
+| session-summary | 1.8 | 2 | 2 | 0 |
+| commit-push-pr | 1.2 | 3 | 2 | 1 |
+
+Time in loops (repeat rounds, at each block's mean peer time): about 126.1 min over 70 repeat calls.
 
 ## Evidence ledger
 
@@ -62,7 +77,7 @@ Time per block: not measured in these records (the driver records it from B2 on)
 - **F-4** (open): P7 fails three times and the orchestrator cannot read why. the orchestrator-scope guard (ADR-0017) hides the P7 scorecard, and the gate message does not print the failing rows, so the plan update cannot target them. Runs: `20261021-P2-cadence-core-haiku-1`, `20261022-P2-cadence-core-haiku-3`.
 - **F-5** (open): Delivered pipelines map the ticket's checks to invented invariants or file paths, so no check parses. nothing in the core traces the ticket's own requirement list (the seven checks) to a delivered proof; the answer map is never run against the spec's contract before delivery. Runs: `20261022-P1-cadence-core-haiku-3`, `20261021-P2-cadence-core-haiku-2`.
 - **F-6** (open): adapter none can be set only inside the plugin tree, so a clean benchmark run cannot use the local PR mode. jtouley/cadence reads adapter only from the plugin root's cadence.config.json (shared/skill_gate.py load_adapter, scripts/tracker_header.py no_tracker_declared, scripts/preflight.py), which says github-issues; a project .cadence.json cannot set it, so turning on adapter none edits the plugin tree, which loop.driver refuses. Runs: `20261022-P1-cadence-core-haiku-3`, `20261021-P2-cadence-core-haiku-2`.
-- **F-7** (open): On P2, Cadence on Haiku takes 1.6 to 3.1 times the Haiku one-shot's agent time (stretch goal: 1.25). time goes to planning loops before any code: P7 failed three times in two runs, and the third replanned from scratch after E1 (five P3 cycles, three P6 rounds); per-block times were not recorded, so the share of each block is UNPROVEN until B2. Runs: `20261021-P2-cadence-core-haiku-1`, `20261021-P2-cadence-core-haiku-2`, `20261022-P2-cadence-core-haiku-3`.
+- **F-7** (open): On P2, Cadence on Haiku takes 1.6 to 3.1 times the Haiku one-shot's agent time (stretch goal: 1.25). time goes to planning loops before any code. Peer time per block from the attest logs (loop.blocks, postmortem 2026-10-21-cadence-core-subscription): plan-review 28 calls and plan-update 35 calls over the batch, 52 of them repeat rounds; about 126 of 237 peer minutes were repeat rounds. P7 failed three times in two runs, and the third replanned from scratch after E1. Runs: `20261021-P2-cadence-core-haiku-1`, `20261021-P2-cadence-core-haiku-2`, `20261022-P2-cadence-core-haiku-3`.
 - Two of eight sessions were lost to the cloud host (container reclaimed while idle; worker restarted while busy). A cloud session is not a place for multi-hour trials. Runs: `20261021-P1-cadence-core-haiku-0-killed`, `20261021-P2-cadence-core-haiku-2a-killed`.
 
 ## Decisions
