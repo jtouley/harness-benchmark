@@ -68,3 +68,48 @@ def test_the_21_october_p2_run_spent_most_of_its_peer_time_in_one_e1_call(tmp_pa
     found = blocks.peer_time(tmp_path)
     assert found["spec-driven"]["calls"] == 1 and round(found["spec-driven"]["seconds"] / 60, 1) == 50.1
     assert found["plan-review"]["calls"] == 4
+
+
+# --- a resumed agent: several start/stop pairs (review of #66)
+
+def _agent_events(ctx: Path, events: list[tuple[str, float]]) -> None:
+    _write(ctx, "calls", [_call("t1", "plan-review", 0)])
+    _write(ctx, "joins", [{"tool_use_id": "t1", "agent_id": "a1", "at": 0}])
+    _write(ctx, "agents", [{"agent_id": "a1", "event": e, "at": at} for e, at in events])
+
+
+def test_each_start_is_paired_with_the_next_stop_and_the_pairs_are_summed(tmp_path):
+    ctx = tmp_path / ".context"
+    _agent_events(ctx, [("start", 10), ("stop", 20), ("start", 30), ("stop", 45), ("start", 50), ("stop", 51)])
+    assert blocks.peer_time(ctx)["plan-review"] == {"seconds": 26.0, "calls": 1, "unfinished": 0}
+
+
+def test_a_start_left_open_after_a_resume_is_unfinished_never_negative(tmp_path):
+    ctx = tmp_path / ".context"
+    _agent_events(ctx, [("start", 10), ("stop", 20), ("start", 30)])
+    assert blocks.peer_time(ctx)["plan-review"] == {"seconds": 10.0, "calls": 1, "unfinished": 1}
+
+
+def test_a_duplicate_stop_counts_once_the_first_wins(tmp_path):
+    ctx = tmp_path / ".context"
+    _agent_events(ctx, [("start", 10), ("stop", 20), ("stop", 90)])
+    assert blocks.peer_time(ctx)["plan-review"] == {"seconds": 10.0, "calls": 1, "unfinished": 0}
+
+
+def test_events_are_paired_in_time_order_not_file_order(tmp_path):
+    ctx = tmp_path / ".context"
+    _agent_events(ctx, [("stop", 20), ("start", 10)])
+    assert blocks.peer_time(ctx)["plan-review"]["seconds"] == 10.0
+
+
+@pytest.mark.skipif(subprocess.run(["git", "cat-file", "-e", f"{OCT21}^{{commit}}"], cwd=ROOT).returncode != 0,
+                    reason="the 21 October evidence commit is not fetched")
+def test_the_resumed_plan_review_of_the_21_october_p1_run_counts_all_its_pairs(tmp_path):
+    folder = "docs/evidence/2026-10-21-pipeline-cadence-core-subscription/P1-cadence-core-haiku-1/context/attest"
+    names = subprocess.run(["git", "ls-tree", "--name-only", f"{OCT21}:{folder}"], cwd=ROOT,
+                           capture_output=True, text=True, check=True).stdout.split()
+    (tmp_path / "attest").mkdir()
+    for name in names:
+        (tmp_path / "attest" / name).write_text(subprocess.run(
+            ["git", "show", f"{OCT21}:{folder}/{name}"], cwd=ROOT, capture_output=True, text=True, check=True).stdout)
+    assert round(blocks.peer_time(tmp_path)["plan-review"]["seconds"], 1) == 98.8
