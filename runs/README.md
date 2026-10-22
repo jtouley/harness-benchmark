@@ -67,5 +67,6 @@ run does not count.
 
 `timing` has the same fields for a one-shot and a Cadence run: `agent_wall_seconds` (the agent session,
 from `--timing`, the figure the speed ratio uses), `run_wall_seconds` (the whole command),
-`agent_active_seconds` (the transcript's result durations) and `blocks` (seconds per block; not yet
-measured).
+`agent_active_seconds` (the transcript's result durations) and `blocks`: with `--context <the run's
+.context>`, the peer seconds, peer calls and unfinished peers of each Cadence stage, from its attest logs
+(`loop/blocks.py`). Calls above one are repeat rounds. Orchestrator time between peers is in no stage.

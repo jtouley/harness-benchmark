@@ -27,7 +27,7 @@ from datetime import datetime, timezone
 from decimal import Decimal
 from pathlib import Path
 
-from loop import record, store
+from loop import blocks, record, store
 
 ROOT = Path(__file__).resolve().parents[1]
 GRADER_PATH = "golden/pipeline/pipetask"
@@ -192,6 +192,7 @@ def main(argv: list[str] | None = None) -> int:
     ap.add_argument("--stop-point-file", type=Path, help='JSON {"block": "E4", "reason": "..."} the command wrote')
     ap.add_argument("--cwd", type=Path, default=Path.cwd(), help="where the command runs")
     ap.add_argument("--fresh-home", type=Path, help="an empty or new folder to give the command as HOME")
+    ap.add_argument("--context", type=Path, help="the run's .context (a copy is fine): time per block comes from it")
     ap.add_argument("--timing", type=Path, help='JSON with "agent_seconds" (the agent session) that the command wrote')
     ap.add_argument("--runs", type=Path, default=ROOT / "runs")
     ap.add_argument("--store", type=Path, required=True, help="a checkout of the runs-store branch")
@@ -251,7 +252,7 @@ def main(argv: list[str] | None = None) -> int:
         "tree": _tree_blob(args.tree, args.store) if args.tree else store.missing("--tree not given"),
         "counts": counts,
         "timing": {"agent_wall_seconds": agent_wall, "run_wall_seconds": run_wall, "agent_active_seconds": active,
-                   "blocks": None},
+                   "blocks": blocks.peer_time(args.context) if args.context else None},
         "isolation": {"cwd": str(args.cwd.resolve()), "home": str(home), "fresh_home": bool(args.fresh_home),
                       "other_cadence_checkouts": others},
     }
