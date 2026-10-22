@@ -1,0 +1,51 @@
+{
+ "arm": "baseline",
+ "batch": "2026-10-15-pipeline-trials",
+ "cadence": null,
+ "claude_version": null,
+ "command": null,
+ "cost": {
+  "list_usd": "0.331473",
+  "reported_usd": null,
+  "tokens": {
+   "cache_read": 15361867,
+   "cache_write": 454495,
+   "input": 4831,
+   "output": 241119
+  }
+ },
+ "counts": {
+  "counts": false,
+  "why": "void: the grader deleted the uncommitted work before building (fixed by --snapshot-worktree); run again as P1-haiku-1"
+ },
+ "ended_at": null,
+ "exit_code": 0,
+ "kind": "benchmark",
+ "model_requested": "claude-haiku-5-5",
+ "models_served": null,
+ "provenance": {
+  "evidence": [
+   "ec54dbc:docs/evidence/2026-10-15-pipeline-trials.json#P1-haiku-void",
+   "docs/evidence/2026-10-15-pipeline-trials.md"
+  ],
+  "source": "backfill"
+ },
+ "request_id": null,
+ "run_id": "20261015-P1-haiku-void",
+ "schema": 1,
+ "session_id": null,
+ "started_at": null,
+ "stop_point": {
+  "block": null,
+  "reason": null
+ },
+ "task": "P1",
+ "transcript": {
+  "missing": "kept outside git on the operator's laptop (results/runs/, gitignored); no sha256 was recorded",
+  "sha256": null
+ },
+ "tree": {
+  "missing": "the saved tree is on the operator's laptop (results/runs/, gitignored)",
+  "sha256": null
+ }
+}

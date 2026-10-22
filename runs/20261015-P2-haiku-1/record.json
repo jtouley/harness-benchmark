@@ -1,0 +1,52 @@
+{
+ "arm": "baseline",
+ "batch": "2026-10-15-pipeline-trials",
+ "cadence": null,
+ "claude_version": null,
+ "command": null,
+ "cost": {
+  "list_usd": "0.278074",
+  "reported_usd": null,
+  "tokens": {
+   "cache_read": 9747836,
+   "cache_write": 365025,
+   "input": 5336,
+   "output": 268868
+  }
+ },
+ "counts": {
+  "counts": true,
+  "why": "scored run (15 Oct write-up)"
+ },
+ "ended_at": null,
+ "exit_code": 0,
+ "kind": "benchmark",
+ "model_requested": "claude-haiku-5-5",
+ "models_served": null,
+ "provenance": {
+  "evidence": [
+   "ec54dbc:docs/evidence/2026-10-15-pipeline-trials.json#P2-haiku-1",
+   "docs/evidence/2026-10-15-pipeline-trials.md"
+  ],
+  "note": "P2-haiku-1-flatmap-regrade (3/7) is a diagnostic regrade of an edited map, not a grade of the delivered run, so it is not a score here",
+  "source": "backfill"
+ },
+ "request_id": null,
+ "run_id": "20261015-P2-haiku-1",
+ "schema": 1,
+ "session_id": null,
+ "started_at": null,
+ "stop_point": {
+  "block": null,
+  "reason": null
+ },
+ "task": "P2",
+ "transcript": {
+  "missing": "kept outside git on the operator's laptop (results/runs/, gitignored); no sha256 was recorded",
+  "sha256": null
+ },
+ "tree": {
+  "missing": "the saved tree is on the operator's laptop (results/runs/, gitignored)",
+  "sha256": null
+ }
+}

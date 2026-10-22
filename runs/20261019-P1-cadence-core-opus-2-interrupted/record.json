@@ -1,0 +1,52 @@
+{
+ "arm": "cadence-core",
+ "batch": "2026-10-19-pipeline-cadence-core",
+ "cadence": {
+  "published_in": [
+   "origin/ccr-3d2e0c73-lr6bdt"
+  ],
+  "repo": "https://github.com/jtouley/cadence",
+  "sha": "4935e831b45a46e7468543035424032d65d4afa1",
+  "tree_clean": null
+ },
+ "claude_version": "2.1.303 (Claude Code)",
+ "command": null,
+ "cost": {
+  "list_usd": null,
+  "reported_usd": null
+ },
+ "counts": {
+  "counts": false,
+  "why": "interrupted, not scored (19 Oct, Results)"
+ },
+ "ended_at": null,
+ "exit_code": null,
+ "kind": "benchmark",
+ "model_requested": "claude-opus-5-5",
+ "models_served": null,
+ "provenance": {
+  "evidence": [
+   "d4f9b00:docs/evidence/2026-10-19-pipeline-cadence-core/P1-cadence-core-opus-2-interrupted",
+   "d4f9b00:docs/evidence/2026-10-19-pipeline-cadence-core.md"
+  ],
+  "source": "backfill"
+ },
+ "request_id": "gh-1",
+ "run_id": "20261019-P1-cadence-core-opus-2-interrupted",
+ "schema": 1,
+ "session_id": null,
+ "started_at": null,
+ "stop_point": {
+  "block": "P1",
+  "reason": "interrupted by the owner, who switched the arm to Haiku"
+ },
+ "task": "P1",
+ "transcript": {
+  "missing": "not committed (19 Oct write-up, amended per #55)",
+  "sha256": null
+ },
+ "tree": {
+  "missing": "not kept; the host container is gone",
+  "sha256": null
+ }
+}
