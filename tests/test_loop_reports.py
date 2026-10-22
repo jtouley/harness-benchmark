@@ -76,16 +76,16 @@ def _copy_baselines(dest: Path) -> None:
             shutil.copytree(run, dest / run.name)
 
 
-def _scored(runs: Path, run_id: str, task: str, passed: int) -> None:
+def _scored(runs: Path, run_id: str, task: str, passed: int, seconds: float | None = None, block: str = "R7") -> None:
     record.write_record(runs, {
         "schema": 1, "run_id": run_id, "kind": "benchmark", "batch": "2026-10-23-gate",
         "provenance": {"source": "driver", "evidence": []}, "task": task, "request_id": "gh-1", "arm": "cadence",
         "cadence": {"repo": "https://github.com/jtouley/cadence", "sha": "abcdef1", "tree_clean": True},
         "model_requested": "claude-haiku-5-5", "models_served": ["claude-haiku-5-5"], "command": None,
         "started_at": None, "ended_at": None, "exit_code": 0, "cost": {"list_usd": None, "reported_usd": None},
-        "stop_point": {"block": "R7", "reason": None}, "transcript": {"sha256": None, "missing": "t"},
+        "stop_point": {"block": block, "reason": None}, "transcript": {"sha256": None, "missing": "t"},
         "tree": {"sha256": None, "missing": "t"}, "counts": {"counts": True, "why": "t"},
-        "timing": {"agent_wall_seconds": None, "run_wall_seconds": None, "agent_active_seconds": None, "blocks": None},
+        "timing": {"agent_wall_seconds": seconds, "run_wall_seconds": None, "agent_active_seconds": None, "blocks": None},
         "isolation": None})
     record.append_score(runs, {"run_id": run_id, "grader": {"repo": "jtouley/harness-benchmark", "commit": "abc1234",
                                                           "tree": "b" * 40}, "reward": passed / 7, "passed": passed,
@@ -118,17 +118,37 @@ def test_the_one_shot_time_is_the_mean_agent_session_of_the_counted_baseline_run
     assert scoreboard.oneshot_seconds(RUNS, "P1", "claude-fable-5-1") is None
 
 
-def test_the_time_ratio_of_a_cadence_run():
-    rec = record.load(RUNS / "20261021-P2-cadence-core-haiku-2")
-    assert scoreboard.time_ratio(RUNS, rec) == pytest.approx(3864.0 / 1596.9, abs=1e-3)
+def test_the_time_ratio_of_a_cadence_run_that_passed_a_check():
+    rec = record.load(RUNS / "20261019-P1-cadence-core-haiku-1")  # stopped at E4 with 5/7
+    assert scoreboard.time_ratio(RUNS, rec) == pytest.approx(3062 / 1882.6, abs=1e-3)
     assert scoreboard.time_ratio(RUNS, record.load(RUNS / "20261021-P1-cadence-core-haiku-0-killed")) is None
 
 
-def test_the_scoreboard_shows_the_time_ratio_beside_the_score():
+def test_a_run_that_stopped_early_with_no_check_passed_has_no_ratio():
+    rec = record.load(RUNS / "20261021-P1-cadence-core-haiku-1")  # stopped at P4 after 10 min, 0/7
+    assert not scoreboard.reached_end(RUNS, rec)
+    assert scoreboard.time_ratio(RUNS, rec) is None
+    assert scoreboard.reached_end(RUNS, record.load(RUNS / "20261019-P1-cadence-core-haiku-3"))  # R7, 0/7
+
+
+def test_the_scoreboard_shows_the_time_ratio_beside_the_score_and_the_runs_it_left_out():
     text = scoreboard.table(RUNS)
     assert "Agent min" in text and "Time ÷ one-shot" in text
-    row = next(line for line in text.splitlines() if "cadence-core@29315c4" in line and line.startswith("| 2026-10-21"))
-    assert "1.2" in row or "x" in row  # a ratio is shown for the cell
+    p1 = next(line for line in text.splitlines() if "cadence-core@29315c4" in line and "| 3 |" in line)
+    assert "— (3 stopped early)" in p1  # all three stopped before the end with no check passed
+    b1 = next(line for line in text.splitlines() if "cadence@b1bbdcd" in line)
+    assert "1.63x (1 stopped early)" in b1  # 5/7 counts; the run that stopped at P9 does not
+
+
+def test_an_early_stop_does_not_lower_the_ratio(tmp_path):
+    for run in RUNS.iterdir():
+        if run.name.startswith("20261015-"):
+            shutil.copytree(run, tmp_path / run.name)
+    _scored(tmp_path, "20261023-P1-cadence-haiku-1", "P1", 6, seconds=3000.0)
+    _scored(tmp_path, "20261023-P1-cadence-haiku-2", "P1", 0, seconds=60.0, block="P4")  # fast and broken
+    _scored(tmp_path, "20261023-P1-cadence-haiku-3", "P1", 0, seconds=4000.0, block="R7")
+    row = next(line for line in scoreboard.table(tmp_path).splitlines() if "cadence@abcdef1" in line)
+    assert f"{(3000 / 1882.6 + 4000 / 1882.6) / 2:.2f}x (1 stopped early)" in row
 
 
 def test_the_gate_reports_the_time_ratio_against_the_stretch_goal():
@@ -139,5 +159,7 @@ def test_the_gate_reports_the_time_ratio_against_the_stretch_goal():
 def test_the_postmortem_has_a_speed_section_with_each_run_and_the_slowest():
     text = postmortem.generate(BATCH, RUNS, {})
     speed = text.split("## Speed", 1)[1].split("\n## ", 1)[0]
-    assert "`20261022-P2-cadence-core-haiku-3`" in speed and "3.06" in speed
-    assert "Slowest" in speed and "per block" in speed
+    row = next(line for line in speed.splitlines() if line.startswith("| `20261022-P2-cadence-core-haiku-3`"))
+    assert "81.3" in row and "— (stopped early)" in row  # 3.06x the one-shot, but it never finished
+    assert "Slowest runs: `20261022-P2-cadence-core-haiku-3`" in speed
+    assert "Peer time per block" in speed and "| plan-review | 51.4 | 28 | 6 | 22 |" in speed

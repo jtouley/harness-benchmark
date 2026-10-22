@@ -55,43 +55,7 @@
  "timing": {
   "agent_active_seconds": null,
   "agent_wall_seconds": 4880.7,
-  "blocks": {
-   "de-adversarial-reviewer": {
-    "calls": 6,
-    "seconds": 526.236,
-    "unfinished": 0
-   },
-   "plan-create": {
-    "calls": 2,
-    "seconds": 381.816,
-    "unfinished": 0
-   },
-   "plan-review": {
-    "calls": 11,
-    "seconds": 1506.787,
-    "unfinished": 0
-   },
-   "plan-update": {
-    "calls": 16,
-    "seconds": 935.735,
-    "unfinished": 3
-   },
-   "spec-driven": {
-    "calls": 1,
-    "seconds": 0.0,
-    "unfinished": 1
-   },
-   "test-benchmark-plan": {
-    "calls": 5,
-    "seconds": 451.073,
-    "unfinished": 0
-   },
-   "vibe-test": {
-    "calls": 2,
-    "seconds": 159.046,
-    "unfinished": 0
-   }
-  },
+  "blocks": null,
   "run_wall_seconds": null
  },
  "transcript": {

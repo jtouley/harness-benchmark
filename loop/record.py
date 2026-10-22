@@ -108,6 +108,15 @@ def load(run: Path) -> dict:
     return json.loads((run / "record.json").read_text(encoding="utf-8"))
 
 
+def blocks(run: Path, rec: dict | None = None) -> dict | None:
+    """Time per block: the record's timing.blocks, else a backfilled runs/<id>/blocks.json, else None."""
+    rec = rec if rec is not None else load(run)
+    if rec["timing"]["blocks"] is not None:
+        return rec["timing"]["blocks"]
+    path = run / "blocks.json"
+    return json.loads(path.read_text(encoding="utf-8"))["blocks"] if path.exists() else None
+
+
 def scores(run: Path) -> list[dict]:
     path = run / "scores.jsonl"
     if not path.exists():

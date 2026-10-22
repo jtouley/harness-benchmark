@@ -53,28 +53,7 @@
  "timing": {
   "agent_active_seconds": null,
   "agent_wall_seconds": 6117,
-  "blocks": {
-   "plan-create": {
-    "calls": 1,
-    "seconds": 235.57,
-    "unfinished": 0
-   },
-   "plan-review": {
-    "calls": 5,
-    "seconds": 373.452,
-    "unfinished": 0
-   },
-   "plan-update": {
-    "calls": 5,
-    "seconds": 252.332,
-    "unfinished": 0
-   },
-   "pr-review-local": {
-    "calls": 5,
-    "seconds": 2062.725,
-    "unfinished": 0
-   }
-  },
+  "blocks": null,
   "run_wall_seconds": null
  },
  "transcript": {

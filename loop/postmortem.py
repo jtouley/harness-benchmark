@@ -116,24 +116,27 @@ def _speed(rows: list[tuple[dict, dict | None]], runs: Path) -> list[str]:
     block when the record has it."""
     out = ["## Speed", "",
            f"Agent session per run, and its ratio to the mean one-shot session of the same task and model "
-           f"(stretch goal: at most {scoreboard.STRETCH_RATIO}).", "",
+           f"(stretch goal: at most {scoreboard.STRETCH_RATIO}). A run that stopped before the end with no check "
+           f"passed has no ratio: its time says nothing about a finished pipeline.", "",
            "| Run | Task | Model | Agent min | One-shot min | Ratio | Stop |", "|---|---|---|---|---|---|---|"]
     timed = []
     for rec, _ in rows:
         seconds = rec["timing"]["agent_wall_seconds"]
         base = scoreboard.oneshot_seconds(runs, rec["task"], rec["model_requested"])
         ratio = scoreboard.time_ratio(runs, rec)
+        ratio_text = f"{ratio:.2f}" if ratio is not None else (
+            "— (stopped early)" if seconds is not None and base and not scoreboard.reached_end(runs, rec) else "—")
         if seconds is not None:
             timed.append((seconds, rec["run_id"]))
         out.append(f"| `{rec['run_id']}` | {rec['task']} | {rec['model_requested']} | "
                    f"{f'{seconds / 60:.1f}' if seconds is not None else 'not recorded'} | "
-                   f"{f'{base / 60:.1f}' if base else '—'} | {f'{ratio:.2f}' if ratio is not None else '—'} | "
+                   f"{f'{base / 60:.1f}' if base else '—'} | {ratio_text} | "
                    f"{rec['stop_point']['block'] or '—'} |")
     slowest = sorted(timed, reverse=True)[:3]
     out += ["", "Slowest runs: " + (", ".join(f"`{rid}` ({s / 60:.1f} min)" for s, rid in slowest) or "none timed") + "."]
     stages: dict[str, dict] = {}
     for rec, _ in rows:
-        for stage, t in (rec["timing"]["blocks"] or {}).items():
+        for stage, t in (record.blocks(runs / rec["run_id"], rec) or {}).items():
             agg = stages.setdefault(stage, {"seconds": 0.0, "calls": 0, "runs": 0})
             agg["seconds"] += t["seconds"]
             agg["calls"] += t["calls"]

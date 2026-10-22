@@ -1,0 +1,35 @@
+{
+ "blocks": {
+  "commit-push-pr": {
+   "calls": 1,
+   "seconds": 24.883,
+   "unfinished": 0
+  },
+  "plan-create": {
+   "calls": 1,
+   "seconds": 197.956,
+   "unfinished": 0
+  },
+  "plan-review": {
+   "calls": 4,
+   "seconds": 315.493,
+   "unfinished": 0
+  },
+  "plan-update": {
+   "calls": 3,
+   "seconds": 158.504,
+   "unfinished": 0
+  },
+  "session-summary": {
+   "calls": 1,
+   "seconds": 52.832,
+   "unfinished": 0
+  },
+  "spec-driven": {
+   "calls": 1,
+   "seconds": 3003.633,
+   "unfinished": 0
+  }
+ },
+ "source": "d8b9611:docs/evidence/2026-10-21-pipeline-cadence-core-subscription/P2-cadence-core-haiku-2/context/attest"
+}

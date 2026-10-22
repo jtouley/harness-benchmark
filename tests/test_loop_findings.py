@@ -177,3 +177,11 @@ def test_a_speed_finding_closes_only_when_the_agent_time_is_within_the_ratio(tmp
     _run(runs, "20261023-P1-cadence-haiku-1", sha=_sha(cadence, 0), seconds=seconds)
     row = {**ROW, "gone_when": {"max_time_ratio": 1.25}}
     assert findings.compute(row, runs, cadence)[0] == status
+
+
+def test_a_fast_run_that_stopped_early_does_not_close_a_speed_finding(tmp_path, cadence):
+    runs = tmp_path / "runs5"
+    _run(runs, "20261015-P1-haiku-1", sha=None, arm="baseline", seconds=1000.0, started="2026-10-15T00:00:00Z")
+    _run(runs, FOUND, sha=_sha(cadence, 2), seconds=3000.0, started="2026-10-22T00:00:00Z")
+    _run(runs, "20261023-P1-cadence-haiku-1", sha=_sha(cadence, 0), seconds=300.0, block="P4", passed=0, reward=0.5)
+    assert findings.compute({**ROW, "gone_when": {"max_time_ratio": 1.25}}, runs, cadence)[0] == "open"

@@ -226,7 +226,6 @@ def oct19() -> list[tuple[dict, list[dict]]]:
                     tree=store.missing("not kept; the host container is gone"))
         rec.update({k: v for k, v in facts.items() if k in ("models_served", "session_id")})
         rec["timing"] = _timing((_json(commit, f"{d}/timing.json") or {}).get("agent_seconds"))
-        rec["timing"]["blocks"] = _blocks(commit, d)
         rec["cost"] = facts.get("cost", rec["cost"])
         if cost:
             rec["cost"]["list_usd"] = cost["usd_total"]
@@ -271,7 +270,6 @@ def oct21() -> list[tuple[dict, list[dict]]]:
                                      "/home/user/cadence-core (same commit) (21 Oct, Findings 5)")
         rec.update({k: v for k, v in facts.items() if k in ("models_served", "session_id")})
         rec["timing"] = _timing(row.get("agent_seconds"))
-        rec["timing"]["blocks"] = _blocks(commit, d)
         rec["cost"] = {"list_usd": row["cost_usd"] if row["outcome"] != "infra_error" else None,
                        "reported_usd": row.get("host_cost_usd"), **({"tokens": row["tokens"]} if counts else {})}
         grade = _json(commit, f"{d}/grade.json")
@@ -281,6 +279,25 @@ def oct21() -> list[tuple[dict, list[dict]]]:
 
 def build() -> list[tuple[dict, list[dict]]]:
     return oct15() + oct19() + oct21()
+
+
+def block_times() -> dict[str, dict]:
+    """runs/<run_id>/blocks.json of the backfilled runs whose attest logs were committed. The records are
+    written once and were written before loop.blocks existed, so the time per block is a file of its own."""
+    out = {}
+    for (commit, folder), names, date in ((OCT19, RUNS19, None), (OCT21, RUNS21, "trial")):
+        for name in names:
+            d = f"{folder}/{name}"
+            found = _blocks(commit, d)
+            if found is None:
+                continue
+            if date:
+                started = (_json(commit, f"{d}/trial.json") or {}).get("started_at") or ""
+                run_id = f"{started[:10].replace('-', '')}-{name}"
+            else:
+                run_id = f"20261019-{name}"
+            out[run_id] = {"source": f"{commit[:7]}:{d}/context/attest", "blocks": found}
+    return out
 
 
 def main(argv: list[str] | None = None) -> int:
@@ -299,7 +316,12 @@ def main(argv: list[str] | None = None) -> int:
         for s in scores:
             record.append_score(args.runs, s)
         written += 1
-    print(f"{written} record(s) written to {args.runs}")
+    for run_id, body in block_times().items():
+        path = args.runs / run_id / "blocks.json"
+        if (args.runs / run_id).is_dir() and not path.exists():
+            path.write_text(json.dumps(body, indent=1, sort_keys=True) + "\n", encoding="utf-8")
+            written += 1
+    print(f"{written} file(s) written to {args.runs}")
     return 0
 
 
