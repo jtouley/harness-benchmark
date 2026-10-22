@@ -56,7 +56,7 @@
     "transcript": {"$ref": "#/definitions/blob"},
     "tree": {"$ref": "#/definitions/blob"},
     "timing": {
-      "$comment": "agent_wall_seconds: the agent session from start to exit, the figure that compares a Cadence run with a one-shot. run_wall_seconds: the driver's whole command (setup and grading too). agent_active_seconds: the sum of the transcript's result durations. blocks: seconds per Cadence block (A1 to R7), or null when not measured.",
+      "$comment": "agent_wall_seconds: the agent session from start to exit, the figure that compares a Cadence run with a one-shot. run_wall_seconds: the driver's whole command (setup and grading too). agent_active_seconds: the sum of the transcript's result durations. blocks: per Cadence stage, the peer seconds, peer calls and unfinished peers from the run's attest logs (loop.blocks), or null when not measured.",
       "type": "object", "additionalProperties": false,
       "required": ["agent_wall_seconds", "run_wall_seconds", "agent_active_seconds", "blocks"],
       "properties": {
