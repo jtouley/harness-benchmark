@@ -1,0 +1,75 @@
+uv run python -m engine run pipelines/build.yml
+warning: The `UV_NATIVE_TLS` environment variable is deprecated and will be removed in a future release. Use `UV_SYSTEM_CERTS` instead.
+warning: `VIRTUAL_ENV=/home/user/harness-benchmark/.venv` does not match the project environment path `.venv` and will be ignored; use `--active` to target the active environment instead
+Using CPython 3.12.3 interpreter at: /usr/bin/python3.12
+Creating virtual environment at: .venv
+Downloading polars-runtime-32 (52.0MiB)
+Downloading datafusion (41.0MiB)
+ Downloaded datafusion
+ Downloaded polars-runtime-32
+Installed 63 packages in 1.75s
+mkdir -p out/marts
+uv run dbt build --project-dir transform --profiles-dir transform --exclude tag:stream
+warning: The `UV_NATIVE_TLS` environment variable is deprecated and will be removed in a future release. Use `UV_SYSTEM_CERTS` instead.
+warning: `VIRTUAL_ENV=/home/user/harness-benchmark/.venv` does not match the project environment path `.venv` and will be ignored; use `--active` to target the active environment instead
+[0m00:46:10  Running with dbt=1.11.6
+[0m00:46:10  Registered adapter: duckdb=1.11.0
+[0m00:46:11  Unable to do partial parsing because saved manifest not found. Starting full parse.
+[0m00:46:13  Found 11 models, 22 data tests, 5 sources, 500 macros
+[0m00:46:13  
+[0m00:46:13  Concurrency: 4 threads (target='dev')
+[0m00:46:13  
+[0m00:46:13  1 of 24 START sql view model main.dim_date ..................................... [RUN]
+[0m00:46:13  2 of 24 START sql view model main.stg_census_county_population ................. [RUN]
+[0m00:46:13  3 of 24 START sql view model main.stg_usaspending_awards ....................... [RUN]
+[0m00:46:13  4 of 24 START sql view model main.stg_wiki_sites ............................... [RUN]
+[0m00:46:14  1 of 24 OK created sql view model main.dim_date ................................ [[32mOK[0m in 0.21s]
+[0m00:46:14  3 of 24 OK created sql view model main.stg_usaspending_awards .................. [[32mOK[0m in 0.21s]
+[0m00:46:14  4 of 24 OK created sql view model main.stg_wiki_sites .......................... [[32mOK[0m in 0.21s]
+[0m00:46:14  2 of 24 OK created sql view model main.stg_census_county_population ............ [[32mOK[0m in 0.22s]
+[0m00:46:14  5 of 24 START test not_null_dim_date_date_key .................................. [RUN]
+[0m00:46:14  6 of 24 START test unique_dim_date_date_key .................................... [RUN]
+[0m00:46:14  7 of 24 START test not_null_stg_usaspending_awards_source_key .................. [RUN]
+[0m00:46:14  8 of 24 START test unique_stg_usaspending_awards_source_key .................... [RUN]
+[0m00:46:14  5 of 24 PASS not_null_dim_date_date_key ........................................ [[32mPASS[0m in 0.11s]
+[0m00:46:14  7 of 24 PASS not_null_stg_usaspending_awards_source_key ........................ [[32mPASS[0m in 0.12s]
+[0m00:46:14  6 of 24 PASS unique_dim_date_date_key .......................................... [[32mPASS[0m in 0.12s]
+[0m00:46:14  9 of 24 START test not_null_stg_wiki_sites_dbname .............................. [RUN]
+[0m00:46:14  8 of 24 PASS unique_stg_usaspending_awards_source_key .......................... [[32mPASS[0m in 0.12s]
+[0m00:46:14  10 of 24 START test unique_stg_wiki_sites_dbname ............................... [RUN]
+[0m00:46:14  11 of 24 START test not_null_stg_census_county_population_population_key ....... [RUN]
+[0m00:46:14  12 of 24 START test unique_stg_census_county_population_population_key ......... [RUN]
+[0m00:46:14  9 of 24 PASS not_null_stg_wiki_sites_dbname .................................... [[32mPASS[0m in 0.16s]
+[0m00:46:14  10 of 24 PASS unique_stg_wiki_sites_dbname ..................................... [[32mPASS[0m in 0.07s]
+[0m00:46:14  11 of 24 PASS not_null_stg_census_county_population_population_key ............. [[32mPASS[0m in 0.07s]
+[0m00:46:14  13 of 24 START sql view model main.dim_agency .................................. [RUN]
+[0m00:46:14  12 of 24 PASS unique_stg_census_county_population_population_key ............... [[32mPASS[0m in 0.07s]
+[0m00:46:14  14 of 24 START sql view model main.dim_place ................................... [RUN]
+[0m00:46:14  13 of 24 OK created sql view model main.dim_agency ............................. [[32mOK[0m in 0.06s]
+[0m00:46:14  15 of 24 START test not_null_dim_agency_agency_key ............................. [RUN]
+[0m00:46:14  16 of 24 START test unique_dim_agency_agency_key ............................... [RUN]
+[0m00:46:14  14 of 24 OK created sql view model main.dim_place .............................. [[32mOK[0m in 0.07s]
+[0m00:46:14  17 of 24 START test not_null_dim_place_place_key ............................... [RUN]
+[0m00:46:14  18 of 24 START test unique_dim_place_place_key ................................. [RUN]
+[0m00:46:14  15 of 24 PASS not_null_dim_agency_agency_key ................................... [[32mPASS[0m in 0.07s]
+[0m00:46:14  16 of 24 PASS unique_dim_agency_agency_key ..................................... [[32mPASS[0m in 0.07s]
+[0m00:46:14  17 of 24 PASS not_null_dim_place_place_key ..................................... [[32mPASS[0m in 0.05s]
+[0m00:46:14  18 of 24 PASS unique_dim_place_place_key ....................................... [[32mPASS[0m in 0.05s]
+[0m00:46:14  19 of 24 START sql view model main.fact_award_transaction ...................... [RUN]
+[0m00:46:14  19 of 24 OK created sql view model main.fact_award_transaction ................. [[32mOK[0m in 0.03s]
+[0m00:46:14  20 of 24 START test not_null_fact_award_transaction_transaction_key ............ [RUN]
+[0m00:46:14  21 of 24 START test unique_fact_award_transaction_transaction_key .............. [RUN]
+[0m00:46:14  20 of 24 PASS not_null_fact_award_transaction_transaction_key .................. [[32mPASS[0m in 0.04s]
+[0m00:46:14  21 of 24 PASS unique_fact_award_transaction_transaction_key .................... [[32mPASS[0m in 0.06s]
+[0m00:46:14  22 of 24 START sql external model main.mart_fy2024_monthly_county_agency ....... [RUN]
+[0m00:46:14  22 of 24 OK created sql external model main.mart_fy2024_monthly_county_agency .. [[32mOK[0m in 0.25s]
+[0m00:46:14  23 of 24 START test not_null_mart_fy2024_monthly_county_agency_mart_key ........ [RUN]
+[0m00:46:14  24 of 24 START test unique_mart_fy2024_monthly_county_agency_mart_key .......... [RUN]
+[0m00:46:14  23 of 24 PASS not_null_mart_fy2024_monthly_county_agency_mart_key .............. [[32mPASS[0m in 0.04s]
+[0m00:46:14  24 of 24 PASS unique_mart_fy2024_monthly_county_agency_mart_key ................ [[32mPASS[0m in 0.04s]
+[0m00:46:14  
+[0m00:46:14  Finished running 1 external model, 16 data tests, 7 view models in 0 hours 0 minutes and 1.63 seconds (1.63s).
+[0m00:46:14  
+[0m00:46:14  [32mCompleted successfully[0m
+[0m00:46:14  
+[0m00:46:14  Done. PASS=24 WARN=0 ERROR=0 SKIP=0 NO-OP=0 TOTAL=24

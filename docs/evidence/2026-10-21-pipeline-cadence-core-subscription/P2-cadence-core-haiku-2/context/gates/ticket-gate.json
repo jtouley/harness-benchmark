@@ -1,0 +1,8 @@
+{
+  "slug": "ticket-gate",
+  "RUN_BY_SCRIPT": "ticket_gate.py",
+  "tracker": "none",
+  "ticket": "TICKET_SKIPPED (none: no tracker declared in the config)",
+  "task_id": "cd-1",
+  "local_tracker": ".context/issues/cd-1.md"
+}

@@ -1,0 +1,15 @@
+{"prompt_tokens": 39409, "decision": "ok", "mode": "shadow", "source": "session", "warn_tokens": 60000, "tool_use_id": "toolu_01P3XheqxGM7ft2MLeMyD1bf", "agent_id": null, "at": 1792630137.5565546}
+{"prompt_tokens": 41670, "decision": "ok", "mode": "shadow", "source": "session", "warn_tokens": 60000, "tool_use_id": "toolu_01GsT1pDxm2oeihkUUdRH1Ni", "agent_id": null, "at": 1792630248.5170019}
+{"prompt_tokens": 42756, "decision": "ok", "mode": "shadow", "source": "session", "warn_tokens": 60000, "tool_use_id": "toolu_01TqyFCNnZhaUNkvev4VxeWB", "agent_id": null, "at": 1792630329.4422684}
+{"prompt_tokens": 43789, "decision": "ok", "mode": "shadow", "source": "session", "warn_tokens": 60000, "tool_use_id": "toolu_016ia2rekHg372NWdZMrnbCn", "agent_id": null, "at": 1792630330.9433646}
+{"prompt_tokens": 44564, "decision": "ok", "mode": "shadow", "source": "session", "warn_tokens": 60000, "tool_use_id": "toolu_01RdLvwTufJv17tobGFkw3vF", "agent_id": null, "at": 1792630393.476181}
+{"prompt_tokens": 45469, "decision": "ok", "mode": "shadow", "source": "session", "warn_tokens": 60000, "tool_use_id": "toolu_01VzE3ef9gnu53nF5iZmeCKz", "agent_id": null, "at": 1792630483.0562487}
+{"prompt_tokens": 46389, "decision": "ok", "mode": "shadow", "source": "session", "warn_tokens": 60000, "tool_use_id": "toolu_01KcPr7AwRwyKNBgrh7sFrTV", "agent_id": null, "at": 1792630530.9010668}
+{"prompt_tokens": 47380, "decision": "ok", "mode": "shadow", "source": "session", "warn_tokens": 60000, "tool_use_id": "toolu_01FDqtthuHxAQx7God1sdrfU", "agent_id": null, "at": 1792630603.6000986}
+{"prompt_tokens": 48308, "decision": "ok", "mode": "shadow", "source": "session", "warn_tokens": 60000, "tool_use_id": "toolu_019rBXWnFRgH8UcbEYEhqBre", "agent_id": null, "at": 1792630652.5337005}
+{"prompt_tokens": 49349, "decision": "ok", "mode": "shadow", "source": "session", "warn_tokens": 60000, "tool_use_id": "toolu_01KMo3wbRttngPBCF5iPwz1P", "agent_id": null, "at": 1792630736.3932223}
+{"prompt_tokens": 50265, "decision": "ok", "mode": "shadow", "source": "session", "warn_tokens": 60000, "tool_use_id": "toolu_0196MJdYEA2s4HJer95wdAs2", "agent_id": null, "at": 1792630783.2255528}
+{"prompt_tokens": 53837, "decision": "ok", "mode": "shadow", "source": "session", "warn_tokens": 60000, "tool_use_id": "toolu_01EAFv42sd34zTTBcQ8h9fQL", "agent_id": null, "at": 1792630868.194532}
+{"prompt_tokens": 55908, "decision": "ok", "mode": "shadow", "source": "session", "warn_tokens": 60000, "tool_use_id": "toolu_01U7KNd7XJo4tn9NuBFGezF1", "agent_id": null, "at": 1792630917.6389186}
+{"prompt_tokens": 57991, "decision": "ok", "mode": "shadow", "source": "session", "warn_tokens": 60000, "tool_use_id": "toolu_017397EsbYVi3tNHW8TWxxNe", "agent_id": null, "at": 1792632963.5202243}
+{"prompt_tokens": 59092, "decision": "ok", "mode": "shadow", "source": "session", "warn_tokens": 60000, "tool_use_id": "toolu_01UE4wqQaHRMpAum1cADEGPR", "agent_id": null, "at": 1792632989.3272142}

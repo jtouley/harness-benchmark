@@ -1,0 +1,9 @@
+{"tool_use_id": "toolu_018S9rAqfA1AiweK83a6qVvA", "stage": "vibe-test", "model_slug": "validate", "model": "haiku", "decision": "allow", "run_id": "1a240cbc-2484-4175-b2ce-b76ba5272a21", "at": 1792622228.1812804}
+{"tool_use_id": "toolu_01Ln89G22kRANwf2cEahW1Az", "stage": "plan-create", "model_slug": "plan-create", "model": "haiku", "decision": "allow", "run_id": "1a240cbc-2484-4175-b2ce-b76ba5272a21", "at": 1792622291.9996018}
+{"tool_use_id": "toolu_01RXhwjT2MkZw217u9LsS1HZ", "stage": "plan-review", "model_slug": "plan-review", "model": "haiku", "decision": "allow", "run_id": "1a240cbc-2484-4175-b2ce-b76ba5272a21", "at": 1792622414.548022}
+{"tool_use_id": "toolu_01MGu86verd5gnZihP5bMe5b", "stage": "plan-update", "model_slug": null, "model": "haiku", "decision": "allow", "run_id": "1a240cbc-2484-4175-b2ce-b76ba5272a21", "at": 1792622590.8514183}
+{"tool_use_id": "toolu_01PeLig8mXZs3qp4Kugm8Wx1", "stage": "plan-review", "model_slug": "plan-review", "model": "haiku", "decision": "deny", "run_id": "1a240cbc-2484-4175-b2ce-b76ba5272a21", "at": 1792622803.3199673}
+{"tool_use_id": "toolu_019BHQdrR3pzf6DX6A5ZcHWg", "stage": "plan-update", "model_slug": null, "model": "haiku", "decision": "deny", "run_id": "1a240cbc-2484-4175-b2ce-b76ba5272a21", "at": 1792622816.9242308}
+{"tool_use_id": "toolu_01GjaJYoBsdzPAfSDhXvAdnW", "stage": "plan-create", "model_slug": "plan-create", "model": "haiku", "decision": "allow", "run_id": "1a240cbc-2484-4175-b2ce-b76ba5272a21", "at": 1792622828.382171}
+{"tool_use_id": "toolu_01Rofpd5hEGYDEiRgAMdFuVq", "stage": "plan-review", "model_slug": "plan-review", "model": "haiku", "decision": "allow", "run_id": "1a240cbc-2484-4175-b2ce-b76ba5272a21", "at": 1792622913.3406434}
+{"tool_use_id": "toolu_01792VpXfQx68qr5v4WNCK8G", "stage": "plan-update", "model_slug": null, "model": "haiku", "decision": "allow", "run_id": "1a240cbc-2484-4175-b2ce-b76ba5272a21", "at": 1792623080.437789}

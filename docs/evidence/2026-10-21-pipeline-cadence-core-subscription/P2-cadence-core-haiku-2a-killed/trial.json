@@ -1,0 +1,4 @@
+{"task": "P2", "mode": "agent", "model": "claude-haiku-5-5", "arm": "cadence-core", "harness": true,
+ "backstop_seconds": 86400, "backstop_source": "default", "image": "host", "replay_seed": 0,
+ "started_at": "2026-10-21T22:57:20Z",
+ "infra_error": "the cloud container's worker was restarted at 23:40:52 UTC (transcript ends 23:40:44, in E1 after phase 6 of the plan, P9 passed, 8 commits); every process died; not a scored run (criteria v2 section 5.3)"}

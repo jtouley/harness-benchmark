@@ -1,0 +1,4 @@
+{"task": "P1", "mode": "agent", "model": "claude-haiku-5-5", "arm": "cadence-core", "harness": true,
+ "backstop_seconds": 86400, "backstop_source": "default", "image": "host", "replay_seed": 0,
+ "started_at": "2026-10-21T13:04:23+00:00",
+ "infra_error": "the cloud container was reclaimed while idle at about 14:47 UTC (transcript ends 14:47:08, mid E1 phase 4, 4 phase commits); every process died; not a scored run (criteria v2 section 5.3)"}

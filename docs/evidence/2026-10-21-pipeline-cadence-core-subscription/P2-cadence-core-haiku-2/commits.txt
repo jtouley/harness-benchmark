@@ -1,0 +1,12 @@
+edc56ea 2026-10-22T00:43:06+00:00 refactor: meet the R3 limits for the cadence run
+b6ba463 2026-10-22T00:35:55+00:00 phase 10: oracle map, decisions file, checks, and acceptance run
+aef8769 2026-10-22T00:30:06+00:00 phase 9: dbt stream models: edit fact and 5-minute window mart
+659274d 2026-10-22T00:13:53+00:00 phase 8: dbt batch models: staging, star schema, Question A mart
+f966319 2026-10-22T00:09:04+00:00 phase 7: pipeline YAML files and make targets
+4a1945f 2026-10-22T00:07:43+00:00 phase 6: event identity, edit rule and late events
+775dbdb 2026-10-22T00:06:22+00:00 phase 5: stream source and micro-batch stream sink
+911a543 2026-10-22T00:01:37+00:00 phase 4: polars and datafusion transforms
+cd24c00 2026-10-22T00:00:48+00:00 phase 3: file sources and clean source tables
+3dc531e 2026-10-21T23:57:17+00:00 phase 2: engine core and parquet lake sink
+7c9272e 2026-10-21T23:56:03+00:00 phase 1: pipeline YAML loading and schema validation
+92eee78 2026-10-21T23:54:38+00:00 phase 0: dependencies and package skeleton

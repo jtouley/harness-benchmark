@@ -1,0 +1,359 @@
+{
+  "slug": "cognitive-complexity",
+  "RUN_BY_SCRIPT": "cognitive_complexity_gate.py",
+  "base": "main",
+  "max": 15,
+  "cognitive_complexity": {
+    "max": 15,
+    "unsupported": "warn",
+    "threshold_source": {
+      "max": "default"
+    }
+  },
+  "duplication": {
+    "max_percent": 3,
+    "min_block_lines": 6,
+    "unsupported": "warn",
+    "threshold_source": {
+      "max_percent": "default",
+      "min_block_lines": "default"
+    }
+  },
+  "code_shape": {
+    "max_function_statements": 50,
+    "max_branch_chain": 6,
+    "unsupported": "warn",
+    "threshold_source": {
+      "max_function_statements": "default",
+      "max_branch_chain": "default"
+    }
+  },
+  "bugs": {
+    "max": 0,
+    "timeout_seconds": 60,
+    "unsupported": "warn",
+    "threshold_source": {
+      "max": "default",
+      "timeout_seconds": "default"
+    }
+  },
+  "types": {
+    "max": 0,
+    "timeout_seconds": 60,
+    "unsupported": "warn",
+    "threshold_source": {
+      "max": "default",
+      "timeout_seconds": "default"
+    }
+  },
+  "findings": [
+    {
+      "path": "tests/checks/acceptance.py",
+      "name": "run_checks",
+      "line": 85,
+      "score": 20,
+      "base": null,
+      "same_named": 1,
+      "metric": "complexity"
+    }
+  ],
+  "unmeasured": [
+    "tests/checks/check_01.sql: no analyzer",
+    "tests/checks/check_02.sql: no analyzer",
+    "tests/checks/check_03.sql: no analyzer",
+    "tests/checks/check_04.sql: no analyzer",
+    "tests/checks/check_05.sql: no analyzer",
+    "tests/checks/check_06.sql: no analyzer",
+    "tests/checks/check_07.sql: no analyzer",
+    "transform/models/core/dim_agency.sql: no analyzer",
+    "transform/models/core/dim_date.sql: no analyzer",
+    "transform/models/core/dim_place.sql: no analyzer",
+    "transform/models/core/fact_award_transaction.sql: no analyzer",
+    "transform/models/marts/mart_fy2024_monthly_county_agency.sql: no analyzer",
+    "transform/models/staging/stg_census_county_population.sql: no analyzer",
+    "transform/models/staging/stg_usaspending_awards.sql: no analyzer",
+    "transform/models/staging/stg_wiki_sites.sql: no analyzer",
+    "transform/models/stream/late_events.sql: no analyzer",
+    "transform/models/stream/mart_wiki_window_5min.sql: no analyzer",
+    "transform/models/stream/stream_edit_fact.sql: no analyzer"
+  ],
+  "unparsable": [],
+  "functions": 213,
+  "files": 42,
+  "duplicated": [
+    {
+      "path": "engine/sources/base.py",
+      "percent": 26.1,
+      "base": null,
+      "lines": 12,
+      "total": 46,
+      "blocks": [
+        {
+          "units": 6,
+          "a": "engine/sources/base.py:35-40",
+          "b": "engine/sources/base.py:54-59"
+        }
+      ]
+    },
+    {
+      "path": "tests/test_dbt_stream.py",
+      "percent": 32.9,
+      "base": null,
+      "lines": 23,
+      "total": 70,
+      "blocks": [
+        {
+          "units": 7,
+          "a": "tests/test_dbt_stream.py:79-87",
+          "b": "tests/test_dbt_stream.py:97-105"
+        },
+        {
+          "units": 6,
+          "a": "tests/test_dbt_stream.py:72-77",
+          "b": "tests/test_dbt_stream.py:85-91"
+        }
+      ]
+    },
+    {
+      "path": "tests/test_lake.py",
+      "percent": 22.2,
+      "base": null,
+      "lines": 18,
+      "total": 81,
+      "blocks": [
+        {
+          "units": 9,
+          "a": "tests/test_lake.py:72-82",
+          "b": "tests/test_lake.py:90-100"
+        }
+      ]
+    }
+  ],
+  "python_only": [],
+  "python_files": 42,
+  "highest": {
+    "complexity": 20,
+    "statements": 33,
+    "branch_chain": 3,
+    "duplication": 32.9
+  },
+  "tools": [
+    {
+      "measure": "bugs",
+      "value": 0,
+      "threshold": 0,
+      "threshold_source": "default",
+      "verdict": "warn",
+      "offenders": [],
+      "unmeasured": [
+        "tests/checks/check_01.sql: not Python",
+        "tests/checks/check_02.sql: not Python",
+        "tests/checks/check_03.sql: not Python",
+        "tests/checks/check_04.sql: not Python",
+        "tests/checks/check_05.sql: not Python",
+        "tests/checks/check_06.sql: not Python",
+        "tests/checks/check_07.sql: not Python",
+        "transform/models/core/dim_agency.sql: not Python",
+        "transform/models/core/dim_date.sql: not Python",
+        "transform/models/core/dim_place.sql: not Python",
+        "transform/models/core/fact_award_transaction.sql: not Python",
+        "transform/models/marts/mart_fy2024_monthly_county_agency.sql: not Python",
+        "transform/models/staging/stg_census_county_population.sql: not Python",
+        "transform/models/staging/stg_usaspending_awards.sql: not Python",
+        "transform/models/staging/stg_wiki_sites.sql: not Python",
+        "transform/models/stream/late_events.sql: not Python",
+        "transform/models/stream/mart_wiki_window_5min.sql: not Python",
+        "transform/models/stream/stream_edit_fact.sql: not Python",
+        "ruff 0.17.0 is not in the uv cache: run `uv tool run ruff==0.17.0 --version` once"
+      ],
+      "tool": "ruff",
+      "version": "0.17.0",
+      "args_sha256": "01bbfbba1e45b25e8b70e8ee9139259e1dc655614cd3ce09887360f9dc009308",
+      "rules_sha256": "8ba5565334cdf14c72970333afb60e37b213387ae1ac72b398f6bac5f022accf",
+      "base": "769f32fd0328ca61c0c7b26397f824e16bd51f63",
+      "head": "b6ba46309aee7bb5ca37434a2c90ada56f8db6f3",
+      "timed_out": false,
+      "unsupported": "ruff 0.17.0 is not in the uv cache: run `uv tool run ruff==0.17.0 --version` once",
+      "files": 42
+    },
+    {
+      "measure": "types",
+      "value": 0,
+      "threshold": 0,
+      "threshold_source": "default",
+      "verdict": "warn",
+      "offenders": [],
+      "unmeasured": [
+        "tests/checks/check_01.sql: not Python",
+        "tests/checks/check_02.sql: not Python",
+        "tests/checks/check_03.sql: not Python",
+        "tests/checks/check_04.sql: not Python",
+        "tests/checks/check_05.sql: not Python",
+        "tests/checks/check_06.sql: not Python",
+        "tests/checks/check_07.sql: not Python",
+        "transform/models/core/dim_agency.sql: not Python",
+        "transform/models/core/dim_date.sql: not Python",
+        "transform/models/core/dim_place.sql: not Python",
+        "transform/models/core/fact_award_transaction.sql: not Python",
+        "transform/models/marts/mart_fy2024_monthly_county_agency.sql: not Python",
+        "transform/models/staging/stg_census_county_population.sql: not Python",
+        "transform/models/staging/stg_usaspending_awards.sql: not Python",
+        "transform/models/staging/stg_wiki_sites.sql: not Python",
+        "transform/models/stream/late_events.sql: not Python",
+        "transform/models/stream/mart_wiki_window_5min.sql: not Python",
+        "transform/models/stream/stream_edit_fact.sql: not Python",
+        "mypy 2.4.0 is not in the uv cache: run `uv tool run mypy==2.4.0 --version` once"
+      ],
+      "tool": "mypy",
+      "version": "2.4.0",
+      "args_sha256": "021578cff25e767c9c674464aab5efb6987854974f614595714a085bd07ffd56",
+      "rules_sha256": "39ae6656ad4c1b3d8ff3fc12a8695786769d024757390cba1b382b6ec8f74371",
+      "base": "769f32fd0328ca61c0c7b26397f824e16bd51f63",
+      "head": "b6ba46309aee7bb5ca37434a2c90ada56f8db6f3",
+      "timed_out": false,
+      "unsupported": "mypy 2.4.0 is not in the uv cache: run `uv tool run mypy==2.4.0 --version` once",
+      "files": 42
+    }
+  ],
+  "packs": [],
+  "measures": [
+    {
+      "measure": "complexity",
+      "value": 20,
+      "threshold": 15,
+      "threshold_source": "default",
+      "verdict": "fail",
+      "offenders": [
+        "tests/checks/acceptance.py:85 run_checks = 20 (new)"
+      ],
+      "unmeasured": [
+        "tests/checks/check_01.sql: no analyzer",
+        "tests/checks/check_02.sql: no analyzer",
+        "tests/checks/check_03.sql: no analyzer",
+        "tests/checks/check_04.sql: no analyzer",
+        "tests/checks/check_05.sql: no analyzer",
+        "tests/checks/check_06.sql: no analyzer",
+        "tests/checks/check_07.sql: no analyzer",
+        "transform/models/core/dim_agency.sql: no analyzer",
+        "transform/models/core/dim_date.sql: no analyzer",
+        "transform/models/core/dim_place.sql: no analyzer",
+        "transform/models/core/fact_award_transaction.sql: no analyzer",
+        "transform/models/marts/mart_fy2024_monthly_county_agency.sql: no analyzer",
+        "transform/models/staging/stg_census_county_population.sql: no analyzer",
+        "transform/models/staging/stg_usaspending_awards.sql: no analyzer",
+        "transform/models/staging/stg_wiki_sites.sql: no analyzer",
+        "transform/models/stream/late_events.sql: no analyzer",
+        "transform/models/stream/mart_wiki_window_5min.sql: no analyzer",
+        "transform/models/stream/stream_edit_fact.sql: no analyzer"
+      ]
+    },
+    {
+      "measure": "statements",
+      "value": 33,
+      "threshold": 50,
+      "threshold_source": "default",
+      "verdict": "pass",
+      "offenders": [],
+      "unmeasured": []
+    },
+    {
+      "measure": "branch_chain",
+      "value": 3,
+      "threshold": 6,
+      "threshold_source": "default",
+      "verdict": "pass",
+      "offenders": [],
+      "unmeasured": []
+    },
+    {
+      "measure": "duplication",
+      "value": 32.9,
+      "threshold": 3,
+      "threshold_source": "default",
+      "verdict": "fail",
+      "offenders": [
+        "engine/sources/base.py: 26.1% duplicated, 12 of 46 code lines (new); engine/sources/base.py:35-40 = engine/sources/base.py:54-59",
+        "tests/test_dbt_stream.py: 32.9% duplicated, 23 of 70 code lines (new); tests/test_dbt_stream.py:79-87 = tests/test_dbt_stream.py:97-105",
+        "tests/test_lake.py: 22.2% duplicated, 18 of 81 code lines (new); tests/test_lake.py:72-82 = tests/test_lake.py:90-100"
+      ],
+      "unmeasured": []
+    },
+    {
+      "measure": "bugs",
+      "value": 0,
+      "threshold": 0,
+      "threshold_source": "default",
+      "verdict": "warn",
+      "offenders": [],
+      "unmeasured": [
+        "tests/checks/check_01.sql: not Python",
+        "tests/checks/check_02.sql: not Python",
+        "tests/checks/check_03.sql: not Python",
+        "tests/checks/check_04.sql: not Python",
+        "tests/checks/check_05.sql: not Python",
+        "tests/checks/check_06.sql: not Python",
+        "tests/checks/check_07.sql: not Python",
+        "transform/models/core/dim_agency.sql: not Python",
+        "transform/models/core/dim_date.sql: not Python",
+        "transform/models/core/dim_place.sql: not Python",
+        "transform/models/core/fact_award_transaction.sql: not Python",
+        "transform/models/marts/mart_fy2024_monthly_county_agency.sql: not Python",
+        "transform/models/staging/stg_census_county_population.sql: not Python",
+        "transform/models/staging/stg_usaspending_awards.sql: not Python",
+        "transform/models/staging/stg_wiki_sites.sql: not Python",
+        "transform/models/stream/late_events.sql: not Python",
+        "transform/models/stream/mart_wiki_window_5min.sql: not Python",
+        "transform/models/stream/stream_edit_fact.sql: not Python",
+        "ruff 0.17.0 is not in the uv cache: run `uv tool run ruff==0.17.0 --version` once"
+      ],
+      "tool": "ruff",
+      "version": "0.17.0",
+      "args_sha256": "01bbfbba1e45b25e8b70e8ee9139259e1dc655614cd3ce09887360f9dc009308",
+      "rules_sha256": "8ba5565334cdf14c72970333afb60e37b213387ae1ac72b398f6bac5f022accf",
+      "base": "769f32fd0328ca61c0c7b26397f824e16bd51f63",
+      "head": "b6ba46309aee7bb5ca37434a2c90ada56f8db6f3",
+      "timed_out": false,
+      "unsupported": "ruff 0.17.0 is not in the uv cache: run `uv tool run ruff==0.17.0 --version` once",
+      "files": 42
+    },
+    {
+      "measure": "types",
+      "value": 0,
+      "threshold": 0,
+      "threshold_source": "default",
+      "verdict": "warn",
+      "offenders": [],
+      "unmeasured": [
+        "tests/checks/check_01.sql: not Python",
+        "tests/checks/check_02.sql: not Python",
+        "tests/checks/check_03.sql: not Python",
+        "tests/checks/check_04.sql: not Python",
+        "tests/checks/check_05.sql: not Python",
+        "tests/checks/check_06.sql: not Python",
+        "tests/checks/check_07.sql: not Python",
+        "transform/models/core/dim_agency.sql: not Python",
+        "transform/models/core/dim_date.sql: not Python",
+        "transform/models/core/dim_place.sql: not Python",
+        "transform/models/core/fact_award_transaction.sql: not Python",
+        "transform/models/marts/mart_fy2024_monthly_county_agency.sql: not Python",
+        "transform/models/staging/stg_census_county_population.sql: not Python",
+        "transform/models/staging/stg_usaspending_awards.sql: not Python",
+        "transform/models/staging/stg_wiki_sites.sql: not Python",
+        "transform/models/stream/late_events.sql: not Python",
+        "transform/models/stream/mart_wiki_window_5min.sql: not Python",
+        "transform/models/stream/stream_edit_fact.sql: not Python",
+        "mypy 2.4.0 is not in the uv cache: run `uv tool run mypy==2.4.0 --version` once"
+      ],
+      "tool": "mypy",
+      "version": "2.4.0",
+      "args_sha256": "021578cff25e767c9c674464aab5efb6987854974f614595714a085bd07ffd56",
+      "rules_sha256": "39ae6656ad4c1b3d8ff3fc12a8695786769d024757390cba1b382b6ec8f74371",
+      "base": "769f32fd0328ca61c0c7b26397f824e16bd51f63",
+      "head": "b6ba46309aee7bb5ca37434a2c90ada56f8db6f3",
+      "timed_out": false,
+      "unsupported": "mypy 2.4.0 is not in the uv cache: run `uv tool run mypy==2.4.0 --version` once",
+      "files": 42
+    }
+  ],
+  "excluded": []
+}

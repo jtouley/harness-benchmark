@@ -1,0 +1,12 @@
+{
+  "stage": "spec-driven",
+  "command": "/spec-driven .context/plans/cd-1-gh-1-pipeline.plan.md",
+  "pipeline_run_id": "8a67c0d0-b7ea-47c1-a4b6-e94ee8d1f9da",
+  "status": "running",
+  "source": "PreToolUse",
+  "started_at": "2026-10-22T01:01:57.660647+00:00",
+  "completed_at": "",
+  "artifact_path": "",
+  "manifest_entry_id": "",
+  "tool_use_id": "toolu_01U7KNd7XJo4tn9NuBFGezF1"
+}

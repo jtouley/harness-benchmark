@@ -1,0 +1,12 @@
+{
+  "stage": "plan-create",
+  "command": "/plan-create cd-1",
+  "pipeline_run_id": "1a240cbc-2484-4175-b2ce-b76ba5272a21",
+  "status": "running",
+  "source": "PreToolUse",
+  "started_at": "2026-10-21T22:47:08.377187+00:00",
+  "completed_at": "",
+  "artifact_path": "",
+  "manifest_entry_id": "",
+  "tool_use_id": "toolu_01GjaJYoBsdzPAfSDhXvAdnW"
+}

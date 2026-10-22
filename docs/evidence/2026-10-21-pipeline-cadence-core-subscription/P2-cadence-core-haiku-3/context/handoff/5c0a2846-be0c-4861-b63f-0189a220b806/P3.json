@@ -1,0 +1,22 @@
+{
+  "block": "P3",
+  "command": "/plan-review .cursor/plans/gh-1-pipeline_cd-1.plan.md",
+  "contract": "commands/plan-review.md",
+  "inputs": [
+    {
+      "path": ".cursor/plans/gh-1-pipeline_cd-1.plan.md",
+      "sha256": "bc627afef4e446e7f38eafba64764162bdb823fa65820a1c655d194d7438ad31"
+    },
+    {
+      "path": ".context/reviews/plan_gh-1-pipeline_cd-1.md",
+      "sha256": "575a6b7c9f404fbc21e115c856b888162f49adbcf37a5dbd7c5657be4670149d"
+    },
+    {
+      "path": ".context/vibetest/cd-1_2026-10-22-rev2.md",
+      "sha256": "4d54f7578d7722e602142db728cfcc29d5fd64f0d692b6a57b73871338764c11"
+    }
+  ],
+  "nonce": "4ad0912716cb116a3d24b73e2f360a98",
+  "run_key": "5c0a2846-be0c-4861-b63f-0189a220b806",
+  "ticket": "cd-1"
+}

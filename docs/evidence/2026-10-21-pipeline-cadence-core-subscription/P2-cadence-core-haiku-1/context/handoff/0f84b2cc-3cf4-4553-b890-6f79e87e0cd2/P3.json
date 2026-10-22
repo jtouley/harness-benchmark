@@ -1,0 +1,22 @@
+{
+  "block": "P3",
+  "command": "/plan-review .context/plans/cd-1-pipeline.plan.md",
+  "contract": "commands/plan-review.md",
+  "inputs": [
+    {
+      "path": ".context/plans/cd-1-pipeline.plan.md",
+      "sha256": "71c1bad953a6e02e6c8febcd12c007b98c81a5223d7f53f93460167824beb407"
+    },
+    {
+      "path": ".context/reviews/plan_cd-1-pipeline.md",
+      "sha256": "e21870f180893c7c5f23dad99b453039e33bd53bbbff84c544ea1c2b1eb24b9c"
+    },
+    {
+      "path": ".context/vibetest/cd-1_2026-10-21.md",
+      "sha256": "f5ed48528e1562ae7030226ed1ce2eb410fe6a165463fd7cb069ba15f1422223"
+    }
+  ],
+  "nonce": "7cf46613f52093b23ab4b4d223555998",
+  "run_key": "0f84b2cc-3cf4-4553-b890-6f79e87e0cd2",
+  "ticket": "cd-1"
+}

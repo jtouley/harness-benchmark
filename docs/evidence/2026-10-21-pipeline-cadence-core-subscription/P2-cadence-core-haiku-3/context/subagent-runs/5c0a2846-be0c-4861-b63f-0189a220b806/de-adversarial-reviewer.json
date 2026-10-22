@@ -1,0 +1,12 @@
+{
+  "stage": "de-adversarial-reviewer",
+  "command": "/de-adversarial-reviewer plan-gate .cursor/plans/gh-1-pipeline_cd-1.plan.md",
+  "pipeline_run_id": "5c0a2846-be0c-4861-b63f-0189a220b806",
+  "status": "running",
+  "source": "PreToolUse",
+  "started_at": "2026-10-22T02:51:52.840918+00:00",
+  "completed_at": "",
+  "artifact_path": "",
+  "manifest_entry_id": "",
+  "tool_use_id": "toolu_01WQ5yYurc9UrhNnZk5rZhCp"
+}

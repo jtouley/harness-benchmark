@@ -1,0 +1,113 @@
+{
+  "RUN_BY_SKILL": "test-benchmark",
+  "task_id": "cd-1",
+  "ticket": "cd-1",
+  "mode": "plan",
+  "plan": ".context/plans/cd-1-pipeline.plan.md",
+  "plan_sha256": "4e73c133a7e998a7700ad1b545e5e8b4cc4ab41e6bf90e4591569b21d3956f72",
+  "score_floor": 7,
+  "scores": {
+    "coverage_of_behavior": 7,
+    "assertion_strength": 6,
+    "dry_no_clone_setups": 6,
+    "layer_correctness": 6,
+    "failure_paths": 8,
+    "mutation_resilience": 5
+  },
+  "mean": 6.33,
+  "verdict": "FAIL",
+  "mutants_run": false,
+  "mutants_note": "Plan mode runs no scripts and names no mutants. No kill rate is given. Mutation resilience is scored by reading the test rows only: three mutants survive on the rows as written (F18, F19, F20).",
+  "findings": [
+    {
+      "id": "cd-1-F12",
+      "severity": "must-fix",
+      "check": "dry",
+      "evidence": "Still open. The body of ## Reuse and extension (lines 200-214) names no helper. Plan update (P7 scorecard 0ae7415cacae) F01 (line 764) and F05 (line 799) say that section gains sse_fixture_server, build_lake_tree and run_engine_then_dbt. The body does not. Fix: add the three helper names from tests/conftest.py to the body of ## Reuse and extension."
+    },
+    {
+      "id": "cd-1-F13",
+      "severity": "must-fix",
+      "check": "dry",
+      "evidence": "Still open. The round 2 carry (lines 746-748) and the revision ledger row at line 754 still name transform/tests/test_place_population_join.sql and transform/tests/test_territory_places.sql. The first carry (line 570) and its ledger row (line 576) do too. F02 (lines 780-782) replaces both files with transform/tests/test_place_county_unknown.sql. A reader who follows the carry creates the two files that F02 removes. Fix: change the carry sections and the ledger rows to transform/tests/test_place_county_unknown.sql."
+    },
+    {
+      "id": "cd-1-F14",
+      "severity": "must-fix",
+      "check": "layer",
+      "evidence": "Still open. F02 (lines 772-778) and F06 to F08 (lines 808-814) need fixture rows inside dbt singular tests (transform/tests/test_place_county_unknown.sql, transform/tests/test_edit_window_rules.sql). The plan gives no path for those rows into the warehouse the singular test reads. F05 (lines 797-804) names the harness for test_late_after_restart and test_orphan_batch_excluded only. F02 also fails by design on its state 09 county 09999 row, so the same file cannot pass on the real build unless the fixture run and the real build are separated. Fix: name the mechanism (a dbt seed or a var-selected fixture warehouse run by run_engine_then_dbt), and state which run uses the fixture and which uses the real build."
+    },
+    {
+      "id": "cd-1-F15",
+      "severity": "must-fix",
+      "check": "dry",
+      "evidence": "Still open. The kill and restart setup is written in three files with no shared helper: tests/test_stream_commit.py (kill between batch rename and manifest commit, Phase 5 TDD note at line 165), tests/test_stream_resume.py (SIGTERM case, line 711, and the union case, line 700) and tests/test_stream_e2e.py (SIGTERM after the 500th commit, then read K, lines 704 and 710). Each starts a process, injects a fault or a signal, and reads the manifest. run_engine_then_dbt (line 799) covers only engine then dbt. Fix: add one process and signal helper to tests/conftest.py, name it in ## Reuse and extension, and state that the three files use it."
+    },
+    {
+      "id": "cd-1-F16",
+      "severity": "must-fix",
+      "check": "assertion",
+      "evidence": "Still open for two checks. Acceptance 4 (MF-11, line 551) says the territory row count is 'written as found, and the plan does not change to match it.' A test that accepts any count asserts nothing. C-4 (line 669) requires N events to arrive 'with margin' and gives no threshold. Fix: state the expected count and the margin as values in a dbt test or a pytest assertion, and state the update step when the real build differs. The state 09 equality of the removed MF-10 test is covered in part by check 4 (see cd-1-F26)."
+    },
+    {
+      "id": "cd-1-F17",
+      "severity": "must-fix",
+      "check": "coverage",
+      "evidence": "Still open. Phase 6 TDD note 1 (line 182) asserts that an edit 11 minutes after its window end is absent from mart_edit_window_5min and present in late_events. F06 (lines 808-810) says the 9-minute and 11-minute rows move to transform/tests/test_edit_window_rules.sql. The rows it lists are only the 10-minute and 10-minute-1-second lateness rows. No row checks mart exclusion or late_events membership, and no row checks check_late_count (check 7). Fix: add a row to test_edit_window_rules.sql that a late edit is absent from mart_edit_window_5min and present in late_events, and a row for check_late_count."
+    },
+    {
+      "id": "cd-1-F18",
+      "severity": "must-fix",
+      "check": "mutation",
+      "evidence": "Still open. The net_bytes rows (F08, line 811) cover only the NULL case. No row fixes the value of length_new - length_old with both lengths present and non-zero. No row checks the window sum of net_bytes. A sign-flipped mutant (length_old - length_new) and a dropped subtraction both survive. Fix: add a row with length_old 100 and length_new 40 that expects net_bytes -60, and a window row that sums two such edits."
+    },
+    {
+      "id": "cd-1-F19",
+      "severity": "must-fix",
+      "check": "mutation",
+      "evidence": "Still open. The money rows (line 127, and line 422 of the MF-7 text) use '-0.10' as the only value in the sum. A float-sum mutant gives the same result on one value and survives. Fix: add a sum row where float addition drifts, for example 0.10 and 0.20, or ten values of 0.10 that must sum to exactly 1.00."
+    },
+    {
+      "id": "cd-1-F20",
+      "severity": "must-fix",
+      "check": "mutation",
+      "evidence": "Still open. The UTC rule (line 31, and F07 at line 810) has rows only at HH:MM:00, HH:MM:04:59 and HH:MM:05:00 in the CI zone. No row would differ under a local time zone, so a mutant that buckets in local time passes on a UTC runner. Fix: add a row whose input is near midnight UTC, or has an explicit non-UTC offset, and state that the test sets the session zone to a non-UTC value."
+    },
+    {
+      "id": "cd-1-F21",
+      "severity": "must-fix",
+      "check": "assertion",
+      "evidence": "Still open. The name S3 has two meanings. MF-6 (line 359) says S3 is 'delete out/marts.prev if it exists'. N-5 (line 462) says tests/test_publish_states.py 'gains S3: a failure after the first swap rename'. A test named S3 can assert either behavior. Fix: rename the N-5 case (for example S4) and list it under MF-6 with its own step."
+    },
+    {
+      "id": "cd-1-F23",
+      "severity": "note",
+      "check": "coverage",
+      "evidence": "Acceptance 4 (line 79) requires checks 1 to 7 from oracle_map.yml to return a value. No test runs the oracle_map SQL. The check views check_edits_replay_hour, check_top_windows_en and check_late_count (line 178) have no row. 'Returns a value' is not an assertion. Consider one parametrized test that runs each oracle_map query on the fixture warehouse and asserts the expected value."
+    },
+    {
+      "id": "cd-1-F24",
+      "severity": "note",
+      "check": "coverage",
+      "evidence": "The COPY ORDER BY rule for byte-identical marts (N-2, line 461) has no test row. Acceptance 2 checks it only on the full real build, with sha256sum, so a failure surfaces late. Consider a row in tests/test_publish_states.py or a dbt test that runs the publish COPY twice on the fixture."
+    },
+    {
+      "id": "cd-1-F25",
+      "severity": "note",
+      "check": "dry",
+      "evidence": "Phase 5 TDD note 3 (line 166) says 'a dedup test' and names no file. The in-connection dedup row should be a parametrize row in tests/test_stream_resume.py, as F03 does for the restart case. The revision ledger row cd-1-F01 (line 841) still verifies by grep, which MF-4 replaced with a test."
+    },
+    {
+      "id": "cd-1-F26",
+      "severity": "note",
+      "check": "coverage",
+      "evidence": "New. The real-build state 09 equality (MF-10) lived in transform/tests/test_connecticut_planning_region.sql, which F02 (line 781) replaces with transform/tests/test_place_county_unknown.sql. F02 does not list the equality. Check 4 (Phase 4, line 143, and Acceptance 4) still compares county sums with state sums, and the UNKNOWN county is in that sum, so Connecticut is covered in part. Fix: add the state 09 equality row to test_place_county_unknown.sql or to the check 4 test."
+    },
+    {
+      "id": "cd-1-F27",
+      "severity": "note",
+      "check": "coverage",
+      "evidence": "New. obligations_per_person is 'rounded to 2 places at output only' (Phase 4, line 139). No row checks the rounding, and no row checks that the sum is taken before the division. A mutant that rounds each row before the sum passes. Consider one row with three values whose rounded sum differs from the sum of the rounded values."
+    }
+  ]
+}

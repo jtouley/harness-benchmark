@@ -1,0 +1,14 @@
+{
+  "block": "R7",
+  "command": "/session-summary .context/manifests/cd-1.md",
+  "contract": "commands/session-summary.md",
+  "inputs": [
+    {
+      "path": ".context/manifests/cd-1.md",
+      "sha256": "ddfc3c333961ef47ff634297574a8af72935e27e830ca143582e7b7be6159375"
+    }
+  ],
+  "nonce": "e673aa36985e064d9191fe7b0943a413",
+  "run_key": "0f84b2cc-3cf4-4553-b890-6f79e87e0cd2",
+  "ticket": "cd-1"
+}

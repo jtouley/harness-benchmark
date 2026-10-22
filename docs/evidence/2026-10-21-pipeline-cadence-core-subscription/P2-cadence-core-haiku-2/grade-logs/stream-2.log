@@ -1,0 +1,37 @@
+uv run python -m engine run pipelines/stream.yml --duration 90
+warning: The `UV_NATIVE_TLS` environment variable is deprecated and will be removed in a future release. Use `UV_SYSTEM_CERTS` instead.
+warning: `VIRTUAL_ENV=/home/user/harness-benchmark/.venv` does not match the project environment path `.venv` and will be ignored; use `--active` to target the active environment instead
+mkdir -p out/marts
+uv run dbt build --project-dir transform --profiles-dir transform --select tag:stream
+warning: The `UV_NATIVE_TLS` environment variable is deprecated and will be removed in a future release. Use `UV_SYSTEM_CERTS` instead.
+warning: `VIRTUAL_ENV=/home/user/harness-benchmark/.venv` does not match the project environment path `.venv` and will be ignored; use `--active` to target the active environment instead
+[0m00:48:29  Running with dbt=1.11.6
+[0m00:48:29  Registered adapter: duckdb=1.11.0
+[0m00:48:29  Found 11 models, 22 data tests, 5 sources, 500 macros
+[0m00:48:29  
+[0m00:48:29  Concurrency: 4 threads (target='dev')
+[0m00:48:29  
+[0m00:48:29  1 of 9 START sql view model main.late_events ................................... [RUN]
+[0m00:48:29  2 of 9 START sql incremental model main.stream_edit_fact ....................... [RUN]
+[0m00:48:30  1 of 9 OK created sql view model main.late_events .............................. [[32mOK[0m in 0.23s]
+[0m00:48:30  3 of 9 START test not_null_late_events_meta_id ................................. [RUN]
+[0m00:48:30  4 of 9 START test unique_late_events_meta_id ................................... [RUN]
+[0m00:48:30  2 of 9 OK created sql incremental model main.stream_edit_fact .................. [[32mOK[0m in 0.37s]
+[0m00:48:30  5 of 9 START test not_null_stream_edit_fact_meta_id ............................ [RUN]
+[0m00:48:30  6 of 9 START test unique_stream_edit_fact_meta_id .............................. [RUN]
+[0m00:48:30  3 of 9 PASS not_null_late_events_meta_id ....................................... [[32mPASS[0m in 0.18s]
+[0m00:48:30  4 of 9 PASS unique_late_events_meta_id ......................................... [[32mPASS[0m in 0.19s]
+[0m00:48:30  5 of 9 PASS not_null_stream_edit_fact_meta_id .................................. [[32mPASS[0m in 0.05s]
+[0m00:48:30  6 of 9 PASS unique_stream_edit_fact_meta_id .................................... [[32mPASS[0m in 0.06s]
+[0m00:48:30  7 of 9 START sql incremental model main.mart_wiki_window_5min .................. [RUN]
+[0m00:48:30  7 of 9 OK created sql incremental model main.mart_wiki_window_5min ............. [[32mOK[0m in 0.07s]
+[0m00:48:30  8 of 9 START test not_null_mart_wiki_window_5min_window_key .................... [RUN]
+[0m00:48:30  9 of 9 START test unique_mart_wiki_window_5min_window_key ...................... [RUN]
+[0m00:48:30  8 of 9 PASS not_null_mart_wiki_window_5min_window_key .......................... [[32mPASS[0m in 0.03s]
+[0m00:48:30  9 of 9 PASS unique_mart_wiki_window_5min_window_key ............................ [[32mPASS[0m in 0.04s]
+[0m00:48:30  
+[0m00:48:30  Finished running 2 incremental models, 6 data tests, 1 view model in 0 hours 0 minutes and 0.71 seconds (0.71s).
+[0m00:48:30  
+[0m00:48:30  [32mCompleted successfully[0m
+[0m00:48:30  
+[0m00:48:30  Done. PASS=9 WARN=0 ERROR=0 SKIP=0 NO-OP=0 TOTAL=9

@@ -1,0 +1,14 @@
+{"agent_id": "ab5dadd5ab358c41d", "decision": "unknown", "reason": "no final message", "chars": null, "lines": null, "at": 1792630243.4300284}
+{"agent_id": "a8435f8a15f91a279", "decision": "unknown", "reason": "no final message", "chars": null, "lines": null, "at": 1792630326.9087536}
+{"agent_id": "ac2237c3a9c5c403f", "decision": "unknown", "reason": "no final message", "chars": null, "lines": null, "at": 1792630391.9505613}
+{"agent_id": "ac1aea6ac2a64c225", "decision": "unknown", "reason": "no final message", "chars": null, "lines": null, "at": 1792630481.2831595}
+{"agent_id": "ab6a2ae9a2c99b77a", "decision": "unknown", "reason": "no final message", "chars": null, "lines": null, "at": 1792630529.4589064}
+{"agent_id": "a1aa7f3dff0c8f675", "decision": "unknown", "reason": "no final message", "chars": null, "lines": null, "at": 1792630601.3750856}
+{"agent_id": "a0bc4f94bd4081be6", "decision": "unknown", "reason": "no final message", "chars": null, "lines": null, "at": 1792630650.9979503}
+{"agent_id": "a7f6d34223c481003", "decision": "hold", "reason": "the final message is not a lean return (ARTIFACT: <path>, or ARTIFACT: <path> VERDICT: <words>, or STOPPED: <reason>)", "chars": 124, "lines": 1, "at": 1792630734.3092613}
+{"agent_id": "ad4260985239cc23f", "decision": "unknown", "reason": "no final message", "chars": null, "lines": null, "at": 1792630781.708758}
+{"agent_id": "a13256759803b66bc", "decision": "unknown", "reason": "no final message", "chars": null, "lines": null, "at": 1792630854.2332041}
+{"agent_id": "a65501bb14fb37c7f", "decision": "unknown", "reason": "no final message", "chars": null, "lines": null, "at": 1792630910.8869374}
+{"agent_id": "ae3982128bfe7696b", "decision": "unknown", "reason": "no final message", "chars": null, "lines": null, "at": 1792632955.3578746}
+{"agent_id": "a40ea9d32060d899f", "decision": "unknown", "reason": "no final message", "chars": null, "lines": null, "at": 1792632986.0214164}
+{"agent_id": "ad16e2e3794e7397b", "decision": "unknown", "reason": "no final message", "chars": null, "lines": null, "at": 1792633016.5864415}

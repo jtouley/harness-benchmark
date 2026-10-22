@@ -1,0 +1,8 @@
+66143c6 2026-10-22T01:35:22+00:00 refactor(stream): phase 3 split consume for R3, check URL scheme, bind oracle SQL
+ff8a241 2026-10-22T01:30:17+00:00 phase 7: documentation and PR text
+196cb84 2026-10-22T01:27:31+00:00 phase 6: oracle map, idempotence, and end-to-end run
+2baeceb 2026-10-22T01:24:27+00:00 phase 5: marts, late events, and external publication
+89a2b73 2026-10-22T01:22:35+00:00 phase 4: staging and star schema in dbt-duckdb
+51a4618 2026-10-22T01:13:41+00:00 phase 3: SSE consumer with resume and dedupe
+9a11cbc 2026-10-22T01:06:57+00:00 phase 2: batch sources to the lake
+c55f2ec 2026-10-22T01:05:37+00:00 phase 1: toolchain and Makefile skeleton

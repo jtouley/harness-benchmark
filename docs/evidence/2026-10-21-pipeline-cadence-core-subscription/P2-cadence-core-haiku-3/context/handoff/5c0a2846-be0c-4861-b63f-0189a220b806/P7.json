@@ -1,0 +1,14 @@
+{
+  "block": "P7",
+  "command": "/test-benchmark plan .cursor/plans/gh-1-pipeline_cd-1.plan.md",
+  "contract": "skills/test-benchmark/SKILL.md",
+  "inputs": [
+    {
+      "path": ".cursor/plans/gh-1-pipeline_cd-1.plan.md",
+      "sha256": "95db630b642346092294a1b7fd8effe597ae098656824b437ffeea86bc55ae1d"
+    }
+  ],
+  "nonce": "4b5aa539dce5dee94c25b5f03b574f6c",
+  "run_key": "5c0a2846-be0c-4861-b63f-0189a220b806",
+  "ticket": "cd-1"
+}

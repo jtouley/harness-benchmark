@@ -1,0 +1,9 @@
+{
+  "block": "E4",
+  "command": "/commit-push-pr --draft",
+  "contract": "commands/commit-push-pr.md",
+  "inputs": [],
+  "nonce": "f9a59ffbd3eb897c67d6df37a4cb0734",
+  "run_key": "8a67c0d0-b7ea-47c1-a4b6-e94ee8d1f9da",
+  "ticket": "cd-1"
+}

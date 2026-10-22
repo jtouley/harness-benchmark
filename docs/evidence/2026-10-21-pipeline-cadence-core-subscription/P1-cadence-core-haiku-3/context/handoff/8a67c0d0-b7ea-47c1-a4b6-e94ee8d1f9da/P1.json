@@ -1,0 +1,14 @@
+{
+  "block": "P1",
+  "command": "/plan-create cd-1",
+  "contract": "commands/plan-create.md",
+  "inputs": [
+    {
+      "path": ".context/proposals/cd-1.md",
+      "sha256": "c2553ecf081c2ba9d20c7c6c7d1ca63605ea570fc7ac945d77218681e7d41492"
+    }
+  ],
+  "nonce": "ff5070a46db3dfebf45606b11c57b19a",
+  "run_key": "8a67c0d0-b7ea-47c1-a4b6-e94ee8d1f9da",
+  "ticket": "cd-1"
+}

@@ -1,0 +1,110 @@
+{
+  "RUN_BY_SKILL": "test-benchmark",
+  "task_id": "cd-1",
+  "mode": "plan",
+  "plan": ".cursor/plans/gh-1-pipeline_cd-1.plan.md",
+  "plan_sha256": "95db630b642346092294a1b7fd8effe597ae098656824b437ffeea86bc55ae1d",
+  "packet_sha256": "63be1eee28dd6bb6fb600faebc2cb51eebac4f51426987bbcb699a21f6d4ac03",
+  "benchmark_score_floor": 7,
+  "scope": "Test spec of plan sections 'Phases' (Phase 1 to Phase 7, exits and TDD lines), the seven 'Plan update 2026-10-22' sections (MF-1 to MF-13, cd-1-F01 to cd-1-F11 with 'Phase changes' lines), the 'Carried adversarial findings' table, and '## Reuse and extension'. Later updates govern where they differ from the Phases text, per the plan's own rule.",
+  "scores": {
+    "coverage_of_behavior": 6,
+    "assertion_strength": 7,
+    "dry_no_clone_setups": 6,
+    "layer_correctness": 6,
+    "failure_paths": 7,
+    "mutation_resilience": 6,
+    "mean": 6.3
+  },
+  "verdict": "FAIL",
+  "verdict_reason": "Layer (6), DRY (6) and coverage/mutation (6) are below the floor 7. Layer and DRY findings are must-fix. The mean 6.3 is below 7. Plan mode: the plan peer applies the must-fix findings through /plan-update, then /test-benchmark plan runs again.",
+  "measures": {
+    "dry_measurement": "not computed. test_shape.py is code mode only and plan mode runs no scripts. DRY was scored by reading the test spec and the Reuse and extension section."
+  },
+  "mutants": "not run. Plan mode has no code. Mutation resilience is a reasoned judgement over named tests. No kill rate is stated.",
+  "adversarial_inputs": "not applicable in plan mode (code mode only).",
+  "strengths": [
+    "Phase 5 names an exact-10-minute case (not late) and an 11-minute case (late), which pins the strict > rule in the engine.",
+    "Phase 5 crash tests cover an exception before and after os.replace, which pins the commit point.",
+    "Phase 5 reconnect, restart-late and redelivery tests (cd-1-F03, cd-1-F04) assert the Last-Event-ID header value, the footer maximum and the maximum advance.",
+    "Phase 2 cast-path test (cd-1-F05) asserts DECIMAL(18,2) output and an exact total of 3000.00 over 20,000 rows, which catches a float cast.",
+    "Phase 4 and Phase 6 tie-break tests (chk_02 county key, chk_06 window_start) and the stale-file test (test_batch_rerun_removes_stale_file) are named.",
+    "Phase 7 integration tests assert presence and a minimum row count before the comparisons (cd-1-F01), so an empty lake cannot pass vacuously.",
+    "Phase 3 bucket test (MF-11, cd-1-F02) and census tests (MF-13) assert invariants over every state, with a fixture that must fail, so no literal count gates the build.",
+    "The fixture homes for the engine tests are named (conftest.py, the dbt fixture generator) in the plan updates, so the stream fixture has one source (cd-1-F08)."
+  ],
+  "findings": [
+    {
+      "id": "cd-1-F11",
+      "severity": "must-fix",
+      "check": "dry_no_clone_setups",
+      "evidence": "Still open in the current plan. The seventh update (cd-1-F11, lines 648-652) says the '## Reuse and extension' section gains the homes engine/tests/conftest.py and engine/tests/make_dbt_stream_fixture.py. The section (lines 91-106) names neither file: a text search of that section for 'conftest' returns 0 hits, and 'make_dbt_stream_fixture' appears only in the Phase 6 and ledger text. The batch dbt fixtures (the census fixture of Phase 3 and test_census_no_mixed_geographies, the foreign, UNKNOWN and NULL-population fixture of Phase 4, the award-key fixture, the fixture mart of G-12) have no named home at all: the plan says only 'transform/tests/fixtures/'. Fix: add the two engine homes and one named home for the batch dbt fixtures to the Reuse section, and name the file or folder that each batch dbt fixture test loads."
+    },
+    {
+      "id": "cd-1-F15",
+      "severity": "must-fix",
+      "check": "layer_correctness",
+      "evidence": "Phase 6 TDD line (line 207) still requires 'a late event at exactly 10 minutes (not late) and at 11 minutes (late)' in the dbt singular tests on the fixture stream lake. The seventh update (cd-1-F08, line 593 and the Phase 6 change line) moves the boundary to the engine only: the dbt fixture carries the is_late value the engine set, and the dbt tests check pass-through and exclusion only. The same rule now has two homes that disagree on the layer. An implementer who follows the Phase 6 line writes a dbt boundary test that cd-1-F08 forbids. Fix: strike the boundary cases from the Phase 6 TDD line and keep the pass-through and exclusion tests there."
+    },
+    {
+      "id": "cd-1-F16",
+      "severity": "must-fix",
+      "check": "coverage_of_behavior",
+      "evidence": "chk_07_late_count has no named test and no expected value in any phase or update. Phase 6 names chk_05 and chk_06 tests (test_chk05_excludes_log_events, test_chk06_tie_breaks_by_window_start, test_chk02_returns_ten_rows for check 2 only), and the Phase 6 exit lists dbt build only. A mutant that counts only edits, or that drops the late filter, in chk_07 passes every named test. The Carried table (C-8) leaves the chk_07 content open until DECISIONS is written, so the test spec does not fix what chk_07 counts. Fix: name test_chk07_counts_late_first_arrivals on the fixture (expected count from the fixture rows, with log and categorize events in the fixture so the count rule is pinned), and state the rule in the test text, not only in DECISIONS."
+    },
+    {
+      "id": "cd-1-F17",
+      "severity": "must-fix",
+      "check": "mutation_resilience",
+      "evidence": "The per-person rounding rule (G-5 and cd-1-per-person: DECIMAL(18,2), rounded half away from zero) has no named test. Phase 3 names only the uniqueness test on county population. C-7 (per-person equals obligations divided by county population) is in the carried table with 'Settled by the test' but no test name and no phase line carries it. A mutant that rounds half to even, truncates, or divides by an agency-summed population passes the named tests. Fix: add test_per_person_rounds_half_away_from_zero (parametrized rows: a positive and a negative exact half cent, and a value just under half) and test_per_person_is_obligation_over_county_population, both in the Phase 3 TDD line."
+    },
+    {
+      "id": "cd-1-F18",
+      "severity": "should-fix",
+      "check": "coverage_of_behavior",
+      "evidence": "Named rules with no named assertion: (a) G-6 null length gives a 0 byte delta and has_length = false (Phase 6 fixture has a null length, no test asserts the 0 delta); (b) G-6 bot field gives actor_type 'bot' or 'human' (Phase 6 staging line, no test); (c) N-2 states that 'a test asserts' server_name 'en.wikipedia.org' maps 1:1 to wiki 'enwiki', but no test name is given; (d) Phase 2 sitematrix flattening (one row per site with dbname, code, url host and the parent language code) has no test name, and the Phase 2 test list covers decimal, FIPS, SUMLEV, G-2, sort order and rerun only. Fix: one named test or parametrize row for each of (a) to (d), in the layer that owns the rule."
+    },
+    {
+      "id": "cd-1-F19",
+      "severity": "should-fix",
+      "check": "layer_correctness",
+      "evidence": "Two stale texts make the test spec conflict with the later updates. (1) Phase 3 scope (line 168) still says 'the 2021 fallback per county (N-1)'. MF-13 (third update, line 479) replaces it with a state-level rule, and test_census_no_mixed_geographies depends on MF-13. (2) The sixth update's cd-1-F01 text (line 586) still says 'After make stream, it must hold mart_edit_window_5min'. The seventh update (cd-1-F10) withdraws that name, so a test that reads the old folder would check the wrong path. Fix: change line 168 to the state-level rule, and change line 586 to mart_edit_windows_5min, so each test name and path has one value in the body."
+    },
+    {
+      "id": "cd-1-F20",
+      "severity": "should-fix",
+      "check": "assertion_strength",
+      "evidence": "test_oracle_map_resolves asserts only that each relation and column exists in the catalog. Phase 4 says each view 'returns the answer', but the only value assertions are the chk_01 total against fct_award_transaction and the chk_02 row count (cd-1-F07). chk_03, chk_04, chk_05 and chk_06 have prefix-sum, reconciliation, exclusion and tie-break tests, but no test checks an expected value on the fixture for any of them. Fix: for each of checks 1 to 7, name one assertion of an expected value on the fixture, and keep the existence test as the second line."
+    },
+    {
+      "id": "cd-1-F21",
+      "severity": "should-fix",
+      "check": "dry_no_clone_setups",
+      "evidence": "The same test is defined in several sections. The census tests (test_census_state_sum, test_census_no_mixed_geographies) are defined in MF-10, MF-13, the second and seventh updates' Phase changes and the Phase 3 changes. The award key tests are defined in MF-1 and MF-9. The 10-minute boundary is in the Phases text (Phase 5 and Phase 6) and in cd-1-F08. A reader must assemble the effective test list from eight sections, and two of the definitions disagree (F15). Fix: give each test name one definition in its phase's TDD line, and reduce the update sections to a pointer or to a changed value."
+    },
+    {
+      "id": "cd-1-F12",
+      "severity": "should-fix",
+      "check": "coverage_of_behavior",
+      "evidence": "Carried from the previous scorecard and still open. Phase 2 sitematrix flattening has no named test (see cd-1-F18 (d), which now carries it, so this item is closed by F18 when F18 is applied)."
+    },
+    {
+      "id": "cd-1-F13",
+      "severity": "should-fix",
+      "check": "coverage_of_behavior",
+      "evidence": "Carried from the previous scorecard and still open. Named behaviours with no named test: (a) window_start = floor(timestamp / 300) * 300 and window_end = window_start + 300 (Phase 5 Windows line), with no window-edge case; (b) the G-10 replayed-hour rule (first UTC event-time hour of fct_edit, end exclusive), used by chk_05, with no test that the hour is chosen by that rule; (c) the staging FY2024 filter action_date_fiscal_year = 2024 (Phase 3), with no named test; (d) dim_date covers each day from 2023-10-01 to 2024-09-30 (N-8), with no named test. Fix: one named test or parametrize row for each of (a) to (d)."
+    },
+    {
+      "id": "cd-1-F14",
+      "severity": "should-fix",
+      "check": "mutation_resilience",
+      "evidence": "Carried from the previous scorecard and still open. Two mutants have no named killer. (1) Changing the is_edit set (G-6: edit and new): the only named check on change types is test_chk05_excludes_log_events, which covers log alone, so a mutant that counts categorize or drops new passes. (2) Dropping the C: or A: prefix on transaction_key (N-6): the key test is unique and not_null, which still passes without the prefix when the two raw keys do not collide. Fix: parametrize the is_edit test over every change type in the fixture, and add a row that asserts the C: and A: prefixes for one contract and one assistance key. Put each as a new row in an existing parametrize table, not a new file."
+    }
+  ],
+  "notes": [
+    "Closed by the seventh update and checked in this plan: cd-1-F10 (window mart name in the Phase 6 model bullet, line 204). Its stale copy in the sixth update's cd-1-F01 text is cd-1-F19 (2).",
+    "Carried adversarial items (B-1, B-2, C-1 to C-9) are not scored here. They are plan decisions, not test spec. The test names in the carried table are read for coverage only.",
+    "The Amendment A question (B-1) and the territory rule (B-2) are open for the user. This scorecard does not choose either rule.",
+    "The plan has no ledger rows in plan mode. The findings above are plan findings. The plan peer applies them through /plan-update, and a new scorecard closes them."
+  ]
+}

@@ -1,0 +1,14 @@
+{
+  "arm": "cadence-core",
+  "task": "P2",
+  "model": "claude-haiku-5-5",
+  "cadence_repo": "https://github.com/jtouley/cadence-core",
+  "cadence_sha": "29315c4e64ff318a80a1a7d2c809beb4b3c15611",
+  "claude_version": "2.1.307 (Claude Code)",
+  "auth": "the operator's Claude subscription (no API key)",
+  "isolation": "host (no Docker daemon here): clean HOME, no clean room, dev replay seed 0, grading seed 1",
+  "time_limit": "none but the harness backstop of 86400 s (runner/pipeline/caps.json default)",
+  "plugin_config": {"adapter": "none", "peer_models": {"default": "haiku"},
+                    "gated_prefixes_extra": ["pipeline/", "engine/", "pipelines/", "transform/", "Makefile"]},
+  "base_sha": "8778545ba70e3c79a331784a58d6b742a083cba6"
+}

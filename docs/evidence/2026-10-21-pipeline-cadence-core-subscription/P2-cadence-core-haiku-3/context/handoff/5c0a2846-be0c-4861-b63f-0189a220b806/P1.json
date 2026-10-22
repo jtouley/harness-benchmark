@@ -1,0 +1,18 @@
+{
+  "block": "P1",
+  "command": "/plan-create cd-1",
+  "contract": "commands/plan-create.md",
+  "inputs": [
+    {
+      "path": ".context/proposals/cd-1.md",
+      "sha256": "9ce8ff61312f1bd49b72db2eebcdd3f8ce263bbbd4b7821a852d6dcfea588758"
+    },
+    {
+      "path": ".context/vibetest/cd-1_2026-10-22-rev2.md",
+      "sha256": "4d54f7578d7722e602142db728cfcc29d5fd64f0d692b6a57b73871338764c11"
+    }
+  ],
+  "nonce": "7e025ee717128d81d49a9e813f399e0f",
+  "run_key": "5c0a2846-be0c-4861-b63f-0189a220b806",
+  "ticket": "cd-1"
+}

@@ -1,0 +1,22 @@
+{"agent_id": "a44412bb37c610cd5", "decision": "unknown", "reason": "no final message", "chars": null, "lines": null, "at": 1792635804.3014443}
+{"agent_id": "ad2510d1ff61a816e", "decision": "unknown", "reason": "no final message", "chars": null, "lines": null, "at": 1792636036.7501714}
+{"agent_id": "aeb838384ecd2a3f5", "decision": "unknown", "reason": "no final message", "chars": null, "lines": null, "at": 1792636237.2025502}
+{"agent_id": "a34ecb4a747053c73", "decision": "unknown", "reason": "no final message", "chars": null, "lines": null, "at": 1792636391.5578387}
+{"agent_id": "afb78adfcbda41b35", "decision": "unknown", "reason": "no final message", "chars": null, "lines": null, "at": 1792636640.04547}
+{"agent_id": "aea600600d9adb161", "decision": "hold", "reason": "the final message is not a lean return (ARTIFACT: <path>, or ARTIFACT: <path> VERDICT: <words>, or STOPPED: <reason>)", "chars": 156, "lines": 1, "at": 1792636799.2016487}
+{"agent_id": "ab21a10ec36d82c7b", "decision": "unknown", "reason": "no final message", "chars": null, "lines": null, "at": 1792636968.9037035}
+{"agent_id": "a231fed5fc31bdc55", "decision": "unknown", "reason": "no final message", "chars": null, "lines": null, "at": 1792637062.644062}
+{"agent_id": "a9b6379a0eb20e1f1", "decision": "unknown", "reason": "no final message", "chars": null, "lines": null, "at": 1792637154.5528662}
+{"agent_id": "a4c41e98f9ec00c2f", "decision": "unknown", "reason": "no final message", "chars": null, "lines": null, "at": 1792637302.168509}
+{"agent_id": "ad67aea2e058f0fdc", "decision": "unknown", "reason": "no final message", "chars": null, "lines": null, "at": 1792637351.6243598}
+{"agent_id": "a4e92e2beda4dbfb5", "decision": "unknown", "reason": "no final message", "chars": null, "lines": null, "at": 1792637405.2310164}
+{"agent_id": "a72a8e688568bec0c", "decision": "unknown", "reason": "no final message", "chars": null, "lines": null, "at": 1792637467.2101772}
+{"agent_id": "ad9cd3b5a89a81254", "decision": "ok", "reason": null, "chars": 168, "lines": 1, "at": 1792637508.3864942}
+{"agent_id": "ad9cd3b5a89a81254", "decision": "ok", "reason": null, "chars": 168, "lines": 1, "at": 1792637511.021923}
+{"agent_id": "aa786c9cb6198f782", "decision": "unknown", "reason": "no final message", "chars": null, "lines": null, "at": 1792637574.0378838}
+{"agent_id": "ae1c617b700b884a3", "decision": "unknown", "reason": "no final message", "chars": null, "lines": null, "at": 1792637610.6396146}
+{"agent_id": "a76c4941dff58f627", "decision": "unknown", "reason": "no final message", "chars": null, "lines": null, "at": 1792637721.9404376}
+{"agent_id": "a224b73591d196b6e", "decision": "hold", "reason": "the final message is not a lean return (ARTIFACT: <path>, or ARTIFACT: <path> VERDICT: <words>, or STOPPED: <reason>)", "chars": 110, "lines": 1, "at": 1792637837.0646033}
+{"agent_id": "a128c869266e37023", "decision": "unknown", "reason": "no final message", "chars": null, "lines": null, "at": 1792637931.5395925}
+{"agent_id": "af3d54fae7951a00b", "decision": "hold", "reason": "the final message is not a lean return (ARTIFACT: <path>, or ARTIFACT: <path> VERDICT: <words>, or STOPPED: <reason>)", "chars": 266, "lines": 1, "at": 1792638036.0631309}
+{"agent_id": "ab7e57e0db2827a33", "decision": "unknown", "reason": "no final message", "chars": null, "lines": null, "at": 1792638147.5198073}

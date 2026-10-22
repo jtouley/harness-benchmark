@@ -1,0 +1,39 @@
+# Maps each check to the table or view and the columns it reads, and to its SQL file in tests/checks/.
+checks:
+  1:
+    description: FY2024 net obligations per awarding agency
+    table: out/marts/mart_fy2024_monthly_county_agency.parquet
+    columns: [agency_key, net_obligations]
+    lake: lake/usaspending_awards
+    query: tests/checks/check_01.sql
+  2:
+    description: Ten counties with the highest FY2024 obligations per person
+    table: out/marts/mart_fy2024_monthly_county_agency.parquet
+    columns: [county_fips, county_name, population, net_obligations]
+    query: tests/checks/check_02.sql
+  3:
+    description: Count of awards with a negative net obligation in FY2024
+    table: lake/usaspending_awards
+    columns: [award_key, federal_action_obligation, action_date_fiscal_year]
+    query: tests/checks/check_03.sql
+  4:
+    description: One month rolls up county to state to the source total
+    table: out/marts/mart_fy2024_monthly_county_agency.parquet
+    columns: [month_key, state_fips, county_fips, net_obligations]
+    lake: lake/usaspending_awards
+    query: tests/checks/check_04.sql
+  5:
+    description: Edits and net bytes per wiki, human and bot, for the replayed hour, late events included
+    table: lake/stream_recentchange
+    columns: [wiki, bot, timestamp, is_edit, net_bytes, is_late]
+    query: tests/checks/check_05.sql
+  6:
+    description: The ten 5-minute windows with the most on-time edits on enwiki
+    table: out/marts/mart_wiki_window_5min.parquet
+    columns: [window_start, wiki, edit_count]
+    query: tests/checks/check_06.sql
+  7:
+    description: Count of late events
+    table: lake/late_events
+    columns: [meta_id, is_late]
+    query: tests/checks/check_07.sql

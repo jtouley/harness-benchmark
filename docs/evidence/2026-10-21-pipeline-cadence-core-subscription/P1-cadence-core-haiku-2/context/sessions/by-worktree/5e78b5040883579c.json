@@ -1,0 +1,156 @@
+{
+  "skill": "cadence",
+  "pipeline_run_id": "1a240cbc-2484-4175-b2ce-b76ba5272a21",
+  "task_id": "cd-1",
+  "task_source": "branch:feature/gh-1-pipeline",
+  "task_description": "",
+  "branch": "feature/gh-1-pipeline",
+  "ticket_tokens": [
+    "1",
+    "cd-1",
+    "feature/gh-1-pipeline"
+  ],
+  "fresh_run": false,
+  "supersede_on_activate": false,
+  "superseded_paths": [],
+  "activated_at": "2026-10-21T22:36:52.362182+00:00",
+  "owner_session_id": "2a23f7f8-4ce2-4a5e-9f73-a270e4880e3a",
+  "orchestrator_agent_ids": [],
+  "orchestrator_source": "missing",
+  "host": "claude",
+  "base": "main",
+  "workspace": "/tmp/claude-0/-home-user/5b20bc6c-3f91-5511-8000-71d5898a937e/scratchpad/pipe/2026-10-21/P1-cadence-core-haiku-2/repo",
+  "primary_checkout": "/tmp/claude-0/-home-user/5b20bc6c-3f91-5511-8000-71d5898a937e/scratchpad/pipe/2026-10-21/P1-cadence-core-haiku-2/repo",
+  "context_root": "/tmp/claude-0/-home-user/5b20bc6c-3f91-5511-8000-71d5898a937e/scratchpad/pipe/2026-10-21/P1-cadence-core-haiku-2/repo/.context",
+  "matching_artifacts": {},
+  "resume_slug": "activate-session",
+  "resume_block": "A1",
+  "resume_reason": "Resume requested but no ticket-scoped artifacts \u2014 start at A1",
+  "active_skill": "cadence",
+  "registry_version": 1,
+  "env_exports": {
+    "CURSOR_ACTIVE_SKILL": "cadence",
+    "CADENCE_TASK_ID": "cd-1",
+    "CADENCE_FRESH_RUN": "0",
+    "CADENCE_PIPELINE_RUN_ID": "1a240cbc-2484-4175-b2ce-b76ba5272a21",
+    "CADENCE_HOME": "/root/.cache/cadence-bench/src/cadence-core@29315c4e64ff318a80a1a7d2c809beb4b3c15611"
+  },
+  "peer_models": {
+    "validate": "haiku",
+    "plan-create": "haiku",
+    "plan-review": "haiku",
+    "adversarial-review": "haiku",
+    "test-benchmark-plan": "haiku",
+    "pr-review-local": "haiku",
+    "test-benchmark-pr": "haiku"
+  },
+  "config": {
+    "layers": [
+      {
+        "name": "default",
+        "path": "/root/.cache/cadence-bench/src/cadence-core@29315c4e64ff318a80a1a7d2c809beb4b3c15611/cadence.defaults.json",
+        "sha256": "b48e8c8d0bb6264037c092848be6f16e6e5d649842e673ae3cf0fc9f539b7169"
+      },
+      {
+        "name": "profile:standard",
+        "path": "/root/.cache/cadence-bench/src/cadence-core@29315c4e64ff318a80a1a7d2c809beb4b3c15611/profiles/standard.json",
+        "sha256": "ca3d163bab055381827226140568f3bef7eaac187cebd76878e0b63e9e442356"
+      },
+      {
+        "name": "user",
+        "path": "/tmp/claude-0/-home-user/5b20bc6c-3f91-5511-8000-71d5898a937e/scratchpad/pipe/2026-10-21/P1-cadence-core-haiku-2/home/.config/cadence/config.json",
+        "sha256": "50e8627c469634a87fd28ef6b7a5f91fdc17e7d55c0bd196231f5979b21c7f50"
+      },
+      {
+        "name": "project",
+        "path": "/tmp/claude-0/-home-user/5b20bc6c-3f91-5511-8000-71d5898a937e/scratchpad/pipe/2026-10-21/P1-cadence-core-haiku-2/repo/.cadence.json",
+        "sha256": "166d92f85903b40c5209999fec1c0fd546597f3ae4746e665a756e9e8163d03b"
+      }
+    ],
+    "values": {
+      "profile": "standard",
+      "adapter": "none",
+      "packs": [],
+      "pack_config": {},
+      "peers": {},
+      "stages": {
+        "overlays": []
+      },
+      "gated_prefixes": [
+        "src/",
+        "lib/",
+        "app/",
+        "packages/",
+        "pipeline/",
+        "engine/",
+        "pipelines/",
+        "transform/",
+        "Makefile"
+      ],
+      "secret_paths": [],
+      "layer_map": {},
+      "decision_frontmatter_required": true,
+      "peer_models": {
+        "default": "haiku"
+      },
+      "subagent_hygiene": {
+        "mode": "enforce",
+        "rewrite_prompt": true,
+        "classifier": "none",
+        "classifier_threshold": 0.5,
+        "classifier_timeout": 10,
+        "on_classifier_error": null
+      },
+      "orchestrator_scope": {
+        "mode": "enforce"
+      },
+      "context_budget": {
+        "mode": "shadow",
+        "warn_tokens": 60000
+      },
+      "cognitive_complexity": {
+        "max": 15,
+        "unsupported": "warn"
+      },
+      "duplication": {
+        "max_percent": 3,
+        "min_block_lines": 6,
+        "unsupported": "warn"
+      },
+      "code_shape": {
+        "max_function_statements": 50,
+        "max_branch_chain": 6,
+        "unsupported": "warn"
+      },
+      "test_shape": {
+        "max_helpers_reimplemented": 0,
+        "max_thin_files": 0,
+        "unsupported": "warn",
+        "layout": {}
+      },
+      "bugs": {
+        "max": 0,
+        "timeout_seconds": 60,
+        "unsupported": "warn"
+      },
+      "types": {
+        "max": 0,
+        "timeout_seconds": 60,
+        "unsupported": "warn"
+      },
+      "measure_exclude": [],
+      "plan_review_cycles": 5,
+      "adversarial_cycles": 3,
+      "review_fix_rounds": 2,
+      "benchmark_score_floor": 7
+    }
+  },
+  "lean_record_by_hook": true,
+  "resumed_at": "2026-10-21T22:36:52.505847+00:00",
+  "worktree_key": "5e78b5040883579c",
+  "hard_stop": {
+    "class": "retries",
+    "reason": "P4 plan-update peer drops RUN_BY_COMMAND: plan-create on each update (cycles 1 and 2); every later peer handoff is denied. Blocked at P4 with no in-run recovery; see outputs/summary.md.",
+    "at": "2026-10-21T22:54:12.543156+00:00"
+  }
+}

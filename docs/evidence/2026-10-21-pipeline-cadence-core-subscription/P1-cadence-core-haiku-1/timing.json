@@ -1,0 +1,8 @@
+{
+ "agent_seconds": 577.7,
+ "grader_seconds": 4.9,
+ "agent_exit": 0,
+ "grader_exit": 0,
+ "backstop_seconds": 86400,
+ "hit_backstop": false
+}

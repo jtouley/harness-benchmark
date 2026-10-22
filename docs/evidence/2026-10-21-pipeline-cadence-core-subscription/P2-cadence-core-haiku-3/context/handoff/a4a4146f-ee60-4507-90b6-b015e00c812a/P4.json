@@ -1,0 +1,26 @@
+{
+  "block": "P4",
+  "command": "/plan-update .cursor/plans/gh-1-pipeline_cd-1.plan.md --from-review .context/reviews/plan_gh-1-pipeline_cd-1.md",
+  "contract": "commands/plan-update.md",
+  "inputs": [
+    {
+      "path": ".cursor/plans/gh-1-pipeline_cd-1.plan.md",
+      "sha256": "e2c50302757bc8c9423e974983f7cbb45b20aa1a6962aaa3ee1f5c56d529f1a1"
+    },
+    {
+      "path": ".context/reviews/plan_gh-1-pipeline_cd-1.md",
+      "sha256": "64db5863199805044b4ab271178c8ce48131d1e7a0a4aa5ee86c59ae43f0266f"
+    },
+    {
+      "path": ".context/vibetest/cd-1_2026-10-22.md",
+      "sha256": "692e057cf367b99e7b909ebcc0d4b4a61a896163090274891a98f14b59f5690a"
+    },
+    {
+      "path": ".context/benchmarks/gh-1-pipeline_cd-1_plan.json",
+      "sha256": "6acb5c150ea6ca4e9eb6d660df3c3506bd369b292f58f927885ebc17066ecd86"
+    }
+  ],
+  "nonce": "fb5676f47824fb8796ca4059a9b6380b",
+  "run_key": "a4a4146f-ee60-4507-90b6-b015e00c812a",
+  "ticket": "cd-1"
+}

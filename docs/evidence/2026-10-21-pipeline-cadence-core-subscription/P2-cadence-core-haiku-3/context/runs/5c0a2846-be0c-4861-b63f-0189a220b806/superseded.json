@@ -1,0 +1,13 @@
+{
+  "pipeline_run_id": "5c0a2846-be0c-4861-b63f-0189a220b806",
+  "task_id": "cd-1",
+  "superseded_at": "2026-10-22T02:22:06.218745+00:00",
+  "paths": [
+    "deferrals/cd-1_deferral-register.md",
+    "adversarial/adversarial_gh-1-pipeline_cd-1.md",
+    "adversarial/adversarial_gh-1-pipeline_cd-1_r3.md",
+    "adversarial/adversarial_gh-1-pipeline_cd-1_r2.md",
+    "reviews/plan_gh-1-pipeline_cd-1.md",
+    "benchmarks/gh-1-pipeline_cd-1_plan.json"
+  ]
+}

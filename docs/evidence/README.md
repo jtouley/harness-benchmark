@@ -93,6 +93,17 @@ what produced each number, and the [whitepaper](../whitepaper.md) draws them tog
   frictions found in the add-a-harness path: three fixed, three documented.
 - Read: [write-up](2026-10-21-cadence-core-tiers-1-2.md), [data](2026-10-21-cadence-core-tiers-1-2/)
 
+## cadence-core on P1 and P2, on a subscription (21–22 October): exploratory
+
+- Question: with no time cap and a current cadence-core (`29315c4`), does Haiku 5.5 deliver the
+  pipeline tasks that it failed alone?
+- Sample: three runs each on P1 and P2, on a host (no Docker daemon, no clean room), plus two runs lost
+  to container restarts and run again.
+- Result: 0 of 7 in all six. Four runs stopped in planning on gate and contract failures; the two that
+  built a working pipeline stopped at E4, which needs a GitHub PR URL, and lost their checks to answer
+  maps that do not answer the ticket's checks and to grader defect #49.
+- Read: [write-up](2026-10-21-pipeline-cadence-core-subscription.md), [data](2026-10-21-pipeline-cadence-core-subscription/)
+
 ## Scripts kept with the data
 
 The scripts beside each round's data (`grade.py`, `run_arm.sh` and others) are the exact ones used for that

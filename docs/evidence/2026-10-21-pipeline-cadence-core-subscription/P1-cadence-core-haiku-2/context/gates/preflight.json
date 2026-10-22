@@ -1,0 +1,6 @@
+{
+  "slug": "preflight",
+  "RUN_BY_SCRIPT": "preflight.py",
+  "git_toplevel": "/tmp/claude-0/-home-user/5b20bc6c-3f91-5511-8000-71d5898a937e/scratchpad/pipe/2026-10-21/P1-cadence-core-haiku-2/repo",
+  "branch": "feature/gh-1-pipeline"
+}

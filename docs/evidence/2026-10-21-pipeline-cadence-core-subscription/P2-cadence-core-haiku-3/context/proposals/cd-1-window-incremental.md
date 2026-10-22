@@ -1,0 +1,8 @@
+---
+decision_id: cd-1-window-incremental
+status: proposed
+question: How does the incremental window mart update windows that can still change, and which lower bound does each build use?
+choice: Incremental model with incremental_strategy delete+insert and unique_key [window_start, wiki, namespace, actor_type]. Each build recomputes every window with window_start >= L from the on-time edit rows of fct_edit, where L = built_max_event_time - 15 minutes. built_max_event_time is the maximum event time over fct_edit as of the last successful build, stored in window_build_state by a post-hook. A build with no state row (state table missing or empty) reads L as null and selects every on-time edit row, so every window is rebuilt whole; this covers the first build and a first build whose state post-hook failed. The window_start filter applies only when is_incremental() is true and L is not null. The state post-hook creates window_build_state if it does not exist.
+rationale: An on-time event has window_start >= (running max before the event) - 15 minutes, so every window that a not-yet-built batch can touch starts at or after the running max after the last built batch minus 15 minutes. A failed dbt run skips the post-hook, so the next run still covers the uncovered batch (plan update cycle two, MF-6). is_incremental() does not read the state table, so "no state table" is not the first-build test (plan update cycle three, MF-8). Rejects a lower bound from the newest footer, which loses the refresh of a batch whose dbt step failed. Rejects a full rebuild each run, which is not incremental.
+---
+Ticket: cd-1

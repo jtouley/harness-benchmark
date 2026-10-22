@@ -1,0 +1,27 @@
+# Oracle checks. Each check has an id, the query or script it runs (pipeline/oracle.py),
+# and the expected result. Checks 1 to 6 run after make build. Check 7 runs under make stream.
+# replay_mode: R = the replay server replays from Last-Event-ID (see pipeline/README.md probe).
+replay_mode: R
+
+checks:
+  - id: raw_row_conservation
+    query: "count(distinct award_row_key) of FY2024 rows in lake/raw/usaspending_awards equals the rows_fy2024 sum in lake/logs/batch_counts.json"
+    expected: pass
+  - id: obligation_total_exact
+    query: "sum(obligation_total) in out/marts/mart_obligations_by_geo_agency_month.parquet equals the sum of federal_action_obligation over the FY2024 CSV rows in the zips (csv module, Decimal), to the cent"
+    expected: pass
+  - id: state_equals_county
+    query: "each state-month total in mart_obligations_by_state_month equals the sum of its county-month totals"
+    expected: pass
+  - id: per_person_recompute
+    query: "obligation_per_person equals obligation_total / population recomputed with Decimal, half-up to 4 places, for every row (null when population is null)"
+    expected: pass
+  - id: stream_no_duplicate_ids
+    query: "count(*) equals count(distinct meta_id) in lake/raw/stream_events"
+    expected: pass
+  - id: window_conservation
+    query: "sum(edit_count) in out/marts/fct_wiki_edit_5min.parquet plus rows in out/marts/late_events.parquet equals count(distinct meta_id) in lake/raw/stream_events (run after make build)"
+    expected: pass
+  - id: resume_equivalence
+    query: "python -m pipeline.oracle run --check resume_equivalence: a run killed and restarted stores the same arrival-ordered rows as an uninterrupted run over the same replay prefix (needs the replay server)"
+    expected: pass

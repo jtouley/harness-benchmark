@@ -1,0 +1,14 @@
+{
+  "block": "E1",
+  "command": "/spec-driven .context/plans/cd-1-gh-1-pipeline.plan.md",
+  "contract": "commands/spec-driven.md",
+  "inputs": [
+    {
+      "path": ".context/plans/cd-1-gh-1-pipeline.plan.md",
+      "sha256": "b01ace9a150c74af6aca13adb55096a1713a933e52c8994963f8bdc00df45d47"
+    }
+  ],
+  "nonce": "40dc405125fa29507905344d93b8e9a0",
+  "run_key": "8a67c0d0-b7ea-47c1-a4b6-e94ee8d1f9da",
+  "ticket": "cd-1"
+}

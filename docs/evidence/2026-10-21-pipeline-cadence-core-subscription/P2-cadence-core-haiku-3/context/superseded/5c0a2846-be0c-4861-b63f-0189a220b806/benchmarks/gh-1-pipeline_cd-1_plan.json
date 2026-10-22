@@ -1,0 +1,57 @@
+{
+  "RUN_BY_SKILL": "test-benchmark",
+  "task_id": "gh-1-pipeline_cd-1",
+  "ticket": "cd-1",
+  "mode": "plan",
+  "input": {
+    "plan": ".cursor/plans/gh-1-pipeline_cd-1.plan.md",
+    "plan_sha256": "3089051dfaf05d9081d5358df02335406245e4c5bb1160e15129d0252c132786",
+    "packet_sha256": "823413f7fa5442fb999a2a14cb1fe62be2fb6145f6d8f9e18e3d9b05dc235bd4"
+  },
+  "scope": "Test spec of phases 1 to 7 and the Reuse and extension section (section 4) of the plan, as updated through the test benchmark update (cd-1-F01 to cd-1-F06 applied).",
+  "scores": {
+    "coverage_of_behavior": 7,
+    "assertion_strength": 8,
+    "dry_no_clone_setups": 8,
+    "layer_correctness": 8,
+    "failure_paths": 8,
+    "mutation_resilience": 6
+  },
+  "mean": 7.5,
+  "mutation": "not run: plan mode has no code, so no mutants were generated or run. No kill rate is reported. Mutation resilience is judged by reading the named cases against the rules.",
+  "dry_measurement": null,
+  "verdict": "PASS",
+  "findings": [
+    {
+      "id": "cd-1-F07",
+      "severity": "minor",
+      "check": "coverage: N-1 population fallback has no named test",
+      "evidence": "N-1 (Amendment A) sets the population of a county missing from the 2024 file to POPESTIMATE2021, and sets NULL when it is missing from both files. The Connecticut case (all eight counties on the 2021 fallback, planning-region rows not joined) is in the cycle-four notes only. No Phase 2, 3 or 4 test names a fallback row with an expected population. The check 2 exclusion of NULL population is in the MF-4 ledger row but not in the Phase 4 TDD text. Fix: add a parametrized row set in the Phase 2 or Phase 3 test module: one county present in 2024, one missing from 2024 and present in 2021, one missing from both (population NULL), with the expected population value for each."
+    },
+    {
+      "id": "cd-1-F08",
+      "severity": "minor",
+      "check": "mutation: G-2 month boundary has one case",
+      "evidence": "The G-2 check has one named case (action_date 2024-10-01, expected exit non-zero). A mutant that uses an exclusive bound (drops 2023-10-01 or 2024-09-30) or a wrong fiscal-year filter survives. Fix: add rows to the Phase 2 G-2 parametrized table: 2023-10-01 (in), 2024-09-30 (in), 2023-09-30 (out, not FY2024 so no error), 2024-10-01 (error), with the expected outcome for each."
+    },
+    {
+      "id": "cd-1-F09",
+      "severity": "minor",
+      "check": "coverage: Phase 6 dedupe test has no expected output",
+      "evidence": "Phase 6 says 'Dedupe test on event_id' with no test name and no expected row count. The Phase 5 crash and disconnect tests state the id set, but a Phase 6 dbt-level dedupe test on fct_edit has no expected value. A mutant that double-counts a replayed meta.id in fct_edit or in the window mart can pass the Phase 6 tests. Fix: name the test (for example test_fct_edit_unique_event_id) with a fixture that replays one meta.id, and the expected edit_count after the duplicate is dropped."
+    },
+    {
+      "id": "cd-1-F10",
+      "severity": "minor",
+      "check": "mutation: check 3 award key and check 6 server filter have no named case",
+      "evidence": "G-3 defines the award as one generated_unique_award_id and counts awards with a negative FY2024 sum. A per-transaction count mutant passes unless the check 3 fixture has an award with two transactions and a net sum below zero that differs from its per-transaction signs. Check 6 keeps only server_name = en.wikipedia.org (N-2). No named case has another wiki with a high count, so a mutant that drops the server filter passes the tie test. Fix: state these two fixture cases in the Phase 4 check 3 and Phase 7 check 6 TDD text, with the expected rows."
+    }
+  ],
+  "notes": [
+    "Coverage scores 7, assertion strength 8, DRY 8, layer 8, failure paths 8. Mean 7.5 is at or above benchmark_score_floor 7. No dimension named for must-fix (layer, dry, assert) is below 7, so verdict is PASS.",
+    "Prior scorecard gh-1-pipeline_cd-1_plan.json (plan sha e2c50302, FAIL, mean 6.5) findings cd-1-F01 to cd-1-F06 are applied in the test benchmark update of the plan: F01 helpers in section 4, F02 expected values, F03 checks 5 to 7, F04 parametrized mutant rows, F05 restart test, F06 integration marker. Each is checked against the current plan text.",
+    "Findings cd-1-F07 to cd-1-F10 are minor. They do not change the verdict. In plan mode they need no findings ledger row, and the plan peer may apply them through /plan-update.",
+    "Plan mode does not run scripts/test_shape.py (code mode only). The DRY read is a reading of the spec: no test helper is proposed twice, and the helpers in support.py and conftest.py are each defined once. dry_measurement is null.",
+    "Floor check: benchmark_score_floor 7 from the resolved config (default). No layer config changes it."
+  ]
+}

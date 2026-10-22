@@ -1,0 +1,14 @@
+{
+  "block": "P6",
+  "command": "/de-adversarial-reviewer plan-gate .cursor/plans/gh-1-pipeline_cd-1.plan.md",
+  "contract": "skills/de-adversarial-reviewer/SKILL.md",
+  "inputs": [
+    {
+      "path": ".cursor/plans/gh-1-pipeline_cd-1.plan.md",
+      "sha256": "e2c50302757bc8c9423e974983f7cbb45b20aa1a6962aaa3ee1f5c56d529f1a1"
+    }
+  ],
+  "nonce": "e9369c7baaecdd801fd2dd9a0bbf3979",
+  "run_key": "a4a4146f-ee60-4507-90b6-b015e00c812a",
+  "ticket": "cd-1"
+}

@@ -1,0 +1,18 @@
+{
+  "block": "P3",
+  "command": "/plan-review .context/plans/cd-1-gh-1-pipeline.plan.md",
+  "contract": "commands/plan-review.md",
+  "inputs": [
+    {
+      "path": ".context/plans/cd-1-gh-1-pipeline.plan.md",
+      "sha256": "0a523071571a9afb24f55163028a8cafdd1776d4ce2dbb7df93abad50f13f3e2"
+    },
+    {
+      "path": ".context/reviews/plan_cd-1-gh-1-pipeline.md",
+      "sha256": "6135ad33f49ed22e1aaf0b544c74295b83140cc9e2c7ab07bd05fb6b24b8aaa9"
+    }
+  ],
+  "nonce": "6cb7a6ffbc236de289b779906c940ae5",
+  "run_key": "c11abad2-208f-4d85-bb55-2a95c021b556",
+  "ticket": "cd-1"
+}

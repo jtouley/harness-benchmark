@@ -1,0 +1,18 @@
+{
+  "block": "P3",
+  "command": "/plan-review .context/plans/cd-1.plan.md",
+  "contract": "commands/plan-review.md",
+  "inputs": [
+    {
+      "path": ".context/plans/cd-1.plan.md",
+      "sha256": "1bcaebe94f36f5e405b92a06f80b91d984452d67c5af014ef32463e827996e1f"
+    },
+    {
+      "path": ".context/vibetest/cd-1_2026-10-21.md",
+      "sha256": "3febdc71ca850fa5ea5f9ef4992acf32d6013de8d79511c8b28611524f6bac87"
+    }
+  ],
+  "nonce": "31df54f0c1060ef7a2997872c34d625f",
+  "run_key": "81d6f968-0843-449a-b3ac-e0fffa47a255",
+  "ticket": "cd-1"
+}

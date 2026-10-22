@@ -1,0 +1,311 @@
+{
+  "slug": "cognitive-complexity",
+  "RUN_BY_SCRIPT": "cognitive_complexity_gate.py",
+  "base": "main",
+  "max": 15,
+  "cognitive_complexity": {
+    "max": 15,
+    "unsupported": "warn",
+    "threshold_source": {
+      "max": "default"
+    }
+  },
+  "duplication": {
+    "max_percent": 3,
+    "min_block_lines": 6,
+    "unsupported": "warn",
+    "threshold_source": {
+      "max_percent": "default",
+      "min_block_lines": "default"
+    }
+  },
+  "code_shape": {
+    "max_function_statements": 50,
+    "max_branch_chain": 6,
+    "unsupported": "warn",
+    "threshold_source": {
+      "max_function_statements": "default",
+      "max_branch_chain": "default"
+    }
+  },
+  "bugs": {
+    "max": 0,
+    "timeout_seconds": 60,
+    "unsupported": "warn",
+    "threshold_source": {
+      "max": "default",
+      "timeout_seconds": "default"
+    }
+  },
+  "types": {
+    "max": 0,
+    "timeout_seconds": 60,
+    "unsupported": "warn",
+    "threshold_source": {
+      "max": "default",
+      "timeout_seconds": "default"
+    }
+  },
+  "findings": [],
+  "unmeasured": [
+    "transform/models/intermediate/dim_agency.sql: no analyzer",
+    "transform/models/intermediate/dim_date_month.sql: no analyzer",
+    "transform/models/intermediate/dim_geography.sql: no analyzer",
+    "transform/models/intermediate/dim_wiki.sql: no analyzer",
+    "transform/models/intermediate/fct_obligation_monthly.sql: no analyzer",
+    "transform/models/marts/fct_wiki_edit_5min.sql: no analyzer",
+    "transform/models/marts/late_events.sql: no analyzer",
+    "transform/models/marts/mart_obligations_by_geo_agency_month.sql: no analyzer",
+    "transform/models/marts/mart_obligations_by_state_month.sql: no analyzer",
+    "transform/models/staging/stg_census__county_population.sql: no analyzer",
+    "transform/models/staging/stg_usaspending__awards.sql: no analyzer",
+    "transform/models/staging/stg_wiki__recentchange.sql: no analyzer",
+    "transform/models/staging/stg_wiki__sites.sql: no analyzer",
+    "transform/tests/assert_obligation_has_two_decimals.sql: no analyzer",
+    "transform/tests/assert_state_total_equals_county_sum.sql: no analyzer",
+    "transform/tests/assert_stg_usaspending_total_matches_raw_csv.sql: no analyzer"
+  ],
+  "unparsable": [],
+  "functions": 129,
+  "files": 10,
+  "duplicated": [],
+  "python_only": [],
+  "python_files": 10,
+  "highest": {
+    "complexity": 15,
+    "statements": 23,
+    "branch_chain": 2,
+    "duplication": 0.0
+  },
+  "tools": [
+    {
+      "measure": "bugs",
+      "value": 12,
+      "threshold": 0,
+      "threshold_source": "default",
+      "verdict": "fail",
+      "offenders": [
+        "pipeline/oracle.py:121 S608 Possible SQL injection vector through string-based query construction",
+        "pipeline/oracle.py:129 S608 Possible SQL injection vector through string-based query construction",
+        "pipeline/oracle.py:139 S608 Possible SQL injection vector through string-based query construction",
+        "pipeline/oracle.py:146 S608 Possible SQL injection vector through string-based query construction",
+        "pipeline/oracle.py:156 S608 Possible SQL injection vector through string-based query construction",
+        "pipeline/oracle.py:169 S608 Possible SQL injection vector through string-based query construction",
+        "pipeline/oracle.py:175 S608 Possible SQL injection vector through string-based query construction",
+        "pipeline/oracle.py:176 S608 Possible SQL injection vector through string-based query construction",
+        "pipeline/oracle.py:177 S608 Possible SQL injection vector through string-based query construction",
+        "pipeline/oracle.py:253 S608 Possible SQL injection vector through string-based query construction",
+        "pipeline/stream.py:327 S310 Audit URL open for permitted schemes. Allowing use of `file:` or custom schemes is often unexpected.",
+        "pipeline/stream.py:329 S310 Audit URL open for permitted schemes. Allowing use of `file:` or custom schemes is often unexpected."
+      ],
+      "unmeasured": [
+        "transform/models/intermediate/dim_agency.sql: not Python",
+        "transform/models/intermediate/dim_date_month.sql: not Python",
+        "transform/models/intermediate/dim_geography.sql: not Python",
+        "transform/models/intermediate/dim_wiki.sql: not Python",
+        "transform/models/intermediate/fct_obligation_monthly.sql: not Python",
+        "transform/models/marts/fct_wiki_edit_5min.sql: not Python",
+        "transform/models/marts/late_events.sql: not Python",
+        "transform/models/marts/mart_obligations_by_geo_agency_month.sql: not Python",
+        "transform/models/marts/mart_obligations_by_state_month.sql: not Python",
+        "transform/models/staging/stg_census__county_population.sql: not Python",
+        "transform/models/staging/stg_usaspending__awards.sql: not Python",
+        "transform/models/staging/stg_wiki__recentchange.sql: not Python",
+        "transform/models/staging/stg_wiki__sites.sql: not Python",
+        "transform/tests/assert_obligation_has_two_decimals.sql: not Python",
+        "transform/tests/assert_state_total_equals_county_sum.sql: not Python",
+        "transform/tests/assert_stg_usaspending_total_matches_raw_csv.sql: not Python"
+      ],
+      "tool": "ruff",
+      "version": "0.17.0",
+      "args_sha256": "01bbfbba1e45b25e8b70e8ee9139259e1dc655614cd3ce09887360f9dc009308",
+      "rules_sha256": "8ba5565334cdf14c72970333afb60e37b213387ae1ac72b398f6bac5f022accf",
+      "base": "59431111c4a447a83b01975de96c9412cc9b2855",
+      "head": "ff8a241809204b16856f1cb2f43783d45feb2dee",
+      "timed_out": false,
+      "unsupported": null,
+      "files": 8
+    },
+    {
+      "measure": "types",
+      "value": 2,
+      "threshold": 0,
+      "threshold_source": "default",
+      "verdict": "fail",
+      "offenders": [
+        "pipeline/batch.py:163 var-annotated Need type annotation for \"counts\" (hint: \"counts: dict[<type>, <type>] = ...\")",
+        "pipeline/oracle.py:57 var-annotated Need type annotation for \"county_sums\""
+      ],
+      "unmeasured": [
+        "transform/models/intermediate/dim_agency.sql: not Python",
+        "transform/models/intermediate/dim_date_month.sql: not Python",
+        "transform/models/intermediate/dim_geography.sql: not Python",
+        "transform/models/intermediate/dim_wiki.sql: not Python",
+        "transform/models/intermediate/fct_obligation_monthly.sql: not Python",
+        "transform/models/marts/fct_wiki_edit_5min.sql: not Python",
+        "transform/models/marts/late_events.sql: not Python",
+        "transform/models/marts/mart_obligations_by_geo_agency_month.sql: not Python",
+        "transform/models/marts/mart_obligations_by_state_month.sql: not Python",
+        "transform/models/staging/stg_census__county_population.sql: not Python",
+        "transform/models/staging/stg_usaspending__awards.sql: not Python",
+        "transform/models/staging/stg_wiki__recentchange.sql: not Python",
+        "transform/models/staging/stg_wiki__sites.sql: not Python",
+        "transform/tests/assert_obligation_has_two_decimals.sql: not Python",
+        "transform/tests/assert_state_total_equals_county_sum.sql: not Python",
+        "transform/tests/assert_stg_usaspending_total_matches_raw_csv.sql: not Python"
+      ],
+      "tool": "mypy",
+      "version": "2.4.0",
+      "args_sha256": "021578cff25e767c9c674464aab5efb6987854974f614595714a085bd07ffd56",
+      "rules_sha256": "39ae6656ad4c1b3d8ff3fc12a8695786769d024757390cba1b382b6ec8f74371",
+      "base": "59431111c4a447a83b01975de96c9412cc9b2855",
+      "head": "ff8a241809204b16856f1cb2f43783d45feb2dee",
+      "timed_out": false,
+      "unsupported": null,
+      "files": 8
+    }
+  ],
+  "packs": [],
+  "measures": [
+    {
+      "measure": "complexity",
+      "value": 15,
+      "threshold": 15,
+      "threshold_source": "default",
+      "verdict": "warn",
+      "offenders": [],
+      "unmeasured": [
+        "transform/models/intermediate/dim_agency.sql: no analyzer",
+        "transform/models/intermediate/dim_date_month.sql: no analyzer",
+        "transform/models/intermediate/dim_geography.sql: no analyzer",
+        "transform/models/intermediate/dim_wiki.sql: no analyzer",
+        "transform/models/intermediate/fct_obligation_monthly.sql: no analyzer",
+        "transform/models/marts/fct_wiki_edit_5min.sql: no analyzer",
+        "transform/models/marts/late_events.sql: no analyzer",
+        "transform/models/marts/mart_obligations_by_geo_agency_month.sql: no analyzer",
+        "transform/models/marts/mart_obligations_by_state_month.sql: no analyzer",
+        "transform/models/staging/stg_census__county_population.sql: no analyzer",
+        "transform/models/staging/stg_usaspending__awards.sql: no analyzer",
+        "transform/models/staging/stg_wiki__recentchange.sql: no analyzer",
+        "transform/models/staging/stg_wiki__sites.sql: no analyzer",
+        "transform/tests/assert_obligation_has_two_decimals.sql: no analyzer",
+        "transform/tests/assert_state_total_equals_county_sum.sql: no analyzer",
+        "transform/tests/assert_stg_usaspending_total_matches_raw_csv.sql: no analyzer"
+      ]
+    },
+    {
+      "measure": "statements",
+      "value": 23,
+      "threshold": 50,
+      "threshold_source": "default",
+      "verdict": "pass",
+      "offenders": [],
+      "unmeasured": []
+    },
+    {
+      "measure": "branch_chain",
+      "value": 2,
+      "threshold": 6,
+      "threshold_source": "default",
+      "verdict": "pass",
+      "offenders": [],
+      "unmeasured": []
+    },
+    {
+      "measure": "duplication",
+      "value": 0.0,
+      "threshold": 3,
+      "threshold_source": "default",
+      "verdict": "pass",
+      "offenders": [],
+      "unmeasured": []
+    },
+    {
+      "measure": "bugs",
+      "value": 12,
+      "threshold": 0,
+      "threshold_source": "default",
+      "verdict": "fail",
+      "offenders": [
+        "pipeline/oracle.py:121 S608 Possible SQL injection vector through string-based query construction",
+        "pipeline/oracle.py:129 S608 Possible SQL injection vector through string-based query construction",
+        "pipeline/oracle.py:139 S608 Possible SQL injection vector through string-based query construction",
+        "pipeline/oracle.py:146 S608 Possible SQL injection vector through string-based query construction",
+        "pipeline/oracle.py:156 S608 Possible SQL injection vector through string-based query construction",
+        "pipeline/oracle.py:169 S608 Possible SQL injection vector through string-based query construction",
+        "pipeline/oracle.py:175 S608 Possible SQL injection vector through string-based query construction",
+        "pipeline/oracle.py:176 S608 Possible SQL injection vector through string-based query construction",
+        "pipeline/oracle.py:177 S608 Possible SQL injection vector through string-based query construction",
+        "pipeline/oracle.py:253 S608 Possible SQL injection vector through string-based query construction",
+        "pipeline/stream.py:327 S310 Audit URL open for permitted schemes. Allowing use of `file:` or custom schemes is often unexpected.",
+        "pipeline/stream.py:329 S310 Audit URL open for permitted schemes. Allowing use of `file:` or custom schemes is often unexpected."
+      ],
+      "unmeasured": [
+        "transform/models/intermediate/dim_agency.sql: not Python",
+        "transform/models/intermediate/dim_date_month.sql: not Python",
+        "transform/models/intermediate/dim_geography.sql: not Python",
+        "transform/models/intermediate/dim_wiki.sql: not Python",
+        "transform/models/intermediate/fct_obligation_monthly.sql: not Python",
+        "transform/models/marts/fct_wiki_edit_5min.sql: not Python",
+        "transform/models/marts/late_events.sql: not Python",
+        "transform/models/marts/mart_obligations_by_geo_agency_month.sql: not Python",
+        "transform/models/marts/mart_obligations_by_state_month.sql: not Python",
+        "transform/models/staging/stg_census__county_population.sql: not Python",
+        "transform/models/staging/stg_usaspending__awards.sql: not Python",
+        "transform/models/staging/stg_wiki__recentchange.sql: not Python",
+        "transform/models/staging/stg_wiki__sites.sql: not Python",
+        "transform/tests/assert_obligation_has_two_decimals.sql: not Python",
+        "transform/tests/assert_state_total_equals_county_sum.sql: not Python",
+        "transform/tests/assert_stg_usaspending_total_matches_raw_csv.sql: not Python"
+      ],
+      "tool": "ruff",
+      "version": "0.17.0",
+      "args_sha256": "01bbfbba1e45b25e8b70e8ee9139259e1dc655614cd3ce09887360f9dc009308",
+      "rules_sha256": "8ba5565334cdf14c72970333afb60e37b213387ae1ac72b398f6bac5f022accf",
+      "base": "59431111c4a447a83b01975de96c9412cc9b2855",
+      "head": "ff8a241809204b16856f1cb2f43783d45feb2dee",
+      "timed_out": false,
+      "unsupported": null,
+      "files": 8
+    },
+    {
+      "measure": "types",
+      "value": 2,
+      "threshold": 0,
+      "threshold_source": "default",
+      "verdict": "fail",
+      "offenders": [
+        "pipeline/batch.py:163 var-annotated Need type annotation for \"counts\" (hint: \"counts: dict[<type>, <type>] = ...\")",
+        "pipeline/oracle.py:57 var-annotated Need type annotation for \"county_sums\""
+      ],
+      "unmeasured": [
+        "transform/models/intermediate/dim_agency.sql: not Python",
+        "transform/models/intermediate/dim_date_month.sql: not Python",
+        "transform/models/intermediate/dim_geography.sql: not Python",
+        "transform/models/intermediate/dim_wiki.sql: not Python",
+        "transform/models/intermediate/fct_obligation_monthly.sql: not Python",
+        "transform/models/marts/fct_wiki_edit_5min.sql: not Python",
+        "transform/models/marts/late_events.sql: not Python",
+        "transform/models/marts/mart_obligations_by_geo_agency_month.sql: not Python",
+        "transform/models/marts/mart_obligations_by_state_month.sql: not Python",
+        "transform/models/staging/stg_census__county_population.sql: not Python",
+        "transform/models/staging/stg_usaspending__awards.sql: not Python",
+        "transform/models/staging/stg_wiki__recentchange.sql: not Python",
+        "transform/models/staging/stg_wiki__sites.sql: not Python",
+        "transform/tests/assert_obligation_has_two_decimals.sql: not Python",
+        "transform/tests/assert_state_total_equals_county_sum.sql: not Python",
+        "transform/tests/assert_stg_usaspending_total_matches_raw_csv.sql: not Python"
+      ],
+      "tool": "mypy",
+      "version": "2.4.0",
+      "args_sha256": "021578cff25e767c9c674464aab5efb6987854974f614595714a085bd07ffd56",
+      "rules_sha256": "39ae6656ad4c1b3d8ff3fc12a8695786769d024757390cba1b382b6ec8f74371",
+      "base": "59431111c4a447a83b01975de96c9412cc9b2855",
+      "head": "ff8a241809204b16856f1cb2f43783d45feb2dee",
+      "timed_out": false,
+      "unsupported": null,
+      "files": 8
+    }
+  ],
+  "excluded": []
+}
