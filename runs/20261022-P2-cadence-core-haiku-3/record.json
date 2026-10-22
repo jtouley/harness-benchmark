@@ -28,6 +28,7 @@
  },
  "ended_at": "2026-10-22T03:04:12Z",
  "exit_code": 0,
+ "isolation": null,
  "kind": "benchmark",
  "model_requested": "claude-haiku-5-5",
  "models_served": [
@@ -51,6 +52,12 @@
   "reason": "retries hard stop: P7 failed three times after a replan from E1"
  },
  "task": "P2",
+ "timing": {
+  "agent_active_seconds": null,
+  "agent_wall_seconds": 4880.7,
+  "blocks": null,
+  "run_wall_seconds": null
+ },
  "transcript": {
   "missing": "not committed (5 to 9 MB each, host paths); the host container is gone",
   "sha256": null

@@ -27,6 +27,7 @@
  },
  "ended_at": null,
  "exit_code": null,
+ "isolation": null,
  "kind": "benchmark",
  "model_requested": "claude-haiku-5-5",
  "models_served": [
@@ -49,6 +50,12 @@
   "reason": "credentials hard stop: no GitHub remote and no PR number"
  },
  "task": "P1",
+ "timing": {
+  "agent_active_seconds": null,
+  "agent_wall_seconds": 3062,
+  "blocks": null,
+  "run_wall_seconds": null
+ },
  "transcript": {
   "missing": "not committed (19 Oct write-up, amended per #55)",
   "sha256": null

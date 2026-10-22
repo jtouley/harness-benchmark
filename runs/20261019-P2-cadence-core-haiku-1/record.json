@@ -21,6 +21,7 @@
  },
  "ended_at": null,
  "exit_code": null,
+ "isolation": null,
  "kind": "benchmark",
  "model_requested": "claude-haiku-5-5",
  "models_served": null,
@@ -41,6 +42,12 @@
   "reason": "cut off by the host's 7,200 s guard before phase 10"
  },
  "task": "P2",
+ "timing": {
+  "agent_active_seconds": null,
+  "agent_wall_seconds": 7203,
+  "blocks": null,
+  "run_wall_seconds": null
+ },
  "transcript": {
   "missing": "not committed (19 Oct write-up, amended per #55)",
   "sha256": null
