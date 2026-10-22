@@ -133,6 +133,29 @@ def test_a_second_build_that_changes_an_output_scores_zero(key, tmp_path, port):
     assert result["reward"] == 0.0
 
 
+# #49: oracle.py reads a Parquet file at the top of out/marts/ as a mart, so the run-twice check must too.
+AS_FILES = ("rm -rf out/marts && mkdir -p out/marts && "
+            "for d in fixture/marts/*/; do cp \"$$d\"*.parquet out/marts/$$(basename \"$$d\").parquet; done")
+MIXED = COPY_MARTS + " && rm -rf out/marts/late_events && cp fixture/marts/late_events/*.parquet out/marts/late_events.parquet"
+
+
+@pytest.mark.parametrize("build", [COPY_MARTS, AS_FILES, MIXED], ids=["folders", "single-files", "mixed"])
+def test_marts_published_as_folders_single_files_or_both_are_checked_for_a_second_build(key, tmp_path, port, build):
+    result = run_trial(delivered(tmp_path, key, port, build=build), key, tmp_path, port)
+    assert result["idempotent"] and result["changed_by_second_build"] == []
+    assert result["passed"] == 7 and result["reward"] == 1.0
+
+
+@pytest.mark.parametrize("build", [AS_FILES, MIXED], ids=["single-files", "mixed"])
+def test_a_second_build_that_changes_a_single_file_mart_scores_zero(key, tmp_path, port, build):
+    # The second build publishes other rows in late_events.parquet.
+    second_differs = build + (" && { test -e .built && cp fixture/marts/negative_awards/*.parquet "
+                              "out/marts/late_events.parquet; touch .built; }")
+    result = run_trial(delivered(tmp_path, key, port, build=second_differs), key, tmp_path, port)
+    assert not result["idempotent"] and result["changed_by_second_build"] == ["late_events"]
+    assert result["reward"] == 0.0
+
+
 def test_outputs_and_state_from_development_are_removed_before_the_first_build(key, tmp_path, port):
     repo = delivered(tmp_path, key, port, build="true", commit_outputs=True)
     (repo / "state").mkdir()
