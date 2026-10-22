@@ -86,7 +86,7 @@ def test_an_invalid_record_is_not_written(tmp_path):
 
 def test_scores_are_appended_and_need_a_record(tmp_path):
     score = {"run_id": "20261021-P1-cadence-core-haiku-1",
-             "grader": {"repo": "jtouley/harness-benchmark", "commit": "abc1234", "tree": None},
+             "grader": {"repo": "jtouley/harness-benchmark", "commit": "abc1234", "tree": "a" * 40},
              "reward": 0.0, "passed": 0, "total": 7, "idempotent": False, "stream_ok": True, "error": None,
              "source": "driver", "graded_at": None}
     with pytest.raises(record.RecordError, match="no record"):
@@ -98,6 +98,20 @@ def test_scores_are_appended_and_need_a_record(tmp_path):
     assert [r["reward"] for r in rows] == [0.0, 0.5]
     with pytest.raises(record.RecordError, match="run_id"):
         record.append_score(tmp_path, {**score, "run_id": "20261021-P2-other"})
+
+
+def test_only_a_backfilled_score_may_leave_the_grader_unknown_and_it_says_why(tmp_path):
+    record.write_record(tmp_path, minimal())
+    score = {"run_id": "20261021-P1-cadence-core-haiku-1",
+             "grader": {"repo": "jtouley/harness-benchmark", "commit": None, "tree": None},
+             "reward": 0.0, "passed": 0, "total": 7, "idempotent": False, "stream_ok": True, "error": None,
+             "source": "driver", "graded_at": None}
+    with pytest.raises(record.RecordError, match="only a backfill"):
+        record.append_score(tmp_path, score)
+    with pytest.raises(record.RecordError, match="basis"):
+        record.append_score(tmp_path, {**score, "source": "backfill"})
+    record.append_score(tmp_path, {**score, "source": "backfill",
+                                   "grader": {**score["grader"], "basis": "not recorded at grading time"}})
 
 
 def test_the_check_refuses_a_changed_or_deleted_record_and_allows_new_ones_and_new_scores(tmp_path):

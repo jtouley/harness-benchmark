@@ -89,6 +89,12 @@ def append_score(runs: Path, score: dict) -> Path:
     errors = validate(score, SCORE_SCHEMA)
     if errors:
         raise RecordError("invalid score: " + "; ".join(errors))
+    grader = score["grader"]
+    if score["source"] != "backfill" and (grader["commit"] is None or grader["tree"] is None or "basis" in grader):
+        raise RecordError("a driver or regrade score names the grader commit and tree it ran; only a backfill "
+                          "may leave them unknown or inferred")
+    if score["source"] == "backfill" and (grader["commit"] is None or grader["tree"] is None) and "basis" not in grader:
+        raise RecordError("a backfilled score with an unknown grader says why in grader.basis")
     run = runs / score["run_id"]
     if not (run / "record.json").exists():
         raise RecordError(f"no record for run_id {score['run_id']} in {runs}")

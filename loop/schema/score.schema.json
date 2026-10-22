@@ -1,5 +1,5 @@
 {
-  "$comment": "One line of runs/<run_id>/scores.jsonl (append-only). Only the harness-benchmark grader scores a run; each score names the grader by commit and by the git tree of golden/pipeline/pipetask.",
+  "$comment": "One line of runs/<run_id>/scores.jsonl (append-only). Only the harness-benchmark grader scores a run; each score names the grader by commit and by the git tree of golden/pipeline/pipetask. Only a backfilled score may leave them null or inferred, and then grader.basis says how they were found.",
   "type": "object",
   "additionalProperties": false,
   "required": ["run_id", "grader", "reward", "passed", "total", "idempotent", "stream_ok", "error", "source", "graded_at"],
@@ -9,8 +9,9 @@
       "type": "object", "additionalProperties": false, "required": ["repo", "commit", "tree"],
       "properties": {
         "repo": {"enum": ["jtouley/harness-benchmark"]},
-        "commit": {"type": "string", "pattern": "^[0-9a-f]{7,40}$"},
-        "tree": {"type": ["string", "null"], "pattern": "^[0-9a-f]{40}$"}
+        "commit": {"type": ["string", "null"], "pattern": "^[0-9a-f]{7,40}$"},
+        "tree": {"type": ["string", "null"], "pattern": "^[0-9a-f]{40}$"},
+        "basis": {"type": "string"}
       }
     },
     "reward": {"type": "number", "minimum": 0},
