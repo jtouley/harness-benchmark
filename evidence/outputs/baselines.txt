@@ -1,0 +1,27 @@
+1. docs/evidence/2026-10-15-pipeline-trials.json at origin/main ec54dbc928d4b7ebf10cbef94812b6ebc3ba8c9a
+   history of the file (newest first):
+     19d441e 2026-10-18 docs: group docs into evidence, method, plans and talk
+     0a25052 2026-10-16 fix(pipeline): count only result rows; checks: precedence; fair write-up
+     d058fb0 2026-10-16 docs(pipeline): first one-shot trials on P3; all nine trials
+   run                      task model (recorded)     reward   checks counted
+   P1-haiku-1-regrade       P1   claude-haiku-5-5     0.0      0/7    True
+   P1-sonnet-1-regrade      P1   claude-sonnet-5-5    0.4286   3/7    True
+   P1-opus-1-regrade        P1   claude-opus-5-5      0.8571   6/7    True
+   P2-haiku-1               P2   claude-haiku-5-5     0.0      0/7    True
+   P2-sonnet-1              P2   claude-sonnet-5-5    0.4286   3/7    True
+   P2-opus-1                P2   claude-opus-5-5      0.7143   5/7    True
+   P3-haiku-1               P3   claude-haiku-5-5     0.0      0/7    True
+   P3-sonnet-1              P3   claude-sonnet-5-5    0.7143   5/7    True
+   P3-opus-1                P3   claude-opus-5-5      0.4286   3/7    True
+
+2. docs/evidence/2026-10-19-pipeline-cadence-core/P1-cadence-core-haiku-1 at d4f9b00d9414b5686a4f462d5abb9bc10dd989fd (branch ccr-3d2e0c73-lr6bdt)
+   provenance: cadence b1bbdcda7663ef08daf8fdeb2c6af853254016a9 (ccr-3d2e0c73-lr6bdt), requested model claude-haiku-5-5, 2.1.303 (Claude Code)
+   served models (result.json modelUsage): ['claude-haiku-5-5']
+   grade: reward 0.7143, passed 5/7, idempotent True, stream_ok True
+     check 1: pass=True
+     check 2: pass=True
+     check 3: pass=True
+     check 4: pass=False
+     check 5: pass=False
+     check 6: pass=True
+     check 7: pass=True

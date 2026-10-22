@@ -1,0 +1,1327 @@
+diff --git a/.cadence.json b/.cadence.json
+new file mode 100644
+index 0000000..42cc2ab
+--- /dev/null
++++ b/.cadence.json
+@@ -0,0 +1,3 @@
++{
++  "gated_prefixes": ["src/", "lib/", "app/", "packages/", "pipeline/", "engine/", "pipelines/", "transform/", "Makefile"]
++}
+diff --git a/.context/attest/81d6f968-0843-449a-b3ac-e0fffa47a255.agents.jsonl b/.context/attest/81d6f968-0843-449a-b3ac-e0fffa47a255.agents.jsonl
+new file mode 100644
+index 0000000..b12d41a
+--- /dev/null
++++ b/.context/attest/81d6f968-0843-449a-b3ac-e0fffa47a255.agents.jsonl
+@@ -0,0 +1,10 @@
++{"agent_id": "a52d39ba8c9e6f95a", "event": "start", "at": 1792619073.017707}
++{"agent_id": "a52d39ba8c9e6f95a", "event": "stop", "at": 1792619192.4293294}
++{"agent_id": "aa11cbc4a5e801b8d", "event": "start", "at": 1792619195.7045743}
++{"agent_id": "aa11cbc4a5e801b8d", "event": "stop", "at": 1792619407.641733}
++{"agent_id": "a9b094f7c25e74010", "event": "start", "at": 1792619410.5871322}
++{"agent_id": "a9b094f7c25e74010", "event": "stop", "at": 1792619486.2889836}
++{"agent_id": "a9b094f7c25e74010", "event": "start", "at": 1792619493.4457014}
++{"agent_id": "a9b094f7c25e74010", "event": "stop", "at": 1792619510.239859}
++{"agent_id": "a9b094f7c25e74010", "event": "start", "at": 1792619558.6901855}
++{"agent_id": "a9b094f7c25e74010", "event": "stop", "at": 1792619564.9688241}
+diff --git a/.context/attest/81d6f968-0843-449a-b3ac-e0fffa47a255.calls.jsonl b/.context/attest/81d6f968-0843-449a-b3ac-e0fffa47a255.calls.jsonl
+new file mode 100644
+index 0000000..e8b2793
+--- /dev/null
++++ b/.context/attest/81d6f968-0843-449a-b3ac-e0fffa47a255.calls.jsonl
+@@ -0,0 +1,7 @@
++{"tool_use_id": "toolu_01U2LYu3KS7RtP6TgoTu98kf", "stage": "vibe-test", "model_slug": "validate", "model": "haiku", "decision": "allow", "run_id": "81d6f968-0843-449a-b3ac-e0fffa47a255", "at": 1792619072.8214536}
++{"tool_use_id": "toolu_01E9HXZeUFa5vfa2yoSnF7b7", "stage": "plan-create", "model_slug": "plan-create", "model": "haiku", "decision": "allow", "run_id": "81d6f968-0843-449a-b3ac-e0fffa47a255", "at": 1792619195.461671}
++{"tool_use_id": "toolu_017kSVujQAKYJzvkviQoyPWn", "stage": "plan-review", "model_slug": "plan-review", "model": "haiku", "decision": "allow", "run_id": "81d6f968-0843-449a-b3ac-e0fffa47a255", "at": 1792619410.3606834}
++{"tool_use_id": "toolu_01AVY9ESdqud7HQTRyVEwnJq", "stage": "plan-update", "model_slug": null, "model": "haiku", "decision": "deny", "run_id": "81d6f968-0843-449a-b3ac-e0fffa47a255", "at": 1792619489.1130056}
++{"tool_use_id": "toolu_01Ct8HRfea3JDDSfD7naq3AR", "stage": "plan-update", "model_slug": null, "model": "haiku", "decision": "deny", "run_id": "81d6f968-0843-449a-b3ac-e0fffa47a255", "at": 1792619512.1964912}
++{"tool_use_id": "toolu_01JGcfdouRio5sswzLpAUiMn", "stage": "plan-update", "model_slug": null, "model": "haiku", "decision": "deny", "run_id": "81d6f968-0843-449a-b3ac-e0fffa47a255", "at": 1792619567.449134}
++{"tool_use_id": "toolu_01BdVyJY27rReBNte2HTuFhE", "stage": "plan-update", "model_slug": null, "model": "haiku", "decision": "deny", "run_id": "81d6f968-0843-449a-b3ac-e0fffa47a255", "at": 1792619609.1509545}
+diff --git a/.context/attest/81d6f968-0843-449a-b3ac-e0fffa47a255.context.jsonl b/.context/attest/81d6f968-0843-449a-b3ac-e0fffa47a255.context.jsonl
+new file mode 100644
+index 0000000..3c5acf2
+--- /dev/null
++++ b/.context/attest/81d6f968-0843-449a-b3ac-e0fffa47a255.context.jsonl
+@@ -0,0 +1,7 @@
++{"prompt_tokens": 44394, "decision": "ok", "mode": "shadow", "source": "session", "warn_tokens": 60000, "tool_use_id": "toolu_01U2LYu3KS7RtP6TgoTu98kf", "agent_id": null, "at": 1792619072.7998405}
++{"prompt_tokens": 45976, "decision": "ok", "mode": "shadow", "source": "session", "warn_tokens": 60000, "tool_use_id": "toolu_01E9HXZeUFa5vfa2yoSnF7b7", "agent_id": null, "at": 1792619195.4419923}
++{"prompt_tokens": 48451, "decision": "ok", "mode": "shadow", "source": "session", "warn_tokens": 60000, "tool_use_id": "toolu_017kSVujQAKYJzvkviQoyPWn", "agent_id": null, "at": 1792619410.3286316}
++{"prompt_tokens": 50419, "decision": "ok", "mode": "shadow", "source": "session", "warn_tokens": 60000, "tool_use_id": "toolu_01AVY9ESdqud7HQTRyVEwnJq", "agent_id": null, "at": 1792619489.0894196}
++{"prompt_tokens": 52842, "decision": "ok", "mode": "shadow", "source": "session", "warn_tokens": 60000, "tool_use_id": "toolu_01Ct8HRfea3JDDSfD7naq3AR", "agent_id": null, "at": 1792619512.1739113}
++{"prompt_tokens": 66754, "decision": "warn", "mode": "shadow", "source": "session", "warn_tokens": 60000, "tool_use_id": "toolu_01JGcfdouRio5sswzLpAUiMn", "agent_id": null, "at": 1792619567.4282234}
++{"prompt_tokens": 75095, "decision": "warn", "mode": "shadow", "source": "session", "warn_tokens": 60000, "tool_use_id": "toolu_01BdVyJY27rReBNte2HTuFhE", "agent_id": null, "at": 1792619609.1227539}
+diff --git a/.context/attest/81d6f968-0843-449a-b3ac-e0fffa47a255.joins.jsonl b/.context/attest/81d6f968-0843-449a-b3ac-e0fffa47a255.joins.jsonl
+new file mode 100644
+index 0000000..fd31aca
+--- /dev/null
++++ b/.context/attest/81d6f968-0843-449a-b3ac-e0fffa47a255.joins.jsonl
+@@ -0,0 +1,3 @@
++{"tool_use_id": "toolu_01U2LYu3KS7RtP6TgoTu98kf", "agent_id": "a52d39ba8c9e6f95a", "resolved_model": "claude-haiku-5-5", "at": 1792619073.0189}
++{"tool_use_id": "toolu_01E9HXZeUFa5vfa2yoSnF7b7", "agent_id": "aa11cbc4a5e801b8d", "resolved_model": "claude-haiku-5-5", "at": 1792619195.711139}
++{"tool_use_id": "toolu_017kSVujQAKYJzvkviQoyPWn", "agent_id": "a9b094f7c25e74010", "resolved_model": "claude-haiku-5-5", "at": 1792619410.5658097}
+diff --git a/.context/attest/81d6f968-0843-449a-b3ac-e0fffa47a255.jsonl b/.context/attest/81d6f968-0843-449a-b3ac-e0fffa47a255.jsonl
+new file mode 100644
+index 0000000..b89dfae
+--- /dev/null
++++ b/.context/attest/81d6f968-0843-449a-b3ac-e0fffa47a255.jsonl
+@@ -0,0 +1,3 @@
++{"path": "vibetest/cd-1_2026-10-21.md", "agent_id": "a52d39ba8c9e6f95a", "sha256": "3febdc71ca850fa5ea5f9ef4992acf32d6013de8d79511c8b28611524f6bac87", "at": 1792619189.9353554}
++{"path": "reviews/plan_cd-1.plan.md", "agent_id": "a9b094f7c25e74010", "sha256": "6f68000969bd4bbf5a6d3aed38a8becfee17c483089054892ce0bdb58ea83681", "at": 1792619507.5547717}
++{"path": "reviews/plan_cd-1.plan.md", "agent_id": "a9b094f7c25e74010", "sha256": "5f0b3593bef9e889ae848b376708e3c3e534e0065e9a189e6c3e11f2117e516e", "at": 1792619562.7002518}
+diff --git a/.context/attest/81d6f968-0843-449a-b3ac-e0fffa47a255.models.jsonl b/.context/attest/81d6f968-0843-449a-b3ac-e0fffa47a255.models.jsonl
+new file mode 100644
+index 0000000..88e6011
+--- /dev/null
++++ b/.context/attest/81d6f968-0843-449a-b3ac-e0fffa47a255.models.jsonl
+@@ -0,0 +1,3 @@
++{"stage": "validate", "block": "A5", "model": "haiku", "subagent_type": "general-purpose", "decision": "allow", "tool_use_id": "toolu_01U2LYu3KS7RtP6TgoTu98kf", "agent_id": null, "session_id": "c65bced7-bf13-4703-854c-5110d5cbcf8b", "at": 1792619072.8160937}
++{"stage": "plan-create", "block": "P1", "model": "haiku", "subagent_type": "general-purpose", "decision": "allow", "tool_use_id": "toolu_01E9HXZeUFa5vfa2yoSnF7b7", "agent_id": null, "session_id": "c65bced7-bf13-4703-854c-5110d5cbcf8b", "at": 1792619195.4576793}
++{"stage": "plan-review", "block": "P3", "model": "haiku", "subagent_type": "general-purpose", "decision": "allow", "tool_use_id": "toolu_017kSVujQAKYJzvkviQoyPWn", "agent_id": null, "session_id": "c65bced7-bf13-4703-854c-5110d5cbcf8b", "at": 1792619410.3557909}
+diff --git a/.context/attest/81d6f968-0843-449a-b3ac-e0fffa47a255.returns.jsonl b/.context/attest/81d6f968-0843-449a-b3ac-e0fffa47a255.returns.jsonl
+new file mode 100644
+index 0000000..b3e6e0c
+--- /dev/null
++++ b/.context/attest/81d6f968-0843-449a-b3ac-e0fffa47a255.returns.jsonl
+@@ -0,0 +1,5 @@
++{"agent_id": "a52d39ba8c9e6f95a", "decision": "unknown", "reason": "no final message", "chars": null, "lines": null, "at": 1792619192.4206855}
++{"agent_id": "aa11cbc4a5e801b8d", "decision": "unknown", "reason": "no final message", "chars": null, "lines": null, "at": 1792619407.6317706}
++{"agent_id": "a9b094f7c25e74010", "decision": "unknown", "reason": "no final message", "chars": null, "lines": null, "at": 1792619486.2799683}
++{"agent_id": "a9b094f7c25e74010", "decision": "unknown", "reason": "no final message", "chars": null, "lines": null, "at": 1792619510.2305152}
++{"agent_id": "a9b094f7c25e74010", "decision": "unknown", "reason": "no final message", "chars": null, "lines": null, "at": 1792619564.9602132}
+diff --git a/.context/breadcrumbs/phase-boundary.md b/.context/breadcrumbs/phase-boundary.md
+new file mode 100644
+index 0000000..b474cfe
+--- /dev/null
++++ b/.context/breadcrumbs/phase-boundary.md
+@@ -0,0 +1,6 @@
++# Cadence phase-boundary breadcrumb
++
++- task_id: cd-1
++- resume_slug: activate-session
++- pipeline_run_id: 81d6f968-0843-449a-b3ac-e0fffa47a255
++- detail: stop refused — hold cadence
+diff --git a/.context/cadence-session.json b/.context/cadence-session.json
+new file mode 100644
+index 0000000..6b78e60
+--- /dev/null
++++ b/.context/cadence-session.json
+@@ -0,0 +1,3 @@
++{
++  "ref": "sessions/by-worktree/ca342967282af126.json"
++}
+diff --git a/.context/deferrals/cd-1_deferral-register.md b/.context/deferrals/cd-1_deferral-register.md
+new file mode 100644
+index 0000000..5236d43
+--- /dev/null
++++ b/.context/deferrals/cd-1_deferral-register.md
+@@ -0,0 +1,34 @@
++RUN_BY_COMMAND: plan-create
++
++# Deferral register: cd-1
++
++Ticket: cd-1
++Pipeline-Run: 81d6f968-0843-449a-b3ac-e0fffa47a255
++
++The register logs what the run assumes and what it defers. Each assumption is built by the phase named in
++"Settled by". The vibe-test verdict is NOT READY FOR PLANNING; these assumptions stand in for the answers the
++request does not give. The owner can overturn one; the cost is the named phase.
++
++## Approved deferrals
++
++No approved deferrals.
++
++## Assumptions
++
++| Gap | Assumption | Settled by |
++|---|---|---|
++| G-1 | Dedupe key is meta.id checked against the landed lake; the lake is the state; Last-Event-ID is a hint; a replay that restarts from the top is deduped. The live URL is not tested. | Phase 5 (cd-1-stream-dedupe-resume; tests a to d) |
++| G-2 | The watermark is the running max of event time over all first arrivals, kept in fct_edit, so it persists across runs and reconnects; late events are included in the max but cannot raise it. | Phase 6 (unit tests S4, S5, boundary) |
++| G-3 | Award key is generated_unique_award_id; net obligation is summed per award over FY2024, then the sign test is applied. | Phase 3 and Phase 4 (check 3 test) |
++| G-4 | Place means place of performance; no valid state goes to Unplaced (99, 99999); a state without a county goes to Unknown county (state FIPS plus 000); no row is dropped. | Phase 3 (no-loss and key singular tests); Phase 4 (check 4) |
++| G-5 | Every table analysts query is published under out/marts/ (star, award net mart, fct_edit, late_events, window mart, dim_wiki); oracle_map.yml names only those objects. | Phase 4 and Phase 6 (publish tests) |
++| G-6 | Mart column names and types are set by this plan (Phase 4 and Phase 6 column lists) and enforced by dbt contracts. | Phase 4 and Phase 6 (dbt contract tests) |
++| G-7 | Source amounts are cast to DECIMAL(18,2) in staging; the per-person ratio is DECIMAL(18,4); no DOUBLE or FLOAT. | Phase 3 (type contract) |
++| G-8 | A missing length gives bytes_delta 0 and has_length false; the event still counts as an edit. | Phase 6 (unit test) |
++| G-9 | A missing bot flag gives actor_type human; the count of such events goes to DECISIONS.md. | Phase 6 (unit test) |
++| G-10 | The wiki key is the sitematrix dbname (enwiki); check 6 filters server_name en.wikipedia.org through dim_wiki. | Phase 6 (dim_wiki join test) and Phase 7 (check 6) |
++| G-11 | The replayed hour is every landed event; its first and last event time are written to DECISIONS.md from the data. | Phase 7 (check 5 oracle) |
++| G-12 | The join key is the 5-digit state plus county FIPS; the 2024 estimate (July 1 2024) is used; an absent key uses the 2021 vintage estimate with population_year and population_source recorded; the 2020 base is never read. | Phase 3 (population fallback tests) |
++| G-13 | Batch raw sources use replace; the stream uses append with the meta.id dedupe; marts are overwritten. | Phase 2 (idempotence hash test) and Phase 4 (repeat-run hash) |
++| G-14 | Check 2 ties are broken by county FIPS ascending; no population threshold is applied. | Phase 4 (check 2 oracle) |
++| G-15 | The stack section is read as the Stack paragraph of the request (Python 3.12, dlt, dbt-duckdb, DuckDB); no separate heading is needed. | Phase 1 (wiring tests, pins unchanged) |
+diff --git a/.context/gates/entry-invariant-81d6f968-0843-449a-b3ac-e0fffa47a255.ok b/.context/gates/entry-invariant-81d6f968-0843-449a-b3ac-e0fffa47a255.ok
+new file mode 100644
+index 0000000..d70c18f
+--- /dev/null
++++ b/.context/gates/entry-invariant-81d6f968-0843-449a-b3ac-e0fffa47a255.ok
+@@ -0,0 +1,5 @@
++{
++  "pipeline_run_id": "81d6f968-0843-449a-b3ac-e0fffa47a255",
++  "task_id": "cd-1",
++  "written_at": "2026-10-21T21:53:08Z"
++}
+diff --git a/.context/gates/ops-gate.json b/.context/gates/ops-gate.json
+new file mode 100644
+index 0000000..cce1b0a
+--- /dev/null
++++ b/.context/gates/ops-gate.json
+@@ -0,0 +1,4 @@
++{
++  "slug": "ops-gate",
++  "RUN_BY_SCRIPT": "ops_gate.py"
++}
+diff --git a/.context/gates/plan-create-gate.json b/.context/gates/plan-create-gate.json
+new file mode 100644
+index 0000000..a077b69
+--- /dev/null
++++ b/.context/gates/plan-create-gate.json
+@@ -0,0 +1,4 @@
++{
++  "slug": "plan-create-gate",
++  "RUN_BY_SCRIPT": "plan_create_gate.py"
++}
+diff --git a/.context/gates/plan-review-gate.json b/.context/gates/plan-review-gate.json
+new file mode 100644
+index 0000000..91fe815
+--- /dev/null
++++ b/.context/gates/plan-review-gate.json
+@@ -0,0 +1,4 @@
++{
++  "slug": "plan-review-gate",
++  "RUN_BY_SCRIPT": "plan_review_gate.py"
++}
+diff --git a/.context/gates/preflight.json b/.context/gates/preflight.json
+new file mode 100644
+index 0000000..76c24b8
+--- /dev/null
++++ b/.context/gates/preflight.json
+@@ -0,0 +1,6 @@
++{
++  "slug": "preflight",
++  "RUN_BY_SCRIPT": "preflight.py",
++  "git_toplevel": "/tmp/claude-0/-home-user/5b20bc6c-3f91-5511-8000-71d5898a937e/scratchpad/pipe/2026-10-21/P1-cadence-core-haiku-1/repo",
++  "branch": "feature/gh-1-pipeline"
++}
+diff --git a/.context/gates/ticket-gate.json b/.context/gates/ticket-gate.json
+new file mode 100644
+index 0000000..82d20f8
+--- /dev/null
++++ b/.context/gates/ticket-gate.json
+@@ -0,0 +1,8 @@
++{
++  "slug": "ticket-gate",
++  "RUN_BY_SCRIPT": "ticket_gate.py",
++  "tracker": "none",
++  "ticket": "TICKET_SKIPPED (none: no tracker declared in the config)",
++  "task_id": "cd-1",
++  "local_tracker": ".context/issues/cd-1.md"
++}
+diff --git a/.context/handoff/81d6f968-0843-449a-b3ac-e0fffa47a255/A5.json b/.context/handoff/81d6f968-0843-449a-b3ac-e0fffa47a255/A5.json
+new file mode 100644
+index 0000000..1e18426
+--- /dev/null
++++ b/.context/handoff/81d6f968-0843-449a-b3ac-e0fffa47a255/A5.json
+@@ -0,0 +1,9 @@
++{
++  "block": "A5",
++  "command": "/vibe-test cd-1",
++  "contract": "skills/vibe-test/SKILL.md",
++  "inputs": [],
++  "nonce": "e9b73baaade7b27f29ff6e9c1fc2bdfa",
++  "run_key": "81d6f968-0843-449a-b3ac-e0fffa47a255",
++  "ticket": "cd-1"
++}
+diff --git a/.context/handoff/81d6f968-0843-449a-b3ac-e0fffa47a255/P1.json b/.context/handoff/81d6f968-0843-449a-b3ac-e0fffa47a255/P1.json
+new file mode 100644
+index 0000000..7747f5d
+--- /dev/null
++++ b/.context/handoff/81d6f968-0843-449a-b3ac-e0fffa47a255/P1.json
+@@ -0,0 +1,18 @@
++{
++  "block": "P1",
++  "command": "/plan-create cd-1",
++  "contract": "commands/plan-create.md",
++  "inputs": [
++    {
++      "path": ".context/proposals/cd-1.md",
++      "sha256": "d9d6fd011b66b3ab66fbc072fe01d5be685da0267321151131d0abf4c48a2883"
++    },
++    {
++      "path": ".context/vibetest/cd-1_2026-10-21.md",
++      "sha256": "3febdc71ca850fa5ea5f9ef4992acf32d6013de8d79511c8b28611524f6bac87"
++    }
++  ],
++  "nonce": "d60b6d0a8b64b4184732e0908118a4c8",
++  "run_key": "81d6f968-0843-449a-b3ac-e0fffa47a255",
++  "ticket": "cd-1"
++}
+diff --git a/.context/handoff/81d6f968-0843-449a-b3ac-e0fffa47a255/P3.json b/.context/handoff/81d6f968-0843-449a-b3ac-e0fffa47a255/P3.json
+new file mode 100644
+index 0000000..cc981eb
+--- /dev/null
++++ b/.context/handoff/81d6f968-0843-449a-b3ac-e0fffa47a255/P3.json
+@@ -0,0 +1,18 @@
++{
++  "block": "P3",
++  "command": "/plan-review .context/plans/cd-1.plan.md",
++  "contract": "commands/plan-review.md",
++  "inputs": [
++    {
++      "path": ".context/plans/cd-1.plan.md",
++      "sha256": "1bcaebe94f36f5e405b92a06f80b91d984452d67c5af014ef32463e827996e1f"
++    },
++    {
++      "path": ".context/vibetest/cd-1_2026-10-21.md",
++      "sha256": "3febdc71ca850fa5ea5f9ef4992acf32d6013de8d79511c8b28611524f6bac87"
++    }
++  ],
++  "nonce": "31df54f0c1060ef7a2997872c34d625f",
++  "run_key": "81d6f968-0843-449a-b3ac-e0fffa47a255",
++  "ticket": "cd-1"
++}
+diff --git a/.context/handoff/81d6f968-0843-449a-b3ac-e0fffa47a255/log.jsonl b/.context/handoff/81d6f968-0843-449a-b3ac-e0fffa47a255/log.jsonl
+new file mode 100644
+index 0000000..d2f0bb3
+--- /dev/null
++++ b/.context/handoff/81d6f968-0843-449a-b3ac-e0fffa47a255/log.jsonl
+@@ -0,0 +1,7 @@
++{"block": "A5", "event": "PreToolUse", "mode": "enforce", "notes": [], "prompt_sha256": "d2e96f2945f915e487fb2990fe6df706f54ff85c0c5cec709d12f8dc4eddc520", "reasons": ["router prompt differs from packet rendering"], "rendered_sha256": "b026fa6c5f90e8c17d2f6147d5eee777d402302ca3bd300d96aeb9bf5baf2d6e", "untraced": []}
++{"block": "P1", "event": "PreToolUse", "mode": "enforce", "notes": [], "prompt_sha256": "b2c697bf379a0aac6a9bd1fcb865447f60060a859de123f9f31c297bdec78947", "reasons": ["router prompt differs from packet rendering"], "rendered_sha256": "47b039ca5aa66ef11dbe08f71efc1d1b69fa6ed610dff4ab639edd1eb3ab2768", "untraced": []}
++{"block": "P3", "event": "PreToolUse", "mode": "enforce", "notes": [], "prompt_sha256": "3530f68d0d9c2f5197149cda88d9fe2b93685e626dd434ff1ef639af8722f450", "reasons": ["router prompt differs from packet rendering"], "rendered_sha256": "99cb25de720326f7ee8f95ed77fa911f07c7c0d5bdc638ff659221f2cde46b04", "untraced": []}
++{"block": "P4", "event": "PreToolUse", "mode": "enforce", "notes": [], "prompt_sha256": "720a4e5ae2b4596e4ed75c35ae4d350210b104ea946635fd4514461936d01438", "reasons": ["P4 needs plan-review: no plan review of the run with a verdict in .context/reviews/plan_<slug>.md. Block P3 (plan-review) writes it."], "rendered_sha256": "", "untraced": []}
++{"block": "P4", "event": "PreToolUse", "mode": "enforce", "notes": [], "prompt_sha256": "307cb30ac93fdd25ddef8e0b9aee7ba09faaef10e859115846573d439fa79b92", "reasons": ["P4 needs plan-review: no plan review of the run with a verdict in .context/reviews/plan_<slug>.md. Block P3 (plan-review) writes it."], "rendered_sha256": "", "untraced": []}
++{"block": "P4", "event": "PreToolUse", "mode": "enforce", "notes": [], "prompt_sha256": "307cb30ac93fdd25ddef8e0b9aee7ba09faaef10e859115846573d439fa79b92", "reasons": ["P4 needs plan-review: no plan review of the run with a verdict in .context/reviews/plan_<slug>.md. Block P3 (plan-review) writes it."], "rendered_sha256": "", "untraced": []}
++{"block": "P4", "event": "PreToolUse", "mode": "enforce", "notes": [], "prompt_sha256": "307cb30ac93fdd25ddef8e0b9aee7ba09faaef10e859115846573d439fa79b92", "reasons": ["P4 needs plan-review: no plan review of the run with a verdict in .context/reviews/plan_<slug>.md. Block P3 (plan-review) writes it."], "rendered_sha256": "", "untraced": []}
+diff --git a/.context/plans/cd-1.plan-review.md b/.context/plans/cd-1.plan-review.md
+new file mode 100644
+index 0000000..d22f6d3
+--- /dev/null
++++ b/.context/plans/cd-1.plan-review.md
+@@ -0,0 +1,49 @@
++RUN_BY_COMMAND: plan-review
++Pipeline-Run: 81d6f968-0843-449a-b3ac-e0fffa47a255
++
++# Plan review: cd-1 (block P3)
++
++**Plan:** `.context/plans/cd-1.plan.md` sha256 1bcaebe94f36f5e405b92a06f80b91d984452d67c5af014ef32463e827996e1f
++**Vibe test:** `.context/vibetest/cd-1_2026-10-21.md` sha256 3febdc71ca850fa5ea5f9ef4992acf32d6013de8d79511c8b28611524f6bac87
++**Contract:** `commands/plan-review.md` is not in this repo; the review used the packet and the plan's own gates.
++
++## Verdict
++
++VERDICT: BLOCKING ITEMS (not READY TO EXECUTE)
++
++All five vibe-test blocking gaps (G-1 to G-5) have an assumption and a decision record, and the 11 `cd-1-*` proposals and the deferral register exist with the names the plan cites. The blocking items below are defects in the plan text itself, found by checking the plan against the repo data and the spec.
++
++## Blocking items
++
++B-1. Phase 6 S4 test case uses the wrong window. The plan says "event 12:21, window 12:15 start, prior max 12:31 gives is_late = true". An event at 12:21 falls in the window 12:20 to 12:25, not 12:15. With window start 12:20 the threshold is 12:35, so prior max 12:31 gives is_late = false. The spec rule gives on time here (12:31 is 6 minutes after the window end 12:25). The vibe test S4 has the same error. Fix: use event 12:17 (window 12:15, threshold 12:30) with prior max 12:31, which gives late. Add the 12:21 case as an explicit on-time case. Also correct the S4 wording in the vibe test or note it in DECISIONS.
++
++B-2. Cross-batch prior_max is not defined for incremental rows. Phase 6 says prior_max is "from fct_edit itself for old rows and from ROWS BETWEEN UNBOUNDED PRECEDING AND 1 PRECEDING over arrival_seq for new rows". A window function over the new batch alone does not see the maximum event time already in fct_edit. The plan must state the formula for new rows: max(event_time) over existing fct_edit rows, combined with the in-batch running max. It must also state that is_late is set once at first landing and is never recomputed by a later incremental merge. Otherwise the Phase 6 check "full rebuild gives the same hash as the incremental path" is not guaranteed. Also say how arrival_seq is numbered inside one flush (receipt order).
++
++B-3. Check 2 ranking has no rule for rows without population. Phase 3 puts unplaced members into dim_place (state 99 / county 99999 "Unplaced", and XX000 "Unknown county"). Those rows have no census population. Phase 4 defines the ties rule (G-14) but not whether these rows are excluded from the "ten counties with highest obligations per person" ranking. The plan must exclude rows with null population from check 2 and record it in DECISIONS (new gap entry). Without this, the top-10 answer is undefined.
++
++B-4. dim_wiki misses the sitematrix specials. `data/raw/sitematrix.json` has 376 top-level keys under `sitematrix`: numbered language entries with a `site` list, plus a `specials` list of 124 sites (for example abstractwiki, advisorswiki, arbcom_cswiki). Phase 2 says "flatten sitematrix entries into one row per site", which reads only the numbered entries. Stream edits from special wikis (for example commonswiki or wikidatawiki) would then have no dim_wiki row. Fix: flatten both `sitematrix.<n>.site` and `sitematrix.specials`, and add a Phase 2 test that the flattened row count equals the sum of both lists.
++
++## Non-blocking corrections
++
++N-1. Phase 2 zip count is wrong. The plan says "for each of the 8 assistance and 8 contracts zips". The repo has 4 assistance and 4 contracts zips (agencies 417, 418, 474, 485). The count of 8 is the total. Correct the text and the test expectation.
++
++N-2. The Phase 1 seed count should be read from the file, not from "50 states, DC and the inhabited territories". The census 2024 file has 51 state rows (COUNTY = 000) out of 3195 rows, which gives 3144 county rows. The plan's exit criterion already reads the count from the file, so only the description needs fixing.
++
++N-3. Phase 3 join key `state_fips || county_fips` must be zero-padded to 2 and 3 digits (LPAD) before it becomes the 5-digit key. Say so in the staging description.
++
++N-4. The spec says "each mart has a dbt model contract". The plan enforces contracts only on mart_obligations_monthly and mart_edit_windows_5min. State contracts for dim_agency, dim_place, dim_date, fct_award_transaction, mart_award_net_fy2024, fct_edit, late_events, dim_wiki, or say which marts are exempt and why.
++
++N-5. Phase 7 check 5 uses "all consumed events" as the replayed hour (G-11). This is acceptable only if the stream run for the check is the one-hour replay with no extra events. State the first and last event time check that the plan already asks for, and note the DURATION used.
++
++N-6. Phase 5 and Phase 6 `make stream` runs `dbt build --select tag:stream` before any stream model exists in Phase 5. Confirm that dbt exits 0 when a selector matches no nodes. If it does not, Phase 5 exit fails for a reason unrelated to the consumer.
++
++## What holds
++
++- The late rule, watermark persistence, and the claim that a late event never raises prior_max are correct. A late event's time is at most its window end, and it is late only when prior_max is greater than window start + 15, so it cannot raise the maximum.
++- The window boundary cases (12:04:59 and 12:05:00) and the S5 and boundary cases are correct.
++- Each blocking gap G-1 to G-5 maps to a named phase and a proposal file that exists.
++- The pinned dependencies are not changed, and the version pins in pyproject.toml are untouched.
++
++## Next step
++
++Apply B-1 to B-4 and N-1 to N-4 with `/plan-update` against this review, then run P3 again.
+diff --git a/.context/plans/cd-1.plan.md b/.context/plans/cd-1.plan.md
+new file mode 100644
+index 0000000..36aee03
+--- /dev/null
++++ b/.context/plans/cd-1.plan.md
+@@ -0,0 +1,386 @@
++RUN_BY_COMMAND: plan-create
++
++# Plan: cd-1 open data pipeline (batch federal money, Wikipedia edit stream)
++
++**Tracker:** none
++**Ticket:** TICKET_SKIPPED (none: no tracker declared)
++**Task token:** cd-1 (the packet argument; file names and the register use it)
++**Branch:** feature/gh-1-pipeline (the `gh-1` in the request is the GitHub issue reference for the PR, not the Cadence token)
++**Pipeline-Run:** 81d6f968-0843-449a-b3ac-e0fffa47a255
++
++Inputs (pinned by the packet):
++- `.context/proposals/cd-1.md` sha256 d9d6fd011b66b3ab66fbc072fe01d5be685da0267321151131d0abf4c48a2883
++- `.context/vibetest/cd-1_2026-10-21.md` sha256 3febdc71ca850fa5ea5f9ef4992acf32d6013de8d79511c8b28611524f6bac87
++
++The vibe-test verdict is **NOT READY FOR PLANNING** with blocking gaps G-1 to G-5. This plan does not
++wait for answers. Each blocking gap is turned into an assumption in
++`.context/deferrals/cd-1_deferral-register.md`. Each assumption is built in a named phase and recorded in
++`.context/proposals/cd-1-*.md`. A reviewer or the owner can overturn an assumption; the cost is the phase
++named in the register.
++
++## Step 0: problem, design, blast radius, acceptance
++
++### Problem
++
++Build one repository that answers two analyst questions from raw public data:
++
++- A (batch): FY2024 federal contract and grant money, in total and per resident, by state, county,
++  awarding agency and month. Source: USAspending FY2024 prime transactions for agencies 417, 418, 474, 485
++  (assistance and contracts files), Census county estimates, Wikimedia site matrix.
++- B (stream): Wikipedia edits per wiki, namespace and 5-minute window, split human and bot, with net
++  bytes. Source: Wikimedia EventStreams `recentchange` over SSE (replay at `http://localhost:8099`).
++
++Flow: raw files and stream -> Parquet lake (`lake/`, dlt) -> dbt-duckdb models (`transform/`) ->
++published Parquet marts (`out/marts/`, dbt external materialization).
++
++### Challenges to the spec (written into the plan, not silently accepted)
++
++1. The spec has no answer for G-1 to G-5. The plan picks answers (see the register). Each pick is a
++   decision record, so P3 and the adversarial review can attack it.
++2. The stream dedupe depends on the replay server. The replay may or may not honor `Last-Event-ID`. The
++   plan does not depend on it: dedupe by `meta.id` against the lake makes replays harmless either way.
++   The live URL (`stream.wikimedia.org`) is not tested here. That is the residual risk of G-1.
++3. "Per person" in the monthly mart repeats the population on each month row. Per-person values are
++   additive only in the FY sums, so the FY check (check 2) computes per person from FY sums, not from
++   summed monthly ratios.
++4. The packet says the task id is `gh-1`, the request file says `cd-1`. The plan uses `cd-1` for every
++   Cadence artifact. The PR and branch keep `gh-1`.
++5. The spec asks for dlt. The stdlib `urllib` is used for SSE, so no new dependency is added. The pins
++   in `pyproject.toml` stay as they are (spec rule).
++
++### Design decisions (each has a decision record in `.context/proposals/`)
++
++| Decision | Record | Settles |
++|---|---|---|
++| Stream dedupe key is `meta.id`; the lake is the state; `Last-Event-ID` is a hint | `cd-1-stream-dedupe-resume` | G-1 |
++| Watermark is the running max of event time over all first arrivals, kept in `fct_edit`; `arrival_seq` set at first landing | `cd-1-stream-lateness-watermark` | G-2 |
++| Award key `generated_unique_award_id`; net obligation summed per award over FY2024, then the sign test | `cd-1-award-key-and-sign` | G-3 |
++| Place means place of performance; rows without a state or county go to explicit unplaced members | `cd-1-place-and-unplaced` | G-4 |
++| Publish every table analysts query (facts, dimensions, late_events) under `out/marts/`; oracle map points only there | `cd-1-publication-scope` | G-5, C-1 |
++| Money is DECIMAL(18,2); per-person ratio is DECIMAL(18,4); no DOUBLE anywhere | `cd-1-money-type` | G-7 |
++| Population: join on 5-digit FIPS, 2024 estimate July 1 2024, fallback to 2021 vintage estimate for absent keys | `cd-1-population-fallback` | G-12 |
++| Batch raw sources use `replace`; stream uses append with dedupe; marts overwrite | `cd-1-write-disposition` | G-13 |
++| Stream field rules: missing length gives 0 bytes and `has_length=false`; missing bot flag gives `human`; wiki key is `dbname` joined from the site matrix | `cd-1-stream-field-rules` | G-8, G-9, G-10, G-11 |
++| Stream code uses stdlib only; tests are `unittest` and dbt unit tests | `cd-1-stream-tooling` | dependency choice |
++| `make build` = batch only; `make stream` = consumer + stream models | `cd-1-make-target-split` | blast radius of rebuilds |
++
++### Blast radius
++
++- New: `pipeline/` (Python, dlt and SSE), `transform/models/**`, `transform/seeds/` (state codes),
++  `transform/tests` or yml unit tests, `tests/` (unittest), `oracle_map.yml`, `DECISIONS.md`.
++- Changed: `Makefile` (targets `build` and `stream` are stubs now), `transform/dbt_project.yml`
++  (materialization and tags).
++- Not changed: `pyproject.toml` pins, `uv.lock`, the raw data, the `.gitignore` lines for `lake/` and `out/`.
++- Gated paths (`.cadence.json`): `pipeline/`, `transform/`, `Makefile` will trigger the E1 gates. That is intended.
++
++### Acceptance (the run is done when all hold)
++
++1. `make build` runs twice from a clean `lake/` and `out/`. Row content of every mart and every lake
++   table is identical after the second run (compare by content hash, not file bytes).
++2. `make stream DURATION=<s>` runs twice in two halves, and once unbroken on the same replay. The edit
++   counts and net bytes per wiki, namespace, actor type are identical in both cases. No `meta.id` appears
++   twice in `fct_edit`.
++3. All seven checks in `oracle_map.yml` resolve to objects in `out/marts/` only, and each check returns
++   a result that matches the independent Python computation in `tests/`.
++4. `uv run dbt test` passes, including the key tests on every model and the unit tests for the late rule
++   (S4 and S5 from the vibe test).
++5. `DECISIONS.md` lists each choice, each assumption outcome, and each non-blocking gap with its answer.
++
++## Quality gates (real commands from this repo)
++
++- Environment: `uv sync --frozen` (uses `uv.lock`, Python 3.12 from `.python-version`).
++- Batch: `make build` (after Phase 2 it runs `uv run python -m pipeline.batch_ingest` and then
++  `uv run dbt build --project-dir transform --profiles-dir transform --exclude tag:stream`).
++- Stream: `make stream DURATION=<seconds>` (runs `uv run python -m pipeline.stream_consume --duration $(DURATION)`
++  and then `uv run dbt build --project-dir transform --profiles-dir transform --select tag:stream`).
++- Models and tests: `uv run dbt test --project-dir transform --profiles-dir transform`.
++- Python tests: `uv run python -m unittest discover -s tests -v`. No pytest (not pinned).
++- Contract check: `uv run dbt parse --project-dir transform --profiles-dir transform` must succeed after
++  every phase that changes a yml contract.
++
++The `Makefile` targets are stubs now (`exit 1`). Phase 1 replaces them. Do not add make targets that the
++Makefile does not call.
++
++## Reuse and extension
++
++- Reused existing pieces: `pyproject.toml` (dlt 1.31.0, dbt-core 1.11.6, dbt-duckdb 1.11.0, duckdb 1.5.6);
++  `transform/profiles.yml` (profile `open_data_pipeline`, DuckDB at `out/warehouse.duckdb`);
++  `transform/dbt_project.yml` (model paths); the `Makefile` targets `build` and `stream`;
++  `.gitignore` entries for `lake/` and `out/`.
++- Extension point added: the dbt layers `staging` -> `core` (star and stream facts) -> `marts`
++  (published externally), selected by tags `batch` and `stream`. Each new model joins one layer.
++- Extension point added: `pipeline/` is one Python package with one module per source (`batch_ingest`,
++  `stream_consume`). A new source adds a module, not a new entry point.
++- No helper is copied from elsewhere. The SSE reader and the Census fallback are new code in `pipeline/`.
++
++## Layout after the run
++
++```
++lake/
++  usaspending_assistance/   (dlt parquet, replace)
++  usaspending_contracts/    (dlt parquet, replace)
++  census_county_2024/       (dlt parquet, replace)
++  census_county_2021/       (dlt parquet, replace)
++  sitematrix/               (dlt parquet, replace)
++  recentchange/             (dlt parquet, append; one file per consumer flush; carries meta.id and arrival_seq)
++  _stream_cursor.json       (last SSE id; a hint only)
++out/
++  warehouse.duckdb          (dbt dev target; holds incremental state)
++  marts/<mart>/<mart>.parquet  (one folder per published table)
++transform/models/
++  staging/  core/  marts/  stream/
++transform/seeds/state_codes.csv  (USPS abbreviation, state FIPS, state name)
++pipeline/batch_ingest.py  pipeline/stream_consume.py  pipeline/sse.py
++tests/  oracle_map.yml  DECISIONS.md
++```
++
++## Phases
++
++Registry order. Each phase ends with a commit. Each phase has a `Phase N` commit subject
++(`phase N: <title>`).
++
++### Phase 1: Wiring, state codes and the Makefile
++
++Goal: the repo builds and parses with no data logic yet.
++
++- Replace the `Makefile` stubs with the commands in the quality gates section. Keep `build` and `stream`
++  names.
++- Add `transform/seeds/state_codes.csv` with the 50 states, DC and the inhabited territories: USPS code,
++  2-digit state FIPS, name. Source of the FIPS values: the state rows of the 2024 Census file
++  (`COUNTY = 000`), checked against the names.
++- Update `transform/dbt_project.yml`: `staging` as views, `core` as tables, `marts` as external
++  (dbt-duckdb `external` materialization, `external_location: out/marts/{{ this.name }}/{{ this.name }}.parquet`),
++  tags `batch` and `stream` per folder.
++- Add `DECISIONS.md` with a heading per record in `.context/proposals/cd-1-*.md`.
++
++TDD note: write `tests/test_wiring.py` first. It asserts that `make -n build` and `make -n stream` no
++longer print "not implemented", that `state_codes.csv` has one row per state FIPS value in the 2024 Census
++file's state rows, and that no dependency pin in `pyproject.toml` changed (compare with `git show main:pyproject.toml`).
++Run it red on the stubs, then make it green.
++
++Exit criteria:
++- `uv run dbt debug --project-dir transform --profiles-dir transform` reports the connection ok.
++- `make build` exits 0 with no models and no data.
++- `uv run python -m unittest tests.test_wiring -v` passes.
++- The seed row count equals the number of state rows in `co-est2024-alldata.csv` (`COUNTY = 000`), read from the file.
++- `make stream` against an unreachable URL is not a Phase 1 check; it is covered in Phase 5.
++
++### Phase 2: Batch ingestion with dlt (raw to lake)
++
++Goal: every raw input lands in `lake/` with its source columns and load metadata only.
++
++- `pipeline/batch_ingest.py`: dlt resources, filesystem destination with Parquet, `write_disposition="replace"`
++  (record `cd-1-write-disposition`).
++- USAspending: for each of the 8 assistance and 8 contracts zips under `data/raw/usaspending/`, read the
++  single CSV inside the zip with the stdlib `zipfile` and `csv` module. Land one dlt table per family:
++  `usaspending_assistance`, `usaspending_contracts`. Add a column `source_file` (zip name) for traceability.
++  Column names come from the CSV header; confirm the names of: award key `generated_unique_award_id`,
++  transaction id, action date, federal action obligation, place-of-performance state code, county code,
++  country code, toptier agency code and name. Record the confirmed names in `DECISIONS.md`.
++- Census: `co-est2024-alldata.csv` into `census_county_2024`, `co-est2021-alldata.csv` into
++  `census_county_2021`. Keep all columns. Drop nothing here.
++- Site matrix: flatten `data/raw/sitematrix.json` `sitematrix` entries into one row per site (`dbname`,
++  `url`, `code` (project), language code, `closed`). Table `sitematrix`.
++- Stream is not touched in this phase.
++
++TDD note: write `tests/test_batch_ingest.py` first. Test: row count of each lake table equals the row
++count of its source (CSV rows, census rows, flattened sites); a second run gives the same content hash of
++every lake table. Run it red before writing `batch_ingest.py`.
++
++Exit criteria:
++- `make build` runs the ingestion step and exits 0.
++- `uv run python -m unittest tests.test_batch_ingest -v` passes.
++- Content hash of each lake table is identical after two runs.
++
++### Phase 3: Batch staging and star schema (dbt core)
++
++Goal: typed staging, dimensions and the transaction fact, with keys tested.
++
++- Staging (views): `stg_usaspending_transactions` (union of both families, cast amounts with
++  `CAST(... AS DECIMAL(18,2))` and no FLOAT, action date to DATE, FY2024 filter on action date),
++  `stg_census_population` (join key `state_fips || county_fips` as 5-digit text; drop the `COUNTY = 000`
++  state rows; POPESTIMATE2024 for July 1 2024; fallback from 2021 for keys absent in 2024),
++  `stg_sitematrix`.
++- Core (tables): `dim_agency` (toptier code, agency name), `dim_place` (state FIPS, county FIPS 5-digit,
++  state name, county name, `is_unplaced`), `dim_date` (date, month start, fiscal year), and
++  `fct_award_transaction` at the grain of one transaction (transaction key from Phase 2 confirmation).
++- Unplaced members (record `cd-1-place-and-unplaced`): a transaction with no valid US state code goes to
++  `state_fips = '99'`, `county_fips = '99999'`, named "Unplaced". A transaction with a state but no county goes to
++  `county_fips = <state fips>000`, named "Unknown county". Both are rows in `dim_place`. No row is dropped.
++- Population: `stg_census_population` keeps `population_year` (2024 or 2021) and `population_source`.
++- Money: every amount in DECIMAL(18,2). The per-person ratio is DECIMAL(18,4) in Phase 4.
++
++TDD note: write the dbt tests first: `unique` and `not_null` on each key, `relationships` from the fact to
++`dim_agency`, `dim_place`, `dim_date`, a singular test that the fact total for FY2024 equals the sum of the
++staging amounts (no loss), and a singular test that every transaction has one place key. Run `dbt test`
++red first.
++
++Exit criteria:
++- `uv run dbt build --project-dir transform --profiles-dir transform --select tag:batch --exclude marts`
++  passes.
++- Fact row count equals the number of FY2024 source rows (from Phase 2 counts, not typed).
++
++### Phase 4: Batch marts, oracle checks 1 to 4, publish
++
++Goal: the monthly mart with a contract, published to `out/marts/`, and checks 1 to 4 answered.
++
++- `mart_obligations_monthly`, grain: month start, state FIPS, county FIPS, agency code. Columns:
++  `month_start DATE`, `state_fips VARCHAR`, `county_fips VARCHAR`, `agency_code VARCHAR`,
++  `net_obligations DECIMAL(18,2)`, `transaction_count BIGINT`, `population BIGINT`,
++  `population_year INTEGER`, `population_source VARCHAR`, `obligations_per_person DECIMAL(18,4)`.
++  Enforced contract (dbt `contract: enforced: true`) with these types. Marts carry no `_dlt_*` columns.
++- Population on each monthly row is the FY2024 population for that county (not divided by 12).
++- Publish the star tables under `out/marts/` too (record `cd-1-publication-scope`): `dim_agency`,
++  `dim_place`, `dim_date`, `fct_award_transaction`, `mart_obligations_monthly`. Each is an external
++  model in the `marts` layer with a thin select (`select * from ...`) so the write path is the same.
++- Oracle checks: `oracle_map.yml` entries 1 to 4. Check 1: `mart_obligations_monthly` or the fact,
++  by agency, FY2024 sum. Check 2: FY obligations per person computed from FY sums of the monthly mart,
++  ties broken by county FIPS ascending (record in DECISIONS, G-14). Check 3: the award-level view
++  (`award_net` = sum per `award_key` over FY2024, then count where below zero), published as
++  `mart_award_net_fy2024` (record `cd-1-award-key-and-sign`). Check 4: a singular dbt test for one chosen
++  month: county totals per state equal the state total, state totals sum to the source total.
++
++TDD note: write the singular tests for check 4 and the expected counts for check 3 before the marts.
++Write the independent Python computation in `tests/test_oracle_batch.py` for checks 1 to 3 from the raw CSV
++(stdlib `zipfile`, `csv`, and integer cents for money), then compare to the dbt results.
++
++Exit criteria:
++- `make build` run twice: content hash of every table under `out/marts/` is identical.
++- Each dbt contract passes `dbt build`.
++- The independent Python results match the dbt results for checks 1, 2 and 3.
++- Check 4 passes for every month in the FY (stronger than one month).
++
++### Phase 5: Stream consumer (SSE to lake, no dbt yet)
++
++Goal: `make stream DURATION=<s>` lands each unique edit once, with a stable arrival sequence, across
++disconnects and restarts.
++
++- `pipeline/sse.py`: stdlib `urllib.request` SSE reader. Parses `event:`, `data:`, `id:` lines and `retry:`.
++  On a dropped connection: reconnect with backoff, send `Last-Event-ID` from `lake/_stream_cursor.json`
++  when present.
++- `pipeline/stream_consume.py`: for each `message` event, parse JSON. Dedupe key is `meta.id` (record
++  `cd-1-stream-dedupe-resume`). Before landing a flush, read existing `meta.id` values from
++  `lake/recentchange/*.parquet` with DuckDB and drop any already landed. `arrival_seq` is the next integer
++  after `max(arrival_seq)` in the lake (the lake is the state; `_stream_cursor.json` is only a hint).
++  Land each flush through dlt with `write_disposition="append"` (record `cd-1-write-disposition`).
++  Write `_stream_cursor.json` after the land succeeds, via a temp file and `os.replace`.
++- The stream row keeps: `meta_id`, `timestamp` (event time, seconds), `meta_dt`, `wiki`, `server_name`,
++  `namespace`, `bot`, `length_old`, `length_new`, `arrival_seq`, `arrival_ts`.
++- `--duration` is wall-clock seconds. At the deadline: stop reading, flush, land, write the cursor, exit 0.
++- Stop and restart: a second run reads the lake state, so no event is counted twice and no landed event
++  is lost. An event read but not landed is not acknowledged, so the next run receives it again (if the
++  server replays) or the replay is restarted from the top and deduped. Either way no loss.
++
++TDD note: write `tests/test_stream_consume.py` first with a local HTTP server that serves SSE and can
++drop the connection after N events. Tests: (a) a drop after 5 events, then reconnect, gives each `meta.id`
++once; (b) stop after 10 events, restart: the union equals one unbroken run; (c) a replayed block with
++repeated `meta.id` values lands once; (d) `arrival_seq` is strictly increasing with no gaps.
++
++Exit criteria:
++- Tests (a) to (d) pass.
++- `make stream DURATION=20` against `http://localhost:8099/v2/stream/recentchange` lands rows (the replay
++  must be up; if it is not, the Phase fails with `STOPPED`, not a fake pass).
++- Second run against the same replay adds no rows with an existing `meta.id`.
++
++### Phase 6: Stream models (incremental fact, late events, 5-minute windows)
++
++Goal: the edit fact, the late_events table and the window mart, built by incremental dbt models from the
++landed micro-batches.
++
++- `stg_recentchange` (view on the lake): `event_id = meta_id`, `event_time = to_timestamp(timestamp)` (UTC),
++  `window_start = time_bucket(INTERVAL 5 MINUTE, event_time)` (check the bucket origin is epoch, so
++  windows start on multiples of 5 minutes UTC; write a unit test), `actor_type = case when bot then 'bot'
++  else 'human' end` (missing bot = human; record `cd-1-stream-field-rules`), `bytes_delta` = `length_new -
++  length_old` or 0 when either is missing, `has_length` flag.
++- `fct_edit` (incremental, `unique_key = event_id`, grain: one change event): adds `is_late`. Late rule
++  (record `cd-1-stream-lateness-watermark`): `prior_max` = the greatest `event_time` of earlier arrivals,
++  from `fct_edit` itself for old rows and from `ROWS BETWEEN UNBOUNDED PRECEDING AND 1 PRECEDING` over
++  `arrival_seq` for new rows. `is_late = prior_max is not null and prior_max > window_start + 15 minutes`.
++  (The window end is `window_start + 5 minutes`; 10 minutes after it is `window_start + 15 minutes`.)
++  Because a late event's own time is at most its window end, it never raises `prior_max`, so the
++  watermark answers G-2 without a special case.
++- `late_events` (table, the late rows of `fct_edit`), published.
++- `mart_edit_windows_5min` (incremental, unique key of window, wiki, namespace, actor type): only rows with
++  `is_late = false`. Columns: `window_start TIMESTAMP`, `window_end TIMESTAMP`, `wiki VARCHAR`,
++  `server_name VARCHAR`, `namespace INTEGER`, `actor_type VARCHAR`, `edit_count BIGINT`,
++  `net_bytes_added BIGINT`. Enforced contract. Recomputed for affected windows only (a late event does
++  not touch a window).
++- `dim_wiki` (from `stg_sitematrix`): `wiki` = `dbname`, `server_name` = host of `url`, `project`, `language`.
++  Check 6 uses `server_name = 'en.wikipedia.org'`, which maps to `dbname = 'enwiki'` (answers G-10).
++- Publish `fct_edit`, `late_events`, `mart_edit_windows_5min`, `dim_wiki` under `out/marts/`.
++- Stream models carry the tag `stream`. `make stream` builds them after the consumer.
++
++TDD note: dbt unit tests in yml (dbt-core 1.11 supports `unit_tests:`) first. Cases:
++- S4: event 12:21, window 12:15 start, prior max 12:31 gives `is_late = true`.
++- S5: event 12:30, window 12:25 start, prior max 12:30 gives `is_late = false`.
++- Boundary: prior max exactly window start + 15 minutes gives false.
++- Window start for 12:04:59 is 12:00, for 12:05:00 is 12:05.
++- Missing length gives `bytes_delta = 0`, `has_length = false`.
++- Missing bot gives `actor_type = 'human'`.
++Plus key tests: `event_id` unique and not null on `fct_edit`; the window mart key test.
++Plus an incremental test: build on two batches, then a full rebuild: same content hash.
++
++Exit criteria:
++- All unit tests in yml pass.
++- After `make stream` on the replay: `count(*) from fct_edit` equals the count of unique `meta.id` in the lake.
++- A full rebuild of the stream models (`dbt run --full-refresh --select tag:stream`) gives the same content
++  hash of `fct_edit` and the window mart as the incremental path.
++
++### Phase 7: Stream checks 5 to 7 and the replay tests
++
++Goal: checks 5, 6 and 7 answered and tested; the stop and restart rule is tested on the real replay.
++
++- Check 5: edits and net bytes per wiki, actor type, over every row of `fct_edit` (late included). The
++  replayed hour is all consumed events (record `cd-1-stream-field-rules`, G-11); the first and last event
++  time are written to `DECISIONS.md` from the data.
++- Check 6: the window with the most edits on `server_name = 'en.wikipedia.org'`, on-time only, from
++  `mart_edit_windows_5min`. Ties: the earliest window_start wins; record in DECISIONS.
++- Check 7: `count(*)` of `late_events`.
++- `oracle_map.yml`: entries 1 to 7, each naming the table and column (or view) under `out/marts/` only.
++- Independent Python check for checks 5 to 7 from the raw lake files (stdlib + DuckDB) in
++  `tests/test_oracle_stream.py`.
++- Stop and restart test on the real replay: run one unbroken `make stream`, record the counts; reset the
++  stream lake; run two halves with a stop between; compare counts. Both must match exactly.
++
++Exit criteria:
++- The oracle test for checks 5 to 7 passes against the dbt results.
++- The stop and restart comparison matches exactly (no difference in count or net bytes per group).
++
++### Phase 8: Close-out and the repeat-run proof
++
++Goal: the final build and documentation match the acceptance list.
++
++- Fill `DECISIONS.md` with the choices and their outcomes; each entry links to its decision record.
++- Each model has a description of its grain in its yml (`description:` with "one row per ..."). Fix any
++  model without it.
++- Run from a clean tree (remove `lake/` and `out/`): `make build` twice, `make stream` twice on the replay
++  (with the stop-restart comparison already done in Phase 7), `uv run dbt test`, `uv run python -m unittest
++  discover -s tests -v`.
++- Write `summary.md` and `PR.md` outputs as the packet asks (the packet path under the outputs directory).
++
++Exit criteria: every item in the Acceptance list is true, and the content hashes from both builds match.
++
++## Assumptions that the plan builds
++
++Each row is in `.context/deferrals/cd-1_deferral-register.md`. Phase is where it is built.
++
++| Gap | Assumption | Built in |
++|---|---|---|
++| G-1 | Dedupe key `meta.id`; the lake is the state; `Last-Event-ID` is a hint; replay restarts are deduped | Phase 5 |
++| G-2 | Watermark = running max of event time over all first arrivals, persisted in `fct_edit` | Phase 6 |
++| G-3 | Award key `generated_unique_award_id`; sum per award over FY2024, then sign | Phase 3, 4 |
++| G-4 | Place of performance; unplaced members for no state, and "Unknown county" for no county | Phase 3 |
++| G-5 | Star tables and stream facts are published under `out/marts/`; oracle points only there | Phase 4, 6 |
++
++## Risks for the reviewer
++
++- The replay behavior for `Last-Event-ID` is not known. The plan works either way; the live URL is untested.
++- The dlt filesystem destination in append mode with one file per flush must be verified in Phase 5 (a
++  spike at the start of the phase). If it cannot append Parquet files, the consumer writes Parquet with
++  DuckDB directly, and the plan's `DECISIONS.md` says so.
++- The incremental state lives in `out/warehouse.duckdb`. The grader removes `out/` and `lake/` before a
++  run, so a fresh build must regenerate all state from `lake/`. Phase 8 tests that.
++
++## Footer
++
++Next step: `/plan-review .context/plans/cd-1.plan.md`.
+diff --git a/.context/proposals/cd-1-award-key-and-sign.md b/.context/proposals/cd-1-award-key-and-sign.md
+new file mode 100644
+index 0000000..2bc8c3a
+--- /dev/null
++++ b/.context/proposals/cd-1-award-key-and-sign.md
+@@ -0,0 +1,8 @@
++---
++decision_id: cd-1-award-key-and-sign
++status: proposed
++question: What is the award key for check 3, and is the sign test applied to each transaction or to the sum per award?
++choice: Award key is generated_unique_award_id; net obligation is summed per award over FY2024 transactions, then the sign test is applied to that sum.
++rationale: The check counts awards, and an award can have a positive and a negative transaction that net to a positive value. Rejected: the transaction-level sign test (counts transactions, not awards) and the award_id_piid key (not unique across agencies).
++---
++Ticket: cd-1
+diff --git a/.context/proposals/cd-1-make-target-split.md b/.context/proposals/cd-1-make-target-split.md
+new file mode 100644
+index 0000000..6b3f5e9
+--- /dev/null
++++ b/.context/proposals/cd-1-make-target-split.md
+@@ -0,0 +1,8 @@
++---
++decision_id: cd-1-make-target-split
++status: proposed
++question: Which make target builds which part, so that make build does not depend on the stream and make stream does not rebuild batch models?
++choice: make build runs the batch ingestion and dbt build with exclude tag stream; make stream runs the consumer and dbt build with select tag stream.
++rationale: Keeps each target's inputs separate, so the batch build stays idempotent without the stream lake. Rejected: one target that builds everything (the stream lake would be needed for make build).
++---
++Ticket: cd-1
+diff --git a/.context/proposals/cd-1-money-type.md b/.context/proposals/cd-1-money-type.md
+new file mode 100644
+index 0000000..72df065
+--- /dev/null
++++ b/.context/proposals/cd-1-money-type.md
+@@ -0,0 +1,8 @@
++---
++decision_id: cd-1-money-type
++status: proposed
++question: What type holds dollar amounts so that sums are exact?
++choice: Obligations and net amounts are DECIMAL(18,2); the per-person ratio is DECIMAL(18,4); net bytes are BIGINT; no FLOAT or DOUBLE in any model.
++rationale: Exact decimal sums meet the spec rule and the source precision (cents). Rejected: DOUBLE (rounding error in sums) and integer cents (more casting code for the same result).
++---
++Ticket: cd-1
+diff --git a/.context/proposals/cd-1-place-and-unplaced.md b/.context/proposals/cd-1-place-and-unplaced.md
+new file mode 100644
+index 0000000..085cefa
+--- /dev/null
++++ b/.context/proposals/cd-1-place-and-unplaced.md
+@@ -0,0 +1,8 @@
++---
++decision_id: cd-1-place-and-unplaced
++status: proposed
++question: Does place mean place of performance or recipient location, and how are rows without a state or county handled so that county totals equal state totals?
++choice: Place means place of performance; a row with no valid US state goes to an Unplaced member (state 99, county 99999); a row with a state but no county goes to an Unknown county member (state FIPS plus 000); both are rows of dim_place, so no row is dropped.
++rationale: Where the money went is the place of performance. The explicit members keep the reconciliation exact. Rejected: recipient location (answers where the recipient is, not where the money went) and dropping unplaced rows (breaks check 4).
++---
++Ticket: cd-1
+diff --git a/.context/proposals/cd-1-population-fallback.md b/.context/proposals/cd-1-population-fallback.md
+new file mode 100644
+index 0000000..10e2a60
+--- /dev/null
++++ b/.context/proposals/cd-1-population-fallback.md
+@@ -0,0 +1,8 @@
++---
++decision_id: cd-1-population-fallback
++status: proposed
++question: How is the county population joined and what is used where a county has no 2024 estimate?
++choice: Join on the 5-digit FIPS (state plus county, from the 2024 file); use POPESTIMATE2024 (July 1 2024); where a key is absent from the 2024 file, use the 2021 vintage estimate and record population_year and population_source; never read the 2020 base column.
++rationale: Matches Amendment A (July 1 2024, latest earlier estimate, said in DECISIONS). Rejected: the 2020 census base (Amendment A excludes it) and dropping absent counties (leaves a per-person gap).
++---
++Ticket: cd-1
+diff --git a/.context/proposals/cd-1-publication-scope.md b/.context/proposals/cd-1-publication-scope.md
+new file mode 100644
+index 0000000..e2cb857
+--- /dev/null
++++ b/.context/proposals/cd-1-publication-scope.md
+@@ -0,0 +1,8 @@
++---
++decision_id: cd-1-publication-scope
++status: proposed
++question: Which tables are published under out/marts/, and may an oracle check answer from a table outside it?
++choice: Every table that an analyst queries is published under out/marts/ (star tables, the award net mart, fct_edit, late_events, mart_edit_windows_5min, dim_wiki); oracle_map.yml names only objects under out/marts/.
++rationale: Resolves the conflict C-1 between downstream reads only out/marts/ and oracle answers from any table; it also keeps the analyst contract in one folder. Rejected: publishing only the marts (the star fact would be unreadable downstream) and letting oracle_map point into the dev warehouse.
++---
++Ticket: cd-1
+diff --git a/.context/proposals/cd-1-stream-dedupe-resume.md b/.context/proposals/cd-1-stream-dedupe-resume.md
+new file mode 100644
+index 0000000..56f251a
+--- /dev/null
++++ b/.context/proposals/cd-1-stream-dedupe-resume.md
+@@ -0,0 +1,8 @@
++---
++decision_id: cd-1-stream-dedupe-resume
++status: proposed
++question: How does the stream consumer avoid double counting and losing events across disconnects and restarts, when the replay server may not honor Last-Event-ID?
++choice: Dedupe key is meta.id checked against the landed lake; the lake is the state; Last-Event-ID from a cursor file is only a hint; the cursor advances only after a successful land.
++rationale: Works whether or not the server resumes; a replay that restarts from the top is deduped, so nothing is counted twice or lost. Rejected: Last-Event-ID alone (the replay may not honor it) and a composite key of wiki, timestamp and title (not unique).
++---
++Ticket: cd-1
+diff --git a/.context/proposals/cd-1-stream-field-rules.md b/.context/proposals/cd-1-stream-field-rules.md
+new file mode 100644
+index 0000000..a2319c8
+--- /dev/null
++++ b/.context/proposals/cd-1-stream-field-rules.md
+@@ -0,0 +1,8 @@
++---
++decision_id: cd-1-stream-field-rules
++status: proposed
++question: What is counted when length, bot, wiki key or the replayed hour is missing or unnamed?
++choice: A missing length gives bytes_delta 0 with has_length false; a missing bot flag gives actor_type human; wiki is the sitematrix dbname (enwiki) joined from the stream wiki value, with server_name for en.wikipedia.org; the replayed hour is every landed event, and its first and last event time go to DECISIONS.md.
++rationale: Each event still counts as an edit, so check 5 counts every consumed edit; the flags keep the defaults visible. Rejected: dropping events with missing fields (breaks the count) and a clock-based hour (the spec forbids a clock reading for lateness, and the hour is defined by the capture).
++---
++Ticket: cd-1
+diff --git a/.context/proposals/cd-1-stream-lateness-watermark.md b/.context/proposals/cd-1-stream-lateness-watermark.md
+new file mode 100644
+index 0000000..a766862
+--- /dev/null
++++ b/.context/proposals/cd-1-stream-lateness-watermark.md
+@@ -0,0 +1,8 @@
++---
++decision_id: cd-1-stream-lateness-watermark
++status: proposed
++question: What is the lateness watermark, does it persist across make stream runs and reconnects, and do late events raise it?
++choice: The watermark is the running max of event time over all first arrivals, computed in dbt over arrival_seq and kept in fct_edit; it persists because the fact persists; late events are included in the max.
++rationale: The spec defines the rule over earlier arrivals, so persistence and inclusion follow from it. A late event has event time at most its window end, and it is late only when the max already exceeds window end plus 10 minutes, so it can never raise the max; the question has no effect on results. Rejected: a per-run reset (makes the result depend on how the run was split) and wall-clock time (the spec forbids it).
++---
++Ticket: cd-1
+diff --git a/.context/proposals/cd-1-stream-tooling.md b/.context/proposals/cd-1-stream-tooling.md
+new file mode 100644
+index 0000000..ceac2d4
+--- /dev/null
++++ b/.context/proposals/cd-1-stream-tooling.md
+@@ -0,0 +1,8 @@
++---
++decision_id: cd-1-stream-tooling
++status: proposed
++question: Which libraries and test runner does the stream consumer and its tests use, given that the pins in pyproject.toml must not change?
++choice: Stdlib urllib for SSE, stdlib unittest for Python tests, and dbt unit tests in yml for the SQL rules; no new dependency.
++rationale: The pins are fixed by the spec, and pytest or an HTTP client would be a new dependency. Rejected: adding httpx or pytest to pyproject.toml.
++---
++Ticket: cd-1
+diff --git a/.context/proposals/cd-1-write-disposition.md b/.context/proposals/cd-1-write-disposition.md
+new file mode 100644
+index 0000000..10c8980
+--- /dev/null
++++ b/.context/proposals/cd-1-write-disposition.md
+@@ -0,0 +1,8 @@
++---
++decision_id: cd-1-write-disposition
++status: proposed
++question: Which dlt write disposition does each source use so that running make build twice changes no output?
++choice: Batch raw sources use replace; the stream table uses append with the consumer's meta.id dedupe in front; marts are overwritten by dbt external materialization.
++rationale: Replace makes the batch idempotent; append is needed for the stream, and the dedupe prevents double counts. Rejected: dlt's default append for the batch sources (second run doubles rows).
++---
++Ticket: cd-1
+diff --git a/.context/proposals/cd-1.md b/.context/proposals/cd-1.md
+new file mode 100644
+index 0000000..92bbe18
+--- /dev/null
++++ b/.context/proposals/cd-1.md
+@@ -0,0 +1,51 @@
++# Request: cd-1
++
++Ticket: cd-1
++Source: the request as the user wrote it, saved at activation.
++
++Build a pipeline that answers two questions for analysts, from raw public data to columnar tables a BI tool can query directly.
++
++Question A (batch): where did federal contract and grant money go in fiscal year 2024? In total and per person, by state, county, awarding agency and month.
++Question B (stream): how is Wikipedia being edited right now? Edits per wiki, per namespace and per 5-minute window, split by human and bot, with the net bytes added.
++
++Inputs:
++- data/raw/usaspending/: USAspending.gov prime award transactions, FY2024, for the agencies listed in data/raw/usaspending/README.md.
++- data/raw/census/: the Census Bureau county population estimates.
++- data/raw/sitematrix.json: the Wikimedia site matrix (wiki id, language, project).
++- The edit stream: a Server-Sent Events endpoint with the Wikimedia EventStreams recentchange format. During development and grading it is http://localhost:8099/v2/stream/recentchange, a replay of a recorded capture. The replay server behaves like the real service, including disconnects. In a live demo the same code points at https://stream.wikimedia.org/v2/stream/recentchange.
++
++Architecture:
++- Lake. Ingestion writes every source to a Parquet lake under lake/ (one folder per source table, partitioned where it helps). The lake keeps the source's data and adds only load metadata.
++- Models. A dbt project in transform/ builds everything after the lake: staging models, the star schema and the marts. Each mart has a dbt model contract (column names and types enforced).
++- Publish. The marts are materialized as Parquet under out/marts/ (one folder per mart). Anything downstream reads only out/marts/.
++
++Outputs:
++1. A star schema for Question A: one fact table at the grain of one award transaction, and dimensions for agency, place (state and county) and date. A monthly mart by state, county and agency, with net obligations, population and obligations per person.
++2. For Question B: a fact table of edits at the grain of one change event, and a mart of 5-minute windows by wiki, namespace and actor type (human or bot), with the edit count and the net bytes added. The stream consumer lands micro-batches in the lake; incremental dbt models build the edit fact and the window mart from them.
++3. The lake under lake/, the dbt project under transform/, and the published marts under out/marts/, plus whatever the stack section asks for.
++4. oracle_map.yml: for each question in the "Checks" list below, the table and column (or SQL view) that answers it.
++5. DECISIONS.md: each place where this spec left a choice to you, what you chose and why.
++
++Rules:
++- make build runs the batch part from the raw files. Running it twice must not change any output.
++- make stream DURATION=<seconds> consumes the stream for that long and updates the stream tables. If the connection drops, the consumer resumes where it stopped. Stopping and starting the consumer must not count any event twice or lose one.
++- Event time, not arrival time, places an edit in a window. Windows are 5 minutes long and start on the multiples of 5 minutes (UTC).
++- Lateness is measured in stream time, not by a clock: an event is late when, at its first arrival, the highest event time among the events that arrived before it is more than 10 minutes after the end of its window. A late event is not added to its window; put it in a late_events table instead. The replay can run faster than real time, so a wall-clock reading of "late" is wrong.
++- Money is in US dollars, summed exactly (no floating-point sums).
++- Document the grain of each model. Test the keys of each model with dbt tests.
++
++Checks the analysts will run:
++1. FY2024 net obligations per awarding agency.
++2. The ten counties with the highest FY2024 obligations per person.
++3. The number of awards with a net negative obligation in FY2024.
++4. For one month: county totals add up to state totals, and state totals add up to the source total.
++5. For the stream: edits and net bytes per wiki for the replayed hour, split human and bot. Late events are included: this check counts every edit consumed, on time or late.
++6. For the stream: the 5-minute windows with the most edits on en.wikipedia.org (on-time edits only).
++7. For the stream: the count of late events.
++
++Amendment A (from the analysts, after the first review):
++"Per person" means per resident in the population estimate for July 1, 2024, not the 2020 census count. Where a county has no 2024 estimate, use the latest earlier estimate and say so in DECISIONS.md.
++
++Use Python 3.12 and dlt to land the raw files and the stream in the Parquet lake (dlt's filesystem destination with Parquet files). Model with dbt-duckdb reading the lake; materialize the marts as Parquet with dbt-duckdb's external materialization. The skeleton pins the versions in pyproject.toml; do not change them.
++
++Environment (same for every run): there is no GitHub and no Linear. Where you would create, update, or comment on a PR or ticket, write that text to /tmp/claude-0/-home-user/5b20bc6c-3f91-5511-8000-71d5898a937e/scratchpad/pipe/2026-10-21/P1-cadence-core-haiku-1/outputs/PR.md (append comments) and continue as if it succeeded. Nobody will answer questions: work autonomously to the end. Save outputs to /tmp/claude-0/-home-user/5b20bc6c-3f91-5511-8000-71d5898a937e/scratchpad/pipe/2026-10-21/P1-cadence-core-haiku-1/outputs/: summary.md (what you did, and each pipeline stage and its result) and PR.md (the PR title and body). Do all work in /tmp/claude-0/-home-user/5b20bc6c-3f91-5511-8000-71d5898a937e/scratchpad/pipe/2026-10-21/P1-cadence-core-haiku-1/repo (git; branch feature/gh-1-pipeline; origin is a local bare repo). The task id is gh-1.
+diff --git a/.context/reviews/plan_cd-1.plan.md b/.context/reviews/plan_cd-1.plan.md
+new file mode 100644
+index 0000000..7dde786
+--- /dev/null
++++ b/.context/reviews/plan_cd-1.plan.md
+@@ -0,0 +1,51 @@
++RUN_BY_COMMAND: plan-review
++Pipeline-Run: 81d6f968-0843-449a-b3ac-e0fffa47a255
++Task ID: cd-1
++Verdict: BLOCKING ITEMS
++
++# Plan review: cd-1 (block P3)
++
++**Plan:** `.context/plans/cd-1.plan.md` sha256 1bcaebe94f36f5e405b92a06f80b91d984452d67c5af014ef32463e827996e1f
++**Vibe test:** `.context/vibetest/cd-1_2026-10-21.md` sha256 3febdc71ca850fa5ea5f9ef4992acf32d6013de8d79511c8b28611524f6bac87
++**Contract:** `commands/plan-review.md` is not in this repo; the review used the packet and the plan's own gates.
++
++## Verdict
++
++VERDICT: BLOCKING ITEMS (not READY TO EXECUTE)
++
++All five vibe-test blocking gaps (G-1 to G-5) have an assumption and a decision record, and the 11 `cd-1-*` proposals and the deferral register exist with the names the plan cites. The blocking items below are defects in the plan text itself, found by checking the plan against the repo data and the spec.
++
++## Blocking items
++
++B-1. Phase 6 S4 test case uses the wrong window. The plan says "event 12:21, window 12:15 start, prior max 12:31 gives is_late = true". An event at 12:21 falls in the window 12:20 to 12:25, not 12:15. With window start 12:20 the threshold is 12:35, so prior max 12:31 gives is_late = false. The spec rule gives on time here (12:31 is 6 minutes after the window end 12:25). The vibe test S4 has the same error. Fix: use event 12:17 (window 12:15, threshold 12:30) with prior max 12:31, which gives late. Add the 12:21 case as an explicit on-time case. Also correct the S4 wording in the vibe test or note it in DECISIONS.
++
++B-2. Cross-batch prior_max is not defined for incremental rows. Phase 6 says prior_max is "from fct_edit itself for old rows and from ROWS BETWEEN UNBOUNDED PRECEDING AND 1 PRECEDING over arrival_seq for new rows". A window function over the new batch alone does not see the maximum event time already in fct_edit. The plan must state the formula for new rows: max(event_time) over existing fct_edit rows, combined with the in-batch running max. It must also state that is_late is set once at first landing and is never recomputed by a later incremental merge. Otherwise the Phase 6 check "full rebuild gives the same hash as the incremental path" is not guaranteed. Also say how arrival_seq is numbered inside one flush (receipt order).
++
++B-3. Check 2 ranking has no rule for rows without population. Phase 3 puts unplaced members into dim_place (state 99 / county 99999 "Unplaced", and XX000 "Unknown county"). Those rows have no census population. Phase 4 defines the ties rule (G-14) but not whether these rows are excluded from the "ten counties with highest obligations per person" ranking. The plan must exclude rows with null population from check 2 and record it in DECISIONS (new gap entry). Without this, the top-10 answer is undefined.
++
++B-4. dim_wiki misses the sitematrix specials. `data/raw/sitematrix.json` has 376 top-level keys under `sitematrix`: numbered language entries with a `site` list, plus a `specials` list of 124 sites (for example abstractwiki, advisorswiki, arbcom_cswiki). Phase 2 says "flatten sitematrix entries into one row per site", which reads only the numbered entries. Stream edits from special wikis (for example commonswiki or wikidatawiki) would then have no dim_wiki row. Fix: flatten both `sitematrix.<n>.site` and `sitematrix.specials`, and add a Phase 2 test that the flattened row count equals the sum of both lists.
++
++## Non-blocking corrections
++
++N-1. Phase 2 zip count is wrong. The plan says "for each of the 8 assistance and 8 contracts zips". The repo has 4 assistance and 4 contracts zips (agencies 417, 418, 474, 485). The count of 8 is the total. Correct the text and the test expectation.
++
++N-2. The Phase 1 seed count should be read from the file, not from "50 states, DC and the inhabited territories". The census 2024 file has 51 state rows (COUNTY = 000) out of 3195 rows, which gives 3144 county rows. The plan's exit criterion already reads the count from the file, so only the description needs fixing.
++
++N-3. Phase 3 join key `state_fips || county_fips` must be zero-padded to 2 and 3 digits (LPAD) before it becomes the 5-digit key. Say so in the staging description.
++
++N-4. The spec says "each mart has a dbt model contract". The plan enforces contracts only on mart_obligations_monthly and mart_edit_windows_5min. State contracts for dim_agency, dim_place, dim_date, fct_award_transaction, mart_award_net_fy2024, fct_edit, late_events, dim_wiki, or say which marts are exempt and why.
++
++N-5. Phase 7 check 5 uses "all consumed events" as the replayed hour (G-11). This is acceptable only if the stream run for the check is the one-hour replay with no extra events. State the first and last event time check that the plan already asks for, and note the DURATION used.
++
++N-6. Phase 5 and Phase 6 `make stream` runs `dbt build --select tag:stream` before any stream model exists in Phase 5. Confirm that dbt exits 0 when a selector matches no nodes. If it does not, Phase 5 exit fails for a reason unrelated to the consumer.
++
++## What holds
++
++- The late rule, watermark persistence, and the claim that a late event never raises prior_max are correct. A late event's time is at most its window end, and it is late only when prior_max is greater than window start + 15, so it cannot raise the maximum.
++- The window boundary cases (12:04:59 and 12:05:00) and the S5 and boundary cases are correct.
++- Each blocking gap G-1 to G-5 maps to a named phase and a proposal file that exists.
++- The pinned dependencies are not changed, and the version pins in pyproject.toml are untouched.
++
++## Next step
++
++Apply B-1 to B-4 and N-1 to N-4 with `/plan-update` against this review, then run P3 again.
+diff --git a/.context/runs/81d6f968-0843-449a-b3ac-e0fffa47a255/superseded.json b/.context/runs/81d6f968-0843-449a-b3ac-e0fffa47a255/superseded.json
+new file mode 100644
+index 0000000..862666b
+--- /dev/null
++++ b/.context/runs/81d6f968-0843-449a-b3ac-e0fffa47a255/superseded.json
+@@ -0,0 +1,6 @@
++{
++  "pipeline_run_id": "81d6f968-0843-449a-b3ac-e0fffa47a255",
++  "task_id": "cd-1",
++  "superseded_at": "2026-10-21T21:44:14.787775+00:00",
++  "paths": []
++}
+diff --git a/.context/sessions/by-task/cd-1.json b/.context/sessions/by-task/cd-1.json
+new file mode 100644
+index 0000000..6b78e60
+--- /dev/null
++++ b/.context/sessions/by-task/cd-1.json
+@@ -0,0 +1,3 @@
++{
++  "ref": "sessions/by-worktree/ca342967282af126.json"
++}
+diff --git a/.context/sessions/by-worktree/ca342967282af126.json b/.context/sessions/by-worktree/ca342967282af126.json
+new file mode 100644
+index 0000000..020e046
+--- /dev/null
++++ b/.context/sessions/by-worktree/ca342967282af126.json
+@@ -0,0 +1,152 @@
++{
++  "skill": "cadence",
++  "pipeline_run_id": "81d6f968-0843-449a-b3ac-e0fffa47a255",
++  "task_id": "cd-1",
++  "task_source": "branch:feature/gh-1-pipeline",
++  "task_description": "",
++  "branch": "feature/gh-1-pipeline",
++  "ticket_tokens": [
++    "1",
++    "cd-1",
++    "feature/gh-1-pipeline"
++  ],
++  "fresh_run": true,
++  "supersede_on_activate": false,
++  "superseded_paths": [],
++  "activated_at": "2026-10-21T21:44:14.794178+00:00",
++  "owner_session_id": "c65bced7-bf13-4703-854c-5110d5cbcf8b",
++  "orchestrator_agent_ids": [],
++  "orchestrator_source": "toplevel",
++  "host": "claude",
++  "base": "main",
++  "workspace": "/tmp/claude-0/-home-user/5b20bc6c-3f91-5511-8000-71d5898a937e/scratchpad/pipe/2026-10-21/P1-cadence-core-haiku-1/repo",
++  "primary_checkout": "/tmp/claude-0/-home-user/5b20bc6c-3f91-5511-8000-71d5898a937e/scratchpad/pipe/2026-10-21/P1-cadence-core-haiku-1/repo",
++  "context_root": "/tmp/claude-0/-home-user/5b20bc6c-3f91-5511-8000-71d5898a937e/scratchpad/pipe/2026-10-21/P1-cadence-core-haiku-1/repo/.context",
++  "matching_artifacts": {},
++  "resume_slug": "activate-session",
++  "resume_block": "A1",
++  "resume_reason": "Fresh run \u2014 start at A1 (activate-session)",
++  "active_skill": "cadence",
++  "registry_version": 1,
++  "env_exports": {
++    "CURSOR_ACTIVE_SKILL": "cadence",
++    "CADENCE_TASK_ID": "cd-1",
++    "CADENCE_FRESH_RUN": "1",
++    "CADENCE_PIPELINE_RUN_ID": "81d6f968-0843-449a-b3ac-e0fffa47a255",
++    "CADENCE_HOME": "/root/.cache/cadence-bench/src/cadence-core@29315c4e64ff318a80a1a7d2c809beb4b3c15611"
++  },
++  "peer_models": {
++    "validate": "haiku",
++    "plan-create": "haiku",
++    "plan-review": "haiku",
++    "adversarial-review": "haiku",
++    "test-benchmark-plan": "haiku",
++    "pr-review-local": "haiku",
++    "test-benchmark-pr": "haiku"
++  },
++  "config": {
++    "layers": [
++      {
++        "name": "default",
++        "path": "/root/.cache/cadence-bench/src/cadence-core@29315c4e64ff318a80a1a7d2c809beb4b3c15611/cadence.defaults.json",
++        "sha256": "b48e8c8d0bb6264037c092848be6f16e6e5d649842e673ae3cf0fc9f539b7169"
++      },
++      {
++        "name": "profile:standard",
++        "path": "/root/.cache/cadence-bench/src/cadence-core@29315c4e64ff318a80a1a7d2c809beb4b3c15611/profiles/standard.json",
++        "sha256": "ca3d163bab055381827226140568f3bef7eaac187cebd76878e0b63e9e442356"
++      },
++      {
++        "name": "user",
++        "path": "/tmp/claude-0/-home-user/5b20bc6c-3f91-5511-8000-71d5898a937e/scratchpad/pipe/2026-10-21/P1-cadence-core-haiku-1/home/.config/cadence/config.json",
++        "sha256": "50e8627c469634a87fd28ef6b7a5f91fdc17e7d55c0bd196231f5979b21c7f50"
++      },
++      {
++        "name": "project",
++        "path": "/tmp/claude-0/-home-user/5b20bc6c-3f91-5511-8000-71d5898a937e/scratchpad/pipe/2026-10-21/P1-cadence-core-haiku-1/repo/.cadence.json",
++        "sha256": "166d92f85903b40c5209999fec1c0fd546597f3ae4746e665a756e9e8163d03b"
++      }
++    ],
++    "values": {
++      "profile": "standard",
++      "adapter": "none",
++      "packs": [],
++      "pack_config": {},
++      "peers": {},
++      "stages": {
++        "overlays": []
++      },
++      "gated_prefixes": [
++        "src/",
++        "lib/",
++        "app/",
++        "packages/",
++        "pipeline/",
++        "engine/",
++        "pipelines/",
++        "transform/",
++        "Makefile"
++      ],
++      "secret_paths": [],
++      "layer_map": {},
++      "decision_frontmatter_required": true,
++      "peer_models": {
++        "default": "haiku"
++      },
++      "subagent_hygiene": {
++        "mode": "enforce",
++        "rewrite_prompt": true,
++        "classifier": "none",
++        "classifier_threshold": 0.5,
++        "classifier_timeout": 10,
++        "on_classifier_error": null
++      },
++      "orchestrator_scope": {
++        "mode": "enforce"
++      },
++      "context_budget": {
++        "mode": "shadow",
++        "warn_tokens": 60000
++      },
++      "cognitive_complexity": {
++        "max": 15,
++        "unsupported": "warn"
++      },
++      "duplication": {
++        "max_percent": 3,
++        "min_block_lines": 6,
++        "unsupported": "warn"
++      },
++      "code_shape": {
++        "max_function_statements": 50,
++        "max_branch_chain": 6,
++        "unsupported": "warn"
++      },
++      "test_shape": {
++        "max_helpers_reimplemented": 0,
++        "max_thin_files": 0,
++        "unsupported": "warn",
++        "layout": {}
++      },
++      "bugs": {
++        "max": 0,
++        "timeout_seconds": 60,
++        "unsupported": "warn"
++      },
++      "types": {
++        "max": 0,
++        "timeout_seconds": 60,
++        "unsupported": "warn"
++      },
++      "measure_exclude": [],
++      "plan_review_cycles": 5,
++      "adversarial_cycles": 3,
++      "review_fix_rounds": 2,
++      "benchmark_score_floor": 7
++    }
++  },
++  "lean_record_by_hook": true,
++  "worktree_key": "ca342967282af126",
++  "stop_refusals": 3,
++  "stop_refusal_slug": "implement"
++}
+diff --git a/.context/sessions/pending-owner.json b/.context/sessions/pending-owner.json
+new file mode 100644
+index 0000000..35751b3
+--- /dev/null
++++ b/.context/sessions/pending-owner.json
+@@ -0,0 +1,5 @@
++{
++  "owner": "c65bced7-bf13-4703-854c-5110d5cbcf8b",
++  "toplevel": "/tmp/claude-0/-home-user/5b20bc6c-3f91-5511-8000-71d5898a937e/scratchpad/pipe/2026-10-21/P1-cadence-core-haiku-1/repo",
++  "at": 1792619054.474356
++}
+diff --git a/.context/subagent-runs/81d6f968-0843-449a-b3ac-e0fffa47a255/plan-create.json b/.context/subagent-runs/81d6f968-0843-449a-b3ac-e0fffa47a255/plan-create.json
+new file mode 100644
+index 0000000..db0dd85
+--- /dev/null
++++ b/.context/subagent-runs/81d6f968-0843-449a-b3ac-e0fffa47a255/plan-create.json
+@@ -0,0 +1,12 @@
++{
++  "stage": "plan-create",
++  "command": "/plan-create cd-1",
++  "pipeline_run_id": "81d6f968-0843-449a-b3ac-e0fffa47a255",
++  "status": "running",
++  "source": "PreToolUse",
++  "started_at": "2026-10-21T21:46:35.457856+00:00",
++  "completed_at": "",
++  "artifact_path": "",
++  "manifest_entry_id": "",
++  "tool_use_id": "toolu_01E9HXZeUFa5vfa2yoSnF7b7"
++}
+diff --git a/.context/subagent-runs/81d6f968-0843-449a-b3ac-e0fffa47a255/plan-review.json b/.context/subagent-runs/81d6f968-0843-449a-b3ac-e0fffa47a255/plan-review.json
+new file mode 100644
+index 0000000..b74fc3e
+--- /dev/null
++++ b/.context/subagent-runs/81d6f968-0843-449a-b3ac-e0fffa47a255/plan-review.json
+@@ -0,0 +1,12 @@
++{
++  "stage": "plan-review",
++  "command": "/plan-review .context/plans/cd-1.plan.md",
++  "pipeline_run_id": "81d6f968-0843-449a-b3ac-e0fffa47a255",
++  "status": "running",
++  "source": "PreToolUse",
++  "started_at": "2026-10-21T21:50:10.356055+00:00",
++  "completed_at": "",
++  "artifact_path": "",
++  "manifest_entry_id": "",
++  "tool_use_id": "toolu_017kSVujQAKYJzvkviQoyPWn"
++}
+diff --git a/.context/subagent-runs/81d6f968-0843-449a-b3ac-e0fffa47a255/vibe-test.json b/.context/subagent-runs/81d6f968-0843-449a-b3ac-e0fffa47a255/vibe-test.json
+new file mode 100644
+index 0000000..ea6b885
+--- /dev/null
++++ b/.context/subagent-runs/81d6f968-0843-449a-b3ac-e0fffa47a255/vibe-test.json
+@@ -0,0 +1,12 @@
++{
++  "stage": "vibe-test",
++  "command": "/vibe-test cd-1",
++  "pipeline_run_id": "81d6f968-0843-449a-b3ac-e0fffa47a255",
++  "status": "running",
++  "source": "PreToolUse",
++  "started_at": "2026-10-21T21:44:32.816705+00:00",
++  "completed_at": "",
++  "artifact_path": "",
++  "manifest_entry_id": "",
++  "tool_use_id": "toolu_01U2LYu3KS7RtP6TgoTu98kf"
++}
+diff --git a/.context/vibetest/cd-1_2026-10-21.md b/.context/vibetest/cd-1_2026-10-21.md
+new file mode 100644
+index 0000000..2fe8796
+--- /dev/null
++++ b/.context/vibetest/cd-1_2026-10-21.md
+@@ -0,0 +1,69 @@
++RUN_BY_SKILL: vibe-test
++Pipeline-Run: 81d6f968-0843-449a-b3ac-e0fffa47a255
++
++# Vibe test: cd-1 (block A5)
++
++**Tracker:** none
++**Ticket:** TICKET_SKIPPED (none: no tracker declared)
++
++## Target
++
++- Classification: disk spec.
++- Spec file: `.context/proposals/cd-1.md` (the request as the user wrote it, saved at activation). It is already on disk, so no snapshot was needed.
++- No plan exists yet under `.context/`.
++- Repo state at test time: branch `feature/gh-1-pipeline`, base `main`. `Makefile` targets `build` and `stream` exit 1 (not implemented). `transform/models/` holds only `.gitkeep`. `data/raw/` holds the USAspending zips, the USAspending README, the Census CSVs (2021 and 2024 vintages) and `sitematrix.json`. No `lake/` or `out/` yet.
++
++## Scenarios traced
++
++- S1. Fresh checkout, `make build`, then `make build` again. Expect no output change. Result: gap G-13 (write disposition not stated).
++- S2. The stream consumer runs, the connection drops, the consumer reconnects and resumes. Expect no event counted twice and none lost. Result: cannot be judged; gap G-1.
++- S3. `make stream` is stopped and restarted with a different `DURATION`. Expect the same counts as one unbroken run. Result: gaps G-1 and G-2.
++- S4. An event with event time 12:21 arrives when the highest event time seen so far is 12:31. Its window is 12:15 to 12:20; 12:31 is more than 10 minutes after 12:20. The event is late and goes to `late_events`. Result: rule is clear within one run. Cross-run case is G-2.
++- S5. An event with event time 12:30 arrives when the highest seen is 12:30. Its window is 12:25 to 12:30; 12:30 is not more than 10 minutes after 12:30. The event is on time. Result: rule is clear.
++- S6. An edit with no `length.old` or `length.new` (for example a log event). Result: gap G-8.
++- S7. Check 3 on an award whose transactions net to a negative sum in FY2024. Result: gap G-3.
++- S8. A FY2024 award with no state or county (foreign place, multi-county place, or missing FIPS). Check 4 must still hold. Result: gap G-4.
++- S9. A county key in the population source that the 2024 file lacks. Result: gap G-12.
++- S10. The same code is pointed at `https://stream.wikimedia.org/v2/stream/recentchange` for the live demo. The disconnect and resume behaviour may differ from the replay server. Result: gap G-1.
++- S11. Check 6 names `en.wikipedia.org`. The stream carries `wiki` and `server_name`; the sitematrix carries `dbname` and `url`. No join key is named. Result: gap G-10.
++- S12. An analyst runs an oracle check against `out/marts/` only, and the answer lives in the fact table. Result: conflict C-1 and gap G-5.
++
++## Gaps
++
++- G-1 (blocking). No dedupe key and no resume position are named for stream events. The spec requires exact resume with no double count and no loss, and says the replay server disconnects. The candidate key is the recentchange `meta.id`. The resume position (SSE event id or Last-Event-ID, or a stored offset) and where it is persisted are not stated.
++- G-2 (blocking). The lateness watermark is defined as the highest event time among earlier arrivals. The spec does not say whether that maximum persists across `make stream` runs and reconnects, or whether late events raise it. Check 7 and the on-time split in check 6 depend on this.
++- G-3 (blocking). Check 3 counts "awards", but the fact grain is one transaction. The spec does not name the award key (for example `generated_unique_award_id`). It also does not say whether net obligation is summed per award over FY2024 transactions before the sign test.
++- G-4 (blocking). The spec does not say whether place means place of performance or recipient location. It does not say how rows without a state or county are handled. Check 4 (county totals equal state totals, state totals equal the source total) fails or silently drops rows unless an unplaced rule exists.
++- G-5 (blocking). Publication scope is unclear. The spec says downstream reads only `out/marts/`. It does not say whether the star-schema fact and dimension tables are published there. `oracle_map.yml` allows a "table or SQL view", which may point outside `out/marts/`.
++- G-6 (non-blocking). Mart column names and types are not listed. The dbt contracts and `oracle_map.yml` cannot be written from the spec alone.
++- G-7 (non-blocking). The source amount type and the money precision are not stated. "Summed exactly" needs a fixed DECIMAL precision.
++- G-8 (non-blocking). Net bytes with a missing `length.old` or `length.new` is not defined. It is not stated whether such an event counts as an edit with 0 bytes.
++- G-9 (non-blocking). The bot split uses the recentchange `bot` flag. The rule for a missing flag is not stated.
++- G-10 (non-blocking). The wiki key for check 6 is not named. `en.wikipedia.org` must map to the stream `wiki` value (`enwiki`) through the sitematrix.
++- G-11 (non-blocking). "The replayed hour" for check 5 has no start or end. It is not stated whether the hour is taken by event time or arrival time.
++- G-12 (non-blocking). The population fallback says "latest earlier estimate". The join key (state and county FIPS) and the role of the 2021 file are not stated. `co-est2024-alldata.csv` has `POPESTIMATE2024` for all 3144 county rows, so the fallback applies only to keys absent from that file. The 2020 base (`ESTIMATESBASE2020`) must not be read as the population.
++- G-13 (non-blocking). The write disposition for each dlt source is not stated. dlt appends by default. "Running twice must not change any output" needs replace or merge per source.
++- G-14 (non-blocking). Check 2 has no rule for ties or very small populations.
++- G-15 (non-blocking). The stack paragraph has no heading. Output 3 refers to "the stack section" without a name. Minor.
++
++## Conflicts
++
++- C-1. "Anything downstream reads only out/marts/" conflicts with `oracle_map.yml` answering a check with any table or SQL view. Tied to G-5.
++
++## Risks for P1
++
++- The planner must choose a durable stream state store that holds the dedupe key, the resume position and the watermark. Without G-1 and G-2 fixed, no plan step can be verified.
++- The planner must choose the award key and the unplaced rule before writing the check-3 and check-4 queries.
++- Amounts and sums must use DECIMAL, not floats, in the staging models.
++
++## Blocking gaps
++
++G-1: No dedupe key and no resume position for stream events are named, so "no double count, no loss" across reconnects and restarts cannot be checked.
++G-2: The lateness watermark is not stated to persist across `make stream` runs or reconnects, and it is not stated whether late events raise it.
++G-3: The award key for check 3 is not named, and the sum-then-sign rule per award is not stated.
++G-4: The place rule (performance or recipient) and the handling of rows with no state or county are not stated, so check 4 cannot be checked.
++G-5: The publication scope of `out/marts/` is not stated for the star-schema fact and dimension tables, and it conflicts with the oracle map (C-1).
++
++## Verdict
++
++Verdict: NOT READY FOR PLANNING

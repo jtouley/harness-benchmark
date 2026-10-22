@@ -1,0 +1,5 @@
+harness-benchmark d8b96111ecca4367ce42c1c0feb7c85b4e1f27a7
+f8ec37e9dd739bdcff692b889cccf33d275d42a1c3972cf633ec147f076fafa5  /home/user/harness-benchmark/golden/pipeline/data/MANIFEST.json
+571a059a15d054d38d6a37bdeafbc9012a6316af44cd96795abe0a433bf34b11  /home/user/harness-benchmark/golden/pipeline/key/answer_key.json
+ golden/pipeline/pipetask/trial.py | 4 ++++
+ 1 file changed, 4 insertions(+)

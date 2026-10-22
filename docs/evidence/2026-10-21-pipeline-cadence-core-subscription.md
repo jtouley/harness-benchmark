@@ -1,6 +1,6 @@
 # Pipeline family: cadence-core on Haiku 5.5, run on a subscription (21–22 October 2026)
 
-Status: exploratory. Six counted runs (P1 and P2, three each) and two infrastructure losses, run on a
+Status: exploratory. Every number below is rechecked from the run records in [`evidence/`](../../evidence/README.md) (22 October), which also lists four corrections. Six counted runs (P1 and P2, three each) and two infrastructure losses, run on a
 host, not in the isolated runner. Data: [`2026-10-21-pipeline-cadence-core-subscription/`](2026-10-21-pipeline-cadence-core-subscription/).
 The one-shot rows it is compared with are from [the 15 October trials](2026-10-15-pipeline-trials.md); the
 earlier cadence-core round is on branch `ccr-3d2e0c73-lr6bdt`
@@ -31,7 +31,8 @@ On 15 October, Haiku 5.5 alone scored 0 of 7 on P1 and P2; Opus 5.5 alone 6 of 7
   `peer_models: {"default": "haiku"}`, and a committed `.cadence.json` that adds `pipeline/`, `engine/`,
   `pipelines/`, `transform/` and the `Makefile` to the gated prefixes. Headless variables from Cadence's
   quickstart (`CLAUDE_AUTO_BACKGROUND_TASKS=false`, `CLAUDE_CODE_PRINT_BG_WAIT_CEILING_MS=0`).
-  Claude Code 2.1.306, `claude -p`, permission mode `auto`.
+  Claude Code 2.1.306 for P1-1, P1-2, P2-1 and both lost runs; 2.1.307 for P1-3, P2-2 and P2-3 (the container
+  updated it after a restart; each run's `provenance.json` names its version). `claude -p`, permission mode `auto`.
 - **Prompt.** The 19 October prompt, word for word in form: the lockfile's `cadence-core` drive prompt
   around the task prompt, plus the same environment note (no GitHub, PR text to `outputs/PR.md`, nobody
   answers, task id gh-1). It carries the same prompt-hygiene limits that round lists (#56).
@@ -44,7 +45,7 @@ On 15 October, Haiku 5.5 alone scored 0 of 7 on P1 and P2; Opus 5.5 alone 6 of 7
 |---|---|---|---|---|---|---|---|---|
 | P1-cadence-core-haiku-1 | P1 | P4 | stopped to ask: P4 refused four times | 0 | 0.0 (0/7) | 9.6 | $0.11 | $0.12 |
 | P1-cadence-core-haiku-2 | P1 | P4 | `retries` hard stop: P4 drops the plan's provenance marker | 0 | 0.0 (0/7) | 20.6 | $0.24 | $0.25 |
-| P1-cadence-core-haiku-3 | P1 | E4 | `credentials` hard stop: no GitHub PR URL | 7 | 0.0 (0/7) | 51.6 | $0.55 | $1.71 |
+| P1-cadence-core-haiku-3 | P1 | E4 | `credentials` hard stop: no GitHub PR URL | 7 (8 commits) | 0.0 (0/7) | 51.6 | $0.55 | $1.71 |
 | P2-cadence-core-haiku-1 | P2 | P7 | `retries` hard stop: P7 failed three times | 0 | 0.0 (0/7) | 42.7 | $0.57 | $0.59 |
 | P2-cadence-core-haiku-2 | P2 | E4 | `credentials` hard stop: no GitHub PR URL | 11 | 0.0 (0/7) | 64.4 | $0.68 | $2.48 |
 | P2-cadence-core-haiku-3 | P2 | P7 (replan) | `retries` hard stop: P7 failed three times after a replan from E1 | 1 | 0.0 (0/7) | 81.3 | $1.09 | $1.54 |
@@ -108,8 +109,9 @@ reproduced here.
   open reading and the grade stands (the 15 October rule); three of its entries also read `lake/`,
   which the spec rules out. Haiku's 15 October P3 one-shot failed the same way.
 - **Both** published single-file marts (`out/marts/*.parquet`). The grader's run-twice check hashes
-  only mart folders (`mart_digests`), so it found no marts, set `idempotent: false` and would have
-  zeroed the reward on its own. This is #49, found in the postmortem and still on main.
+  only mart folders (`mart_digests`), so it found no marts and set `idempotent: false`. This is #49,
+  found in the postmortem and still on main. Regraded with a local fix, both are `idempotent: true`
+  and still 0 of 7.
 
 The first two are the 19 October lesson again: nothing in the core traces the ticket's own requirement
 list (here, the seven checks) to a delivered proof.
@@ -126,12 +128,19 @@ list (here, the seven checks) to a delivered proof.
    idle (14:47 UTC, 103 minutes into P1-0) and its worker was restarted once while busy (23:40 UTC,
    43 minutes into P2-2a). Both killed every process; both runs are infrastructure losses under §5.3
    and were run again. Two of eight sessions lost.
-4. **#49 decides grades now.** It zeroed both runs that built a pipeline. Until it is fixed, a
-   delivered pipeline with single-file marts cannot score.
+4. **#49 is real, but it did not decide these grades.** It sets `idempotent: false` on both runs that
+   built a pipeline, which zeroes the reward on its own. Regraded with a local fix, both runs still
+   score 0 of 7 (every check fails on the answer map), so their grades stand either way. A correct
+   pipeline with single-file marts does lose all its points to #49: the P1 reference, rewritten to
+   publish single files, scores 7 of 7 checks and reward 0 ([`evidence/`](../../evidence/README.md),
+   claims 2 and 3).
 5. **No clean room, and it showed.** A peer's file search found a second copy of the arm at
    `/home/user/cadence-core` (the same commit, `29315c4`), and peers read its skill files from there.
-   No session read anything under the benchmark's repository: no key, grader, reference or replay code
-   (checked by path in every transcript).
+   No tool call in any session touched the benchmark's repository, the key, the grader, the reference
+   solutions or another harness. Two `find` listings (P1-3, P2-3) showed file names under
+   `harness-benchmark/docs/evidence/2026-10-13-pilot/`, and 18 showed other harnesses' installs from
+   the tier 1-2 measurements; none of those files was opened. The search and its output:
+   [`evidence/`](../../evidence/README.md), claim 4.
 6. **Cost columns.** `pipeline_trial.py summary` reads `modelUsage` from the last `result` line. In a
    headless session with background peers there is one `result` line per wake-up; their `usage` is
    per wake-up, but `modelUsage` is session-wide and matches the per-message sums in the transcript, so
@@ -154,5 +163,5 @@ list (here, the seven checks) to a delivered proof.
 - In cadence-core: P4 must keep the plan's provenance marker; the P9 entry invariant must not pass
   while the plan's review is blocking or uncounted; and an orchestrator that cannot read a P7 scorecard
   needs the gate to print the failing rows.
-- In this benchmark: fix #49 before the next pipeline round; give the runner a subscription path or
+- In this benchmark: fix #49 before the next pipeline round (the patch in `evidence/issue49/` is tested); give the runner a subscription path or
   run on a Docker host with an API key.

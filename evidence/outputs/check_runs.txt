@@ -1,0 +1,146 @@
+## P1-cadence-core-haiku-0-killed
+driver: PIPE_ROOT=<dir> bash evidence/scripts/host_trial.sh P1 P1-cadence-core-haiku-1  (cadence-core 29315c4e64ff318a80a1a7d2c809beb4b3c15611, 2.1.306 (Claude Code), requested model claude-haiku-5-5)
+models that served assistant messages (distinct message ids): {'claude-haiku-5-5': 372}
+session ids in the transcript: ['5b20bc6c-3f91-5511-8000-71d5898a937e']
+NOT SCORED (infra_error): the cloud container was reclaimed while idle at about 14:47 UTC (transcript ends 14:47:08, mid E1 phase 4, 4 phase commits); every process died; not a scored run (criteria v2 section 5.3)
+
+## P1-cadence-core-haiku-1
+driver: PIPE_ROOT=<dir> bash evidence/scripts/host_trial.sh P1 P1-cadence-core-haiku-1  (cadence-core 29315c4e64ff318a80a1a7d2c809beb4b3c15611, 2.1.306 (Claude Code), requested model claude-haiku-5-5)
+models that served assistant messages (distinct message ids): {'claude-haiku-5-5': 78}
+session ids in the transcript: ['c65bced7-bf13-4703-854c-5110d5cbcf8b']
+stop record: {"class": null, "stop_refusals": 3, "stop_refusal_slug": "implement", "file": "docs/evidence/2026-10-21-pipeline-cadence-core-subscription/P1-cadence-core-haiku-1/context/sessions/by-worktree/ca342967282af126.json"}
+last refused peer handoff in the transcript: P4
+grader: reward 0.0, passed 0/7, idempotent False, stream_ok False, builds [2, 2], streams [2, 2]
+  check 1: pass=False oracle_map.yml is missing
+  check 2: pass=False oracle_map.yml is missing
+  check 3: pass=False oracle_map.yml is missing
+  check 4: pass=False oracle_map.yml is missing
+  check 5: pass=False oracle_map.yml is missing
+  check 6: pass=False oracle_map.yml is missing
+  check 7: pass=False oracle_map.yml is missing
+commits after the trial's base (0): 
+  ended_at       reported P4                     recomputed P4                     MATCH
+  stop           reported asked (no hard stop)   recomputed asked (no hard stop)   MATCH
+  phase_commits  reported 0                      recomputed 0                      MATCH
+  reward         reported 0.0                    recomputed 0.0                    MATCH
+  agent_min      reported 9.6                    recomputed 9.6                    MATCH
+  list_usd       reported 0.11                   recomputed 0.11                   MATCH
+  cc_usd         reported 0.12                   recomputed 0.12                   MATCH
+
+## P1-cadence-core-haiku-2
+driver: PIPE_ROOT=<dir> bash evidence/scripts/host_trial.sh P1 P1-cadence-core-haiku-2  (cadence-core 29315c4e64ff318a80a1a7d2c809beb4b3c15611, 2.1.306 (Claude Code), requested model claude-haiku-5-5)
+models that served assistant messages (distinct message ids): {'claude-haiku-5-5': 139}
+session ids in the transcript: ['2a23f7f8-4ce2-4a5e-9f73-a270e4880e3a']
+stop record: {"class": "retries", "reason": "P4 plan-update peer drops RUN_BY_COMMAND: plan-create on each update (cycles 1 and 2); every later peer handoff is denied. Blocked at P4 with no in-run recovery; see outputs/summary.md.", "at": "2026-10-21T22:54:12.543156+00:00", "file": "docs/evidence/2026-10-21-pipeline-cadence-core-subscription/P1-cadence-core-haiku-2/context/sessions/by-worktree/5e78b5040883579c.json"}
+grader: reward 0.0, passed 0/7, idempotent False, stream_ok False, builds [2, 2], streams [2, 2]
+  check 1: pass=False oracle_map.yml is missing
+  check 2: pass=False oracle_map.yml is missing
+  check 3: pass=False oracle_map.yml is missing
+  check 4: pass=False oracle_map.yml is missing
+  check 5: pass=False oracle_map.yml is missing
+  check 6: pass=False oracle_map.yml is missing
+  check 7: pass=False oracle_map.yml is missing
+commits after the trial's base (0): 
+  ended_at       reported P4                     recomputed P4                     MATCH
+  stop           reported retries                recomputed retries                MATCH
+  phase_commits  reported 0                      recomputed 0                      MATCH
+  reward         reported 0.0                    recomputed 0.0                    MATCH
+  agent_min      reported 20.6                   recomputed 20.6                   MATCH
+  list_usd       reported 0.24                   recomputed 0.24                   MATCH
+  cc_usd         reported 0.25                   recomputed 0.25                   MATCH
+
+## P1-cadence-core-haiku-3
+driver: PIPE_ROOT=<dir> bash evidence/scripts/host_trial.sh P1 P1-cadence-core-haiku-3  (cadence-core 29315c4e64ff318a80a1a7d2c809beb4b3c15611, 2.1.307 (Claude Code), requested model claude-haiku-5-5)
+models that served assistant messages (distinct message ids): {'claude-haiku-5-5': 280}
+session ids in the transcript: ['0b98a637-beef-4c9a-b7d6-93ee074fdbe7']
+stop record: {"class": "credentials", "reason": "E4 draft-pr gate needs a PR URL. origin is a local bare repo with no GitHub host and gh auth (GH_TOKEN) is invalid, so no PR can be opened. Branch feature/gh-1-pipeline is pushed at 66143c6. Fallback per the user is outputs/PR.md; gate does not accept it. Resume after gh auth and a GitHub remote exist.", "at": "2026-10-22T01:39:53.916740+00:00", "file": "docs/evidence/2026-10-21-pipeline-cadence-core-subscription/P1-cadence-core-haiku-3/context/sessions/by-worktree/9c51df402c8fc3e5.json"}
+grader: reward 0.0, passed 0/7, idempotent False, stream_ok True, builds [0, 0], streams [0, 0]
+  check 1: pass=False query failed: Parser Error: syntax error at or near "count"
+  check 2: pass=False query failed: Parser Error: syntax error at or near "sum"
+  check 3: pass=False query failed: Parser Error: syntax error at or near "each"
+  check 4: pass=False query failed: Parser Error: syntax error at or near "obligation_per_person"
+  check 5: pass=False query failed: Parser Error: syntax error at or near "count"
+  check 6: pass=False query failed: Parser Error: syntax error at or near "sum"
+  check 7: pass=False query failed: Parser Error: syntax error at or near "python"
+commits after the trial's base (8): refactor(stream): phase 3 split consume for R3, check URL scheme, bind oracle SQL; phase 7: documentation and PR text; phase 6: oracle map, idempotence, and end-to-end run; phase 5: marts, late events, and external publication; phase 4: staging and star schema in dbt-duckdb; phase 3: SSE consumer with resume and dedupe; phase 2: batch sources to the lake; phase 1: toolchain and Makefile skeleton
+  ended_at       reported E4                     recomputed E4                     MATCH
+  stop           reported credentials            recomputed credentials            MATCH
+  phase_commits  reported 7                      recomputed 8                      MISMATCH
+  reward         reported 0.0                    recomputed 0.0                    MATCH
+  agent_min      reported 51.6                   recomputed 51.6                   MATCH
+  list_usd       reported 0.55                   recomputed 0.55                   MATCH
+  cc_usd         reported 1.71                   recomputed 1.71                   MATCH
+
+## P2-cadence-core-haiku-1
+driver: PIPE_ROOT=<dir> bash evidence/scripts/host_trial.sh P2 P2-cadence-core-haiku-1  (cadence-core 29315c4e64ff318a80a1a7d2c809beb4b3c15611, 2.1.306 (Claude Code), requested model claude-haiku-5-5)
+models that served assistant messages (distinct message ids): {'claude-haiku-5-5': 316}
+session ids in the transcript: ['1e6fe736-5609-4dbd-99ba-e9021acbb70c']
+stop record: {"class": "retries", "reason": "P7 test-benchmark-plan returned FAIL three times (initial + two plan-update rounds carrying its record); retries exhausted before P8/P9/E1", "at": "2026-10-21T22:35:19.341828+00:00", "file": "docs/evidence/2026-10-21-pipeline-cadence-core-subscription/P2-cadence-core-haiku-1/context/sessions/by-worktree/dd962f6cc1983ba4.json"}
+grader: reward 0.0, passed 0/7, idempotent False, stream_ok False, builds [2, 2], streams [2, 2]
+  check 1: pass=False oracle_map.yml is missing
+  check 2: pass=False oracle_map.yml is missing
+  check 3: pass=False oracle_map.yml is missing
+  check 4: pass=False oracle_map.yml is missing
+  check 5: pass=False oracle_map.yml is missing
+  check 6: pass=False oracle_map.yml is missing
+  check 7: pass=False oracle_map.yml is missing
+commits after the trial's base (0): 
+  ended_at       reported P7                     recomputed P7                     MATCH
+  stop           reported retries                recomputed retries                MATCH
+  phase_commits  reported 0                      recomputed 0                      MATCH
+  reward         reported 0.0                    recomputed 0.0                    MATCH
+  agent_min      reported 42.7                   recomputed 42.7                   MATCH
+  list_usd       reported 0.57                   recomputed 0.57                   MATCH
+  cc_usd         reported 0.59                   recomputed 0.59                   MATCH
+
+## P2-cadence-core-haiku-2
+driver: PIPE_ROOT=<dir> bash evidence/scripts/host_trial.sh P2 P2-cadence-core-haiku-2  (cadence-core 29315c4e64ff318a80a1a7d2c809beb4b3c15611, 2.1.307 (Claude Code), requested model claude-haiku-5-5)
+models that served assistant messages (distinct message ids): {'claude-haiku-5-5': 254}
+session ids in the transcript: ['e1a634d0-0559-4658-867a-cae0f2d30933']
+stop record: {"class": "credentials", "reason": "E4 draft PR cannot be opened: origin is a local bare repo, gh rejects it and GH_TOKEN is invalid. The draft-pr gate and R1 require a github.com pull-request URL, which this environment cannot produce. PR text is at outputs/PR.md; the branch is pushed to origin at edc56ea. Stopping before R1 so no PR URL is invented.", "at": "2026-10-22T00:44:39.310976+00:00", "file": "docs/evidence/2026-10-21-pipeline-cadence-core-subscription/P2-cadence-core-haiku-2/context/sessions/by-worktree/9487b5749ad2da28.json"}
+grader: reward 0.0, passed 0/7, idempotent False, stream_ok True, builds [0, 0], streams [0, 0]
+  check 1: pass=False query failed: Parser Error: syntax error at or near "tests"
+  check 2: pass=False query failed: Parser Error: syntax error at or near "tests"
+  check 3: pass=False query failed: Parser Error: syntax error at or near "tests"
+  check 4: pass=False query failed: Parser Error: syntax error at or near "tests"
+  check 5: pass=False query failed: Parser Error: syntax error at or near "tests"
+  check 6: pass=False query failed: Parser Error: syntax error at or near "tests"
+  check 7: pass=False query failed: Parser Error: syntax error at or near "tests"
+commits after the trial's base (12): refactor: meet the R3 limits for the cadence run; phase 10: oracle map, decisions file, checks, and acceptance run; phase 9: dbt stream models: edit fact and 5-minute window mart; phase 8: dbt batch models: staging, star schema, Question A mart; phase 7: pipeline YAML files and make targets; phase 6: event identity, edit rule and late events; phase 5: stream source and micro-batch stream sink; phase 4: polars and datafusion transforms; phase 3: file sources and clean source tables; phase 2: engine core and parquet lake sink; phase 1: pipeline YAML loading and schema validation; phase 0: dependencies and package skeleton
+  ended_at       reported E4                     recomputed E4                     MATCH
+  stop           reported credentials            recomputed credentials            MATCH
+  phase_commits  reported 11                     recomputed 11                     MATCH
+  reward         reported 0.0                    recomputed 0.0                    MATCH
+  agent_min      reported 64.4                   recomputed 64.4                   MATCH
+  list_usd       reported 0.68                   recomputed 0.68                   MATCH
+  cc_usd         reported 2.48                   recomputed 2.48                   MATCH
+
+## P2-cadence-core-haiku-2a-killed
+driver: PIPE_ROOT=<dir> bash evidence/scripts/host_trial.sh P2 P2-cadence-core-haiku-2  (cadence-core 29315c4e64ff318a80a1a7d2c809beb4b3c15611, 2.1.306 (Claude Code), requested model claude-haiku-5-5)
+models that served assistant messages (distinct message ids): {'claude-haiku-5-5': 218, '<synthetic>': 1}
+session ids in the transcript: ['6ec88388-bb4b-48de-b8ef-9be1867d3497']
+NOT SCORED (infra_error): the cloud container's worker was restarted at 23:40:52 UTC (transcript ends 23:40:44, in E1 after phase 6 of the plan, P9 passed, 8 commits); every process died; not a scored run (criteria v2 section 5.3)
+
+## P2-cadence-core-haiku-3
+driver: PIPE_ROOT=<dir> bash evidence/scripts/host_trial.sh P2 P2-cadence-core-haiku-3  (cadence-core 29315c4e64ff318a80a1a7d2c809beb4b3c15611, 2.1.307 (Claude Code), requested model claude-haiku-5-5)
+models that served assistant messages (distinct message ids): {'claude-haiku-5-5': 583}
+session ids in the transcript: ['b4108d41-f07f-4e2e-8c80-6569c22d2c5e']
+stop record: {"class": "retries", "reason": "P7 test-benchmark-plan FAIL three times (initial, after fix round 1, after fix round 2) on the fresh run plan; no retries left under self-healing. Stopped before P8 deferral register, P9 entry invariant and E1 implementation.", "at": "2026-10-22T03:02:33.324514+00:00", "file": "docs/evidence/2026-10-21-pipeline-cadence-core-subscription/P2-cadence-core-haiku-3/context/sessions/by-worktree/dc4f69d0abf1dd71.json"}
+grader: reward 0.0, passed 0/7, idempotent False, stream_ok False, builds [2, 2], streams [2, 2]
+  check 1: pass=False oracle_map.yml is missing
+  check 2: pass=False oracle_map.yml is missing
+  check 3: pass=False oracle_map.yml is missing
+  check 4: pass=False oracle_map.yml is missing
+  check 5: pass=False oracle_map.yml is missing
+  check 6: pass=False oracle_map.yml is missing
+  check 7: pass=False oracle_map.yml is missing
+commits after the trial's base (1): feat(engine): phase 1 skeleton, schema and validation
+  ended_at       reported P7                     recomputed P7                     MATCH
+  stop           reported retries                recomputed retries                MATCH
+  phase_commits  reported 1                      recomputed 1                      MATCH
+  reward         reported 0.0                    recomputed 0.0                    MATCH
+  agent_min      reported 81.3                   recomputed 81.3                   MATCH
+  list_usd       reported 1.09                   recomputed 1.09                   MATCH
+  cc_usd         reported 1.54                   recomputed 1.54                   MATCH
+
+mismatches: 1

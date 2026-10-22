@@ -1,0 +1,55 @@
+harness-benchmark d8b96111ecca4367ce42c1c0feb7c85b4e1f27a7, run P1-cadence-core-haiku-3, task P1
+P1-cadence-core-haiku-3 grader=committed reward=0.0 passed=0/7 idempotent=False stream_ok=True builds=[0, 0] changed_by_second_build=[]
+  check 1: pass=False query failed: Parser Error: syntax error at or near "count"
+  check 2: pass=False query failed: Parser Error: syntax error at or near "sum"
+  check 3: pass=False query failed: Parser Error: syntax error at or near "each"
+  check 4: pass=False query failed: Parser Error: syntax error at or near "obligation_per_person"
+  check 5: pass=False query failed: Parser Error: syntax error at or near "count"
+  check 6: pass=False query failed: Parser Error: syntax error at or near "sum"
+  check 7: pass=False query failed: Parser Error: syntax error at or near "python"
+P1-cadence-core-haiku-3 grader=patched   reward=0.0 passed=0/7 idempotent=True stream_ok=True builds=[0, 0] changed_by_second_build=[]
+  check 1: pass=False query failed: Parser Error: syntax error at or near "count"
+  check 2: pass=False query failed: Parser Error: syntax error at or near "sum"
+  check 3: pass=False query failed: Parser Error: syntax error at or near "each"
+  check 4: pass=False query failed: Parser Error: syntax error at or near "obligation_per_person"
+  check 5: pass=False query failed: Parser Error: syntax error at or near "count"
+  check 6: pass=False query failed: Parser Error: syntax error at or near "sum"
+  check 7: pass=False query failed: Parser Error: syntax error at or near "python"
+harness-benchmark d8b96111ecca4367ce42c1c0feb7c85b4e1f27a7, run P2-cadence-core-haiku-2, task P2
+P2-cadence-core-haiku-2 grader=committed reward=0.0 passed=0/7 idempotent=False stream_ok=True builds=[0, 0] changed_by_second_build=[]
+  check 1: pass=False query failed: Parser Error: syntax error at or near "tests"
+  check 2: pass=False query failed: Parser Error: syntax error at or near "tests"
+  check 3: pass=False query failed: Parser Error: syntax error at or near "tests"
+  check 4: pass=False query failed: Parser Error: syntax error at or near "tests"
+  check 5: pass=False query failed: Parser Error: syntax error at or near "tests"
+  check 6: pass=False query failed: Parser Error: syntax error at or near "tests"
+  check 7: pass=False query failed: Parser Error: syntax error at or near "tests"
+P2-cadence-core-haiku-2 grader=patched   reward=0.0 passed=0/7 idempotent=True stream_ok=True builds=[0, 0] changed_by_second_build=[]
+  check 1: pass=False query failed: Parser Error: syntax error at or near "tests"
+  check 2: pass=False query failed: Parser Error: syntax error at or near "tests"
+  check 3: pass=False query failed: Parser Error: syntax error at or near "tests"
+  check 4: pass=False query failed: Parser Error: syntax error at or near "tests"
+  check 5: pass=False query failed: Parser Error: syntax error at or near "tests"
+  check 6: pass=False query failed: Parser Error: syntax error at or near "tests"
+  check 7: pass=False query failed: Parser Error: syntax error at or near "tests"
+exit=0
+harness-benchmark d8b96111ecca4367ce42c1c0feb7c85b4e1f27a7, run P1-cadence-core-haiku-1, task P1
+P1-cadence-core-haiku-1 grader=committed reward=0.0 passed=0/7 idempotent=False stream_ok=False builds=[2, 2] changed_by_second_build=[]
+  check 1: pass=False oracle_map.yml is missing
+P1-cadence-core-haiku-1 grader=patched   reward=0.0 passed=0/7 idempotent=False stream_ok=False builds=[2, 2] changed_by_second_build=[]
+  check 1: pass=False oracle_map.yml is missing
+harness-benchmark d8b96111ecca4367ce42c1c0feb7c85b4e1f27a7, run P1-cadence-core-haiku-2, task P1
+P1-cadence-core-haiku-2 grader=committed reward=0.0 passed=0/7 idempotent=False stream_ok=False builds=[2, 2] changed_by_second_build=[]
+  check 1: pass=False oracle_map.yml is missing
+P1-cadence-core-haiku-2 grader=patched   reward=0.0 passed=0/7 idempotent=False stream_ok=False builds=[2, 2] changed_by_second_build=[]
+  check 1: pass=False oracle_map.yml is missing
+harness-benchmark d8b96111ecca4367ce42c1c0feb7c85b4e1f27a7, run P2-cadence-core-haiku-1, task P2
+P2-cadence-core-haiku-1 grader=committed reward=0.0 passed=0/7 idempotent=False stream_ok=False builds=[2, 2] changed_by_second_build=[]
+  check 1: pass=False oracle_map.yml is missing
+P2-cadence-core-haiku-1 grader=patched   reward=0.0 passed=0/7 idempotent=False stream_ok=False builds=[2, 2] changed_by_second_build=[]
+  check 1: pass=False oracle_map.yml is missing
+harness-benchmark d8b96111ecca4367ce42c1c0feb7c85b4e1f27a7, run P2-cadence-core-haiku-3, task P2
+P2-cadence-core-haiku-3 grader=committed reward=0.0 passed=0/7 idempotent=False stream_ok=False builds=[2, 2] changed_by_second_build=[]
+  check 1: pass=False oracle_map.yml is missing
+P2-cadence-core-haiku-3 grader=patched   reward=0.0 passed=0/7 idempotent=False stream_ok=False builds=[2, 2] changed_by_second_build=[]
+  check 1: pass=False oracle_map.yml is missing

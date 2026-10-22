@@ -1,0 +1,1 @@
+harness-benchmark d8b96111ecca4367ce42c1c0feb7c85b4e1f27a7, run P1-cadence-core-haiku-2, task P1

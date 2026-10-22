@@ -101,7 +101,7 @@ what produced each number, and the [whitepaper](../whitepaper.md) draws them tog
   to container restarts and run again.
 - Result: 0 of 7 in all six. Four runs stopped in planning on gate and contract failures; the two that
   built a working pipeline stopped at E4, which needs a GitHub PR URL, and lost their checks to answer
-  maps that do not answer the ticket's checks and to grader defect #49.
+  maps that do not answer the ticket's checks (still 0 of 7 with grader defect #49 fixed).
 - Read: [write-up](2026-10-21-pipeline-cadence-core-subscription.md), [data](2026-10-21-pipeline-cadence-core-subscription/)
 
 ## Scripts kept with the data

@@ -1,0 +1,21 @@
+harness-benchmark d8b96111ecca4367ce42c1c0feb7c85b4e1f27a7
+f8ec37e9dd739bdcff692b889cccf33d275d42a1c3972cf633ec147f076fafa5  /home/user/harness-benchmark/golden/pipeline/data/MANIFEST.json
+571a059a15d054d38d6a37bdeafbc9012a6316af44cd96795abe0a433bf34b11  /home/user/harness-benchmark/golden/pipeline/key/answer_key.json
+Preparing worktree (detached HEAD d8b9611)
+ golden/pipeline/pipetask/trial.py | 4 ++++
+ 1 file changed, 4 insertions(+)
+ Makefile                   |  1 +
+ tools/single_file_marts.py | 12 ++++++++++++
+ 2 files changed, 13 insertions(+)
+--- results
+A-reference-committed        reward=1.0 passed=7/7 idempotent=True stream_ok=True builds=[0, 0]
+B-single-file-committed      reward=0.0 passed=7/7 idempotent=False stream_ok=True builds=[0, 0]
+B-single-file-patched        reward=1.0 passed=7/7 idempotent=True stream_ok=True builds=[0, 0]
+A-reference-patched          reward=1.0 passed=7/7 idempotent=True stream_ok=True builds=[0, 0]
+late_events
+mart_award_obligations.parquet
+mart_county_obligations.parquet
+mart_edit_windows
+mart_monthly_obligations.parquet
+mart_wiki_edits
+exit=0

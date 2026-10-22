@@ -1,0 +1,15 @@
+diff --git a/golden/pipeline/pipetask/trial.py b/golden/pipeline/pipetask/trial.py
+index 15b9ac0..5575084 100644
+--- a/golden/pipeline/pipetask/trial.py
++++ b/golden/pipeline/pipetask/trial.py
+@@ -126,6 +126,10 @@ def mart_digests(repo: Path) -> dict[str, str]:
+         row = con.execute(f"select count(*), coalesce(md5(string_agg(h, '' order by h)), '') from "
+                           f"(select md5(t::varchar) as h from read_parquet({glob}, union_by_name=true) t)").fetchone()
+         out[folder.name] = f"{row[0]}:{row[1]}"
++    for file in sorted(marts.glob("*.parquet")):  # a mart published as a single file, as oracle.py reads it
++        row = con.execute(f"select count(*), coalesce(md5(string_agg(h, '' order by h)), '') from "
++                          f"(select md5(t::varchar) as h from read_parquet({sql_string(file.as_posix())}) t)").fetchone()
++        out[file.stem] = f"{row[0]}:{row[1]}"
+     return out
+ 
+ 

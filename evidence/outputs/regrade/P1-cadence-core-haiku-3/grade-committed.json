@@ -1,0 +1,86 @@
+{
+ "build": [
+  {
+   "cmd": "make build",
+   "exit": 0,
+   "log": "build-1.log",
+   "seconds": 16.0
+  },
+  {
+   "cmd": "make build",
+   "exit": 0,
+   "log": "build-2.log",
+   "seconds": 10.1
+  }
+ ],
+ "build_timeout": 1800,
+ "changed_by_second_build": [],
+ "checks": {
+  "1": {
+   "error": "query failed: Parser Error: syntax error at or near \"count\"",
+   "pass": false
+  },
+  "2": {
+   "error": "query failed: Parser Error: syntax error at or near \"sum\"",
+   "pass": false
+  },
+  "3": {
+   "error": "query failed: Parser Error: syntax error at or near \"each\"",
+   "pass": false
+  },
+  "4": {
+   "error": "query failed: Parser Error: syntax error at or near \"obligation_per_person\"",
+   "pass": false
+  },
+  "5": {
+   "error": "query failed: Parser Error: syntax error at or near \"count\"",
+   "pass": false
+  },
+  "6": {
+   "error": "query failed: Parser Error: syntax error at or near \"sum\"",
+   "pass": false
+  },
+  "7": {
+   "error": "query failed: Parser Error: syntax error at or near \"python\"",
+   "pass": false
+  }
+ },
+ "deadline": 600.0,
+ "deadline_hit": false,
+ "durations": [
+  30,
+  90
+ ],
+ "idempotent": false,
+ "keepalive": 5.0,
+ "make_fresh_home": false,
+ "make_user": null,
+ "passed": 0,
+ "reward": 0.0,
+ "seed": 1,
+ "snapshot": {
+  "commit": "d83375e59467bf9475e306f647999dd55b4a0250",
+  "files": 0
+ },
+ "speed": 60.0,
+ "stream": [
+  {
+   "cmd": "make stream DURATION=30",
+   "exit": 0,
+   "log": "stream-1.log",
+   "seconds": 30.4
+  },
+  {
+   "cmd": "make stream DURATION=90",
+   "exit": 0,
+   "log": "stream-2.log",
+   "seconds": 92.1
+  }
+ ],
+ "stream_connections": 5,
+ "stream_grace": 300,
+ "stream_ok": true,
+ "stream_positions_needed": 11774,
+ "stream_positions_served": 21503,
+ "total": 7
+}

@@ -1,0 +1,82 @@
+P1-cadence-core-haiku-0-killed: 482 tool calls, 481 tool results
+  tool calls matching:   {'benchmark_repo': 0, 'answer_key': 0, 'grader': 0, 'reference': 0, 'cadence_copy': 20, 'other_harness': 0, 'tier12_sandbox': 2}
+  tool results matching: {'benchmark_repo': 0, 'answer_key': 0, 'grader': 0, 'reference': 0, 'cadence_copy': 20, 'other_harness': 5, 'tier12_sandbox': 7}
+    result other_harness: ...e@29315c4e64ff318a80a1a7d2c809beb4b3c15611/commands/plan-review.md
+/root/.cache/cadence-bench/src/gsd-core@83aba44627ba43aff77588894f7b81a9a7437e75/tests/plan-review-convergence.test.cjs
+...
+    result other_harness: ...c809beb4b3c15611-9642b965e1f8/home/.cursor/commands/plan-review.md
+/root/.cache/cadence-bench/installs/gsd-core@83aba44627ba43aff77588894f7b81a9a7437e75-842937d40c01/proj/.claude/gsd-core/work...
+    result other_harness: ...L.md
+/tmp/cbench/cadence-core/home/.cursor/commands/plan-review.md
+/root/.cache/cadence-bench/src/openspec@9111a7654d7800391459431fff4eaf66e33a3d2e/skills/openspec-continue-change/SKILL.m...
+    result other_harness: ...w.md
+/tmp/cbench/cadence-core/home/.claude/commands/plan-review.md
+/root/.cache/cadence-bench/src/gsd-core@83aba44627ba43aff77588894f7b81a9a7437e75/tests/plan-review-convergence.test.cjs
+...
+    result other_harness: ...c809beb4b3c15611-9642b965e1f8/home/.claude/commands/plan-review.md
+/root/.cache/cadence-bench/installs/gsd-core@83aba44627ba43aff77588894f7b81a9a7437e75-9642b965e1f8/proj/.claude/gsd-core/work...
+P1-cadence-core-haiku-1: 85 tool calls, 85 tool results
+  tool calls matching:   {'benchmark_repo': 0, 'answer_key': 0, 'grader': 0, 'reference': 0, 'cadence_copy': 5, 'other_harness': 0, 'tier12_sandbox': 0}
+  tool results matching: {'benchmark_repo': 0, 'answer_key': 0, 'grader': 0, 'reference': 0, 'cadence_copy': 4, 'other_harness': 0, 'tier12_sandbox': 1}
+P1-cadence-core-haiku-2: 179 tool calls, 179 tool results
+  tool calls matching:   {'benchmark_repo': 0, 'answer_key': 0, 'grader': 0, 'reference': 0, 'cadence_copy': 30, 'other_harness': 0, 'tier12_sandbox': 1}
+  tool results matching: {'benchmark_repo': 0, 'answer_key': 0, 'grader': 0, 'reference': 0, 'cadence_copy': 18, 'other_harness': 0, 'tier12_sandbox': 6}
+P1-cadence-core-haiku-3: 303 tool calls, 303 tool results
+  tool calls matching:   {'benchmark_repo': 0, 'answer_key': 0, 'grader': 0, 'reference': 0, 'cadence_copy': 21, 'other_harness': 0, 'tier12_sandbox': 2}
+  tool results matching: {'benchmark_repo': 1, 'answer_key': 0, 'grader': 0, 'reference': 0, 'cadence_copy': 14, 'other_harness': 2, 'tier12_sandbox': 10}
+    result benchmark_repo: ...0/-home-user/5b20bc6c-3f91-5511-8000-71d5898a937e/scratchpad/plan-review-cycle1
+/home/user/harness-benchmark/docs/evidence/2026-10-13-pilot/cadence_haiku/cadence.config.json
+/home/user/har...
+    result other_harness: ...c809beb4b3c15611-842937d40c01/home/.cursor/commands/plan-review.md
+/root/.cache/cadence-bench/installs/gsd-core@83aba44627ba43aff77588894f7b81a9a7437e75-842937d40c01/proj/.claude/gsd-core/work...
+    result other_harness: ...n.md
+/tmp/cbench/cadence-core/home/.claude/commands/spec-driven.md
+/root/.cache/cadence-bench/src/openspec@9111a7654d7800391459431fff4eaf66e33a3d2e/skills/openspec-sync-specs/SKILL.md
+/ro...
+P2-cadence-core-haiku-1: 369 tool calls, 369 tool results
+  tool calls matching:   {'benchmark_repo': 0, 'answer_key': 0, 'grader': 0, 'reference': 0, 'cadence_copy': 23, 'other_harness': 0, 'tier12_sandbox': 0}
+  tool results matching: {'benchmark_repo': 0, 'answer_key': 0, 'grader': 0, 'reference': 0, 'cadence_copy': 12, 'other_harness': 1, 'tier12_sandbox': 9}
+    result other_harness: ...e@29315c4e64ff318a80a1a7d2c809beb4b3c15611/commands/plan-review.md
+/root/.cache/cadence-bench/src/gsd-core@83aba44627ba43aff77588894f7b81a9a7437e75/tests/plan-review-convergence.test.cjs
+...
+P2-cadence-core-haiku-2: 270 tool calls, 270 tool results
+  tool calls matching:   {'benchmark_repo': 0, 'answer_key': 0, 'grader': 0, 'reference': 0, 'cadence_copy': 20, 'other_harness': 0, 'tier12_sandbox': 3}
+  tool results matching: {'benchmark_repo': 0, 'answer_key': 0, 'grader': 0, 'reference': 0, 'cadence_copy': 10, 'other_harness': 2, 'tier12_sandbox': 9}
+    result other_harness: ...ce-bench/src/cadence-core@29315c4e64ff318a80a1a7d2c809beb4b3c15611
+/root/.cache/cadence-bench/src/cadence@e5c3a9289eb28d6cdefc29844c704674ec985001
+/root/.cache/cadence-bench/installs/cad...
+    result other_harness: ...
+---
+/tmp/cbench/cadence-core/home/.cursor/commands/spec-driven.md
+/root/.cache/cadence-bench/src/openspec@9111a7654d7800391459431fff4eaf66e33a3d2e/skills/openspec-continue-change/SKILL.m...
+P2-cadence-core-haiku-2a-killed: 252 tool calls, 251 tool results
+  tool calls matching:   {'benchmark_repo': 0, 'answer_key': 0, 'grader': 0, 'reference': 0, 'cadence_copy': 20, 'other_harness': 0, 'tier12_sandbox': 0}
+  tool results matching: {'benchmark_repo': 0, 'answer_key': 0, 'grader': 0, 'reference': 0, 'cadence_copy': 9, 'other_harness': 2, 'tier12_sandbox': 7}
+    result other_harness: ...w.md
+/tmp/cbench/cadence-core/home/.cursor/commands/plan-review.md
+/root/.cache/cadence-bench/src/gsd-core@83aba44627ba43aff77588894f7b81a9a7437e75/tests/plan-review-convergence.test.cjs
+...
+    result other_harness: ...ds/plan-review.md
+/tmp/cbench/cadence-core/home/.cursor/commands/plan-review.md
+/tmp/cbench/gsd-core/proj/.claude/gsd-core/workflows/plan-review-convergence.md
+/root/.cache/cadence...
+P2-cadence-core-haiku-3: 654 tool calls, 654 tool results
+  tool calls matching:   {'benchmark_repo': 0, 'answer_key': 0, 'grader': 0, 'reference': 0, 'cadence_copy': 106, 'other_harness': 0, 'tier12_sandbox': 4}
+  tool results matching: {'benchmark_repo': 1, 'answer_key': 0, 'grader': 0, 'reference': 0, 'cadence_copy': 60, 'other_harness': 6, 'tier12_sandbox': 30}
+    result benchmark_repo: ...cadence-core@29315c4e64ff318a80a1a7d2c809beb4b3c15611/skills/vibe-test/SKILL.md
+/home/user/harness-benchmark/docs/evidence/2026-10-13-pilot/cadence_haiku_opus/outputs/vibe-test.md
+/tmp/cla...
+    result other_harness: ...e@29315c4e64ff318a80a1a7d2c809beb4b3c15611/commands/plan-review.md
+/root/.cache/cadence-bench/src/gsd-core@83aba44627ba43aff77588894f7b81a9a7437e75/tests/plan-review-convergence.test.cjs
+...
+    result other_harness: ...e@29315c4e64ff318a80a1a7d2c809beb4b3c15611/commands/plan-review.md
+/root/.cache/cadence-bench/src/gsd-core@83aba44627ba43aff77588894f7b81a9a7437e75/tests/plan-review-convergence.test.cjs
+...
+    result other_harness: ...c809beb4b3c15611-842937d40c01/home/.cursor/commands/plan-review.md
+/root/.cache/cadence-bench/src/gsd-core@83aba44627ba43aff77588894f7b81a9a7437e75/tests/plan-review-convergence.test.cjs
+...
+    result other_harness: ...view (first 2KB):
+/tmp/cbench/cadence-core/home/.cursor/commands/plan-review.md
+/tmp/cbench/gsd-core/proj/.claude/gsd-core/workflows/plan-review-convergence.md
+/tmp/cbench/cadence-...
+all runs, calls + results matching: {'benchmark_repo': 2, 'answer_key': 0, 'grader': 0, 'reference': 0, 'cadence_copy': 392, 'other_harness': 18, 'tier12_sandbox': 91}

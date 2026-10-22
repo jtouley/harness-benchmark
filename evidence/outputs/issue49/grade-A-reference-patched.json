@@ -1,0 +1,100 @@
+{
+ "build": [
+  {
+   "cmd": "make build",
+   "exit": 0,
+   "log": "build-1.log",
+   "seconds": 16.4
+  },
+  {
+   "cmd": "make build",
+   "exit": 0,
+   "log": "build-2.log",
+   "seconds": 9.4
+  }
+ ],
+ "build_timeout": 1800,
+ "changed_by_second_build": [],
+ "checks": {
+  "1": {
+   "interpretation": "primary",
+   "pass": true,
+   "reading": "agency_name -> net_obligations",
+   "source": "query"
+  },
+  "2": {
+   "interpretation": "primary",
+   "pass": true,
+   "reading": "county_fips -> obligations_per_person",
+   "source": "query"
+  },
+  "3": {
+   "interpretation": "primary",
+   "pass": true,
+   "reading": "awards",
+   "source": "query"
+  },
+  "4": {
+   "interpretation": "primary",
+   "pass": true,
+   "reading": "month month_start, state state_fips, county county_fips -> net_obligations",
+   "source": "table mart_monthly_obligations"
+  },
+  "5": {
+   "interpretation": "primary",
+   "pass": true,
+   "reading": "wiki, actor_type -> edits, net_bytes",
+   "source": "query"
+  },
+  "6": {
+   "interpretation": "primary",
+   "pass": true,
+   "reading": "window_start -> edits",
+   "source": "query"
+  },
+  "7": {
+   "interpretation": "primary",
+   "pass": true,
+   "reading": "late_events",
+   "source": "query"
+  }
+ },
+ "deadline": 600.0,
+ "deadline_hit": false,
+ "durations": [
+  30,
+  90
+ ],
+ "idempotent": true,
+ "keepalive": 5.0,
+ "make_fresh_home": false,
+ "make_user": null,
+ "passed": 7,
+ "reward": 1.0,
+ "seed": 1,
+ "snapshot": {
+  "commit": "74dfd86e19f87516d6f9d0125a15a476783a177d",
+  "files": 0
+ },
+ "speed": 60.0,
+ "stream": [
+  {
+   "cmd": "make stream DURATION=30",
+   "exit": 0,
+   "log": "stream-1.log",
+   "seconds": 36.9
+  },
+  {
+   "cmd": "make stream DURATION=90",
+   "exit": 0,
+   "log": "stream-2.log",
+   "seconds": 99.1
+  }
+ ],
+ "stream_connections": 5,
+ "stream_grace": 300,
+ "stream_ok": true,
+ "stream_positions_needed": 11774,
+ "stream_positions_served": 21503,
+ "total": 7
+}

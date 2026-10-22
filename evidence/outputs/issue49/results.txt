@@ -1,0 +1,11 @@
+--- results
+A-reference-committed        reward=1.0 passed=7/7 idempotent=True stream_ok=True builds=[0, 0]
+B-single-file-committed      reward=0.0 passed=7/7 idempotent=False stream_ok=True builds=[0, 0]
+B-single-file-patched        reward=1.0 passed=7/7 idempotent=True stream_ok=True builds=[0, 0]
+A-reference-patched          reward=1.0 passed=7/7 idempotent=True stream_ok=True builds=[0, 0]
+late_events
+mart_award_obligations.parquet
+mart_county_obligations.parquet
+mart_edit_windows
+mart_monthly_obligations.parquet
+mart_wiki_edits

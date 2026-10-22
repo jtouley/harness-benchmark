@@ -1,0 +1,1337 @@
+diff --git a/.cadence.json b/.cadence.json
+new file mode 100644
+index 0000000..42cc2ab
+--- /dev/null
++++ b/.cadence.json
+@@ -0,0 +1,3 @@
++{
++  "gated_prefixes": ["src/", "lib/", "app/", "packages/", "pipeline/", "engine/", "pipelines/", "transform/", "Makefile"]
++}
+diff --git a/.context/attest/1a240cbc-2484-4175-b2ce-b76ba5272a21.agents.jsonl b/.context/attest/1a240cbc-2484-4175-b2ce-b76ba5272a21.agents.jsonl
+new file mode 100644
+index 0000000..37d6e07
+--- /dev/null
++++ b/.context/attest/1a240cbc-2484-4175-b2ce-b76ba5272a21.agents.jsonl
+@@ -0,0 +1,14 @@
++{"agent_id": "ab3fd8c1a74964ac3", "event": "start", "at": 1792622228.4889095}
++{"agent_id": "ab3fd8c1a74964ac3", "event": "stop", "at": 1792622288.9079828}
++{"agent_id": "a092be2f8e70e5320", "event": "start", "at": 1792622292.294406}
++{"agent_id": "abcb86a3e5383143d", "event": "start", "at": 1792622414.7776814}
++{"agent_id": "a092be2f8e70e5320", "event": "stop", "at": 1792622444.3861175}
++{"agent_id": "abcb86a3e5383143d", "event": "stop", "at": 1792622586.2066252}
++{"agent_id": "a392f66bcbaed60c3", "event": "start", "at": 1792622591.0979967}
++{"agent_id": "a392f66bcbaed60c3", "event": "stop", "at": 1792622801.1301637}
++{"agent_id": "af5c6ff732e17af85", "event": "start", "at": 1792622828.7394674}
++{"agent_id": "af5c6ff732e17af85", "event": "stop", "at": 1792622908.418461}
++{"agent_id": "aa2e8ed1171c1040d", "event": "start", "at": 1792622913.5795107}
++{"agent_id": "aa2e8ed1171c1040d", "event": "stop", "at": 1792623078.35568}
++{"agent_id": "a50cc3dc913b3f409", "event": "start", "at": 1792623080.6787705}
++{"agent_id": "a50cc3dc913b3f409", "event": "stop", "at": 1792623234.3782334}
+diff --git a/.context/attest/1a240cbc-2484-4175-b2ce-b76ba5272a21.calls.jsonl b/.context/attest/1a240cbc-2484-4175-b2ce-b76ba5272a21.calls.jsonl
+new file mode 100644
+index 0000000..0960afb
+--- /dev/null
++++ b/.context/attest/1a240cbc-2484-4175-b2ce-b76ba5272a21.calls.jsonl
+@@ -0,0 +1,9 @@
++{"tool_use_id": "toolu_018S9rAqfA1AiweK83a6qVvA", "stage": "vibe-test", "model_slug": "validate", "model": "haiku", "decision": "allow", "run_id": "1a240cbc-2484-4175-b2ce-b76ba5272a21", "at": 1792622228.1812804}
++{"tool_use_id": "toolu_01Ln89G22kRANwf2cEahW1Az", "stage": "plan-create", "model_slug": "plan-create", "model": "haiku", "decision": "allow", "run_id": "1a240cbc-2484-4175-b2ce-b76ba5272a21", "at": 1792622291.9996018}
++{"tool_use_id": "toolu_01RXhwjT2MkZw217u9LsS1HZ", "stage": "plan-review", "model_slug": "plan-review", "model": "haiku", "decision": "allow", "run_id": "1a240cbc-2484-4175-b2ce-b76ba5272a21", "at": 1792622414.548022}
++{"tool_use_id": "toolu_01MGu86verd5gnZihP5bMe5b", "stage": "plan-update", "model_slug": null, "model": "haiku", "decision": "allow", "run_id": "1a240cbc-2484-4175-b2ce-b76ba5272a21", "at": 1792622590.8514183}
++{"tool_use_id": "toolu_01PeLig8mXZs3qp4Kugm8Wx1", "stage": "plan-review", "model_slug": "plan-review", "model": "haiku", "decision": "deny", "run_id": "1a240cbc-2484-4175-b2ce-b76ba5272a21", "at": 1792622803.3199673}
++{"tool_use_id": "toolu_019BHQdrR3pzf6DX6A5ZcHWg", "stage": "plan-update", "model_slug": null, "model": "haiku", "decision": "deny", "run_id": "1a240cbc-2484-4175-b2ce-b76ba5272a21", "at": 1792622816.9242308}
++{"tool_use_id": "toolu_01GjaJYoBsdzPAfSDhXvAdnW", "stage": "plan-create", "model_slug": "plan-create", "model": "haiku", "decision": "allow", "run_id": "1a240cbc-2484-4175-b2ce-b76ba5272a21", "at": 1792622828.382171}
++{"tool_use_id": "toolu_01Rofpd5hEGYDEiRgAMdFuVq", "stage": "plan-review", "model_slug": "plan-review", "model": "haiku", "decision": "allow", "run_id": "1a240cbc-2484-4175-b2ce-b76ba5272a21", "at": 1792622913.3406434}
++{"tool_use_id": "toolu_01792VpXfQx68qr5v4WNCK8G", "stage": "plan-update", "model_slug": null, "model": "haiku", "decision": "allow", "run_id": "1a240cbc-2484-4175-b2ce-b76ba5272a21", "at": 1792623080.437789}
+diff --git a/.context/attest/1a240cbc-2484-4175-b2ce-b76ba5272a21.context.jsonl b/.context/attest/1a240cbc-2484-4175-b2ce-b76ba5272a21.context.jsonl
+new file mode 100644
+index 0000000..d80a394
+--- /dev/null
++++ b/.context/attest/1a240cbc-2484-4175-b2ce-b76ba5272a21.context.jsonl
+@@ -0,0 +1,9 @@
++{"prompt_tokens": 42369, "decision": "ok", "mode": "shadow", "source": "session", "warn_tokens": 60000, "tool_use_id": "toolu_018S9rAqfA1AiweK83a6qVvA", "agent_id": null, "at": 1792622228.1617513}
++{"prompt_tokens": 48221, "decision": "ok", "mode": "shadow", "source": "session", "warn_tokens": 60000, "tool_use_id": "toolu_01Ln89G22kRANwf2cEahW1Az", "agent_id": null, "at": 1792622291.9752724}
++{"prompt_tokens": 51282, "decision": "ok", "mode": "shadow", "source": "session", "warn_tokens": 60000, "tool_use_id": "toolu_01RXhwjT2MkZw217u9LsS1HZ", "agent_id": null, "at": 1792622414.5178895}
++{"prompt_tokens": 52267, "decision": "ok", "mode": "shadow", "source": "session", "warn_tokens": 60000, "tool_use_id": "toolu_01MGu86verd5gnZihP5bMe5b", "agent_id": null, "at": 1792622590.8249485}
++{"prompt_tokens": 66025, "decision": "warn", "mode": "shadow", "source": "session", "warn_tokens": 60000, "tool_use_id": "toolu_01PeLig8mXZs3qp4Kugm8Wx1", "agent_id": null, "at": 1792622803.2984607}
++{"prompt_tokens": 68602, "decision": "warn", "mode": "shadow", "source": "session", "warn_tokens": 60000, "tool_use_id": "toolu_019BHQdrR3pzf6DX6A5ZcHWg", "agent_id": null, "at": 1792622816.8980947}
++{"prompt_tokens": 69882, "decision": "warn", "mode": "shadow", "source": "session", "warn_tokens": 60000, "tool_use_id": "toolu_01GjaJYoBsdzPAfSDhXvAdnW", "agent_id": null, "at": 1792622828.3585017}
++{"prompt_tokens": 72854, "decision": "warn", "mode": "shadow", "source": "session", "warn_tokens": 60000, "tool_use_id": "toolu_01Rofpd5hEGYDEiRgAMdFuVq", "agent_id": null, "at": 1792622913.3140862}
++{"prompt_tokens": 74842, "decision": "warn", "mode": "shadow", "source": "session", "warn_tokens": 60000, "tool_use_id": "toolu_01792VpXfQx68qr5v4WNCK8G", "agent_id": null, "at": 1792623080.4046047}
+diff --git a/.context/attest/1a240cbc-2484-4175-b2ce-b76ba5272a21.joins.jsonl b/.context/attest/1a240cbc-2484-4175-b2ce-b76ba5272a21.joins.jsonl
+new file mode 100644
+index 0000000..80b7abc
+--- /dev/null
++++ b/.context/attest/1a240cbc-2484-4175-b2ce-b76ba5272a21.joins.jsonl
+@@ -0,0 +1,7 @@
++{"tool_use_id": "toolu_018S9rAqfA1AiweK83a6qVvA", "agent_id": "ab3fd8c1a74964ac3", "resolved_model": "claude-haiku-5-5", "at": 1792622228.4763956}
++{"tool_use_id": "toolu_01Ln89G22kRANwf2cEahW1Az", "agent_id": "a092be2f8e70e5320", "resolved_model": "claude-haiku-5-5", "at": 1792622292.304031}
++{"tool_use_id": "toolu_01RXhwjT2MkZw217u9LsS1HZ", "agent_id": "abcb86a3e5383143d", "resolved_model": "claude-haiku-5-5", "at": 1792622414.7791336}
++{"tool_use_id": "toolu_01MGu86verd5gnZihP5bMe5b", "agent_id": "a392f66bcbaed60c3", "resolved_model": "claude-haiku-5-5", "at": 1792622591.1003723}
++{"tool_use_id": "toolu_01GjaJYoBsdzPAfSDhXvAdnW", "agent_id": "af5c6ff732e17af85", "resolved_model": "claude-haiku-5-5", "at": 1792622828.7436118}
++{"tool_use_id": "toolu_01Rofpd5hEGYDEiRgAMdFuVq", "agent_id": "aa2e8ed1171c1040d", "resolved_model": "claude-haiku-5-5", "at": 1792622913.5845938}
++{"tool_use_id": "toolu_01792VpXfQx68qr5v4WNCK8G", "agent_id": "a50cc3dc913b3f409", "resolved_model": "claude-haiku-5-5", "at": 1792623080.689538}
+diff --git a/.context/attest/1a240cbc-2484-4175-b2ce-b76ba5272a21.jsonl b/.context/attest/1a240cbc-2484-4175-b2ce-b76ba5272a21.jsonl
+new file mode 100644
+index 0000000..e3ec133
+--- /dev/null
++++ b/.context/attest/1a240cbc-2484-4175-b2ce-b76ba5272a21.jsonl
+@@ -0,0 +1,3 @@
++{"path": "vibetest/cd-1_2026-10-21.md", "agent_id": "ab3fd8c1a74964ac3", "sha256": "8723433576921c2eb25695843b4c7c45278fc6b07600abd528de09a03ed44b94", "at": 1792622286.6410766}
++{"path": "reviews/plan_cd-1-pipeline.plan.md", "agent_id": "abcb86a3e5383143d", "sha256": "5e67b86153932062ec4bcf2d9a448fc649328f540970c39d809c265282f336b9", "at": 1792622583.6834538}
++{"path": "reviews/plan_cd-1-pipeline.plan.md", "agent_id": "aa2e8ed1171c1040d", "sha256": "9c180b13b589a3b7caacee6c4583f63f515ac2eed48906bcb7151c99185d2414", "at": 1792623076.0177023}
+diff --git a/.context/attest/1a240cbc-2484-4175-b2ce-b76ba5272a21.models.jsonl b/.context/attest/1a240cbc-2484-4175-b2ce-b76ba5272a21.models.jsonl
+new file mode 100644
+index 0000000..eb7bc78
+--- /dev/null
++++ b/.context/attest/1a240cbc-2484-4175-b2ce-b76ba5272a21.models.jsonl
+@@ -0,0 +1,6 @@
++{"stage": "validate", "block": "A5", "model": "haiku", "subagent_type": null, "decision": "allow", "tool_use_id": "toolu_018S9rAqfA1AiweK83a6qVvA", "agent_id": null, "session_id": "2a23f7f8-4ce2-4a5e-9f73-a270e4880e3a", "at": 1792622228.1762862}
++{"stage": "plan-create", "block": "P1", "model": "haiku", "subagent_type": null, "decision": "allow", "tool_use_id": "toolu_01Ln89G22kRANwf2cEahW1Az", "agent_id": null, "session_id": "2a23f7f8-4ce2-4a5e-9f73-a270e4880e3a", "at": 1792622291.9951134}
++{"stage": "plan-review", "block": "P3", "model": "haiku", "subagent_type": null, "decision": "allow", "tool_use_id": "toolu_01RXhwjT2MkZw217u9LsS1HZ", "agent_id": null, "session_id": "2a23f7f8-4ce2-4a5e-9f73-a270e4880e3a", "at": 1792622414.5435045}
++{"stage": "plan-review", "block": "P3", "model": "haiku", "subagent_type": null, "decision": "deny", "tool_use_id": "toolu_01PeLig8mXZs3qp4Kugm8Wx1", "agent_id": null, "session_id": "2a23f7f8-4ce2-4a5e-9f73-a270e4880e3a", "at": 1792622803.3161383}
++{"stage": "plan-create", "block": "P1", "model": "haiku", "subagent_type": null, "decision": "allow", "tool_use_id": "toolu_01GjaJYoBsdzPAfSDhXvAdnW", "agent_id": null, "session_id": "2a23f7f8-4ce2-4a5e-9f73-a270e4880e3a", "at": 1792622828.3768823}
++{"stage": "plan-review", "block": "P3", "model": "haiku", "subagent_type": null, "decision": "allow", "tool_use_id": "toolu_01Rofpd5hEGYDEiRgAMdFuVq", "agent_id": null, "session_id": "2a23f7f8-4ce2-4a5e-9f73-a270e4880e3a", "at": 1792622913.3361251}
+diff --git a/.context/attest/1a240cbc-2484-4175-b2ce-b76ba5272a21.returns.jsonl b/.context/attest/1a240cbc-2484-4175-b2ce-b76ba5272a21.returns.jsonl
+new file mode 100644
+index 0000000..adffd70
+--- /dev/null
++++ b/.context/attest/1a240cbc-2484-4175-b2ce-b76ba5272a21.returns.jsonl
+@@ -0,0 +1,7 @@
++{"agent_id": "ab3fd8c1a74964ac3", "decision": "unknown", "reason": "no final message", "chars": null, "lines": null, "at": 1792622288.9007027}
++{"agent_id": "a092be2f8e70e5320", "decision": "unknown", "reason": "no final message", "chars": null, "lines": null, "at": 1792622444.3771417}
++{"agent_id": "abcb86a3e5383143d", "decision": "unknown", "reason": "no final message", "chars": null, "lines": null, "at": 1792622586.1982648}
++{"agent_id": "a392f66bcbaed60c3", "decision": "unknown", "reason": "no final message", "chars": null, "lines": null, "at": 1792622801.1213443}
++{"agent_id": "af5c6ff732e17af85", "decision": "unknown", "reason": "no final message", "chars": null, "lines": null, "at": 1792622908.4091492}
++{"agent_id": "aa2e8ed1171c1040d", "decision": "unknown", "reason": "no final message", "chars": null, "lines": null, "at": 1792623078.3480523}
++{"agent_id": "a50cc3dc913b3f409", "decision": "unknown", "reason": "no final message", "chars": null, "lines": null, "at": 1792623234.3706229}
+diff --git a/.context/cadence-session.json b/.context/cadence-session.json
+new file mode 100644
+index 0000000..d78b4d8
+--- /dev/null
++++ b/.context/cadence-session.json
+@@ -0,0 +1,3 @@
++{
++  "ref": "sessions/by-worktree/5e78b5040883579c.json"
++}
+diff --git a/.context/deferrals/cd-1_deferral-register.md b/.context/deferrals/cd-1_deferral-register.md
+new file mode 100644
+index 0000000..33a354d
+--- /dev/null
++++ b/.context/deferrals/cd-1_deferral-register.md
+@@ -0,0 +1,20 @@
++RUN_BY_COMMAND: plan-create
++Ticket: cd-1
++Pipeline-Run: 1a240cbc-2484-4175-b2ce-b76ba5272a21
++
++# Deferral register: cd-1
++
++## Approved deferrals
++
++No approved deferrals.
++
++## Assumptions
++
++| Gap | Assumption | Settled by |
++|---|---|---|
++| G-1 | Checks 1 to 7 are the plan's rules in Phase 8, because the issue gh-1 body is not on disk. The P3 review replaces them with the issue text if they differ. | Phase 8 `tests/test_checks.py`; P3 review |
++| G-2 | Money is `federal_action_obligation`. Sign is kept as recorded (no abs). Scale is 2 decimals; a value must match `-?[0-9]+(\.[0-9]{1,2})?` or it fails ingest. | Phase 2 tests (`test_amount_pattern`); decision cd-1-money-decimal |
++| G-3 | Geography is place of performance (state FIPS and county FIPS columns, all eight zips). Blank county or a county not in the 2024 county rows goes to `<state_fips>-UNKNOWN-COUNTY`: in state totals, not in county totals. Territory rows go to `OUTSIDE-50-STATES-DC`; blank state to `UNKNOWN-STATE`; both in money totals, in no per-person row. CT 2021 county codes go to `09-UNKNOWN-COUNTY`. | Phase 4 dbt singular tests (`transform/tests/geography_buckets.sql`); check 3 |
++| G-4 | Per-person for agency and month uses the national population (sum of the 3,144 county rows of the 2024 census file). Numerator and denominator cover the 51 state geographies only. | Phase 4; decision cd-1-population-denominator; check 4 |
++| G-5 | Dedupe key is meta.id. Checkpoint is the last committed Last-Event-ID and arrival_seq. Dedupe keeps counts exact for replayed events. Events the endpoint skips during a disconnect are not detected; no gap report is built (MF-8). | Phase 6 fake-server tests; decision cd-1-stream-dedupe-checkpoint; check 5 |
++| G-6 | Stream time is the arrival-order watermark. Late means watermark more than 10 minutes past window end at first arrival. Published windows are not restated. | Phase 7 tests; decision cd-1-late-event-watermark; check 7 |
+diff --git a/.context/domain-analysis.json b/.context/domain-analysis.json
+new file mode 100644
+index 0000000..71668c3
+--- /dev/null
++++ b/.context/domain-analysis.json
+@@ -0,0 +1,8 @@
++{
++  "RUN_BY_SKILL": "cadence",
++  "stage": "domain-analysis",
++  "selected_packs": [],
++  "matched_triggers": [],
++  "enabled_packs": [],
++  "scanned_paths": 45
++}
+diff --git a/.context/gates/ops-gate.json b/.context/gates/ops-gate.json
+new file mode 100644
+index 0000000..cce1b0a
+--- /dev/null
++++ b/.context/gates/ops-gate.json
+@@ -0,0 +1,4 @@
++{
++  "slug": "ops-gate",
++  "RUN_BY_SCRIPT": "ops_gate.py"
++}
+diff --git a/.context/gates/plan-create-gate.json b/.context/gates/plan-create-gate.json
+new file mode 100644
+index 0000000..a077b69
+--- /dev/null
++++ b/.context/gates/plan-create-gate.json
+@@ -0,0 +1,4 @@
++{
++  "slug": "plan-create-gate",
++  "RUN_BY_SCRIPT": "plan_create_gate.py"
++}
+diff --git a/.context/gates/plan-update-gate.json b/.context/gates/plan-update-gate.json
+new file mode 100644
+index 0000000..3a2f65f
+--- /dev/null
++++ b/.context/gates/plan-update-gate.json
+@@ -0,0 +1,5 @@
++{
++  "slug": "plan-update-gate",
++  "RUN_BY_SCRIPT": "plan_update_gate.py",
++  "reason": "plan_update_marker_found"
++}
+diff --git a/.context/gates/preflight.json b/.context/gates/preflight.json
+new file mode 100644
+index 0000000..5593db4
+--- /dev/null
++++ b/.context/gates/preflight.json
+@@ -0,0 +1,6 @@
++{
++  "slug": "preflight",
++  "RUN_BY_SCRIPT": "preflight.py",
++  "git_toplevel": "/tmp/claude-0/-home-user/5b20bc6c-3f91-5511-8000-71d5898a937e/scratchpad/pipe/2026-10-21/P1-cadence-core-haiku-2/repo",
++  "branch": "feature/gh-1-pipeline"
++}
+diff --git a/.context/gates/ticket-gate.json b/.context/gates/ticket-gate.json
+new file mode 100644
+index 0000000..82d20f8
+--- /dev/null
++++ b/.context/gates/ticket-gate.json
+@@ -0,0 +1,8 @@
++{
++  "slug": "ticket-gate",
++  "RUN_BY_SCRIPT": "ticket_gate.py",
++  "tracker": "none",
++  "ticket": "TICKET_SKIPPED (none: no tracker declared in the config)",
++  "task_id": "cd-1",
++  "local_tracker": ".context/issues/cd-1.md"
++}
+diff --git a/.context/handoff/1a240cbc-2484-4175-b2ce-b76ba5272a21/A5.json b/.context/handoff/1a240cbc-2484-4175-b2ce-b76ba5272a21/A5.json
+new file mode 100644
+index 0000000..899c61c
+--- /dev/null
++++ b/.context/handoff/1a240cbc-2484-4175-b2ce-b76ba5272a21/A5.json
+@@ -0,0 +1,9 @@
++{
++  "block": "A5",
++  "command": "/vibe-test cd-1",
++  "contract": "skills/vibe-test/SKILL.md",
++  "inputs": [],
++  "nonce": "91cd79477c761ffa542e52c25e7d4843",
++  "run_key": "1a240cbc-2484-4175-b2ce-b76ba5272a21",
++  "ticket": "cd-1"
++}
+diff --git a/.context/handoff/1a240cbc-2484-4175-b2ce-b76ba5272a21/P1.json b/.context/handoff/1a240cbc-2484-4175-b2ce-b76ba5272a21/P1.json
+new file mode 100644
+index 0000000..f5d7708
+--- /dev/null
++++ b/.context/handoff/1a240cbc-2484-4175-b2ce-b76ba5272a21/P1.json
+@@ -0,0 +1,18 @@
++{
++  "block": "P1",
++  "command": "/plan-create cd-1",
++  "contract": "commands/plan-create.md",
++  "inputs": [
++    {
++      "path": ".context/proposals/cd-1.md",
++      "sha256": "1b0078a788f7e918512c178a020d05eb70b0ea34b84c701394d8f70594af0485"
++    },
++    {
++      "path": ".context/vibetest/cd-1_2026-10-21.md",
++      "sha256": "8723433576921c2eb25695843b4c7c45278fc6b07600abd528de09a03ed44b94"
++    }
++  ],
++  "nonce": "71048e6008853751978ae1394523f1b6",
++  "run_key": "1a240cbc-2484-4175-b2ce-b76ba5272a21",
++  "ticket": "cd-1"
++}
+diff --git a/.context/handoff/1a240cbc-2484-4175-b2ce-b76ba5272a21/P3.json b/.context/handoff/1a240cbc-2484-4175-b2ce-b76ba5272a21/P3.json
+new file mode 100644
+index 0000000..3945fbe
+--- /dev/null
++++ b/.context/handoff/1a240cbc-2484-4175-b2ce-b76ba5272a21/P3.json
+@@ -0,0 +1,22 @@
++{
++  "block": "P3",
++  "command": "/plan-review .context/plans/cd-1-pipeline.plan.md",
++  "contract": "commands/plan-review.md",
++  "inputs": [
++    {
++      "path": ".context/plans/cd-1-pipeline.plan.md",
++      "sha256": "f0b82aee4827a725fd986cc9a853d9fea5b154b8ba95e334dfbd769290d6bc9a"
++    },
++    {
++      "path": ".context/reviews/plan_cd-1-pipeline.plan.md",
++      "sha256": "5e67b86153932062ec4bcf2d9a448fc649328f540970c39d809c265282f336b9"
++    },
++    {
++      "path": ".context/vibetest/cd-1_2026-10-21.md",
++      "sha256": "8723433576921c2eb25695843b4c7c45278fc6b07600abd528de09a03ed44b94"
++    }
++  ],
++  "nonce": "021095f81aacca216ec1f0e061221697",
++  "run_key": "1a240cbc-2484-4175-b2ce-b76ba5272a21",
++  "ticket": "cd-1"
++}
+diff --git a/.context/handoff/1a240cbc-2484-4175-b2ce-b76ba5272a21/P4.json b/.context/handoff/1a240cbc-2484-4175-b2ce-b76ba5272a21/P4.json
+new file mode 100644
+index 0000000..4020ecd
+--- /dev/null
++++ b/.context/handoff/1a240cbc-2484-4175-b2ce-b76ba5272a21/P4.json
+@@ -0,0 +1,22 @@
++{
++  "block": "P4",
++  "command": "/plan-update .context/plans/cd-1-pipeline.plan.md --from-review .context/reviews/plan_cd-1-pipeline.plan.md",
++  "contract": "commands/plan-update.md",
++  "inputs": [
++    {
++      "path": ".context/plans/cd-1-pipeline.plan.md",
++      "sha256": "f0b82aee4827a725fd986cc9a853d9fea5b154b8ba95e334dfbd769290d6bc9a"
++    },
++    {
++      "path": ".context/reviews/plan_cd-1-pipeline.plan.md",
++      "sha256": "9c180b13b589a3b7caacee6c4583f63f515ac2eed48906bcb7151c99185d2414"
++    },
++    {
++      "path": ".context/vibetest/cd-1_2026-10-21.md",
++      "sha256": "8723433576921c2eb25695843b4c7c45278fc6b07600abd528de09a03ed44b94"
++    }
++  ],
++  "nonce": "55acb692a26af3cca6c1cf83f756826f",
++  "run_key": "1a240cbc-2484-4175-b2ce-b76ba5272a21",
++  "ticket": "cd-1"
++}
+diff --git a/.context/handoff/1a240cbc-2484-4175-b2ce-b76ba5272a21/log.jsonl b/.context/handoff/1a240cbc-2484-4175-b2ce-b76ba5272a21/log.jsonl
+new file mode 100644
+index 0000000..e2682b3
+--- /dev/null
++++ b/.context/handoff/1a240cbc-2484-4175-b2ce-b76ba5272a21/log.jsonl
+@@ -0,0 +1,9 @@
++{"block": "A5", "event": "PreToolUse", "mode": "enforce", "notes": [], "prompt_sha256": "d2e96f2945f915e487fb2990fe6df706f54ff85c0c5cec709d12f8dc4eddc520", "reasons": ["router prompt differs from packet rendering"], "rendered_sha256": "741a0e373be11c34f49135d290a0d1c7334eec674a129a5a4b6d001d84b10d59", "untraced": []}
++{"block": "P1", "event": "PreToolUse", "mode": "enforce", "notes": [], "prompt_sha256": "b2c697bf379a0aac6a9bd1fcb865447f60060a859de123f9f31c297bdec78947", "reasons": ["router prompt differs from packet rendering"], "rendered_sha256": "8155a29d12105f90b750a4b85fd27555815d6469b0182af753414b34d2147c0d", "untraced": []}
++{"block": "P3", "event": "PreToolUse", "mode": "enforce", "notes": [], "prompt_sha256": "0c35222b4e5767b8a0dd4dd086351e404853b6b1d535000f353a5bb3f4d50395", "reasons": ["router prompt differs from packet rendering"], "rendered_sha256": "8512479877604452ce3c23d66c254e9da286be06f654f7387be8338c1550f665", "untraced": []}
++{"block": "P4", "event": "PreToolUse", "mode": "enforce", "notes": [], "prompt_sha256": "5284178d4fd62d150147346a4e2bceb8fca9896f4c78bae8c726a6edabb3e9ca", "reasons": ["router prompt differs from packet rendering"], "rendered_sha256": "c7dd61d09e386cc5788752ae9110f4d74dbdeb7ede33a4e00e0f44562ccad44d", "untraced": []}
++{"block": "P3", "event": "PreToolUse", "mode": "enforce", "notes": [], "prompt_sha256": "0c35222b4e5767b8a0dd4dd086351e404853b6b1d535000f353a5bb3f4d50395", "reasons": ["P3 needs plan: no plan of the run in .cursor/plans/ or .context/plans/ with RUN_BY_COMMAND: plan-create. Block P1 (plan-create) writes it."], "rendered_sha256": "", "untraced": []}
++{"block": "P4", "event": "PreToolUse", "mode": "enforce", "notes": [], "prompt_sha256": "5284178d4fd62d150147346a4e2bceb8fca9896f4c78bae8c726a6edabb3e9ca", "reasons": ["P4 needs plan: no plan of the run in .cursor/plans/ or .context/plans/ with RUN_BY_COMMAND: plan-create. Block P1 (plan-create) writes it."], "rendered_sha256": "", "untraced": []}
++{"block": "P1", "event": "PreToolUse", "mode": "enforce", "notes": [], "prompt_sha256": "b2c697bf379a0aac6a9bd1fcb865447f60060a859de123f9f31c297bdec78947", "reasons": ["router prompt differs from packet rendering"], "rendered_sha256": "8155a29d12105f90b750a4b85fd27555815d6469b0182af753414b34d2147c0d", "untraced": []}
++{"block": "P3", "event": "PreToolUse", "mode": "enforce", "notes": [], "prompt_sha256": "0c35222b4e5767b8a0dd4dd086351e404853b6b1d535000f353a5bb3f4d50395", "reasons": ["router prompt differs from packet rendering"], "rendered_sha256": "aee115edf811ecb588f8677e38962fe2894cec6383c47c69bfd4b0e115185c9a", "untraced": []}
++{"block": "P4", "event": "PreToolUse", "mode": "enforce", "notes": [], "prompt_sha256": "5284178d4fd62d150147346a4e2bceb8fca9896f4c78bae8c726a6edabb3e9ca", "reasons": ["router prompt differs from packet rendering"], "rendered_sha256": "564a13ffccc6b4f25eddc95d1aa82084457dc9f524fae1a03737104721122a08", "untraced": []}
+diff --git a/.context/issues/cd-1.md b/.context/issues/cd-1.md
+new file mode 100644
+index 0000000..935f993
+--- /dev/null
++++ b/.context/issues/cd-1.md
+@@ -0,0 +1,10 @@
++# cd-1 issue log
++
++- P4 plan-update (cycle 1) removed the RUN_BY_COMMAND: plan-create provenance marker from .context/plans/cd-1-pipeline.plan.md.
++  P3 gate (/plan-review) denies: no plan with RUN_BY_COMMAND: plan-create. plan_create_gate.py also fails.
++  Classification: recoverable. Action: re-run /plan-update --from-review so the marker is restored, then re-run P3.
++- Re-run P4 is blocked by the handoff hook: no plan with RUN_BY_COMMAND: plan-create. The orchestrator cannot write the plan.
++  Decision: before P9, re-run P1 /plan-create cd-1 to write a fresh plan with its marker. Then P3 and P4 again (review cycles counted from cycle 2 onward).
++- P4 plan-update (cycle 2) dropped RUN_BY_COMMAND: plan-create again. plan_create_gate.py fails; every peer handoff is blocked.
++  Repeated twice, so this is systematic for the P4 peer, not a one-off. Recovery by re-running P1 would be undone by the next P4.
++  Decision: stop the run at P4 and report. Not a destructive, credential or security stop; logged as a retries-class blocker.
+diff --git a/.context/plans/cd-1-pipeline.plan.md b/.context/plans/cd-1-pipeline.plan.md
+new file mode 100644
+index 0000000..6417bf1
+--- /dev/null
++++ b/.context/plans/cd-1-pipeline.plan.md
+@@ -0,0 +1,455 @@
++RUN_BY_COMMAND: plan-update
++Pipeline-Run: 1a240cbc-2484-4175-b2ce-b76ba5272a21
++
++**Tracker:** none
++**Ticket:** TICKET_SKIPPED (none: no tracker declared)
++Ticket token: cd-1 (GitHub issue gh-1, branch feature/gh-1-pipeline)
++
++# Plan: open-data pipeline (gh-1, cd-1)
++
++Inputs: `.context/proposals/cd-1.md` (sha256 1b0078a7...), `.context/vibetest/cd-1_2026-10-21.md`
++(sha256 87234335..., verdict NOT READY FOR PLANNING, blocking gaps G-1 to G-6). Each G-n has an
++assumption row in `.context/deferrals/cd-1_deferral-register.md`. This plan builds those assumptions.
++Plan review (P3) must confirm them before E1.
++
++Plan history: this file is a fresh plan-create run (see `.context/issues/cd-1.md`). Its content is the
++cycle-1 plan (sha256 117b4404...) with review items MF-1 to MF-6 of `.context/reviews/plan_cd-1-pipeline.plan.md`
++applied in the phase text. Each MF-n is named where it is applied, so the next review can check it.
++
++## Goal
++
++Build one pipeline that answers two questions:
++
++- (A, batch) Where federal contract and grant money went in FY2024: total and per person, by state,
++  county, awarding agency and month.
++- (B, stream) How Wikipedia is being edited now: edits per wiki, namespace and 5-minute UTC window,
++  split human and bot, with net bytes added.
++
++## Constraints
++
++- Python 3.12. `pyproject.toml` pins stay as they are: dlt[parquet] 1.31.0, dbt-core 1.11.6,
++  dbt-duckdb 1.11.0, duckdb 1.5.6. No new runtime dependency. Stream client uses stdlib `urllib`.
++- Lake under `lake/` (dlt, Parquet). dbt-duckdb in `transform/`. Published marts in `out/marts/`
++  through external materialization.
++- `make build` idempotent. `make stream DURATION=<s>` resumable with no double count and no loss.
++- Windows are 5 minutes, UTC. Late = stream time more than 10 minutes past window end at first arrival.
++  Late events go to `late_events`.
++- Money sums are exact (no float anywhere in the money path).
++- `lake/` and `out/` are generated and gitignored. `data/raw/` is read only.
++
++## Non-goals
++
++- No dashboard, no scheduler, no cloud deployment.
++- No restatement of published 5-minute windows after a late event.
++- No change to `data/raw/` or to `pyproject.toml` / `uv.lock` pins.
++- No test against the live stream. Tests use a local fake SSE server.
++
++## Success signals
++
++- `make build` exits 0 on a clean checkout. `make stream DURATION=60` exits 0 while the endpoint is up, and
++  exits 3 when it is down (Phase 6, MF-11).
++- A second `make build` gives byte-identical files in `out/marts/`.
++- Each check 1 to 7 (see Phase 8 and assumption G-1) passes.
++- Every decision record in `.context/proposals/cd-1-*.md` has a row in the P9 coverage check.
++
++## Step 0: problem, design, blast radius, acceptance
++
++### Problem restatement
++
++Two pipelines in one repo. Batch: 8 USAspending zip files (4 agencies x contracts/assistance), two
++Census county vintages, and the sitematrix wiki list. Stream: SSE events from a local endpoint. Both
++feed one star schema in dbt-duckdb.
++
++### Weak scope, challenged in the plan text
++
++- The issue text is not on disk. Checks 1 to 7 are unknown (G-1). This plan writes its own checks 1 to 7
++  from the rules the spec does state (Phase 8). The plan review must replace them with the issue text
++  if the issue differs.
++- "Idempotent", "stream time", "dedupe key" and "geography" are undefined in the spec (G-2 to G-6). Each is
++  settled by a decision record (D1 to D6) and a test. None is left as a silent guess.
++- Census gives population by state and county only. Per-person by agency or by month needs a national
++  denominator (D5). This is a choice, not a fact in the source.
++
++### Design decisions (one decision record each)
++
++| ID | Decision | Record |
++|---|---|---|
++| D1 | Money types: DECIMAL(18,2) for amounts, DECIMAL(38,6) for per-person ratios | `cd-1-money-decimal` |
++| D2 | Stream dedupe key is `meta.id`; checkpoint is the last committed event id | `cd-1-stream-dedupe-checkpoint` |
++| D3 | Stream time is a watermark over arrival order; late rule and no restatement | `cd-1-late-event-watermark` |
++| D4 | Windows are half-open `[start, end)` UTC, 300-second floor on epoch seconds | `cd-1-window-boundary` |
++| D5 | Population: July 1 2024 estimate; national denominator for agency and month; fallback rule | `cd-1-population-denominator` |
++| D6 | Storage: dlt Parquet in `lake/`; dbt-duckdb reads it; marts published as external Parquet | `cd-1-lake-storage` |
++
++### Blast radius
++
++- New: `pipeline/` (Python package: sources, build and stream entry points), `tests/`, `transform/models/`
++  (staging, marts, `schema.yml`), `transform/tests/` (dbt singular tests, MF-3 and Phase 4), `oracle_map.yml`,
++  `DECISIONS.md`.
++- Changed: `Makefile` (`build` and `stream` targets are stubs now).
++- Generated, not committed: `lake/`, `out/`, `transform/target/`.
++- Rollback: `git revert` of the phase commits, then remove the gitignored `lake/`, `out/` and `transform/target/`.
++- Unchanged: `pyproject.toml`, `uv.lock`, `data/raw/`, `transform/profiles.yml` (target path stays
++  `out/warehouse.duckdb` as the dev database; published marts do not depend on it).
++
++### Acceptance
++
++The build passes Phases 1 to 9 and the checks in Phase 8. Each phase lists its own exit criteria.
++
++## Assumptions (one per vibe-test gap; rows in the register)
++
++- G-1: Checks 1 to 7 are the rules of Phase 8, not the issue text. Settled by Phase 8 tests and the P3 review.
++- G-2: Money is `federal_action_obligation`. Sign is kept as recorded (de-obligations stay negative, no
++  `abs()`). Scale is 2 decimals; a value must match `-?[0-9]+(\.[0-9]{1,2})?` or it fails ingest. Settled by Phase 2.
++- G-3: Geography is place of performance: state FIPS `prime_award_transaction_place_of_performance_state_fips_code`
++  and county FIPS `prime_award_transaction_place_of_performance_county_fips_code`, in all eight zips. The
++  bucket rules of Phase 4 `dim_geography` apply. Blank county, or a county FIPS not in the 2024 county rows,
++  goes to `<state_fips>-UNKNOWN-COUNTY`: in state totals, not in county totals. Territory rows go to
++  `OUTSIDE-50-STATES-DC` and blank-state rows to `UNKNOWN-STATE`; both are in money totals and in no per-person row.
++  Settled by Phase 4.
++- G-4: Per-person for agency and month uses the national population (sum of the 3,144 county rows,
++  July 1 2024). The numerator and denominator cover the 51 state geographies only. Settled by Phase 4 and D5.
++- G-5: Dedupe key is `meta.id`. Checkpoint is the last committed `Last-Event-ID` and `arrival_seq`. If the
++  endpoint does not honor `Last-Event-ID` (R-2), resume reconnects and dedupe keeps counts exact for replayed
++  events. This build does not detect events that the endpoint skips during a disconnect, and writes no gap
++  report (MF-8). Settled by Phase 6.
++- G-6: Stream time is the watermark defined in D3. Late events are not restated. Settled by Phase 7.
++- N-1 to N-8 (non-blocking, from the vibe-test): settled in Phases 2 to 7, each recorded in DECISIONS.md.
++
++## Reuse and extension
++
++- Reuses existing: `dlt` (`dlt.resource`, `dlt.pipeline`, column hints for `decimal`), `dbt-duckdb`
++  external materialization, stdlib `zipfile`, `csv`, `urllib`, `json`, `unittest`. No helper exists in
++  this repo yet (`pipeline/` and `tests/` are new). Shared test helpers (zip fixture builder, fake SSE server,
++  census readers) go in `tests/support.py`, not `tests/conftest.py`: the suite runs under `unittest discover`,
++  which does not load `conftest.py`.
++- Extension point added: one dlt resource per source in `pipeline/sources/`, and one dbt layer per
++  concern (`staging`, `marts`). A new source adds one resource and one staging model.
++
++## Quality gates (real commands in this repo)
++
++- `uv sync --frozen`
++- `uv run python -m unittest discover -s tests -t .`
++- `uv run dbt parse --project-dir transform --profiles-dir transform`
++- `uv run dbt build --project-dir transform --profiles-dir transform`
++- `make build`
++- `make stream DURATION=60`
++- `git diff --exit-code -- pyproject.toml uv.lock`
++
++No make target other than `build` and `stream` is added or assumed.
++
++Commit checkpoints: one commit per phase on `feature/gh-1-pipeline`, message `P<n>: <phase name>`.
++
++### Phase 1: Skeleton, environment and gates
++
++Scope: create `pipeline/__init__.py`, `pipeline/build.py`, `pipeline/stream.py` (stubs that raise
++`NotImplementedError`), `tests/__init__.py`. Set the Makefile: `build` runs
++`uv run python -m pipeline.build`; `stream` requires `DURATION` (fail with a usage line when missing) and
++runs `uv run python -m pipeline.stream --duration $(DURATION)`.
++Create `DECISIONS.md`. This phase is the only one that creates it. It has one heading for each of D1 to D6
++and N-1 to N-8, each with the rule and the rejected option. Phases 2 to 8 fill their sections (MF-6).
++
++TDD: first write `tests/test_makefile.py` that asserts `make stream` without `DURATION` exits non-zero and
++prints `DURATION`. Then the Makefile.
++
++Exit criteria:
++- `uv sync --frozen` exits 0.
++- `uv run python -m unittest discover -s tests -t .` exits 0.
++- `uv run dbt parse --project-dir transform --profiles-dir transform` exits 0.
++- `git diff --exit-code -- pyproject.toml uv.lock` exits 0.
++- `DECISIONS.md` has 14 headings (D1 to D6, N-1 to N-8).
++
++### Phase 2: Batch ingest, USAspending
++
++Scope: dlt resource `usaspending_transactions` in `pipeline/sources/usaspending.py`. Read each zip with
++`zipfile` and `csv` in streaming mode. Never extract into `data/raw/`. Keep these columns. Each name was
++checked against the headers of all eight zips:
++- Both award types: `federal_action_obligation`, `action_date`, `awarding_agency_code`, `awarding_agency_name`,
++  `prime_award_transaction_place_of_performance_state_fips_code` (2-digit state FIPS) and
++  `prime_award_transaction_place_of_performance_county_fips_code` (5-digit county FIPS).
++- Derived fields, not header columns (MF-7): `source_file` (the zip member name) and `award_type`
++  (`contracts` or `assistance`, from the zip file name). The reader sets them. No zip has them as a header.
++- Unique key: `contract_transaction_unique_key` for Contracts zips; `assistance_transaction_unique_key` for
++  Assistance zips. Stored as one column `transaction_unique_key`, with `award_type`.
++- Not used: `primary_place_of_performance_state_code` and `primary_place_of_performance_state_name`. The
++  2-letter state code exists only in the Contracts zips. The state FIPS column is the one state column that all
++  eight zips share (MF-2).
++- `toptier_code` is not a column of any zip. The agency columns are the `awarding_agency_*` pair above.
++- Source is FY2024 only. A row whose `action_date` is outside 2023-10-01 to 2024-09-30 fails ingest, so a
++  later zip cannot change Goal (A) without notice.
++
++TDD (header test first): for each zip type (`contracts`, `assistance`), a test reads only the header and asserts
++the header columns above. The derived fields are not asserted. A missing column fails the test before any row is read. Test names:
++`tests/test_usaspending_headers.py::test_contracts_headers` and `::test_assistance_headers`.
++
++Typing: `federal_action_obligation` as dlt column hint `{"data_type": "decimal", "precision": 18, "scale": 2}`
++(D1). Before `decimal.Decimal` parses a value, the value must match the regex `-?[0-9]+(\.[0-9]{1,2})?` (MF-4; ASCII digits only, so `re.ASCII` is not needed). A value
++that does not match fails ingest. This includes an empty value, `1e3`, `+1`, `1,000` and a value with more than
++2 decimals. All eight zips match the pattern and have no empty amounts.
++Write disposition `replace` per build (full rebuild from raw; N-7).
++
++TDD: tests build small zip fixtures in a temp dir at test time (no binary fixtures committed). The fixture
++builder lives in `tests/support.py` (see Reuse and extension). Tests:
++- `test_amount_pattern` (in `tests/test_usaspending_ingest.py`): accept `1234567.89`, `-0.01`, `0`, `12.5`; reject
++  `1e3`, `1.005`, `+1`, `1,000` and an empty value. The check is the regex, then `Decimal`.
++- row count of the lake equals the CSV data row count for each fixture zip.
++
++Exit criteria:
++- Over all 8 real zips, the lake row count equals the sum of CSV data rows (checked by a script that
++  counts with `csv`, not `wc`, because of quoted newlines).
++- `SUM(federal_action_obligation)` in DuckDB equals the `Decimal` sum computed from the source CSVs (exact
++  equality, no tolerance).
++
++### Phase 3: Reference ingest, Census and sitematrix
++
++Scope:
++- `pipeline/sources/census.py`: read `co-est2024-alldata.csv` (primary) and `co-est2021-alldata.csv`
++  (fallback only, D5). Keep SUMLEV 040 (state) and 050 (county). County FIPS = `STATE` (2) + `COUNTY` (3).
++  Keep `POPESTIMATE2020` to `POPESTIMATE2024` from the 2024 file and `POPESTIMATE2020`, `POPESTIMATE2021`
++  from the 2021 file, as typed integers.
++- `pipeline/sources/sitematrix.py`: flatten numeric language keys and the `specials` list. One row per
++  site entry, with `dbname`, `url`, `code`, `sitename`, `closed` (null when absent). The stream `wiki`
++  field joins to `dbname` (N-3).
++
++TDD: tests on the real `sitematrix.json` and on the census file headers (no full scan needed in unit tests).
++Assert: 3,144 county rows and 51 state rows in the 2024 file; `dbname` is unique across the flattened list.
++
++Exit criteria:
++- Lake contains 51 state rows and 3,144 county rows for the 2024 vintage.
++- `dbname` unique count equals the flattened row count (no duplicate join keys).
++
++### Phase 4: Star schema and batch marts
++
++Scope, in `transform/models/`:
++- `staging/stg_usaspending_transactions.sql`, `stg_census_population.sql`, `stg_sitematrix_wikis.sql`.
++- Dimensions:
++  - `dim_agency` (awarding_agency_code, awarding_agency_name).
++  - `dim_month` (month_key from `action_date`, UTC date, month start).
++  - `dim_wiki` (MF-1): one row per sitematrix `dbname` from `stg_sitematrix_wikis` (`wiki_key`, `url`, `code`,
++    `sitename`, `closed`), plus one `unknown` row for stream wikis that match no `dbname` (N-3).
++  - `dim_geography` (G-3, MF-3). Each fact row gets one `geography_key` from its state FIPS and county FIPS. The
++    rules apply in this order:
++    1. Blank state FIPS: `UNKNOWN-STATE` (57 rows in the eight zips).
++    2. State FIPS 60, 66, 69, 72 or 78 (US territories): `OUTSIDE-50-STATES-DC`.
++    3. Any other state FIPS that is not one of the 51 state rows of the 2024 census file: the build fails.
++    4. Blank county FIPS, or a county FIPS that is not one of the 3,144 county rows of the 2024 census file:
++       `<state_fips>-UNKNOWN-COUNTY`.
++    5. Otherwise the county FIPS.
++    Rule 4 covers the 16 Connecticut rows with 2021 county codes (09001 to 09015). No 1:1 crosswalk from those
++    codes to the 2022 planning regions (09110 to 09190) is in the packet, so they are not mapped to a region.
++    They go to `09-UNKNOWN-COUNTY`. The dimension holds the 3,144 county rows, the 51 state rows, one
++    `<state_fips>-UNKNOWN-COUNTY` per state, `UNKNOWN-STATE` and `OUTSIDE-50-STATES-DC`. Each fact row also
++    carries `state_fips`, and state totals group by it.
++- Fact: `fct_award_transaction`, grain one row per prime award transaction (the unique key from Phase 2),
++  keys to `dim_agency`, `dim_geography` and `dim_month`, measure `federal_action_obligation` as `DECIMAL(18,2)`.
++- Marts (external Parquet to `out/marts/`, see D6):
++  - `mart_money_monthly`: money by month, state, county, agency.
++  - `mart_money_per_person`: money per person by state, county, agency and month. Denominator per D5:
++    state and county use July 1 2024 population of that geography; agency and month use the national
++    population. Ratio is `DECIMAL(38,6)`, rounded half-up at this step only (D1). Each row carries
++    `population_source` with one of these values: `co-est2024` (POPESTIMATE2024 of the 2024 file),
++    `co-est2024-<year>` (the fallback column POPESTIMATE<year> of the 2024 file), `co-est2021-<year>` (a column
++    of the 2021 file), or `none` (no county population, see below). Fallbacks are visible by these values.
++    The per-person numerator and denominator cover the 51 state geographies only, that is 50 states and DC,
++    including their `<state_fips>-UNKNOWN-COUNTY` rows. Money in `OUTSIDE-50-STATES-DC` and `UNKNOWN-STATE`
++    is in `mart_money_monthly` but in no per-person row (MF-3 b). The national population for agency and month
++    is the sum of the 3,144 county rows of the 2024 census file. A `<state_fips>-UNKNOWN-COUNTY` row has no county
++    population, so its per-person value is NULL and its `population_source` is `none`.
++
++Schema tests in `transform/models/schema.yml`: `unique` and `not_null` on keys (`dim_wiki.wiki_key` included),
++`relationships` from the fact to each batch dimension.
++
++TDD: dbt singular tests in `transform/tests/` for:
++- the sum of all `mart_money_monthly` rows equals the Phase 2 source sum (buckets included);
++- the 51 state geographies plus `OUTSIDE-50-STATES-DC` plus `UNKNOWN-STATE` equal the national total (G-3, G-4);
++- within each state, the county rows plus `<state_fips>-UNKNOWN-COUNTY` equal the state total;
++- a row with county code 09001 lands in `09-UNKNOWN-COUNTY`, and a row with state 72 lands in `OUTSIDE-50-STATES-DC`
++  (file `transform/tests/geography_buckets.sql`);
++- the national per-person denominator equals the sum of the 3,144 county rows.
++
++Exit criteria:
++- `uv run dbt build --project-dir transform --profiles-dir transform` exits 0.
++- Sum of `federal_action_obligation` in `fct_award_transaction` equals the Phase 2 source sum.
++
++### Phase 5: Idempotent build
++
++Scope: `pipeline/build.py` runs, in order: batch ingest (Phases 2 and 3, replace), `dbt build`, publish
++marts to `out/marts/*.parquet`, write `out/build_report.json` (row counts per table, fallback counts from D5, and
++the share of fact rows in `<state_fips>-UNKNOWN-COUNTY` and in the two buckets of Phase 4). The build reports
++these shares and does not gate on them. The sample read showed 79% of rows with a blank county. The
++report field `stream_available` is added in Phase 7 and `oracle_map.yml` is written in Phase 8 (MF-6).
++`DECISIONS.md` is created in Phase 1. This phase adds the N-7 entry (the idempotence method).
++
++Idempotence (N-7): build from empty `lake/` and `out/`; hash `out/marts/*`; build again without cleaning;
++hash again. The hashes must match. Parquet writes use a fixed `ORDER BY` on the key and a fixed row group
++size. If DuckDB Parquet output is not byte-stable, the check falls back to a sorted row hash and DECISIONS.md
++records that choice.
++
++TDD: test in `tests/test_build_idempotent.py` runs the build twice on a fixture subset (`PIPELINE_FIXTURE=1`
++reads two small zips, not the full set).
++
++Exit criteria:
++- `make build` exits 0 twice in a row; `sha256sum out/marts/*` is identical after both runs.
++- `out/build_report.json` has the row counts, the fallback counts and the UNKNOWN-COUNTY and bucket shares.
++
++### Phase 6: Stream ingest, resumable
++
++Scope: `pipeline/sources/stream.py` and `pipeline/stream.py`. SSE client on `urllib` to
++`http://localhost:8099/v2/stream/recentchange`. Parse `id:` and `data:` lines. Keep the event `meta.id`,
++`meta.dt`, `wiki`, `namespace`, `type`, `bot`, `timestamp`, `length` (`old`, `new`), `user`, `title`.
++
++Dedupe (D2): the stream table in the lake is merged on `meta.id`. A replay of an event that is already
++committed changes nothing.
++
++Arrival sequence (MF-9): `arrival_seq` is set on the first insert of a `meta.id` only. In one commit, each new
++`meta.id` gets `arrival_seq` = (max `arrival_seq` already in the lake) + its 1-based position among the new ids
++of that batch, in batch order. The merge does not change `arrival_seq` of an existing `meta.id`, so a replay keeps
++its first value. The merge and the checkpoint of a batch are one commit, in that order.
++
++Endpoint down (MF-11): when the connection is refused or the response status is not 200, `pipeline/stream.py`
++writes nothing to `lake/`, leaves the checkpoint unchanged, prints one line that names the URL and the reason,
++and exits 3.
++
++Checkpoint (D2): `lake/stream/_checkpoint.json` holds the last committed `Last-Event-ID` and the last
++committed `arrival_seq`. Written after the batch is committed to the lake, through a temp file and
++`os.replace`. On start, send `Last-Event-ID` when the checkpoint has one.
++
++`DURATION` is wall-clock seconds. The run commits in batches of `batch_size` events (default 100, a parameter
++so that tests can use 5) or at exit, whichever is first, then exits 0. A commit merges the batch into the lake on
++`meta.id`, then writes the checkpoint with the id of the last event of that batch.
++
++Probe (R-2): one manual `curl` with a 5 s timeout checks whether the endpoint honors `Last-Event-ID`. Its
++result goes into DECISIONS.md. The code does not depend on the answer for dedupe. The answer changes no output
++of this build, because the build writes no gap report (MF-8).
++
++TDD: `tests/test_stream_resume.py` runs a fake SSE server (stdlib `http.server`, on a random port). It sends
++10 events with ids `1` to `10` and records the `Last-Event-ID` header of each request. The helpers live in
++`tests/support.py`.
++- `test_resume_sends_last_event_id_of_batch` (the server honors `Last-Event-ID`): the client runs with
++  `batch_size=5` and a test hook that raises `SimulatedKill` right after the first batch commit. Events 1 to 5 are
++  then committed and the checkpoint names event 5. The second run must send `Last-Event-ID: 5`, and it must end with
++  exactly 10 rows and no duplicate `meta.id` (MF-5).
++- `test_server_ignores_last_event_id`: the same kill, but the server replays events 1 to 10 on reconnect. The
++  result must still be 10 rows with no duplicate `meta.id`.
++- `test_replayed_event_keeps_first_arrival_seq` (MF-9): the same scenario as the previous case. After the second run,
++  events 1 to 5 keep `arrival_seq` 1 to 5 from the first run, and events 6 to 10 get `arrival_seq` 6 to 10.
++- `test_endpoint_down_exits_3_writes_nothing` (MF-11): `pipeline/stream.py` runs against a local port with no
++  listener, then against a fake server that answers 500. Each run exits 3, creates no `lake/stream/`, and writes
++  no checkpoint.
++
++Exit criteria:
++- The four fake-server and endpoint cases above pass.
++- `make stream DURATION=60` followed by `make stream DURATION=60` gives no duplicate `meta.id` in the lake.
++
++### Phase 7: Edit fact and 5-minute window mart
++
++Scope:
++- `stg_stream_events` joins `wiki` to `dim_wiki` (Phase 4, from sitematrix `dbname`). Unmatched wikis get
++  `wiki_key = 'unknown'` (N-3). `schema.yml` adds a `relationships` test from `fct_edit.wiki_key` to
++  `dim_wiki.wiki_key` (MF-1).
++- `build_report.json` gets the field `stream_available` (MF-6, the stream field moved here from Phase 5).
++- `fct_edit` grain: one row per stream event `meta.id`. `is_bot` from `bot`. `namespace` from `namespace`.
++  `net_bytes_added = length.new - length.old` for type `edit` and `new` only when both lengths are present.
++  A null length is excluded from net bytes and still counted in edit totals by type (N-2).
++- Windows (D4): `window_start = floor(timestamp / 300) * 300` (epoch seconds, UTC), window is
++  `[window_start, window_start + 300)`. An event at exactly `window_start + 300` belongs to the next window.
++- Late rule (D3): events are ordered by `arrival_seq` (the position of first arrival in the lake). The
++  watermark before event `k` is the max event `timestamp` among events with `arrival_seq < k`. Event `k` is
++  late when `watermark > window_start + 300 + 600` at its first arrival. Late events go to `late_events`
++  with `late_reason = 'watermark'` and the watermark value. They do not enter `mart_edit_window_5min`, and no
++  published window is restated (G-6).
++- `mart_edit_window_5min` grain `(window_start, wiki_key, namespace, is_bot)`. Measures: `edits_total`,
++  `edits_by_type`, `net_bytes_added`. A window with no events has no row (N-8). A missing stream (no lake
++  stream table) makes the build record `stream_available = false` in `out/build_report.json` and still exit 0.
++  Then `pipeline/build.py` runs `dbt build` without the stream models (`stg_stream_events`, `fct_edit`, `late_events`,
++  `mart_edit_window_5min` and their tests), and publishes only the batch marts (MF-10). With a stream table present,
++  all marts are built and published.
++
++TDD: tests on fixture events in `tests/test_windows.py`:
++- event at `12:04:59.999` goes to the 12:00 window; event at `12:05:00` goes to the 12:05 window (D4);
++- event whose watermark is 11 minutes past its window end goes to `late_events`; the same event at 9 minutes
++  past stays in the window mart (boundary of D3);
++- a duplicate `meta.id` does not re-evaluate lateness (first arrival only).
++
++Exit criteria:
++- The three test cases above pass.
++- `SUM(edits_total)` in the window mart plus `COUNT(*)` in `late_events` equals `COUNT(*)` in `fct_edit`
++  (every event is in exactly one place).
++
++### Phase 8: Oracle map, DECISIONS and checks 1 to 7
++
++Scope:
++- `oracle_map.yml`: one entry per published mart (name, path, grain, keys, measures, source models, checks).
++  Format is this plan's choice (N-5). PyYAML is not a pinned dependency, so the build writes JSON text,
++  which is valid YAML, and the test reads it back with `json`. `pipeline/build.py` writes it as its last step,
++  after publish (MF-6).
++- `DECISIONS.md` (created in Phase 1): complete D1 to D6 with the rule and the rejected option; N-1 to N-8 decisions;
++  the R-2 probe result (Phase 6). N-1 records the D5 fallback order: `POPESTIMATE2023`, 2022, 2021, 2020 from
++  co-est2024, then co-est2021. This differs from the vibe-test N-1 wording on purpose.
++- `tests/test_checks.py` implements checks 1 to 7. These are the plan's checks (G-1), not the issue text. It reads
++  the built output in `out/marts`, so `make build` runs first (Phase 9 step 7 does this). Checks 1, 2, 3, 4, 6
++  and 7 read the built `out/`. Check 5 runs its own fake server and does not read `out/`:
++  1. Build idempotent: two builds give identical `out/marts/*` hashes (Phase 5).
++  2. Exact money: fact sum equals the Decimal sum of the source CSVs.
++  3. Geography totals: the 51 state geographies plus `OUTSIDE-50-STATES-DC` and `UNKNOWN-STATE` sum to the national
++     total. Within each state, the county rows plus `<state_fips>-UNKNOWN-COUNTY` sum to the state total.
++  4. Per person: `mart_money_per_person` ratio equals sum / population for the row's `population_source`. A
++     `<state_fips>-UNKNOWN-COUNTY` row has NULL and `none`. No bucket appears in a per-person row. Fallback rows
++     are counted in `build_report.json`.
++  5. Stream resume: no duplicate `meta.id`, no loss against the fake server (Phase 6).
++  6. Windows: each event falls in exactly one half-open UTC 5-minute window (Phase 7).
++  7. Late routing: every late event is in `late_events` and in no window row (Phase 7).
++
++Exit criteria:
++- `uv run python -m unittest discover -s tests -t .` exits 0 including `test_checks.py`, run after `make build`.
++- `DECISIONS.md` has one section per D-n and per N-n.
++- `grep -n "oracle_map" pipeline/build.py` shows the write only as the last step of the build (MF-6).
++
++### Phase 9: Final verification on a clean tree
++
++Scope: no code changes unless a gate fails.
++
++Precondition: the endpoint at `http://localhost:8099` is up (Phase 6). Steps, in order:
++1. `rm -rf lake out transform/target`.
++2. `make build`. No stream table exists yet, so the build publishes batch marts only. Its hashes are not compared.
++3. `make stream DURATION=60`.
++4. `make build`; keep the output of `sha256sum out/marts/*` as H1.
++5. `make build` again; keep the output of `sha256sum out/marts/*` as H2. H1 must equal H2. Both builds run after step 3.
++6. `make stream DURATION=60`; check for duplicate `meta.id` (query in `tests/test_checks.py`).
++7. `make build`, so that `out/` matches the lake after step 6.
++8. Run every quality gate listed above.
++9. `git status --short` shows only the files in Blast radius, and `lake/`, `out/` are ignored.
++
++Exit criteria: every step exits 0; H1 equals H2; `pyproject.toml` and `uv.lock` are unchanged.
++
++## Revision ledger
++
++None. This is the first plan version of this run's plan-create.
++
++## Plan update 2026-10-21
++
++Answers `.context/reviews/plan_cd-1-pipeline.plan.md` (cycle 2, READY WITH CHANGES, sha256 9c180b13b589...).
++The review's MF-7 to MF-11 are applied. Each change is named in the phase it touches.
++
++- MF-7: `source_file` and `award_type` are derived fields, not header columns. The header test asserts only the header names.
++- MF-8: the gap-report claim is removed. G-5, the R-2 probe text and the register row no longer claim a gap report.
++  The build writes none. The issue text is not on disk, so the P3 review must confirm this removal against it.
++- MF-9: `arrival_seq` has an assignment rule (first insert, batch order, merge keeps it) and a test.
++- MF-10: Phase 9 compares two builds that both run after the stream run. With no stream table, the build publishes batch marts only.
++- MF-11: `make stream` exits 3 when the endpoint is down or answers non-200, with no lake write and no checkpoint change. Test added.
++
++Notes from the review applied: the blast radius lists `transform/tests/`; the amount regex uses `[0-9]`; `population_source`
++values are named; the Connecticut code range is 09001 to 09015; the Phase 8 check ordering is stated; commit checkpoints per phase.
++
++Notes not applied (open for the next review): the dlt write disposition that merges into Parquet under `lake/`, and its support at
++dlt 1.31.0. This update did not run dlt.
++
++## Revision ledger (review 9c180b13b589)
++
++| Id | Change | Where (phase or section) | Verification (the test or check that proves it) |
++|---|---|---|---|
++| MF-7 | `source_file` and `award_type` are derived fields; the header test asserts only header names | Phase 2 scope and TDD | `tests/test_usaspending_headers.py::test_contracts_headers`, `::test_assistance_headers` |
++| MF-8 | Gap-report claim removed from G-5, R-2 probe text and the register row | Assumptions G-5; Phase 6 probe; `.context/deferrals/cd-1_deferral-register.md` | `grep -c "logged as \`gap\`" .context/plans/cd-1-pipeline.plan.md` returns 0 |
++| MF-9 | `arrival_seq` assigned on first insert in batch order; merge keeps it | Phase 6 "Arrival sequence" and TDD | `tests/test_stream_resume.py::test_replayed_event_keeps_first_arrival_seq` |
++| MF-10 | Phase 9 compares H1 and H2, both built after the stream run; batch-only publish without a stream table | Phase 9 steps 2 to 5; Phase 7 publication | Phase 9 exit criterion H1 equals H2 (`sha256sum out/marts/*`) |
++| MF-11 | `make stream` exits 3 when the endpoint is down or answers non-200; no lake write, no checkpoint change | Phase 6 "Endpoint down"; Success signals; Phase 9 precondition | `tests/test_stream_resume.py::test_endpoint_down_exits_3_writes_nothing` |
+diff --git a/.context/proposals/cd-1-lake-storage.md b/.context/proposals/cd-1-lake-storage.md
+new file mode 100644
+index 0000000..e62c5c5
+--- /dev/null
++++ b/.context/proposals/cd-1-lake-storage.md
+@@ -0,0 +1,10 @@
++---
++decision_id: cd-1-lake-storage
++status: proposed
++question: Where do raw loads and published marts live, and which tool moves data between them?
++choice: dlt writes Parquet under lake/<source>/. dbt-duckdb reads the lake with read_parquet and builds the star schema. Published marts use external materialization to out/marts/<name>.parquet. out/warehouse.duckdb (the profiles.yml dev target) is a working database only; no published output depends on its tables.
++rationale: The request names dlt for the lake and external materialization for the marts. Parquet files can be hashed directly, which makes check 1 (idempotent build) a file comparison. Rejected option: publishing tables from the DuckDB file, because a database file is not byte-stable across runs and cannot be read without DuckDB.
++---
++Ticket: cd-1
++
++Applies to Phases 2, 3, 4 and 5. Dependencies are the existing pins (dlt 1.31.0, dbt-duckdb 1.11.0, duckdb 1.5.6); none is added.
+diff --git a/.context/proposals/cd-1-late-event-watermark.md b/.context/proposals/cd-1-late-event-watermark.md
+new file mode 100644
+index 0000000..5966d5d
+--- /dev/null
++++ b/.context/proposals/cd-1-late-event-watermark.md
+@@ -0,0 +1,10 @@
++---
++decision_id: cd-1-late-event-watermark
++status: proposed
++question: What is stream time, and when is an event late, so that the 5-minute window mart is reproducible from the lake?
++choice: Stream time is a watermark over arrival order: the max event timestamp among events with a smaller arrival_seq. Event k is late when watermark > window_start + 900 seconds (window end plus 10 minutes) at its first arrival. Late events go to late_events with the watermark value and are excluded from mart_edit_window_5min. Published windows are not restated.
++rationale: Arrival order is stored in the lake, so a rebuild gives the same late set. Wall-clock stream time would change on each rebuild and break idempotence. Rejected option: restating a window when a late event arrives, because a published number would change after it was published.
++---
++Ticket: cd-1
++
++Applies to Phase 7 (late routing) and check 7 in Phase 8. Gap G-6 is settled by this record.
+diff --git a/.context/proposals/cd-1-money-decimal.md b/.context/proposals/cd-1-money-decimal.md
+new file mode 100644
+index 0000000..19a64ad
+--- /dev/null
++++ b/.context/proposals/cd-1-money-decimal.md
+@@ -0,0 +1,10 @@
++---
++decision_id: cd-1-money-decimal
++status: proposed
++question: What numeric type stores USAspending amounts and per-person results so that sums stay exact?
++choice: DECIMAL(18,2) for federal_action_obligation in the lake and in facts; DECIMAL(38,6) for per-person ratios, rounded half-up once at that step. No float or double in the money path.
++rationale: Inferred types from dlt and DuckDB can produce float columns, which break exact sums (vibe-test C-1, R-1). Rejected option: inferred float types with a tolerance in checks. A tolerance hides rounding drift; the exact check needs no tolerance.
++---
++Ticket: cd-1
++
++Applies to Phase 2 (dlt column hint), Phase 4 (fact and per-person marts) and check 2 in Phase 8.
+diff --git a/.context/proposals/cd-1-population-denominator.md b/.context/proposals/cd-1-population-denominator.md
+new file mode 100644
+index 0000000..87f458b
+--- /dev/null
++++ b/.context/proposals/cd-1-population-denominator.md
+@@ -0,0 +1,10 @@
++---
++decision_id: cd-1-population-denominator
++status: proposed
++question: Which population is the per-person denominator, for each cut, and what happens when a geography has no July 1 2024 estimate?
++choice: Use POPESTIMATE2024 from co-est2024-alldata.csv (July 1 2024) for state and county cuts. Use the national population (sum of the 3,144 county POPESTIMATE2024 values) for awarding agency and month cuts. Fallback when a county has no 2024 value: the latest earlier estimate, in order POPESTIMATE2023, 2022, 2021, 2020 from co-est2024, then from co-est2021. Each mart row carries population_source, and build_report.json counts fallback rows. DECISIONS.md states the rule.
++rationale: The amendment in the request asks for the July 1 2024 estimate with a latest-earlier fallback and a DECISIONS note. The census file has no state-free population, so the national denominator is the sum of counties. Rejected options: the 2021 file as primary (wrong vintage) and an unlabeled fallback (fallbacks would be invisible).
++---
++Ticket: cd-1
++
++Applies to Phase 3 (census sources), Phase 4 (per-person marts), Phase 5 (build report) and check 4 in Phase 8. Gaps G-4 and N-1 are settled by this record.
+diff --git a/.context/proposals/cd-1-stream-dedupe-checkpoint.md b/.context/proposals/cd-1-stream-dedupe-checkpoint.md
+new file mode 100644
+index 0000000..a292a1c
+--- /dev/null
++++ b/.context/proposals/cd-1-stream-dedupe-checkpoint.md
+@@ -0,0 +1,10 @@
++---
++decision_id: cd-1-stream-dedupe-checkpoint
++status: proposed
++question: What key dedupes stream events, and what checkpoint lets make stream resume without double count or loss?
++choice: Dedupe key is the event meta.id; the lake stream table is merged on meta.id. Checkpoint file lake/stream/_checkpoint.json holds the last committed Last-Event-ID and arrival_seq, written after commit through a temp file and os.replace. A resumed run sends Last-Event-ID when the checkpoint has one.
++rationale: The SSE stream has no offset, so Last-Event-ID is the only resume position. A merge on meta.id makes a replay harmless even when the endpoint ignores Last-Event-ID (vibe-test R-2). Rejected options: an offset checkpoint (no offset exists in the stream) and an in-memory seen-set (lost on restart, so it cannot guarantee no double count across runs).
++---
++Ticket: cd-1
++
++Applies to Phase 6 (stream client and merge) and checks 5 in Phase 8. Gap G-5 is settled by this record.
+diff --git a/.context/proposals/cd-1-window-boundary.md b/.context/proposals/cd-1-window-boundary.md
+new file mode 100644
+index 0000000..691fb96
+--- /dev/null
++++ b/.context/proposals/cd-1-window-boundary.md
+@@ -0,0 +1,10 @@
++---
++decision_id: cd-1-window-boundary
++status: proposed
++question: Is a 5-minute window open or closed at its end, and how is an event assigned to a window?
++choice: Windows are half-open [start, end) in UTC. window_start = floor(timestamp / 300) * 300 on epoch seconds. An event at exactly start + 300 belongs to the next window.
++rationale: Each event falls in exactly one window, so the window totals add up to the event count (check 6). Rejected option: closed windows on both ends, which would count a boundary event twice.
++---
++Ticket: cd-1
++
++Applies to Phase 7 (window assignment) and check 6 in Phase 8. Gap N-4 is settled by this record.
+diff --git a/.context/proposals/cd-1.md b/.context/proposals/cd-1.md
+new file mode 100644
+index 0000000..983ffd8
+--- /dev/null
++++ b/.context/proposals/cd-1.md
+@@ -0,0 +1,6 @@
++# Request: cd-1
++
++Ticket: cd-1
++Source: the request as the user wrote it, saved at activation.
++
++Ship gh-1 end to end through R7. Issue gh-1: Build a pipeline answering (A, batch) where federal contract/grant money went in FY2024 (total and per person, by state, county, awarding agency, month) and (B, stream) how Wikipedia is being edited now (edits per wiki, namespace, 5-minute window, split human/bot, net bytes added). Inputs: data/raw/usaspending/, data/raw/census/, data/raw/sitematrix.json, SSE stream http://localhost:8099/v2/stream/recentchange. Lake under lake/ (dlt, Parquet), dbt-duckdb in transform/, marts published to out/marts/ via external materialization. Outputs: star schema, monthly mart, edit fact, 5-minute window mart, oracle_map.yml, DECISIONS.md. Rules: make build idempotent; make stream DURATION=<s> resumable without double count or loss; windows 5 min UTC; late = stream time >10 min past window end at first arrival, to late_events; exact money sums. Checks 1-7 as in the issue. Amendment: per person uses July 1 2024 estimate, fallback to latest earlier estimate with DECISIONS note. Python 3.12, do not change pyproject pins.
+diff --git a/.context/reviews/plan_cd-1-pipeline.plan.md b/.context/reviews/plan_cd-1-pipeline.plan.md
+new file mode 100644
+index 0000000..b4070c6
+--- /dev/null
++++ b/.context/reviews/plan_cd-1-pipeline.plan.md
+@@ -0,0 +1,63 @@
++RUN_BY_COMMAND: plan-review
++Verdict: READY WITH CHANGES
++Last reviewed plan sha256: f0b82aee4827a725fd986cc9a853d9fea5b154b8ba95e334dfbd769290d6bc9a
++Pipeline-Run: 1a240cbc-2484-4175-b2ce-b76ba5272a21
++
++**Tracker:** none
++**Ticket:** TICKET_SKIPPED (none: no tracker declared)
++Ticket token: cd-1
++
++# Plan review: cd-1-pipeline.plan.md (cycle 2)
++
++Inputs: `.context/plans/cd-1-pipeline.plan.md` (sha256 f0b82aee...), `.context/reviews/plan_cd-1-pipeline.plan.md` (cycle 1, sha256 5e67b861..., MF-1 to MF-6, verdict READY WITH CHANGES), `.context/vibetest/cd-1_2026-10-21.md` (sha256 87234335..., NOT READY FOR PLANNING, G-1 to G-6). Also read: the six `.context/proposals/cd-1-*.md` records, `.context/deferrals/cd-1_deferral-register.md`, `.context/proposals/cd-1.md`, `.context/issues/cd-1.md`.
++
++The cycle-1 review file is overwritten by this run at the same path. Its content is in the cycle-1 section of the orchestrator packet.
++
++## Summary
++
++The MF-1 to MF-6 edits are applied in the phase text. All six are closed. The new text adds five open must-fix items (MF-7 to MF-11). Four are spec gaps or wrong order. One is a header test that would fail on every real zip. The data facts the plan states were checked against the files in `data/raw/`: column names, amount format, FY2024 dates, FIPS buckets, and the census counts. All of them hold.
++
++## Status of earlier items
++
++| Id | Status | Evidence |
++|---|---|---|
++| MF-1 | closed | Phase 4 scope adds `dim_wiki` (`wiki_key`, `url`, `code`, `sitename`, `closed`, plus an `unknown` row) with `unique` and `not_null` on `wiki_key`. Phase 7 adds the `relationships` test from `fct_edit.wiki_key` to `dim_wiki.wiki_key`. |
++| MF-2 | closed | Phase 2 names one state FIPS column for both award types and drops the 2-letter state code. Each type gets a header test. Checked: all eight zips carry the named columns for their type. `source_file` is the exception, see MF-7. |
++| MF-3 | closed | Phase 4 geography rules 1 to 5 answer (a) territory rows to `OUTSIDE-50-STATES-DC`, (b) bucket money stays out of the per-person denominator (Phase 4 per-person text and the national denominator = 3,144 county rows), (c) the 16 CT 2021 rows to `09-UNKNOWN-COUNTY`. `transform/tests/geography_buckets.sql` tests CT 09001 and state 72. |
++| MF-4 | closed | Phase 2 pins `-?\d+(\.\d{1,2})?`. `test_amount_pattern` rejects `1e3`, `1.005`, `+1`, `1,000` and empty. Checked: all 9,820 amounts in the eight zips match. |
++| MF-5 | closed | Phase 6 batch size is a parameter (test value 5). The test kills after the first batch commit, asserts `Last-Event-ID: 5` on the second run, and expects 10 rows with no duplicate `meta.id`. |
++| MF-6 | closed | Phase 5 no longer writes `oracle_map.yml` or `stream_available`. Phase 7 adds `stream_available`. Phase 8 writes `oracle_map.yml` as the last build step. Phase 1 is the only phase that creates `DECISIONS.md`. |
++
++## Must-fix items
++
++- MF-7 (Phase 2, header test defines a column that no zip has): Phase 2 says to keep `source_file` and `award_type`, and the header test "asserts the columns above". `source_file` is not a header in any of the eight zips (checked: absent in all eight). The test would fail on every real zip before any row is read. State that `source_file` (zip member name) and `award_type` (from the zip file name) are derived fields, not header columns. The header test asserts only the header names.
++- MF-8 (Phase 6, gap reporting is promised but not built or tested): The G-5 assumption and the register row say a gap during a disconnect is "logged as `gap` in the stream report" and "reported, not hidden". The R-2 probe text says the endpoint behaviour "affects only gap reporting". No phase names a stream report, a file or field for the gap, or a test that produces one. Name the file and field in Phase 6 scope. Add a fake-server case where the server skips events on reconnect and assert that the gap row exists. Or remove the claim from G-5 and from the register row. Until then "Settled by Phase 6" does not hold.
++- MF-9 (Phase 6 and Phase 7, `arrival_seq` has no assignment rule): Phase 6 checkpoints "the last committed `arrival_seq`". Phase 7 defines lateness by `arrival_seq` ("the position of first arrival in the lake"). No phase says what writes `arrival_seq`, when, or how a replay keeps it. The late set cannot be reproduced without that rule. Name the rule (for example: on first insert of a `meta.id`, `arrival_seq` = max stored + 1 in batch order, written in the same commit as the merge). Add a Phase 6 or Phase 7 test that a replayed event keeps its first `arrival_seq`. The Phase 7 duplicate-`meta.id` test depends on it.
++- MF-10 (Phase 9, steps 2 and 4 cannot both pass): Step 3 (`make stream DURATION=60`) writes `lake/stream`. Phase 7 marts (`fct_edit`, `mart_edit_window_5min`) read it. Step 4 requires the `sha256sum out/marts/*` after the stream run to equal the hash from step 2, which was taken before the stream run. Those hashes differ unless the stream marts are empty. Also state which marts are published when `stream_available = false`. Fix the gate: compare two builds that both run after step 3, and make the step-2 hash cover the batch-only build.
++- MF-11 (`make stream` when the endpoint is down): Success signals and Phase 9 step 3 require `make stream DURATION=60` to exit 0 on a clean checkout. The endpoint is `http://localhost:8099/...`, and no phase says what the stream client does when the connection is refused or returns a non-200 status. Name the exit code and the record written in each case (for example: exit 0 with zero events and a `stream_available`-style record, or exit non-zero with a usage line). Phase 9 step 3 and the success signal must match that rule. Add a test for it.
++
++## Notes (not blocking)
++
++- Revision ledger: the plan's `## Revision ledger` says "None." No `## Revision ledger (review <sha>)` table answers MF-1 to MF-6. The closure evidence above therefore cites the plan text. The next `/plan-update` should write a ledger keyed to the sha256 of this review file, with one row for each of MF-7 to MF-11.
++- No commit checkpoint per phase (unchanged from cycle 1). The contract's review list names commit checkpoints. Add one line per phase, or state that the phases are one commit.
++- Blast radius: Phase 4 writes `transform/tests/geography_buckets.sql`, which is not in the blast radius list. The list names `transform/models/` only. Add `transform/tests/` and `transform/models/schema.yml`.
++- Merge mechanism: the plan says "merged on `meta.id`" and "a commit merges the batch into the lake" but does not name the dlt write disposition or the destination that performs the merge into Parquet under `lake/`. Name it, and confirm it is supported at the pinned dlt 1.31.0. This review did not run dlt.
++- `population_source` for fallback rows has no named values. Phase 4 says "the fallback vintage", and Phase 8 check 4 matches on it. Name the values (for example `co-est2024`, `co-est2021`, and the fallback year), so the check and the build report agree.
++- Phase 2 regex: `\d` in Python `re` matches non-ASCII digits. Write `[0-9]` or compile with `re.ASCII` so the rule matches its stated pattern.
++- Phase 8 `test_checks.py` reads `out/marts`. The Phase 8 exit criterion runs `unittest discover` without saying that `make build` runs first. Phase 9 step 6 does run it after step 2. Add the ordering to the Phase 8 exit criterion.
++- Check 5 (stream resume) runs its own fake server, while checks 1 to 4 and 6 to 7 read built output. Phase 8 does not say which checks need a built `out/`. State it per check.
++- G-1 (checks 1 to 7): the issue gh-1 body is not on disk and not in the packet. The comparison with the issue text cannot be made here, and the assumption stands. The orchestrator should supply the issue body if one exists.
++- Reuse section: placing shared test helpers in `tests/support.py` rather than `tests/conftest.py` is correct for `unittest discover`, which does not load `conftest.py`. No change needed.
++
++## Checks run
++
++- Hashes: the plan (f0b82aee...), the cycle-1 review (5e67b861...) and the vibe-test (87234335...) match the packet.
++- Headers of all eight USAspending zips read with `python3 -I` from outside the repo. Columns checked: the Phase 2 list. Present in every zip for its type, except `source_file`, which is absent from all eight.
++- All 9,820 `federal_action_obligation` values match `-?\d+(\.\d{1,2})?`. `action_date` runs from 2023-10-01 to 2024-09-30.
++- State FIPS: 57 blank rows. Territory rows (60, 66, 69, 72, 78): 138. No state FIPS outside the 51 census state rows. In-state rows with a county FIPS outside the 2024 county rows: 16 (CT, the 2021 codes 09001 to 09015). All other in-state county rows are in the 2024 county list.
++- Census: `co-est2024-alldata.csv` has 51 SUMLEV 040 rows and 3,144 SUMLEV 050 rows. `co-est2021-alldata.csv` has the CT county codes 09001 to 09015.
++- Not run: `make build`, `make stream`, `dbt`, `uv`. The plan's commands were not executed.
++
++## Verdict
++
++READY WITH CHANGES. MF-7 to MF-11 block E1. Run `/plan-update` on this plan, answer each id in its revision ledger, then run `/plan-review` again.
+diff --git a/.context/runs/1a240cbc-2484-4175-b2ce-b76ba5272a21/superseded.json b/.context/runs/1a240cbc-2484-4175-b2ce-b76ba5272a21/superseded.json
+new file mode 100644
+index 0000000..e54f748
+--- /dev/null
++++ b/.context/runs/1a240cbc-2484-4175-b2ce-b76ba5272a21/superseded.json
+@@ -0,0 +1,6 @@
++{
++  "pipeline_run_id": "1a240cbc-2484-4175-b2ce-b76ba5272a21",
++  "task_id": "cd-1",
++  "superseded_at": "2026-10-21T22:36:52.358153+00:00",
++  "paths": []
++}
+diff --git a/.context/sessions/by-task/cd-1.json b/.context/sessions/by-task/cd-1.json
+new file mode 100644
+index 0000000..d78b4d8
+--- /dev/null
++++ b/.context/sessions/by-task/cd-1.json
+@@ -0,0 +1,3 @@
++{
++  "ref": "sessions/by-worktree/5e78b5040883579c.json"
++}
+diff --git a/.context/sessions/by-worktree/5e78b5040883579c.json b/.context/sessions/by-worktree/5e78b5040883579c.json
+new file mode 100644
+index 0000000..876d3e1
+--- /dev/null
++++ b/.context/sessions/by-worktree/5e78b5040883579c.json
+@@ -0,0 +1,156 @@
++{
++  "skill": "cadence",
++  "pipeline_run_id": "1a240cbc-2484-4175-b2ce-b76ba5272a21",
++  "task_id": "cd-1",
++  "task_source": "branch:feature/gh-1-pipeline",
++  "task_description": "",
++  "branch": "feature/gh-1-pipeline",
++  "ticket_tokens": [
++    "1",
++    "cd-1",
++    "feature/gh-1-pipeline"
++  ],
++  "fresh_run": false,
++  "supersede_on_activate": false,
++  "superseded_paths": [],
++  "activated_at": "2026-10-21T22:36:52.362182+00:00",
++  "owner_session_id": "2a23f7f8-4ce2-4a5e-9f73-a270e4880e3a",
++  "orchestrator_agent_ids": [],
++  "orchestrator_source": "missing",
++  "host": "claude",
++  "base": "main",
++  "workspace": "/tmp/claude-0/-home-user/5b20bc6c-3f91-5511-8000-71d5898a937e/scratchpad/pipe/2026-10-21/P1-cadence-core-haiku-2/repo",
++  "primary_checkout": "/tmp/claude-0/-home-user/5b20bc6c-3f91-5511-8000-71d5898a937e/scratchpad/pipe/2026-10-21/P1-cadence-core-haiku-2/repo",
++  "context_root": "/tmp/claude-0/-home-user/5b20bc6c-3f91-5511-8000-71d5898a937e/scratchpad/pipe/2026-10-21/P1-cadence-core-haiku-2/repo/.context",
++  "matching_artifacts": {},
++  "resume_slug": "activate-session",
++  "resume_block": "A1",
++  "resume_reason": "Resume requested but no ticket-scoped artifacts \u2014 start at A1",
++  "active_skill": "cadence",
++  "registry_version": 1,
++  "env_exports": {
++    "CURSOR_ACTIVE_SKILL": "cadence",
++    "CADENCE_TASK_ID": "cd-1",
++    "CADENCE_FRESH_RUN": "0",
++    "CADENCE_PIPELINE_RUN_ID": "1a240cbc-2484-4175-b2ce-b76ba5272a21",
++    "CADENCE_HOME": "/root/.cache/cadence-bench/src/cadence-core@29315c4e64ff318a80a1a7d2c809beb4b3c15611"
++  },
++  "peer_models": {
++    "validate": "haiku",
++    "plan-create": "haiku",
++    "plan-review": "haiku",
++    "adversarial-review": "haiku",
++    "test-benchmark-plan": "haiku",
++    "pr-review-local": "haiku",
++    "test-benchmark-pr": "haiku"
++  },
++  "config": {
++    "layers": [
++      {
++        "name": "default",
++        "path": "/root/.cache/cadence-bench/src/cadence-core@29315c4e64ff318a80a1a7d2c809beb4b3c15611/cadence.defaults.json",
++        "sha256": "b48e8c8d0bb6264037c092848be6f16e6e5d649842e673ae3cf0fc9f539b7169"
++      },
++      {
++        "name": "profile:standard",
++        "path": "/root/.cache/cadence-bench/src/cadence-core@29315c4e64ff318a80a1a7d2c809beb4b3c15611/profiles/standard.json",
++        "sha256": "ca3d163bab055381827226140568f3bef7eaac187cebd76878e0b63e9e442356"
++      },
++      {
++        "name": "user",
++        "path": "/tmp/claude-0/-home-user/5b20bc6c-3f91-5511-8000-71d5898a937e/scratchpad/pipe/2026-10-21/P1-cadence-core-haiku-2/home/.config/cadence/config.json",
++        "sha256": "50e8627c469634a87fd28ef6b7a5f91fdc17e7d55c0bd196231f5979b21c7f50"
++      },
++      {
++        "name": "project",
++        "path": "/tmp/claude-0/-home-user/5b20bc6c-3f91-5511-8000-71d5898a937e/scratchpad/pipe/2026-10-21/P1-cadence-core-haiku-2/repo/.cadence.json",
++        "sha256": "166d92f85903b40c5209999fec1c0fd546597f3ae4746e665a756e9e8163d03b"
++      }
++    ],
++    "values": {
++      "profile": "standard",
++      "adapter": "none",
++      "packs": [],
++      "pack_config": {},
++      "peers": {},
++      "stages": {
++        "overlays": []
++      },
++      "gated_prefixes": [
++        "src/",
++        "lib/",
++        "app/",
++        "packages/",
++        "pipeline/",
++        "engine/",
++        "pipelines/",
++        "transform/",
++        "Makefile"
++      ],
++      "secret_paths": [],
++      "layer_map": {},
++      "decision_frontmatter_required": true,
++      "peer_models": {
++        "default": "haiku"
++      },
++      "subagent_hygiene": {
++        "mode": "enforce",
++        "rewrite_prompt": true,
++        "classifier": "none",
++        "classifier_threshold": 0.5,
++        "classifier_timeout": 10,
++        "on_classifier_error": null
++      },
++      "orchestrator_scope": {
++        "mode": "enforce"
++      },
++      "context_budget": {
++        "mode": "shadow",
++        "warn_tokens": 60000
++      },
++      "cognitive_complexity": {
++        "max": 15,
++        "unsupported": "warn"
++      },
++      "duplication": {
++        "max_percent": 3,
++        "min_block_lines": 6,
++        "unsupported": "warn"
++      },
++      "code_shape": {
++        "max_function_statements": 50,
++        "max_branch_chain": 6,
++        "unsupported": "warn"
++      },
++      "test_shape": {
++        "max_helpers_reimplemented": 0,
++        "max_thin_files": 0,
++        "unsupported": "warn",
++        "layout": {}
++      },
++      "bugs": {
++        "max": 0,
++        "timeout_seconds": 60,
++        "unsupported": "warn"
++      },
++      "types": {
++        "max": 0,
++        "timeout_seconds": 60,
++        "unsupported": "warn"
++      },
++      "measure_exclude": [],
++      "plan_review_cycles": 5,
++      "adversarial_cycles": 3,
++      "review_fix_rounds": 2,
++      "benchmark_score_floor": 7
++    }
++  },
++  "lean_record_by_hook": true,
++  "resumed_at": "2026-10-21T22:36:52.505847+00:00",
++  "worktree_key": "5e78b5040883579c",
++  "hard_stop": {
++    "class": "retries",
++    "reason": "P4 plan-update peer drops RUN_BY_COMMAND: plan-create on each update (cycles 1 and 2); every later peer handoff is denied. Blocked at P4 with no in-run recovery; see outputs/summary.md.",
++    "at": "2026-10-21T22:54:12.543156+00:00"
++  }
++}
+diff --git a/.context/sessions/pending-owner.json b/.context/sessions/pending-owner.json
+new file mode 100644
+index 0000000..e4a019e
+--- /dev/null
++++ b/.context/sessions/pending-owner.json
+@@ -0,0 +1,5 @@
++{
++  "owner": "2a23f7f8-4ce2-4a5e-9f73-a270e4880e3a",
++  "toplevel": "/tmp/claude-0/-home-user/5b20bc6c-3f91-5511-8000-71d5898a937e/scratchpad/pipe/2026-10-21/P1-cadence-core-haiku-2/repo",
++  "at": 1792622212.0111005
++}
+diff --git a/.context/subagent-runs/1a240cbc-2484-4175-b2ce-b76ba5272a21/plan-create.json b/.context/subagent-runs/1a240cbc-2484-4175-b2ce-b76ba5272a21/plan-create.json
+new file mode 100644
+index 0000000..a3f8d7e
+--- /dev/null
++++ b/.context/subagent-runs/1a240cbc-2484-4175-b2ce-b76ba5272a21/plan-create.json
+@@ -0,0 +1,12 @@
++{
++  "stage": "plan-create",
++  "command": "/plan-create cd-1",
++  "pipeline_run_id": "1a240cbc-2484-4175-b2ce-b76ba5272a21",
++  "status": "running",
++  "source": "PreToolUse",
++  "started_at": "2026-10-21T22:47:08.377187+00:00",
++  "completed_at": "",
++  "artifact_path": "",
++  "manifest_entry_id": "",
++  "tool_use_id": "toolu_01GjaJYoBsdzPAfSDhXvAdnW"
++}
+diff --git a/.context/subagent-runs/1a240cbc-2484-4175-b2ce-b76ba5272a21/plan-review.json b/.context/subagent-runs/1a240cbc-2484-4175-b2ce-b76ba5272a21/plan-review.json
+new file mode 100644
+index 0000000..bf37ad4
+--- /dev/null
++++ b/.context/subagent-runs/1a240cbc-2484-4175-b2ce-b76ba5272a21/plan-review.json
+@@ -0,0 +1,12 @@
++{
++  "stage": "plan-review",
++  "command": "/plan-review .context/plans/cd-1-pipeline.plan.md",
++  "pipeline_run_id": "1a240cbc-2484-4175-b2ce-b76ba5272a21",
++  "status": "running",
++  "source": "PreToolUse",
++  "started_at": "2026-10-21T22:48:33.336300+00:00",
++  "completed_at": "",
++  "artifact_path": "",
++  "manifest_entry_id": "",
++  "tool_use_id": "toolu_01Rofpd5hEGYDEiRgAMdFuVq"
++}
+diff --git a/.context/subagent-runs/1a240cbc-2484-4175-b2ce-b76ba5272a21/plan-update.json b/.context/subagent-runs/1a240cbc-2484-4175-b2ce-b76ba5272a21/plan-update.json
+new file mode 100644
+index 0000000..757f73d
+--- /dev/null
++++ b/.context/subagent-runs/1a240cbc-2484-4175-b2ce-b76ba5272a21/plan-update.json
+@@ -0,0 +1,12 @@
++{
++  "stage": "plan-update",
++  "command": "/plan-update .context/plans/cd-1-pipeline.plan.md --from-review .context/reviews/plan_cd-1-pipeline.plan.md",
++  "pipeline_run_id": "1a240cbc-2484-4175-b2ce-b76ba5272a21",
++  "status": "running",
++  "source": "PreToolUse",
++  "started_at": "2026-10-21T22:51:20.432081+00:00",
++  "completed_at": "",
++  "artifact_path": "",
++  "manifest_entry_id": "",
++  "tool_use_id": "toolu_01792VpXfQx68qr5v4WNCK8G"
++}
+diff --git a/.context/subagent-runs/1a240cbc-2484-4175-b2ce-b76ba5272a21/vibe-test.json b/.context/subagent-runs/1a240cbc-2484-4175-b2ce-b76ba5272a21/vibe-test.json
+new file mode 100644
+index 0000000..b3133ce
+--- /dev/null
++++ b/.context/subagent-runs/1a240cbc-2484-4175-b2ce-b76ba5272a21/vibe-test.json
+@@ -0,0 +1,12 @@
++{
++  "stage": "vibe-test",
++  "command": "/vibe-test cd-1",
++  "pipeline_run_id": "1a240cbc-2484-4175-b2ce-b76ba5272a21",
++  "status": "running",
++  "source": "PreToolUse",
++  "started_at": "2026-10-21T22:37:08.176538+00:00",
++  "completed_at": "",
++  "artifact_path": "",
++  "manifest_entry_id": "",
++  "tool_use_id": "toolu_018S9rAqfA1AiweK83a6qVvA"
++}
+diff --git a/.context/vibetest/cd-1_2026-10-21.md b/.context/vibetest/cd-1_2026-10-21.md
+new file mode 100644
+index 0000000..2fd365b
+--- /dev/null
++++ b/.context/vibetest/cd-1_2026-10-21.md
+@@ -0,0 +1,89 @@
++RUN_BY_SKILL: vibe-test
++Pipeline-Run: 1a240cbc-2484-4175-b2ce-b76ba5272a21
++
++**Tracker:** none
++**Ticket:** TICKET_SKIPPED (none: no tracker declared)
++Ticket token: cd-1 (session task_id; GitHub issue gh-1 on branch feature/gh-1-pipeline)
++
++# Vibe test: cd-1 (Cadence A5)
++
++## Target and provenance
++
++- Target: `.context/proposals/cd-1.md` (disk spec, snapshot of the request taken at activation). Phase 1 classification: disk spec.
++- Contract: `skills/vibe-test/SKILL.md` resolved to `/home/user/cadence-core/skills/vibe-test/SKILL.md` (also the CADENCE_HOME copy under `/root/.cache/cadence-bench/...`).
++- Contract hash mismatch: the packet cites sha256 `8cf68ba8...1514bd`. The file on disk hashes to `e6e588d7e3acc659f3113a11236dfb66905174b7ff8931527b65bdb673dc2120` (both copies agree). This report follows the on-disk contract. The orchestrator should confirm which contract version the packet meant.
++- Config: adapter `none` (project `.cadence.json` has no adapter; resolved from user layer). No tracker CLI is called.
++- The issue gh-1 body is not on disk. The spec refers to it ("Checks 1-7 as in the issue"). No copy of the issue text exists in the repo or `.context/`.
++- Repo state at review: `Makefile` targets `build` and `stream` are stubs (exit 1). `transform/models/` holds only `.gitkeep`. `data/raw/` holds the USAspending zips (4 agencies x contracts/assistance), census CSVs (2021, 2024 vintages), and `sitematrix.json`. `pyproject.toml` pins dlt 1.31.0, dbt-core 1.11.6, dbt-duckdb 1.11.0, duckdb 1.5.6, Python ==3.12.*.
++
++## Scenarios traced through the spec
++
++S1. Clean checkout, `make build`. The spec names inputs and outputs (star schema, monthly mart, oracle_map.yml, DECISIONS.md) but not the entry points, the dlt source names, or the model list. Trace stops at "which code runs". Gap N-6.
++
++S2. Re-run `make build` on an existing `lake/` and `out/`. "Idempotent" is stated with no definition (full rebuild from raw vs incremental merge). Gap N-7.
++
++S3. Batch money totals. "Exact money sums" with no amount column, no sign rule, no decimal type. Gap G-2. Risk R-1.
++
++S4. Batch geography. Rows are per prime award transaction. The spec does not say place of performance or recipient location, and does not say how rows without a county FIPS are bucketed. Totals by state and county cannot be checked against source. Gap G-3.
++
++S5. Per person by awarding agency and by month. Census supplies population by state and county only. The denominator for agency and month cuts is undefined. Gap G-4.
++
++S6. Per person by county, July 1 2024 estimate. `co-est2024-alldata.csv` carries the 2024 estimate. Amendment fallback is "latest earlier estimate". The spec does not name the column or the vintage. The 2021 file has no 2024 data, so the fallback crosses vintages. The amendment requires a DECISIONS note. Gap N-1.
++
++S7. Stream, first run, `make stream DURATION=60`. Events arrive from `localhost:8099`. Each event's `wiki` field must be joined to sitematrix `dbname`. The spec does not give the join key. Gap N-3.
++
++S8. Stream, interrupted and resumed. Resume needs a checkpoint (offset or SSE `Last-Event-ID`) and a dedupe key (for example the event `meta.id`). The spec gives neither. "No double count or loss" cannot be tested. Gap G-5. Risk R-2 (the endpoint may not honor `Last-Event-ID`).
++
++S9. Stream, event arrives 11 minutes after its window closed. The spec says late events go to `late_events`. It does not say whether the 5-minute window mart is restated, and it does not define "stream time" (event timestamp, or the maximum timestamp seen). Gap G-6.
++
++S10. Stream, `type=log` event with no `length` object. Net bytes added is undefined for it. Gap N-2.
++
++S11. Stream, event at exactly the window boundary. The spec does not say half-open or closed. Gap N-4.
++
++S12. Check 1 to check 7 run against the built output. The checks are not in the spec, so the exit criteria are absent. Gap G-1.
++
++S13. Stream source down at build time. The spec sets no fallback and no exit criterion for a zero-event window. Gap N-8.
++
++## Gaps
++
++Blocking:
++
++- G-1: Checks 1-7 are cited as "as in the issue" but are not written in the persisted spec. Exit criteria are missing. The issue gh-1 body is not on disk.
++- G-2: The USAspending amount field is not named ("federal money went in"). The sign rule for deobligations is not given. The exact-sum type (decimal scale, rounding) is not given.
++- G-3: The geography field is not named (place of performance vs recipient). Handling of rows with no county FIPS is not given.
++- G-4: The per-person denominator is undefined for awarding agency and for month.
++- G-5: The stream dedupe key and the checkpoint rule are undefined. Resume without double count or loss has no testable definition.
++- G-6: "Stream time" is undefined. The rule for restating a published window when a late event arrives is undefined. Late classification changes which events count, so this decides the mart contents.
++
++Non-blocking (the plan logs an assumption for each):
++
++- N-1: Census fallback column and vintage. Assumed: July 1 2024 from co-est2024 `POPESTIMATE2024`; fallback to the latest earlier estimate in co-est2024 (`POPESTIMATE2023` and earlier). Record in DECISIONS.md.
++- N-2: Null `length` on non-edit events. Assumed: excluded from net bytes, counted in edit totals by type.
++- N-3: Join key. Assumed: stream `wiki` equals sitematrix `dbname`. Unmatched wikis go to an "unknown" row.
++- N-4: Window boundary. Assumed: half-open `[start, end)` in UTC.
++- N-5: `oracle_map.yml` format is not specified.
++- N-6: Star schema grain and keys are not specified; no entity list.
++- N-7: "Idempotent" is not defined. Assumed: a full rebuild from `data/raw/` gives byte-identical marts.
++- N-8: Zero-event window or unavailable stream: no rule for the window row.
++
++## Conflicts
++
++- C-1: "Exact money sums" conflicts with the default type inference of dlt and DuckDB, which can produce float columns. The spec sets no type. Treated as R-1 until typed.
++- C-2: Ticket naming. The session task is `cd-1` and the issue is `gh-1`. Tracker is `none`, so no link check runs. Not a spec conflict, noted for the record.
++
++## Risks for P1
++
++- R-1: Float money columns from inferred types would break exact sums. Plan must pin decimal types in the dlt schema.
++- R-2: The SSE endpoint may not support `Last-Event-ID`. Resume may need a local checkpoint of the last `meta.id` or timestamp.
++- R-3: Stream is local (`localhost:8099`). Tests need a fake SSE server. The spec does not require one.
++
++## Blocking gaps
++
++G-1: Checks 1-7 are not in the persisted spec; exit criteria are missing.
++G-2: The money field, sign rule, and exact-sum type are not named.
++G-3: The geography field and the no-FIPS bucket rule are not named.
++G-4: The per-person denominator for agency and month is not defined.
++G-5: The stream dedupe key and checkpoint rule are not defined.
++G-6: "Stream time" and the published-window restatement rule are not defined.
++
++Verdict: NOT READY FOR PLANNING
