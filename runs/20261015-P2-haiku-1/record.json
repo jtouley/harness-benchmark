@@ -20,6 +20,7 @@
  },
  "ended_at": null,
  "exit_code": 0,
+ "isolation": null,
  "kind": "benchmark",
  "model_requested": "claude-haiku-5-5",
  "models_served": null,
@@ -41,6 +42,12 @@
   "reason": null
  },
  "task": "P2",
+ "timing": {
+  "agent_active_seconds": null,
+  "agent_wall_seconds": 1596.9,
+  "blocks": null,
+  "run_wall_seconds": null
+ },
  "transcript": {
   "missing": "kept outside git on the operator's laptop (results/runs/, gitignored); no sha256 was recorded",
   "sha256": null

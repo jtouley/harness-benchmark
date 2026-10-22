@@ -46,7 +46,9 @@ def _run(runs: Path, run_id: str, *, sha: str, source="driver", block="R7", reas
         "models_served": ["claude-haiku-5-5"], "command": None, "started_at": started, "ended_at": None,
         "exit_code": 0, "cost": {"list_usd": None, "reported_usd": None},
         "stop_point": {"block": block, "reason": reason}, "transcript": {"sha256": None, "missing": "test"},
-        "tree": {"sha256": None, "missing": "test"}, "counts": {"counts": counts, "why": "test"}})
+        "tree": {"sha256": None, "missing": "test"}, "counts": {"counts": counts, "why": "test"},
+        "timing": {"agent_wall_seconds": None, "run_wall_seconds": None, "agent_active_seconds": None, "blocks": None},
+        "isolation": None})
     record.append_score(runs, {"run_id": run_id, "grader": {"repo": "jtouley/harness-benchmark", "commit": "abc1234",
                                                           "tree": "a" * 40},
                                "reward": reward, "passed": passed, "total": 7, "idempotent": True,
