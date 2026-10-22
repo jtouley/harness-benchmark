@@ -1,0 +1,58 @@
+{
+ "arm": "baseline",
+ "batch": "2026-10-15-pipeline-trials",
+ "cadence": null,
+ "claude_version": null,
+ "command": null,
+ "cost": {
+  "list_usd": "7.921631",
+  "reported_usd": null,
+  "tokens": {
+   "cache_read": 12257988,
+   "cache_write": 585989,
+   "input": 192,
+   "output": 126966
+  }
+ },
+ "counts": {
+  "counts": true,
+  "why": "scored run (15 Oct write-up)"
+ },
+ "ended_at": null,
+ "exit_code": 0,
+ "isolation": null,
+ "kind": "benchmark",
+ "model_requested": "claude-opus-5-5",
+ "models_served": null,
+ "provenance": {
+  "evidence": [
+   "ec54dbc:docs/evidence/2026-10-15-pipeline-trials.json#P3-opus-1",
+   "docs/evidence/2026-10-15-pipeline-trials.md"
+  ],
+  "source": "backfill"
+ },
+ "request_id": null,
+ "run_id": "20261015-P3-opus-1",
+ "schema": 1,
+ "session_id": null,
+ "started_at": null,
+ "stop_point": {
+  "block": null,
+  "reason": null
+ },
+ "task": "P3",
+ "timing": {
+  "agent_active_seconds": null,
+  "agent_wall_seconds": 3602.7,
+  "blocks": null,
+  "run_wall_seconds": null
+ },
+ "transcript": {
+  "missing": "kept outside git on the operator's laptop (results/runs/, gitignored); no sha256 was recorded",
+  "sha256": null
+ },
+ "tree": {
+  "missing": "the saved tree is on the operator's laptop (results/runs/, gitignored)",
+  "sha256": null
+ }
+}

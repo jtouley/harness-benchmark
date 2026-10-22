@@ -1,0 +1,67 @@
+{
+ "arm": "cadence-core",
+ "batch": "2026-10-19-pipeline-cadence-core",
+ "cadence": {
+  "published_in": [
+   "origin/ccr-3d2e0c73-lr6bdt"
+  ],
+  "repo": "https://github.com/jtouley/cadence",
+  "sha": "b1bbdcda7663ef08daf8fdeb2c6af853254016a9",
+  "tree_clean": null
+ },
+ "claude_version": "2.1.303 (Claude Code)",
+ "command": null,
+ "cost": {
+  "list_usd": "0.6712",
+  "reported_usd": 2.240711065,
+  "tokens": {
+   "cache_read": 34090929,
+   "cache_write": 943753,
+   "input": 3844,
+   "output": 423844
+  }
+ },
+ "counts": {
+  "counts": true,
+  "why": "scored run (19 Oct, 'P1-cadence-core-haiku-1')"
+ },
+ "ended_at": null,
+ "exit_code": null,
+ "isolation": null,
+ "kind": "benchmark",
+ "model_requested": "claude-haiku-5-5",
+ "models_served": [
+  "claude-haiku-5-5"
+ ],
+ "provenance": {
+  "evidence": [
+   "d4f9b00:docs/evidence/2026-10-19-pipeline-cadence-core/P1-cadence-core-haiku-1",
+   "d4f9b00:docs/evidence/2026-10-19-pipeline-cadence-core.md"
+  ],
+  "source": "backfill"
+ },
+ "request_id": "gh-1",
+ "run_id": "20261019-P1-cadence-core-haiku-1",
+ "schema": 1,
+ "session_id": null,
+ "started_at": null,
+ "stop_point": {
+  "block": "E4",
+  "reason": "credentials hard stop: no GitHub remote and no PR number"
+ },
+ "task": "P1",
+ "timing": {
+  "agent_active_seconds": null,
+  "agent_wall_seconds": 3062,
+  "blocks": null,
+  "run_wall_seconds": null
+ },
+ "transcript": {
+  "missing": "not committed (19 Oct write-up, amended per #55)",
+  "sha256": null
+ },
+ "tree": {
+  "missing": "not kept; the host container is gone",
+  "sha256": null
+ }
+}
