@@ -163,3 +163,45 @@ def test_the_postmortem_has_a_speed_section_with_each_run_and_the_slowest():
     assert "81.3" in row and "— (stopped early)" in row  # 3.06x the one-shot, but it never finished
     assert "Slowest runs: `20261022-P2-cadence-core-haiku-3`" in speed
     assert "Peer time per block" in speed and "| plan-review | 51.4 | 28 | 6 | 22 |" in speed
+
+
+# --- the Diagnosis section (owner's loop protocol, step 2)
+
+BATCH0 = ("2026-10-19-pipeline-cadence-core", "2026-10-21-cadence-core-subscription")
+
+
+def _section(text: str, name: str) -> str:
+    return text.split(f"## {name}", 1)[1].split("\n## ", 1)[0]
+
+
+def test_a_postmortem_can_cover_several_batches():
+    text = postmortem.generate(list(BATCH0), RUNS, {}, title="batch 0")
+    assert text.startswith("# Postmortem: batch 0")
+    assert "`20261019-P1-cadence-core-haiku-1`" in text and "`20261021-P1-cadence-core-haiku-1`" in text
+
+
+def test_the_diagnosis_lists_each_run_with_its_block_cause_minutes_and_findings():
+    diagnosis = _section(postmortem.generate(list(BATCH0), RUNS, {}, title="batch 0"), "Diagnosis")
+    row = next(line for line in diagnosis.splitlines() if line.startswith("| `20261021-P2-cadence-core-haiku-2`"))
+    assert "| E4 |" in row and "64.4" in row and "F-1" in row and "F-5" in row
+    killed = next(line for line in diagnosis.splitlines() if line.startswith("| `20261021-P1-cadence-core-haiku-0-killed`"))
+    assert "not counted" in killed
+
+
+def test_findings_are_ranked_by_runs_then_minutes():
+    diagnosis = _section(postmortem.generate(list(BATCH0), RUNS, {}, title="batch 0"), "Diagnosis")
+    ranked = [line.split("|")[1].strip() for line in diagnosis.split("Findings by cost", 1)[1].splitlines()
+              if line.startswith("| **F-")]
+    assert ranked and ranked[0].startswith("**F-")
+    rows = [line for line in diagnosis.split("Findings by cost", 1)[1].splitlines() if line.startswith("| **F-")]
+    keys = [(-int(r.split("|")[2]), -float(r.split("|")[3])) for r in rows]
+    assert keys == sorted(keys)
+
+
+def test_a_reference_diff_is_hand_written_and_cites_runs():
+    with pytest.raises(postmortem.PostmortemError, match="reference_diffs"):
+        postmortem.generate(list(BATCH0), RUNS, {"reference_diffs": [{"text": "no runs"}]}, title="batch 0")
+    text = postmortem.generate(list(BATCH0), RUNS, {"reference_diffs": [
+        {"text": "The map answers its own invariants, not the ticket's checks.",
+         "run_ids": ["20261022-P1-cadence-core-haiku-3"]}]}, title="batch 0")
+    assert "The map answers its own invariants" in _section(text, "Diagnosis")

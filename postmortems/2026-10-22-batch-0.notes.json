@@ -1,0 +1,32 @@
+{
+ "reference_diffs": [
+  {
+   "text": "P1, against golden/pipeline/P1/reference/oracle_map.yml: the reference answers each of the ticket's seven checks (1 to 7) with SQL over the published marts. This run's map is a list of seven invariants it invented (raw_row_conservation, window_conservation, resume_equivalence, ...) with prose in place of SQL; none is a check from the ticket's 'Checks the analysts will run' list, so all seven fail to parse. The plan never traced the ticket's check list to a deliverable (F-5)",
+   "run_ids": [
+    "20261022-P1-cadence-core-haiku-3"
+   ]
+  },
+  {
+   "text": "P2, against golden/pipeline/P2/reference/oracle_map.yml: this run traced the ticket's seven checks correctly (ids 1 to 7, the same questions) and named a mart for each, but answered each with a file path (query: tests/checks/check_0N.sql) where the grader reads SQL text or a table and column, and three entries read lake/, which the spec rules out. The divergence is the answer's form, not its content (F-5)",
+   "run_ids": [
+    "20261021-P2-cadence-core-haiku-2"
+   ]
+  },
+  {
+   "text": "Both runs built a working pipeline (two clean make build runs, the stream read to the end) and stopped at E4 for want of a GitHub PR URL, so no review block (R1 to R7) could have caught the answer map (F-1)",
+   "run_ids": [
+    "20261022-P1-cadence-core-haiku-3",
+    "20261021-P2-cadence-core-haiku-2"
+   ]
+  }
+ ],
+ "decisions": [
+  {
+   "text": "Batch 0 is the 19 and 21 October rounds: the baseline the improvement loop is measured against. The 19 October runs ran on jtouley/cadence (b1bbdcd, f6011df, 4af76ac), the 21 October runs on cadence-core 29315c4, so the batch mixes two codebases; batch F is the first on cadence main",
+   "run_ids": [
+    "20261019-P1-cadence-core-haiku-1",
+    "20261021-P1-cadence-core-haiku-1"
+   ]
+  }
+ ]
+}
