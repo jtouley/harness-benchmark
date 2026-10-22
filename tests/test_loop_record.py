@@ -31,6 +31,8 @@ def minimal(run_id: str = "20261021-P1-cadence-core-haiku-1", **over) -> dict:
         "ended_at": "2026-10-21T00:01:00Z", "exit_code": 0, "cost": {"list_usd": "0.10", "reported_usd": 0.12},
         "stop_point": {"block": "E4", "reason": "credentials"}, "transcript": {"sha256": None, "missing": "x"},
         "tree": {"sha256": None, "missing": "x"}, "counts": {"counts": True, "why": "graded by the grader"},
+        "timing": {"agent_wall_seconds": None, "run_wall_seconds": None, "agent_active_seconds": None, "blocks": None},
+        "isolation": None,
     }
     rec.update(over)
     return rec
@@ -213,7 +215,10 @@ TRANSCRIPT = [
      "claude_code_version": "2.1.307"},
     {"type": "assistant", "message": {"model": "claude-haiku-5-5", "content": []}},
     {"type": "assistant", "message": {"model": "claude-sonnet-5-5", "content": []}},
-    {"type": "result", "session_id": "s-1", "total_cost_usd": 0.5,
+    {"type": "result", "session_id": "s-1", "duration_ms": 1500, "total_cost_usd": 0.4,
+     "modelUsage": {"claude-haiku-5-5": {"inputTokens": 1, "outputTokens": 0,
+                                         "cacheCreationInputTokens": 0, "cacheReadInputTokens": 0}}},
+    {"type": "result", "session_id": "s-1", "duration_ms": 1000, "total_cost_usd": 0.5,
      "modelUsage": {"claude-haiku-5-5": {"inputTokens": 1000000, "outputTokens": 0,
                                          "cacheCreationInputTokens": 0, "cacheReadInputTokens": 0}}},
 ]
@@ -235,6 +240,11 @@ def _drive(tmp_path, plugin, extra=(), script="", grade=None):
             "--task", "P1", "--request-id", "gh-1", "--arm", "cadence", "--model", "claude-haiku-5-5",
             "--plugin-dir", str(plugin), "--runs", str(tmp_path / "runs"), "--store", str(tmp_path / "store"),
             "--transcript", str(out / "transcript.jsonl"), *extra, "--", "bash", "-c", body]
+    if "--cwd" not in extra:  # a work folder and a HOME that hold no Cadence copy
+        (tmp_path / "work").mkdir(exist_ok=True)
+        argv[-4:-4] = ["--cwd", str(tmp_path / "work")]
+    if "--fresh-home" not in extra:
+        argv[-4:-4] = ["--fresh-home", str(tmp_path / f"home-{len(list(tmp_path.glob('home-*')))}")]
     return driver.main(argv), tmp_path / "runs" / "20261022-P1-cadence-haiku-1"
 
 
@@ -279,3 +289,98 @@ def test_a_grade_from_the_benchmark_grader_becomes_a_score_with_the_grader_ident
 def test_the_driver_is_a_module_with_help():
     proc = subprocess.run([sys.executable, "-m", "loop.driver", "--help"], cwd=ROOT, capture_output=True, text=True)
     assert proc.returncode == 0 and "--plugin-dir" in proc.stdout
+
+
+# --- a run that only compiles the plugin's Python still counts (review of #61)
+
+def _with_hook(plugin: Path) -> Path:
+    (plugin / "hooks").mkdir()
+    (plugin / "hooks" / "guard.py").write_text("X = 1\n")
+    _git(plugin, "add", "-A")
+    _git(plugin, "commit", "-qm", "hook")
+    _git(plugin, "push", "-q", "origin", "main")
+    _git(plugin, "fetch", "-q", "origin")
+    return plugin
+
+
+def test_bytecode_written_into_the_plugin_during_the_run_does_not_make_it_unclean(tmp_path, plugin):
+    _with_hook(plugin)
+    leaves_bytecode = (f"mkdir -p {plugin}/hooks/__pycache__ && touch {plugin}/hooks/__pycache__/guard.cpython-312.pyc "
+                       f"{plugin}/stray.pyc")
+    rc, run = _drive(tmp_path, plugin, script=leaves_bytecode)
+    rec = json.loads((run / "record.json").read_text())
+    assert rc == 0 and rec["cadence"]["tree_clean"] is True and rec["counts"]["counts"] is True
+
+
+def test_the_command_runs_without_writing_bytecode(tmp_path, plugin):
+    _with_hook(plugin)
+    imports_the_hook = f"cd {plugin}/hooks && {sys.executable} -c 'import guard'"
+    rc, run = _drive(tmp_path, plugin, script=imports_the_hook)
+    assert rc == 0 and not (plugin / "hooks" / "__pycache__").exists()
+    assert json.loads((run / "record.json").read_text())["counts"]["counts"] is True
+
+
+@pytest.mark.parametrize("change", ["echo patched >> {p}/plugin.json", "touch {p}/hotfix.py"])
+def test_a_run_that_changes_or_adds_plugin_source_does_not_count(tmp_path, plugin, change):
+    rc, run = _drive(tmp_path, plugin, script=change.format(p=plugin))
+    rec = json.loads((run / "record.json").read_text())
+    assert rec["cadence"]["tree_clean"] is False and rec["counts"]["counts"] is False
+
+
+def test_a_plugin_with_bytecode_before_the_run_is_still_refused(plugin):
+    (plugin / "__pycache__").mkdir()
+    (plugin / "__pycache__" / "x.pyc").write_text("")
+    with pytest.raises(driver.DriverError):
+        driver.plugin_commit(plugin)
+
+
+# --- isolation: no other Cadence checkout the run can reach
+
+def _cadence_copy(where: Path) -> Path:
+    (where / ".claude-plugin").mkdir(parents=True)
+    (where / ".claude-plugin" / "plugin.json").write_text('{"name": "cadence"}')
+    return where
+
+
+def test_other_cadence_checkouts_under_the_roots_are_found_and_the_plugin_is_not(tmp_path, plugin):
+    (plugin / ".claude-plugin").mkdir()
+    (plugin / ".claude-plugin" / "plugin.json").write_text('{"name": "cadence"}')
+    home = tmp_path / "home"
+    copy = _cadence_copy(home / ".cache" / "src" / "cadence-core@abc")
+    _cadence_copy(home / "node_modules" / "x")  # skipped folder
+    assert driver.other_checkouts([home, plugin], plugin) == [str(copy)]
+
+
+def test_the_driver_refuses_a_run_that_can_reach_another_cadence_checkout(tmp_path, plugin):
+    work = tmp_path / "work"
+    _cadence_copy(work / "cadence-core")
+    rc, run = _drive(tmp_path, plugin, extra=["--cwd", str(work)], script=f"touch {tmp_path}/ran")
+    assert rc == 2 and not run.exists() and not (tmp_path / "ran").exists()
+
+
+def test_a_fresh_home_is_empty_and_is_recorded(tmp_path, plugin):
+    home = tmp_path / "fresh"
+    rc, run = _drive(tmp_path, plugin, extra=["--fresh-home", str(home)], script=f'echo "$HOME" > {tmp_path}/home.txt')
+    assert rc == 0 and (tmp_path / "home.txt").read_text().strip() == str(home)
+    iso = json.loads((run / "record.json").read_text())["isolation"]
+    assert iso["home"] == str(home) and iso["fresh_home"] is True and iso["other_cadence_checkouts"] == []
+
+
+def test_a_fresh_home_that_exists_and_is_not_empty_is_refused(tmp_path, plugin):
+    home = tmp_path / "fresh"
+    home.mkdir()
+    (home / ".bashrc").write_text("")
+    assert _drive(tmp_path, plugin, extra=["--fresh-home", str(home)])[0] == 2
+
+
+# --- timing: the same fields for a one-shot and a Cadence run
+
+def test_the_record_has_wall_agent_and_active_time(tmp_path, plugin):
+    timing = tmp_path / "timing.json"
+    timing.write_text('{"agent_seconds": 61.5}')
+    rc, run = _drive(tmp_path, plugin, extra=["--timing", str(timing)])
+    t = json.loads((run / "record.json").read_text())["timing"]
+    assert t["agent_wall_seconds"] == 61.5
+    assert t["run_wall_seconds"] >= 0
+    assert t["agent_active_seconds"] == 2.5  # the transcript's result lines: 1500 + 1000 ms
+    assert t["blocks"] is None

@@ -18,9 +18,11 @@ from __future__ import annotations
 
 import argparse
 import json
+import os
 import subprocess
 import sys
 import tempfile
+import time
 from datetime import datetime, timezone
 from decimal import Decimal
 from pathlib import Path
@@ -62,6 +64,58 @@ def plugin_commit(plugin: Path) -> dict:
     return {"repo": url, "sha": sha, "tree_clean": True, "published_in": remotes}
 
 
+def _source_changes(plugin: Path) -> list[str]:
+    """`git status` lines of the plugin, without Python bytecode (a run's hooks import plugin modules)."""
+    lines = _git(plugin, "status", "--porcelain", "--ignored", "--untracked-files=all").splitlines()
+    return [line for line in lines if "__pycache__/" not in line and not line.rstrip().endswith(".pyc")]
+
+
+def plugin_unchanged(plugin: Path, sha: str) -> bool:
+    """After the run: HEAD is still `sha` and no source file changed, was added or was ignored-and-added.
+    Bytecode does not count; before the run, plugin_commit refuses it too."""
+    try:
+        return _git(plugin, "rev-parse", "HEAD") == sha and not _source_changes(plugin)
+    except DriverError:
+        return False
+
+
+SKIP_DIRS = {".git", "node_modules", ".venv", "venv", "__pycache__", "site-packages", ".tox", "proc"}
+
+
+def _is_cadence(folder: Path) -> bool:
+    manifest = folder / ".claude-plugin" / "plugin.json"
+    try:
+        if manifest.is_file() and "cadence" in str(json.loads(manifest.read_text(encoding="utf-8")).get("name", "")):
+            return True
+    except (OSError, ValueError, AttributeError):
+        pass
+    return (folder / "stages.json").is_file() and (folder / "SKILL.md").is_file()
+
+
+def other_checkouts(roots: list[Path], plugin: Path | None, depth: int = 5) -> list[str]:
+    """Every Cadence checkout under `roots` (to `depth` levels) other than the plugin itself: a run's peers
+    could read it in place of the plugin (21 Oct: /home/user/cadence-core)."""
+    skip = plugin.resolve() if plugin else None
+    found: set[str] = set()
+    for root in roots:
+        stack = [(root.resolve(), 0)] if root.is_dir() else []
+        while stack:
+            folder, level = stack.pop()
+            if folder == skip:
+                continue
+            if _is_cadence(folder):
+                found.add(str(folder))
+                continue
+            if level >= depth:
+                continue
+            try:
+                children = [c for c in folder.iterdir() if c.is_dir() and not c.is_symlink() and c.name not in SKIP_DIRS]
+            except OSError:
+                continue
+            stack += [(c, level + 1) for c in children]
+    return sorted(found)
+
+
 def grader_identity(repo: Path) -> dict:
     """The harness-benchmark commit and grader tree, refusing a grader with local changes."""
     dirty = _git(repo, "status", "--porcelain", "--untracked-files=all", "--", GRADER_PATH)
@@ -76,7 +130,7 @@ def transcript_facts(lines) -> dict:
     sys.path.insert(0, str(ROOT / "scripts"))
     from pipeline_trial import PRICING, cost_and_tokens
 
-    served, session, version, result = [], None, None, None
+    served, session, version, result, active_ms = [], None, None, None, 0
     for line in lines:
         try:
             event = json.loads(line)
@@ -92,6 +146,7 @@ def transcript_facts(lines) -> dict:
             served.append(model)
         if event.get("type") == "result":
             result = event
+            active_ms += event.get("duration_ms") or 0
     for model in (result or {}).get("modelUsage") or {}:
         if model not in served:
             served.append(model)
@@ -104,7 +159,7 @@ def transcript_facts(lines) -> dict:
         except KeyError:
             pass  # a model with no list price: the list cost stays unknown
     return {"models_served": sorted(served) or None, "session_id": session, "claude_version": version,
-            "cost": cost}
+            "cost": cost, "agent_active_seconds": round(active_ms / 1000, 3) if result else None}
 
 
 def _now() -> str:
@@ -135,6 +190,9 @@ def main(argv: list[str] | None = None) -> int:
     ap.add_argument("--grade", type=Path, help="grade.json the harness-benchmark grader wrote")
     ap.add_argument("--grader-repo", type=Path, default=ROOT)
     ap.add_argument("--stop-point-file", type=Path, help='JSON {"block": "E4", "reason": "..."} the command wrote')
+    ap.add_argument("--cwd", type=Path, default=Path.cwd(), help="where the command runs")
+    ap.add_argument("--fresh-home", type=Path, help="an empty or new folder to give the command as HOME")
+    ap.add_argument("--timing", type=Path, help='JSON with "agent_seconds" (the agent session) that the command wrote')
     ap.add_argument("--runs", type=Path, default=ROOT / "runs")
     ap.add_argument("--store", type=Path, required=True, help="a checkout of the runs-store branch")
     ap.add_argument("command", nargs=argparse.REMAINDER)
@@ -150,14 +208,24 @@ def main(argv: list[str] | None = None) -> int:
             raise DriverError(f"{args.runs / args.run_id} exists; run ids are never reused")
         cadence = plugin_commit(args.plugin_dir) if args.plugin_dir else None
         grader = grader_identity(args.grader_repo) if args.grade else None
+        home = args.fresh_home or Path(os.environ.get("HOME", "/"))
+        if args.fresh_home:
+            if args.fresh_home.exists() and any(args.fresh_home.iterdir()):
+                raise DriverError(f"--fresh-home {args.fresh_home} is not empty")
+            args.fresh_home.mkdir(parents=True, exist_ok=True)
+        others = other_checkouts([args.cwd, home], args.plugin_dir)
+        if others:
+            raise DriverError(f"the run could read another Cadence checkout: {', '.join(others)}; move it, or run "
+                              "with --fresh-home and a --cwd that holds only the task")
     except DriverError as exc:
         print(f"refused: {exc}", file=sys.stderr)
         return 2
 
-    started = _now()
-    exit_code = subprocess.run(command).returncode
-    ended = _now()
-    if cadence and plugin_commit_or_none(args.plugin_dir) != cadence["sha"]:
+    env = {**os.environ, "PYTHONDONTWRITEBYTECODE": "1", **({"HOME": str(home)} if args.fresh_home else {})}
+    started, t0 = _now(), time.monotonic()
+    exit_code = subprocess.run(command, cwd=args.cwd, env=env).returncode
+    ended, run_wall = _now(), round(time.monotonic() - t0, 3)
+    if cadence and not plugin_unchanged(args.plugin_dir, cadence["sha"]):
         cadence["tree_clean"] = False  # the run changed its own plugin tree
 
     facts = transcript_facts(args.transcript.read_text(encoding="utf-8", errors="replace").splitlines()) \
@@ -166,6 +234,10 @@ def main(argv: list[str] | None = None) -> int:
     stop = {"block": None, "reason": None}
     if args.stop_point_file and args.stop_point_file.exists():
         stop.update(json.loads(args.stop_point_file.read_text(encoding="utf-8")))
+    active = facts.pop("agent_active_seconds", None)
+    agent_wall = None
+    if args.timing and args.timing.exists():
+        agent_wall = json.loads(args.timing.read_text(encoding="utf-8")).get("agent_seconds")
     counts = {"counts": True, "why": "driver run" + (" on a clean published plugin tree" if cadence else "")}
     if cadence and not cadence["tree_clean"]:
         counts = {"counts": False, "why": "the plugin tree changed during the run"}
@@ -178,6 +250,10 @@ def main(argv: list[str] | None = None) -> int:
         else store.missing("the command wrote no transcript"),
         "tree": _tree_blob(args.tree, args.store) if args.tree else store.missing("--tree not given"),
         "counts": counts,
+        "timing": {"agent_wall_seconds": agent_wall, "run_wall_seconds": run_wall, "agent_active_seconds": active,
+                   "blocks": None},
+        "isolation": {"cwd": str(args.cwd.resolve()), "home": str(home), "fresh_home": bool(args.fresh_home),
+                      "other_cadence_checkouts": others},
     }
     record.write_record(args.runs, rec)
     if grader:
@@ -190,13 +266,6 @@ def main(argv: list[str] | None = None) -> int:
             "graded_at": ended})
     print(args.runs / args.run_id / "record.json")
     return 0
-
-
-def plugin_commit_or_none(plugin: Path) -> str | None:
-    try:
-        return plugin_commit(plugin)["sha"]
-    except DriverError:
-        return None
 
 
 if __name__ == "__main__":

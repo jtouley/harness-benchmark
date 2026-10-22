@@ -53,5 +53,19 @@ python -m loop.driver --run-id 20261022-P1-cadence-haiku-1 --kind benchmark --ba
   --store ../runs-store -- <the trial command, e.g. runner/run_trial.sh ...>
 ```
 
-The driver refuses (exit 2, before anything runs) a run id that exists, and a `--plugin-dir` that is not
-a clean checkout of a commit on a remote branch: no modified, untracked or ignored file.
+The driver refuses (exit 2, before anything runs):
+
+- a run id that exists;
+- a `--plugin-dir` that is not a clean checkout of a commit on a remote branch (no modified, untracked or
+  ignored file);
+- a run that could read another Cadence checkout: it searches `--cwd` and HOME (five levels) and refuses
+  any copy other than the plugin. Use `--fresh-home <new folder>` and a `--cwd` that holds only the task.
+
+The command runs with `PYTHONDONTWRITEBYTECODE=1`. After it, the plugin must still be at its commit with
+no source change; Python bytecode does not count. Otherwise the record says `tree_clean: false` and the
+run does not count.
+
+`timing` has the same fields for a one-shot and a Cadence run: `agent_wall_seconds` (the agent session,
+from `--timing`, the figure the speed ratio uses), `run_wall_seconds` (the whole command),
+`agent_active_seconds` (the transcript's result durations) and `blocks` (seconds per block; not yet
+measured).
