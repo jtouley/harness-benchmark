@@ -1,7 +1,7 @@
 """The owner's Done line (docs/rules.md, Owner's goals; Oct 22, 19:30): P1 and P2 means meet the bar on two
 consecutive batches, at no more than 1.25x the one-shot time. loop.scoreboard.done measures it against the
-pinned baselines (baselines.json): P1 Sonnet 3/7, Opus 6/7, Haiku 1882.6 s; P2 Sonnet 3/7, Opus 5/7, Haiku
-1596.9 s."""
+pinned time basis (baselines.json: P1 Haiku 1882.6 s, P2 Haiku 1596.9 s) and the owner's floor: a mean of
+4/7 or more is GOOD, 5/7 or more IDEAL (Oct 23)."""
 
 from __future__ import annotations
 
@@ -11,7 +11,7 @@ from loop import record, scoreboard
 
 HAIKU = "claude-haiku-5-5"
 BASIS = {"P1": 1882.6, "P2": 1596.9}
-GOOD = {"P1": 6, "P2": 5}  # beats Sonnet 3 and matches Opus 6 / 5
+GOOD = {"P1": 6, "P2": 4}  # IDEAL on P1, GOOD on P2: both pass
 
 
 def _run(runs: Path, run_id: str, batch: str, task: str, passed: int, ratio: float, started: str,
@@ -46,8 +46,8 @@ def test_two_consecutive_passing_batches_are_done(tmp_path):
     a, b = _batch(tmp_path, "24", "it1"), _batch(tmp_path, "25", "it2", ratio=1.2)
     ok, lines = scoreboard.done(tmp_path)
     assert ok and lines[-1] == f"DONE: {a} and {b} pass in a row"
-    assert f"{a}: P1 mean 6.00/7, time 1.00x; P2 mean 5.00/7, time 1.00x: PASS" in lines
-    assert f"{b}: P1 mean 6.00/7, time 1.20x; P2 mean 5.00/7, time 1.20x: PASS" in lines
+    assert f"{a}: P1 mean 6.00/7 IDEAL, time 1.00x; P2 mean 4.00/7 GOOD, time 1.00x: PASS" in lines
+    assert f"{b}: P1 mean 6.00/7 IDEAL, time 1.20x; P2 mean 4.00/7 GOOD, time 1.20x: PASS" in lines
 
 
 def test_one_passing_batch_is_not_done(tmp_path):
@@ -60,16 +60,16 @@ def test_a_ratio_over_1_25_fails_the_batch(tmp_path):
     a, b = _batch(tmp_path, "24", "it1"), _batch(tmp_path, "25", "it2", ratio=1.3)
     ok, lines = scoreboard.done(tmp_path)
     assert not ok
-    assert f"{b}: P1 mean 6.00/7, time 1.30x; P2 mean 5.00/7, time 1.30x: FAIL (time above 1.25x on P1, P2)" in lines
+    assert f"{b}: P1 mean 6.00/7 IDEAL, time 1.30x; P2 mean 4.00/7 GOOD, time 1.30x: FAIL (time above 1.25x on P1, P2)" in lines
 
 
 def test_two_passes_with_a_failing_batch_between_are_not_done(tmp_path):
     a = _batch(tmp_path, "24", "it1")
-    b = _batch(tmp_path, "25", "it2", passed={"P1": 3, "P2": 5})
+    b = _batch(tmp_path, "25", "it2", passed={"P1": 3, "P2": 4})
     c = _batch(tmp_path, "26", "it3")
     ok, lines = scoreboard.done(tmp_path)
     assert not ok and lines[-1] == "NOT DONE: no two consecutive batches pass"
-    assert f"{b}: P1 mean 3.00/7, time 1.00x; P2 mean 5.00/7, time 1.00x: FAIL (bar missed on P1)" in lines
+    assert f"{b}: P1 mean 3.00/7 MISS, time 1.00x; P2 mean 4.00/7 GOOD, time 1.00x: FAIL (below 4/7 on P1)" in lines
 
 
 def test_a_batch_short_of_n_runs_fails_and_other_models_and_one_shots_are_not_batches(tmp_path):

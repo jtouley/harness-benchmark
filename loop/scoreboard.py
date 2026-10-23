@@ -9,15 +9,15 @@ A cell takes the counted runs of one (arm, cadence commit, model, task) that hav
 latest score. A bar is the mean checks passed of the pinned one-shots of the same task and model
 (baselines.json, loop.baselines; owner, 2026-10-23: the baselines are fixed and only Cadence is re-run), so a
 one-shot record of a later batch is history and moves no bar. The gate passes for a cadence commit and model when, on every task in TASKS, it has at least --n
-scored runs, and its mean beats Sonnet (above the Sonnet one-shot mean) and matches Opus (within
-OPUS_MARGIN checks of the Opus one-shot mean). Each line prints best and worst beside the mean for both arms, so a
-single lucky run shows.
+scored runs whose mean is at least GOOD_FLOOR (4/7: it beats the pinned Sonnet 3/7); a mean of IDEAL_FLOOR
+(5/7) or more is ideal, and each line prints the tier, GOOD or IDEAL (MISS below the floor). Each line prints
+best and worst beside the mean for Cadence and both one-shots, so a single lucky run shows.
 
 Done (the owner's Done line, docs/rules.md: P1 and P2 means meet the bar on two consecutive batches, at no
 more than 1.25x the one-shot time) is `done`: each batch of counted Cadence-on-Haiku runs passes when, on
-every task in TASKS, it has at least --n scored runs whose mean meets the bar and whose mean time ratio
-(time_ratio, against the pinned basis) is at most STRETCH_RATIO; Done is two passing batches in a row,
-batches ordered by the date in their id, then their earliest started_at, then their id.
+every task in TASKS, it has at least --n scored runs whose mean is GOOD or better (tier_of) and whose mean
+time ratio (time_ratio, against the pinned basis) is at most STRETCH_RATIO; Done is two passing batches in
+a row, batches ordered by the date in their id, then their earliest started_at, then their id.
 """
 
 from __future__ import annotations
@@ -33,7 +33,10 @@ ROOT = Path(__file__).resolve().parents[1]
 TASKS = ("P1", "P2")
 SONNET, OPUS = "claude-sonnet-5-5", "claude-opus-5-5"
 ONE_SHOT_ARMS = frozenset({"baseline", "one-shot"})  # the backfill says baseline, the driver one-shot
-OPUS_MARGIN = 1  # "matches Opus": within 1 of 7 checks of the Opus one-shot mean (coordinator, 2026-10-23)
+# The owner's bar (docs/rules.md, Owner's goals; Oct 23): "Original 3/7 of sonnet, must beat and match opus - so 4
+# is good, 5 or better is ideal." A Cadence mean per task at n=3, in checks passed of 7.
+GOOD_FLOOR = 4
+IDEAL_FLOOR = 5
 STRETCH_RATIO = 1.25  # owner's stretch goal: a Cadence run takes at most 120-125% of the one-shot's time
 
 
@@ -129,6 +132,11 @@ def _ratios(runs: Path, recs: list[dict], pinned: Path = baselines.PATH) -> tupl
     return [x for x in (time_ratio(runs, r, pinned) for r in recs) if x is not None], early
 
 
+def tier_of(mean: float) -> str:
+    """IDEAL at IDEAL_FLOOR or more, GOOD at GOOD_FLOOR or more (the gate passes), else MISS."""
+    return "IDEAL" if mean >= IDEAL_FLOOR else "GOOD" if mean >= GOOD_FLOOR else "MISS"
+
+
 def gate(runs: Path, model: str, sha: str, n: int = 3, pinned: Path = baselines.PATH) -> tuple[bool, list[str]]:
     lines, ok = [], True
     grouped = cells(runs)
@@ -145,13 +153,12 @@ def gate(runs: Path, model: str, sha: str, n: int = 3, pinned: Path = baselines.
             ok = False
             lines.append(f"{task}: no pinned Sonnet or Opus one-shot baseline")
             continue
-        beats_sonnet = cadence["mean"] > sonnet["mean"]
-        matches_opus = cadence["mean"] >= opus["mean"] - OPUS_MARGIN
-        passed = beats_sonnet and matches_opus
+        tier = tier_of(cadence["mean"])
+        passed = tier != "MISS"
         ok = ok and passed
         lines.append(f"{task}: {_show(model, cadence)}; {_show('Sonnet one-shot', sonnet)}; "
-                     f"{_show('Opus one-shot', opus)}: beats Sonnet {'yes' if beats_sonnet else 'no'}, matches Opus "
-                     f"(within {OPUS_MARGIN}) {'yes' if matches_opus else 'no'}: {'PASS' if passed else 'FAIL'}")
+                     f"{_show('Opus one-shot', opus)}: good at {GOOD_FLOOR}/7, ideal at {IDEAL_FLOOR}/7: "
+                     f"{tier}: {'PASS' if passed else 'FAIL'}")
         ratios, early = _ratios(runs, [rec for rec, _ in rows], pinned)
         lines.append(f"{task}: agent time {_ratio_text(ratios, early)} the {model} one-shot (stretch goal <= "
                      f"{STRETCH_RATIO}; reported, not gated)")
@@ -184,16 +191,15 @@ def done(runs: Path, n: int = 3, pinned: Path = baselines.PATH) -> tuple[bool, l
                 parts.append(f"{task} {len(rows)} run(s), needs {n}")
                 continue
             mean = sum(_passed(s) for _, s in rows) / len(rows)
-            sonnet, opus = baseline(task, SONNET, pinned), baseline(task, OPUS, pinned)
             ratios, _ = _ratios(runs, [rec for rec, _ in rows], pinned)
             ratio = sum(ratios) / len(ratios) if ratios else None
-            if sonnet is None or opus is None or not (mean > sonnet and mean >= opus - OPUS_MARGIN):
+            if tier_of(mean) == "MISS":
                 missed.append(task)
             if ratio is None or ratio > STRETCH_RATIO:
                 slow.append(task)
-            parts.append(f"{task} mean {mean:.2f}/7, time {_ratio_text(ratios)}")
+            parts.append(f"{task} mean {mean:.2f}/7 {tier_of(mean)}, time {_ratio_text(ratios)}")
         ok = ok and not missed and not slow
-        why = [f"bar missed on {', '.join(missed)}"] * bool(missed) + \
+        why = [f"below {GOOD_FLOOR}/7 on {', '.join(missed)}"] * bool(missed) + \
               [f"time above {STRETCH_RATIO}x on {', '.join(slow)}"] * bool(slow)
         lines.append(f"{batch}: {'; '.join(parts)}: {'PASS' if ok else 'FAIL'}" + (f" ({'; '.join(why)})" if why else ""))
         passing.append(ok)
