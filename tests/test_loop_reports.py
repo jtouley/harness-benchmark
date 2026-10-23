@@ -295,4 +295,9 @@ def test_the_bar_orders_batches_of_one_day_by_when_they_began(tmp_path):
     _one_shot(runs, "20261023-P1-oneshot-sonnet-2", "2026-10-23-aa", scoreboard.SONNET, 6, "c" * 40,
               started="2026-10-23T20:00:00Z")
     assert scoreboard.baseline(runs, "P1", scoreboard.SONNET) == 6
-    assert scoreboard.baseline(runs, "P1", scoreboard.SONNET, batch="2026-10-23-zz") == 2
+    from loop import speed
+
+    for upto, passed in (("2026-10-23-aa", 6), ("2026-10-23-zz", 2)):  # by name zz sorts last; by start, aa
+        assert scoreboard.baseline(runs, "P1", scoreboard.SONNET, batch=upto) == passed
+        _, basis = speed.oneshot_mean(runs, "P1", scoreboard.SONNET, None, upto)
+        assert basis.startswith(f"batch {upto},"), basis  # the time basis picks the same batch as the bar
