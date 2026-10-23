@@ -1,0 +1,109 @@
+{
+ "citations": {
+  "20261021-P1-cadence-core-haiku-1": [
+   {
+    "branches": [
+     "origin/fix/peer-return-artifact",
+     "origin/pr/205"
+    ],
+    "findings": [
+     "F-3"
+    ],
+    "pr": 205,
+    "sha": "ad97a5b0ab8ac5029d909c310bc59f87ff0ce4fd",
+    "status": "unmerged"
+   },
+   {
+    "branches": [
+     "origin/fix/p9-fails-closed",
+     "origin/pr/206"
+    ],
+    "findings": [
+     "F-3"
+    ],
+    "pr": 206,
+    "sha": "1eabb0198118d7a435c17087b3cd74d95f5abce2",
+    "status": "unmerged"
+   }
+  ],
+  "20261021-P2-cadence-core-haiku-2": [
+   {
+    "findings": [
+     "F-1"
+    ],
+    "merge_sha": "80a6afd84e8c036418cd7acc039aa5b9532ee180",
+    "pr": 199,
+    "sha": "11874a771d5b9b54c37ca3e922f21b34a2e5cc98",
+    "status": "merged"
+   },
+   {
+    "findings": [
+     "F-1"
+    ],
+    "merge_sha": "80a6afd84e8c036418cd7acc039aa5b9532ee180",
+    "pr": 199,
+    "sha": "289e6a9debf6eb3bd916cbb2478860062182c5bf",
+    "status": "merged"
+   },
+   {
+    "findings": [
+     "F-6"
+    ],
+    "merge_sha": "1a52ad2e2f5f55183611cf83e38c110c4260cad3",
+    "pr": 200,
+    "sha": "67028acd74e73e4f324b1615361f226514cb7752",
+    "status": "merged"
+   },
+   {
+    "findings": [
+     "F-6"
+    ],
+    "merge_sha": "1a52ad2e2f5f55183611cf83e38c110c4260cad3",
+    "pr": 200,
+    "sha": "aa192b0191e6e7ebe8964ce55edc999f7e7ef8de",
+    "status": "merged"
+   }
+  ],
+  "20261022-P1-cadence-core-haiku-3": [
+   {
+    "findings": [
+     "F-1"
+    ],
+    "merge_sha": "80a6afd84e8c036418cd7acc039aa5b9532ee180",
+    "pr": 199,
+    "sha": "289e6a9debf6eb3bd916cbb2478860062182c5bf",
+    "status": "merged"
+   },
+   {
+    "findings": [
+     "F-1"
+    ],
+    "merge_sha": "80a6afd84e8c036418cd7acc039aa5b9532ee180",
+    "pr": 199,
+    "sha": "abd4b400e65ce42d6681ea34789219ea98e66147",
+    "status": "merged"
+   },
+   {
+    "findings": [
+     "F-6"
+    ],
+    "merge_sha": "1a52ad2e2f5f55183611cf83e38c110c4260cad3",
+    "pr": 200,
+    "sha": "aa192b0191e6e7ebe8964ce55edc999f7e7ef8de",
+    "status": "merged"
+   },
+   {
+    "findings": [
+     "F-6"
+    ],
+    "merge_sha": "1a52ad2e2f5f55183611cf83e38c110c4260cad3",
+    "pr": 200,
+    "sha": "da1633e9133aa9c21357e458693bd142f278eaa0",
+    "status": "merged"
+   }
+  ]
+ },
+ "main": "748a729d53b401d74d7a081ec4ba08b9db444650",
+ "schema": 1,
+ "source": "jtouley/cadence"
+}
