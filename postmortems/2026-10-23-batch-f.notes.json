@@ -1,0 +1,11 @@
+{
+ "decisions": [
+  {
+   "text": "The gate's P1 Sonnet bar is now batch F's own one-shot: scoreboard.gate reads bar() with no batch, which takes the newest batch's one-shots on the runs' grader tree (#88), so P1 Sonnet is 5/7, up from 3/7 in the 15 October batch. The other bars (P1 Opus 6/7, P2 Sonnet 3/7, P2 Opus 5/7) stay the 15 October one-shots until batch F's own land, and each will move the same way. 'Beats Sonnet on P1' therefore needs a Cadence mean above 5, not above 3",
+   "run_ids": [
+    "20261023-P1-oneshot-sonnet-1-r2",
+    "20261015-P1-sonnet-1"
+   ]
+  }
+ ]
+}
