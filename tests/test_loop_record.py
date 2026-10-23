@@ -576,3 +576,10 @@ def test_the_agents_reported_argv_must_be_the_one_prompt_and_known_flags(tmp_pat
 def test_the_isolation_block_names_the_auth_route(tmp_path, plugin, auth):
     rc, run = _drive(tmp_path, plugin, extra=["--auth", auth])
     assert rc == 0 and json.loads((run / "record.json").read_text())["isolation"]["auth"] == auth
+
+
+def test_the_record_keeps_the_plugins_git_tree_as_well_as_its_commit(tmp_path, plugin):
+    """The fingerprint guard and the trace match a plugin by its tree (coordinator, 2026-10-23)."""
+    rc, run = _drive(tmp_path, plugin)
+    cadence = json.loads((run / "record.json").read_text())["cadence"]
+    assert rc == 0 and cadence["tree"] == _git(plugin, "rev-parse", "HEAD^{tree}")

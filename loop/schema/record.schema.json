@@ -26,6 +26,7 @@
       "properties": {
         "repo": {"type": "string"},
         "sha": {"type": "string", "pattern": "^[0-9a-f]{7,40}$"},
+        "tree": {"$comment": "the plugin commit's git tree (loop.driver), for the fingerprint guard and the trace", "type": "string", "pattern": "^[0-9a-f]{40}$"},
         "tree_clean": {"type": ["boolean", "null"]},
         "published_in": {"type": "array", "items": {"type": "string"}}
       }
