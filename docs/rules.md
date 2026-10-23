@@ -20,6 +20,10 @@ taken: it goes to the owner first, citing the line. The numbered rules below are
   only priority is testing cadence with Haiku against the One Shot benchmarks.")
 - **The bar:** Cadence on Haiku beats the Sonnet one-shot (a mean above 3/7) and matches the Opus one-shot
   (5 to 6/7) on P1 and P2 at n=3, on the benchmark's own grader. (Oct 22)
+- **The bar, as the owner scored it (Oct 23):** "Original 3/7 of sonnet, must beat and match opus - so 4 is
+  good, 5 or better is ideal." Read as: on each of P1 and P2, at n=3, a Cadence-on-Haiku mean of 4/7 or
+  more passes (good), and 5/7 or more is ideal. The gate reports both tiers. This replaces the
+  coordinator's own "Opus minus one" margin, which made P1 need 5.
 - **Done:** P1 and P2 means meet the bar on two consecutive batches, at no more than 1.25x the one-shot
   time. (Oct 22, 19:30)
 - **Stretch goal, speed:** a Cadence run takes at most 120 to 125% of the one-shot's wall time on the same
@@ -194,23 +198,26 @@ taken: it goes to the owner first, citing the line. The numbered rules below are
 
 13. **The baselines are pinned; only Cadence is re-run.** (Owner, 2026-10-23.) The gate's bars are the
     owner's fixed numbers, from the 15 October one-shots: Cadence on Haiku must beat the Sonnet one-shot
-    (more than 3/7) and match the Opus one-shot (5 to 6/7). `baselines.json` names those runs per task and
+    (more than 3/7) and match the Opus one-shot; as the owner scored it, 4/7 is good and 5/7 or better is
+    ideal. `baselines.json` names those runs per task and
     model with the checks they passed and their agent session, and the bars and every time ratio read it
     and nothing else, so a one-shot record of a later batch (the batch F Haiku and Sonnet P1 one-shots)
     stays in `runs/` as history and moves no bar. `loop.check` holds each entry to its run's record and
     latest score. The driver refuses any arm but `cadence`, of every kind. A cadence commit passes for a
-    model when, on every task in the set, it has at least three scored runs whose mean beats the Sonnet
-    bar and is within one check of the Opus bar; best and worst print beside each mean, so a single
-    lucky run shows; the time ratio is reported against the stretch goal, not gated.
+    model when, on every task in the set, it has at least three scored runs whose mean is at least
+    `GOOD_FLOOR` (4/7); each line names the tier, GOOD, or IDEAL at `IDEAL_FLOOR` (5/7) or more, and MISS
+    below 4. Best and worst print beside each mean, so a single lucky run shows; the time ratio is
+    reported against the stretch goal, not gated.
     [baselines.json](../baselines.json), [loop/baselines.py](../loop/baselines.py),
-    [loop/scoreboard.py](../loop/scoreboard.py) (`bar`, `OPUS_MARGIN`, `gate`),
+    [loop/scoreboard.py](../loop/scoreboard.py) (`bar`, `GOOD_FLOOR`, `IDEAL_FLOOR`, `gate`),
     [loop/driver.py](../loop/driver.py), [loop/check.py](../loop/check.py); tests
     `test_the_baselines_are_the_15_october_one_shots`,
     `test_the_pinned_baselines_are_their_records_and_the_check_says_when_not`,
     `test_a_newer_one_shot_record_does_not_move_the_bar_or_the_time_basis`,
     `test_without_a_pinned_bar_the_gate_says_so`,
     `test_the_gate_line_shows_best_and_worst_beside_each_mean`,
-    `test_the_gate_compares_the_mean_with_sonnet_and_opus`, `test_the_gate_needs_n_runs_per_task` in
+    `test_the_gate_passes_on_good_and_prints_the_tier`, `test_the_floors_are_the_owners_numbers`,
+    `test_the_gate_needs_n_runs_per_task` in
     [tests/test_loop_reports.py](../tests/test_loop_reports.py);
     `test_the_driver_refuses_any_arm_but_cadence` in
     [tests/test_loop_record.py](../tests/test_loop_record.py). The 15 October one-shots ran in the

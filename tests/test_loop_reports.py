@@ -124,18 +124,30 @@ def _scored(runs: Path, run_id: str, task: str, passed: int, seconds: float | No
                                "graded_at": None})
 
 
-@pytest.mark.parametrize(("p1", "p2", "ok"), [
-    ((6, 6, 6), (5, 5, 5), True),   # matches Opus on both
-    ((5, 5, 5), (4, 4, 4), True),   # within 1 of Opus 6 and 5, and above Sonnet 3
-    ((5, 5, 4), (5, 5, 5), False),  # P1 mean 4.67 is more than 1 below Opus 6
-    ((7, 7, 7), (3, 3, 3), False),  # P2 mean 3 does not beat Sonnet 3
+@pytest.mark.parametrize(("p1", "p2", "ok", "tiers"), [
+    ((6, 6, 6), (5, 5, 5), True, ("IDEAL", "IDEAL")),
+    ((4, 4, 4), (4, 4, 4), True, ("GOOD", "GOOD")),     # 4/7 beats Sonnet 3/7: good on both (owner, Oct 23)
+    ((5, 5, 4), (4, 4, 5), True, ("GOOD", "GOOD")),     # means 4.67 and 4.33: good, not yet ideal
+    ((4, 4, 3), (5, 5, 5), False, ("MISS", "IDEAL")),   # P1 mean 3.67 is below the good floor of 4
+    ((7, 7, 7), (3, 3, 3), False, ("IDEAL", "MISS")),   # P2 mean 3 does not beat Sonnet 3
 ])
-def test_the_gate_compares_the_mean_with_sonnet_and_opus(tmp_path, p1, p2, ok):
+def test_the_gate_passes_on_good_and_prints_the_tier(tmp_path, p1, p2, ok, tiers):
+    """The owner's bar (Oct 23): "Original 3/7 of sonnet, must beat and match opus - so 4 is good, 5 or better
+    is ideal." The gate passes at GOOD (a mean of 4/7 or more) and names IDEAL at 5/7 or more."""
     _copy_baselines(tmp_path)
     for task, passed in (("P1", p1), ("P2", p2)):
         for i, p in enumerate(passed, 1):
             _scored(tmp_path, f"20261023-{task}-cadence-haiku-{i}", task, p)
-    assert scoreboard.gate(tmp_path, "claude-haiku-5-5", "abcdef1")[0] is ok
+    passed, lines = scoreboard.gate(tmp_path, "claude-haiku-5-5", "abcdef1")
+    assert passed is ok
+    verdicts = [line for line in lines if " one-shot mean " in line]
+    assert [line.rsplit(": ", 2)[1:] for line in verdicts] == [
+        [tier, "FAIL" if tier == "MISS" else "PASS"] for tier in tiers]
+
+
+def test_the_floors_are_the_owners_numbers():
+    assert (scoreboard.GOOD_FLOOR, scoreboard.IDEAL_FLOOR) == (4, 5)
+    assert not hasattr(scoreboard, "OPUS_MARGIN")
 
 
 def test_the_committed_scoreboard_is_what_the_generator_writes():
@@ -286,4 +298,4 @@ def test_the_gate_line_shows_best_and_worst_beside_each_mean(tmp_path):
     line = scoreboard.gate(tmp_path, "claude-haiku-5-5", "abcdef1", pinned=tmp_path / "pinned.json")[1][0]
     assert "claude-haiku-5-5 mean 4.67/7 (best 7, worst 3, n=3)" in line
     assert "Sonnet one-shot mean 3.00/7 (best 6, worst 1, n=3)" in line   # one lucky Sonnet run shows
-    assert "beats Sonnet yes, matches Opus (within 1) yes: PASS" in line
+    assert line.endswith("good at 4/7, ideal at 5/7: GOOD: PASS")
