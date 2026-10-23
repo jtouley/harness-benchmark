@@ -11,11 +11,11 @@ Counted runs with a score from the harness-benchmark grader; each run's latest s
 | 2026-10-15 | baseline | — | claude-haiku-5-5 | 1 | 0/7 | 0.00 | 31 | — | unknown |
 | 2026-10-15 | baseline | — | claude-opus-5-5 | 1 | 6/7 | 6.00 | 28 | — | unknown |
 | 2026-10-15 | baseline | — | claude-sonnet-5-5 | 1 | 3/7 | 3.00 | 22 | — | unknown |
-| 2026-10-19 | cadence-core | cadence@b1bbdcd | claude-haiku-5-5 | 2 | 5/7, 0/7 | 2.50 | 51, 25 | 1.44x (1 stopped early) | 423b34a |
-| 2026-10-19 | cadence-core | cadence@f6011df | claude-haiku-5-5 | 1 | 0/7 | 0.00 | 102 | 2.88x | 423b34a |
+| 2026-10-19 | cadence-core | cadence@b1bbdcd | claude-haiku-5-5 | 2 | 5/7, 0/7 | 2.50 | 51, 25 | 1.63x (1 stopped early) | 423b34a |
+| 2026-10-19 | cadence-core | cadence@f6011df | claude-haiku-5-5 | 1 | 0/7 | 0.00 | 102 | 3.25x | 423b34a |
 | 2026-10-21 | cadence-core | cadence-core@29315c4 | claude-haiku-5-5 | 3 | 0/7, 0/7, 0/7 | 0.00 | 10, 21, 52 | — (3 stopped early) | 423b34a |
 | 2026-10-23 | cadence | cadence@748a729 | claude-haiku-5-5 | 1 | 0/7 | 0.00 | 3 | — (1 stopped early) | 8a0977e |
-| 2026-10-23 | one-shot | — | claude-haiku-5-5 | 1 | 5/7 | 5.00 | 39 | 1.11x | 8a0977e |
+| 2026-10-23 | one-shot | — | claude-haiku-5-5 | 1 | 5/7 | 5.00 | 39 | 1.00x | 8a0977e |
 
 ## P2
 

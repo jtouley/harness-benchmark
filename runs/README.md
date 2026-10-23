@@ -124,6 +124,18 @@ no source change; Python bytecode does not count. Otherwise the record says `tre
 run does not count.
 
 `timing` has the same fields for a one-shot and a Cadence run: `agent_wall_seconds` (the agent session,
-from `--timing`, the figure the speed ratio uses), `run_wall_seconds` (the whole command),
-`agent_active_seconds` (the transcript's result durations) and `blocks` (seconds per block; not yet
-measured).
+from `--timing`'s `agent_seconds`, the figure the speed ratio uses), `run_wall_seconds` (the whole command),
+`agent_active_seconds` (the transcript's result durations), `blocks` (peer seconds per block from the run's
+`.context`, `--context`), and, when the trial's timing.json says them (`scripts/host_trial.py` writes
+`hit_cap` and `agent_cap_seconds`), `hit_cap` and `cap_seconds`.
+
+`python -m loop.speed [--batch <id>]` prints each Cadence run's agent session against the mean one-shot
+session of the same task and model, its ratio to the owner's stretch goal of 1.25, whether it hit its cap,
+and its three slowest blocks. The one-shots take the rule of the gate's bars, pinned by batch: the counted
+one-shots of the newest batch no later than the run's own (batch ids carry their date) on the run's grader
+tree, else of the newest such batch on any tree, and the Basis column names the batch and says which. So a
+later batch's one-shots never move an earlier run's ratio, and a committed postmortem keeps its numbers
+when the next batch lands. The postmortem's Speed section reads the same rows, and the scoreboard's
+`time_ratio` (the gate, the scoreboard table and a finding's `max_time_ratio`) takes its one-shot mean from
+the same function, so every ratio in the loop has one basis. `loop.check` refuses a counted Cadence run
+with no agent session time or no time per block.

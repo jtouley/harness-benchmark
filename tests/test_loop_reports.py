@@ -114,9 +114,9 @@ def test_the_committed_scoreboard_is_what_the_generator_writes():
 # --- speed: agent time against the one-shot of the same task and model
 
 def test_the_one_shot_time_is_the_mean_agent_session_of_the_counted_baseline_runs():
-    assert scoreboard.oneshot_seconds(RUNS, "P1", "claude-haiku-5-5") == 1882.6
-    assert scoreboard.oneshot_seconds(RUNS, "P2", "claude-opus-5-5") == 2465.2
-    assert scoreboard.oneshot_seconds(RUNS, "P1", "claude-fable-5-1") is None
+    assert scoreboard.oneshot_seconds(RUNS, "P1", "claude-haiku-5-5", batch="2026-10-15-pipeline-trials") == 1882.6
+    assert scoreboard.oneshot_seconds(RUNS, "P2", "claude-opus-5-5", batch="2026-10-15-pipeline-trials") == 2465.2
+    assert scoreboard.oneshot_seconds(RUNS, "P1", "claude-fable-5-1", batch="2026-10-15-pipeline-trials") is None
 
 
 def test_the_time_ratio_of_a_cadence_run_that_passed_a_check():
@@ -161,7 +161,9 @@ def test_the_postmortem_has_a_speed_section_with_each_run_and_the_slowest():
     text = postmortem.generate(BATCH, RUNS, {})
     speed = text.split("## Speed", 1)[1].split("\n## ", 1)[0]
     row = next(line for line in speed.splitlines() if line.startswith("| `20261022-P2-cadence-core-haiku-3`"))
-    assert "81.3" in row and "— (stopped early)" in row  # 3.06x the one-shot, but it never finished
+    assert "81.3" in row and "3.06 (above 1.25) (stopped early)" in row  # 3.06x the one-shot, and it never finished
+    assert "batch 2026-10-15-pipeline-trials, any grader tree (no counted one-shot on 423b34a)" in row  # the 15 October one-shots recorded no tree
+    assert "Above the stretch goal: " in speed and "`20261022-P2-cadence-core-haiku-3` (3.06; slowest blocks" in speed
     assert "Slowest runs: `20261022-P2-cadence-core-haiku-3`" in speed
     assert "Peer time per block" in speed and "| plan-review | 51.4 | 28 | 6 | 22 |" in speed
 

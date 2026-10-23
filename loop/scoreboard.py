@@ -84,16 +84,21 @@ def _show(name: str, spread: dict) -> str:
             f"n={spread['n']})")
 
 
-def oneshot_seconds(runs: Path, task: str, model: str) -> float | None:
-    """The mean agent session (seconds) of the counted one-shot runs of `model` on `task`, or None."""
-    found = []
-    for run in sorted(p for p in runs.iterdir() if (p / "record.json").exists()):
-        rec = record.load(run)
-        seconds = rec["timing"]["agent_wall_seconds"]
-        if (rec["arm"] in ONE_SHOT_ARMS and rec["counts"]["counts"] and rec["task"] == task
-                and rec["model_requested"] == model and seconds is not None):
-            found.append(seconds)
-    return round(sum(found) / len(found), 3) if found else None
+def latest_tree(run: Path) -> str | None:
+    """The grader tree of the run's latest score, or None."""
+    scores = record.scores(run)
+    return _tree(scores[-1]) if scores else None
+
+
+def oneshot_seconds(runs: Path, task: str, model: str, tree: str | None = None,
+                    batch: str | None = None) -> float | None:
+    """The mean agent session (seconds) of the counted one-shot runs of `model` on `task` in the newest batch
+    no later than `batch` (any batch when None) that has one on grader `tree`, else on any tree: the bars'
+    rule. This is loop.speed.oneshot_mean, the one basis the gate, the findings and the postmortem read;
+    None without a one-shot."""
+    from loop import speed  # speed reads STRETCH_RATIO, reached_end and latest_tree from this module
+
+    return speed.oneshot_mean(runs, task, model, tree, batch)[0]
 
 
 def reached_end(runs: Path, rec: dict) -> bool:
@@ -106,12 +111,14 @@ def reached_end(runs: Path, rec: dict) -> bool:
 
 
 def time_ratio(runs: Path, rec: dict) -> float | None:
-    """A run's agent session over the one-shot's, same task and model. None when either is unknown, or for a
-    Cadence run that did not reach the end (reached_end)."""
+    """A run's agent session over the one-shot's of the same task and model, from the newest batch no later
+    than the run's on the run's grader tree (oneshot_seconds, the basis loop.speed shows). None when either is
+    unknown, or for a Cadence run that did not reach the end (reached_end): the gate's early-stop rule, which
+    loop.speed does not apply."""
     if rec["arm"] not in ONE_SHOT_ARMS and not reached_end(runs, rec):
-        return None
+        return None  # a stop with nothing passed would make a broken pipeline look fast
     seconds = rec["timing"]["agent_wall_seconds"]
-    base = oneshot_seconds(runs, rec["task"], rec["model_requested"])
+    base = oneshot_seconds(runs, rec["task"], rec["model_requested"], latest_tree(runs / rec["run_id"]), rec["batch"])
     return round(seconds / base, 4) if seconds is not None and base else None
 
 
