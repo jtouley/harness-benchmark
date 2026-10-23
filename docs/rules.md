@@ -1,6 +1,6 @@
 # The rules of the learning loop
 
-Every rule the loop acquired in the week of 19 to 23 October 2026, each with the code or the test that
+The rules the loop acquired in the week of 19 to 23 October 2026, each with the code or the test that
 enforces it. A reader audits the loop from this page: each link is the place where the rule is a check,
 a refusal or a test, not a sentence. A rule that is only in a pull request not merged yet says so with
 the number. No rule here is new.
@@ -11,15 +11,15 @@ the number. No rule here is new.
    live run without `--spec`, gives the command exactly `/cadence <the spec's absolute path>` as
    `HB_AGENT_PROMPT`, refuses a command whose `claude` call carries any other prompt text, and keeps the
    spec's path, sha256 and the prompt in `record.spec`. A run whose agent argv shows another prompt does
-   not count. Only in #73 (`loop/driver.py`, `loop/schema/record.schema.json`; tests
+   not count. (Only in #73: `loop/driver.py`, `loop/schema/record.schema.json`; tests
    `test_the_command_gets_exactly_slash_cadence_and_the_spec_path_and_the_record_has_the_spec`,
    `test_a_command_that_gives_the_agent_other_prompt_text_is_refused`,
-   `test_an_agent_that_ran_with_another_prompt_does_not_count` in `tests/test_loop_record.py`).
+   `test_an_agent_that_ran_with_another_prompt_does_not_count` in `tests/test_loop_record.py`.)
    The saved specs are the golden inputs: [golden/cadence/README.md](../golden/cadence/README.md),
    [tests/test_golden_cadence.py](../tests/test_golden_cadence.py).
 2. **Whether a clean run counts is a function of its kind.** A stub never counts; a backfilled record
-   counts only with a score from the harness-benchmark grader; a driver run counts on a clean published
-   plugin tree. [loop/record.py](../loop/record.py) (`NON_COUNTING_KINDS`, `GRADER_REPO`),
+   counts only with a score from the harness-benchmark grader; a driver run counts, and with a plugin
+   only on a clean published tree that the run did not change (a one-shot has no plugin and counts). [loop/record.py](../loop/record.py) (`NON_COUNTING_KINDS`, `GRADER_REPO`),
    [loop/check.py](../loop/check.py) (`validate_tree`); tests
    `test_whether_a_clean_run_counts_is_a_function_of_its_kind`,
    `test_the_check_refuses_a_counting_record_of_a_kind_that_never_counts`,
@@ -47,32 +47,35 @@ the number. No rule here is new.
    `test_the_driver_refuses_a_run_that_can_reach_another_cadence_checkout` in
    [tests/test_loop_record.py](../tests/test_loop_record.py)). After the run, every tool-call input in the
    transcript is scanned for the benchmark and for any other Cadence checkout; a hit goes in
-   `isolation.contact` and the run does not count. The second scan is only in #73 (test
-   `test_a_transcript_that_touched_the_benchmark_or_another_checkout_does_not_count`).
+   `isolation.contact` and the run does not count. (The second scan is only in #73; test
+   `test_a_transcript_that_touched_the_benchmark_or_another_checkout_does_not_count`.)
 6. **A fresh HOME.** `--fresh-home` must be empty or new, and the record says whether the run had one.
    [loop/driver.py](../loop/driver.py); tests `test_a_fresh_home_is_empty_and_is_recorded`,
    `test_a_fresh_home_that_exists_and_is_not_empty_is_refused` in
    [tests/test_loop_record.py](../tests/test_loop_record.py).
 7. **No key reaches an agent, on either auth route.** In the container, the API key goes in on standard
-   input, never as a process argument, and every output file is scanned and the key redacted
+   input, never as a process argument, and every output file is scanned and the key redacted; when a
+   file cannot be scanned, the runner says so with "do not publish", and exits 3 before `host.json` is
+   written, so those outputs are never taken as clean
    ([runner/run_trial.sh](../runner/run_trial.sh); tests `test_api_key_is_never_a_process_argument`,
    `test_outputs_are_scanned_and_the_key_is_redacted_without_printing_it` in
    [tests/test_runner.py](../tests/test_runner.py)). The two routes for a host that cannot hold a key:
    `proxy` (the host's proxy adds the credentials; `--auth proxy` sends no key, refuses a proxy URL with
    a user, a password or a path, and never prints it) and `oauth-file` (the operator's one OAuth
-   credential file copied into the fresh HOME and nothing else). The container side of `proxy` is the
-   draft #70 ([runner/run_trial.sh](../runner/run_trial.sh), `runner/proxy_relay.py`,
+   credential file copied into the fresh HOME and nothing else). (The container side of `proxy` is the
+   draft #70: [runner/run_trial.sh](../runner/run_trial.sh), `runner/proxy_relay.py`,
    `runner/net_guard.sh`; test `test_auth_proxy_refuses_a_proxy_url_with_a_credential_and_never_prints_it`
-   in [tests/test_runner.py](../tests/test_runner.py) on that branch). The host side of both routes is
-   only in #73 (`scripts/host_trial.py`, the driver's `--auth` and `isolation.auth`; tests
+   in [tests/test_runner.py](../tests/test_runner.py) on that branch.) (The host side of both routes is
+   only in #73: `scripts/host_trial.py`, the driver's `--auth` and `isolation.auth`; tests
    `test_the_fresh_home_gets_exactly_what_the_auth_route_needs`,
-   `test_the_agent_environment_carries_no_api_key_or_token` in `tests/test_host_trial.py`).
+   `test_the_agent_environment_carries_no_api_key_or_token` in `tests/test_host_trial.py`.)
 
 ## Caps
 
-8. **A one-shot has a guard cap and a harness arm only a backstop.** The runner refuses a guard cap on a
-   harness arm and a missing cap on a one-shot; the backstop is the class's measured one or the default
-   in [runner/pipeline/caps.json](../runner/pipeline/caps.json). [runner/run_trial.sh](../runner/run_trial.sh),
+8. **A one-shot has a guard cap and a harness arm only a backstop.** A one-shot without `--agent-timeout`
+   gets the default of 3600 s; the runner refuses `--agent-timeout 0` on a one-shot, a guard cap on a
+   harness arm, and a backstop or a spend limit on a one-shot; a harness arm must have a backstop. The
+   backstop is the class's measured one or the default in [runner/pipeline/caps.json](../runner/pipeline/caps.json). [runner/run_trial.sh](../runner/run_trial.sh),
    [scripts/pipeline_trial.py](../scripts/pipeline_trial.py) (`harness_backstop`); tests
    `test_only_a_one_shot_has_a_guard_cap_and_only_a_harness_a_backstop` in
    [tests/test_runner.py](../tests/test_runner.py), `test_a_one_shot_gets_the_guard_cap_and_no_backstop`
@@ -150,6 +153,25 @@ the number. No rule here is new.
     (`notes_problems`); test `test_a_hand_written_line_without_a_resolvable_run_id_is_refused` in
     [tests/test_loop_reports.py](../tests/test_loop_reports.py).
 
+## Three more, found in the code
+
+18. **A run id is never reused.** The driver refuses a run id whose folder exists.
+    [loop/driver.py](../loop/driver.py); test `test_the_driver_refuses_a_run_id_that_exists` in
+    [tests/test_loop_record.py](../tests/test_loop_record.py).
+19. **A grade needs a clean grader checkout.** With `--grade`, the driver refuses a grader repository
+    whose `golden/pipeline/pipetask` has local changes, because no commit would name the grader that
+    scored the run. [loop/driver.py](../loop/driver.py) (`grader_identity`); test
+    `test_a_grade_from_the_benchmark_grader_becomes_a_score_with_the_grader_identity` in
+    [tests/test_loop_record.py](../tests/test_loop_record.py).
+20. **The P4 key reaches a trial only inside `grader-p4.pyz`.** The starting repository holds the
+    skeleton and the P4 data only, and the grader bundle reads the key from its own archive into memory;
+    nothing key-like is on disk while the candidate's build runs.
+    [golden/pipeline/pipetask/bundle.py](../golden/pipeline/pipetask/bundle.py); tests
+    `test_the_starting_repository_holds_the_skeleton_and_the_p4_data_only` in
+    [tests/test_pipeline_p4.py](../tests/test_pipeline_p4.py),
+    `test_grader_p4_pyz_grades_the_reference_from_a_clean_directory_and_never_puts_the_key_on_disk` in
+    [tests/test_pipeline_p4_runner.py](../tests/test_pipeline_p4_runner.py).
+
 ## Where the rules live
 
 | Rule | Code | Tests | State |
@@ -171,3 +193,6 @@ the number. No rule here is new.
 | 15 postmortems complete and current | `loop/check.py`, `loop/postmortem.py`, `loop/driver.py` | `tests/test_loop_postmortem_complete.py` | #78 |
 | 16 after-merge rule | `runs/README.md` | rule 15 | main (text), #78 (check) |
 | 17 cited hand-written lines | `loop/postmortem.py` | `tests/test_loop_reports.py` | main |
+| 18 run ids never reused | `loop/driver.py` | `tests/test_loop_record.py` | main |
+| 19 a grade needs a clean grader | `loop/driver.py` | `tests/test_loop_record.py` | main |
+| 20 the P4 key only in `grader-p4.pyz` | `golden/pipeline/pipetask/bundle.py` | `tests/test_pipeline_p4.py`, `tests/test_pipeline_p4_runner.py` | main |
