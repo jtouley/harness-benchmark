@@ -14,17 +14,17 @@ BASIS = {"P1": 1882.6, "P2": 1596.9}
 GOOD = {"P1": 6, "P2": 4}  # IDEAL on P1, GOOD on P2: both pass
 
 
-def _run(runs: Path, run_id: str, batch: str, task: str, passed: int, ratio: float, started: str,
-         model: str = HAIKU) -> None:
+def _run(runs: Path, run_id: str, batch: str, task: str, passed: int, ratio: float | None, started: str,
+         model: str = HAIKU, arm: str = "cadence") -> None:
     record.write_record(runs, {
         "schema": 1, "run_id": run_id, "kind": "benchmark", "batch": batch,
-        "provenance": {"source": "driver", "evidence": []}, "task": task, "request_id": "gh-1", "arm": "cadence",
+        "provenance": {"source": "driver", "evidence": []}, "task": task, "request_id": "gh-1", "arm": arm,
         "cadence": {"repo": "https://github.com/jtouley/cadence", "sha": "abcdef1", "tree_clean": True},
         "model_requested": model, "models_served": [model], "command": None, "started_at": started,
         "ended_at": None, "exit_code": 0, "cost": {"list_usd": None, "reported_usd": None},
         "stop_point": {"block": "R7", "reason": None}, "transcript": {"sha256": None, "missing": "t"},
         "tree": {"sha256": None, "missing": "t"}, "counts": {"counts": True, "why": "t"},
-        "timing": {"agent_wall_seconds": round(BASIS[task] * ratio, 3), "run_wall_seconds": None,
+        "timing": {"agent_wall_seconds": None if ratio is None else round(BASIS[task] * ratio, 3), "run_wall_seconds": None,
                    "agent_active_seconds": None, "blocks": None},
         "isolation": None})
     record.append_score(runs, {"run_id": run_id, "grader": {"repo": "jtouley/harness-benchmark", "commit": "abc1234",
@@ -76,9 +76,24 @@ def test_a_batch_short_of_n_runs_fails_and_other_models_and_one_shots_are_not_ba
     _batch(tmp_path, "24", "it1", n=2)
     _run(tmp_path, "20261024-P1-cadence-opus-1", "2026-10-24-opus", "P1", 7, 1.0, "2026-10-24T10:00:00Z",
          model="claude-opus-5-5")
+    before = scoreboard.done(tmp_path)
+    for task in ("P1", "P2"):  # a Haiku one-shot at 7/7 in the same batch is not a Cadence run: it changes nothing
+        _run(tmp_path, f"20261024-{task}-oneshot-haiku-it1", "2026-10-24-it1", task, 7, 1.0,
+             "2026-10-24T10:00:00Z", arm="one-shot")
     ok, lines = scoreboard.done(tmp_path)
+    assert (ok, lines) == before
     assert not ok and lines[0] == "2026-10-24-it1: P1 2 run(s), needs 3; P2 2 run(s), needs 3: FAIL"
     assert not any("opus" in line for line in lines)
+
+
+def test_a_batch_that_passes_on_score_with_no_time_fails(tmp_path):
+    """No agent session time means no ratio ("time —"): Done needs the time, so the batch fails, and says
+    the time is missing rather than slow."""
+    _batch(tmp_path, "24", "it1")
+    b = _batch(tmp_path, "25", "it2", ratio=None)
+    ok, lines = scoreboard.done(tmp_path)
+    assert not ok and lines[-1] == "NOT DONE: no two consecutive batches pass"
+    assert f"{b}: P1 mean 6.00/7 IDEAL, time —; P2 mean 4.00/7 GOOD, time —: FAIL (no time on P1, P2)" in lines
 
 
 def test_the_committed_runs_are_not_done_and_the_scoreboard_shows_it():

@@ -183,7 +183,7 @@ def done(runs: Path, n: int = 3, pinned: Path = baselines.PATH) -> tuple[bool, l
     order = sorted(batches, key=lambda b: _batch_key([rec for rec, _ in batches[b]]))
     lines, passing = [], []
     for batch in order:
-        parts, missed, slow, ok = [], [], [], True
+        parts, missed, untimed, slow, ok = [], [], [], [], True
         for task in TASKS:
             rows = [(rec, s) for rec, s in batches[batch] if rec["task"] == task]
             if len(rows) < n:
@@ -195,11 +195,14 @@ def done(runs: Path, n: int = 3, pinned: Path = baselines.PATH) -> tuple[bool, l
             ratio = sum(ratios) / len(ratios) if ratios else None
             if tier_of(mean) == "MISS":
                 missed.append(task)
-            if ratio is None or ratio > STRETCH_RATIO:
+            if ratio is None:  # no run with a time ratio: Done needs the time, so the batch fails
+                untimed.append(task)
+            elif ratio > STRETCH_RATIO:
                 slow.append(task)
             parts.append(f"{task} mean {mean:.2f}/7 {tier_of(mean)}, time {_ratio_text(ratios)}")
-        ok = ok and not missed and not slow
+        ok = ok and not missed and not untimed and not slow
         why = [f"below {GOOD_FLOOR}/7 on {', '.join(missed)}"] * bool(missed) + \
+              [f"no time on {', '.join(untimed)}"] * bool(untimed) + \
               [f"time above {STRETCH_RATIO}x on {', '.join(slow)}"] * bool(slow)
         lines.append(f"{batch}: {'; '.join(parts)}: {'PASS' if ok else 'FAIL'}" + (f" ({'; '.join(why)})" if why else ""))
         passing.append(ok)
