@@ -7,6 +7,8 @@ from __future__ import annotations
 import json
 from pathlib import Path
 
+import pytest
+
 from loop import check, postmortem, record, speed
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -20,7 +22,7 @@ BLOCKS = {"plan-create": {"seconds": 600.0, "calls": 1, "unfinished": 0},
 
 def _run(runs: Path, run_id: str, *, arm: str, seconds: float | None, tree: str | None = TREE_A, task="P1",
          model="claude-haiku-5-5", block="R7", passed=3, blocks=None, hit_cap=None, counts=True,
-         batch="2026-10-23-speed", score=True) -> None:
+         batch="2026-10-23-speed", score=True, started=None) -> None:
     timing = {"agent_wall_seconds": seconds, "run_wall_seconds": None, "agent_active_seconds": None, "blocks": blocks}
     if hit_cap is not None:
         timing["hit_cap"] = hit_cap
@@ -28,7 +30,7 @@ def _run(runs: Path, run_id: str, *, arm: str, seconds: float | None, tree: str 
         "schema": 1, "run_id": run_id, "kind": "benchmark", "batch": batch,
         "provenance": {"source": "driver", "evidence": []}, "task": task, "request_id": "gh-1", "arm": arm,
         "cadence": None if arm in speed.ONESHOT_ARMS else {"repo": "x", "sha": "abcdef1", "tree_clean": True},
-        "model_requested": model, "models_served": [model], "command": None, "started_at": None, "ended_at": None,
+        "model_requested": model, "models_served": [model], "command": None, "started_at": started, "ended_at": None,
         "exit_code": 0, "cost": {"list_usd": None, "reported_usd": None}, "stop_point": {"block": block, "reason": None},
         "transcript": {"sha256": None, "missing": "t"}, "tree": {"sha256": None, "missing": "t"},
         "counts": {"counts": counts, "why": "t"}, "timing": timing, "isolation": None})
@@ -163,8 +165,8 @@ def test_the_scoreboards_time_ratio_takes_the_same_basis_as_speed_and_keeps_the_
     assert by_id[same["run_id"]]["ratio"] == scoreboard.time_ratio(tmp_path, same)
     assert by_id[other["run_id"]]["ratio"] == scoreboard.time_ratio(tmp_path, other)
     assert scoreboard.time_ratio(tmp_path, early) is None and by_id[early["run_id"]]["ratio"] == 1.3  # the gate's rule; speed shows the slow stop
-    assert scoreboard.oneshot_seconds(tmp_path, "P1", "claude-haiku-5-5") == any_tree          # no tree given: every counted one-shot
-    assert scoreboard.oneshot_seconds(tmp_path, "P1", "claude-haiku-5-5", tree=TREE_A) == 1000.0
+    assert scoreboard.oneshot_seconds(tmp_path, "P1", "claude-haiku-5-5", None, "2026-10-23-speed") == any_tree  # no tree: every counted one-shot
+    assert scoreboard.oneshot_seconds(tmp_path, "P1", "claude-haiku-5-5", TREE_A, "2026-10-23-speed") == 1000.0
     assert scoreboard.latest_tree(tmp_path / same["run_id"]) == TREE_A
 
 
@@ -192,7 +194,60 @@ def test_the_basis_is_the_newest_batch_no_later_than_the_run_so_a_later_batch_le
     later = next(r for r in speed.rows(tmp_path, batch="2026-10-24-x"))
     assert later["oneshot_seconds"] == 5000.0 and later["ratio"] == 1.2       # its own batch, on its tree
     assert later["basis"] == f"batch 2026-10-24-x, same grader tree {TREE_A[:7]}"
-    assert scoreboard.oneshot_seconds(tmp_path, "P1", "claude-haiku-5-5") == 4000.0  # no batch given: the newest, any tree
-    assert scoreboard.oneshot_seconds(tmp_path, "P1", "claude-haiku-5-5", tree="d" * 40) == 3000.0
-    assert scoreboard.oneshot_seconds(tmp_path, "P1", "claude-haiku-5-5", batch="2026-10-23-zz") == round((900 + 1100 + 5000) / 3, 3)
-    assert scoreboard.oneshot_seconds(tmp_path, "P1", "claude-haiku-5-5", tree=TREE_A, batch="2026-10-23-zz") == 1000.0
+    assert scoreboard.oneshot_seconds(tmp_path, "P1", "claude-haiku-5-5", None, "2026-10-24-x") == 4000.0  # no tree: the newest, any tree
+    assert scoreboard.oneshot_seconds(tmp_path, "P1", "claude-haiku-5-5", "d" * 40, "2026-10-24-x") == 3000.0
+    assert scoreboard.oneshot_seconds(tmp_path, "P1", "claude-haiku-5-5", None, "2026-10-23-zz") == round((900 + 1100 + 5000) / 3, 3)
+    assert scoreboard.oneshot_seconds(tmp_path, "P1", "claude-haiku-5-5", TREE_A, "2026-10-23-zz") == 1000.0
+
+
+def test_a_basis_is_always_read_for_a_batch(tmp_path):
+    """A read with no batch would follow the newest batch wherever it lands, and a history test built on it
+    would move with batch F in silence; neither function takes one."""
+    from loop import scoreboard
+    _oneshots(tmp_path)
+    with pytest.raises(TypeError):
+        speed.oneshot_mean(tmp_path, "P1", "claude-haiku-5-5", TREE_A)
+    with pytest.raises(TypeError):
+        scoreboard.oneshot_seconds(tmp_path, "P1", "claude-haiku-5-5", TREE_A)
+    with pytest.raises(TypeError):
+        scoreboard.oneshot_seconds(tmp_path, "P1", "claude-haiku-5-5")
+
+
+def test_two_batches_of_one_day_order_by_when_they_began_not_by_their_names(tmp_path):
+    """Batch 2026-10-23-b began at 18:00 and 2026-10-23-a at 20:00. As strings "-a" sorts before "-b", so a run
+    of a third batch of that day with no one-shot of its own would take "-b" as the newest; by batch_order it
+    takes "-a", the batch that began last. The 15 October records have no started_at and sort first."""
+    from loop import scoreboard
+    _run(tmp_path, "20261023-P1-haiku-oneshot-b", arm="one-shot", seconds=2000.0, batch="2026-10-23-b",
+         started="2026-10-23T18:00:00Z")
+    _run(tmp_path, "20261023-P1-haiku-oneshot-a", arm="one-shot", seconds=4000.0, batch="2026-10-23-a",
+         started="2026-10-23T20:00:00Z")
+    _run(tmp_path, "20261015-P1-haiku-oneshot", arm="baseline", seconds=1000.0, batch="2026-10-15-pipeline-trials")
+    _run(tmp_path, "20261023-P1-cadence-haiku-c", arm="cadence", seconds=4400.0, blocks=BLOCKS, batch="2026-10-23-c",
+         started="2026-10-23T21:00:00Z")
+    _run(tmp_path, "20261023-P1-cadence-haiku-b", arm="cadence", seconds=2200.0, blocks=BLOCKS, batch="2026-10-23-b",
+         started="2026-10-23T18:30:00Z")
+    order = speed.batch_order(speed._records(tmp_path))
+    assert sorted(order, key=order.__getitem__) == ["2026-10-15-pipeline-trials", "2026-10-23-b", "2026-10-23-a",
+                                                    "2026-10-23-c"]
+    rows = {r["run_id"]: r for r in speed.rows(tmp_path)}
+    c, b = rows["20261023-P1-cadence-haiku-c"], rows["20261023-P1-cadence-haiku-b"]
+    assert c["oneshot_seconds"] == 4000.0 and c["basis"] == f"batch 2026-10-23-a, same grader tree {TREE_A[:7]}"
+    assert b["oneshot_seconds"] == 2000.0 and b["ratio"] == 1.1   # "-a" began later than "-b": not its basis
+    assert scoreboard.time_ratio(tmp_path, record.load(tmp_path / "20261023-P1-cadence-haiku-c")) == 1.1
+
+
+def test_a_batchs_start_does_not_depend_on_the_order_its_records_are_read(tmp_path):
+    """A record with no started_at (the backfilled ones) read after one that has it must not reset the batch's
+    start to "": the key is the earliest start among the records that have one, in either read order."""
+    _run(tmp_path, "20261023-P1-haiku-oneshot-1", arm="one-shot", seconds=1.0, batch="2026-10-23-a",
+         started="2026-10-23T20:00:00Z")
+    _run(tmp_path, "20261023-P1-haiku-oneshot-2", arm="one-shot", seconds=1.0, batch="2026-10-23-a")  # no started_at
+    _run(tmp_path, "20261023-P1-haiku-oneshot-3", arm="one-shot", seconds=1.0, batch="2026-10-23-a",
+         started="2026-10-23T21:00:00Z")
+    records = speed._records(tmp_path)
+    key = ("2026-10-23", "2026-10-23T20:00:00Z", "2026-10-23-a")
+    assert speed.batch_order(records)["2026-10-23-a"] == key
+    assert speed.batch_order(records[::-1])["2026-10-23-a"] == key
+    assert speed.batch_order([records[2], records[1], records[0]])["2026-10-23-a"] == key
+    assert speed.batch_order([records[1]])["2026-10-23-a"] == ("2026-10-23", "", "2026-10-23-a")  # none has one
