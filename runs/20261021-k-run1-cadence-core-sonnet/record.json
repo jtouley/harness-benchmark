@@ -1,0 +1,76 @@
+{
+ "arm": "cadence-core",
+ "batch": "2026-10-21-cadence-e2e-budgetcli",
+ "cadence": null,
+ "claude_version": "2.1.305",
+ "command": [
+  "claude",
+  "-p",
+  "/cadence:cadence <requests.md Request 1>",
+  "--plugin-dir",
+  "core-plugin",
+  "--dangerously-skip-permissions",
+  "--output-format",
+  "stream-json",
+  "--verbose"
+ ],
+ "cost": {
+  "list_usd": "4.964539",
+  "reported_usd": 3.980942,
+  "tokens": {
+   "cache_read": 11071190,
+   "cache_write": 628742,
+   "input": 488,
+   "output": 117747
+  }
+ },
+ "counts": {
+  "counts": false,
+  "why": "self-graded, no outside grader, pre-driver"
+ },
+ "ended_at": "2026-10-21T01:45:55Z",
+ "exit_code": 0,
+ "isolation": null,
+ "kind": "live",
+ "model_requested": "claude-sonnet-5-5",
+ "models_served": [
+  "claude-sonnet-5-5"
+ ],
+ "provenance": {
+  "evidence": [
+   "jtouley/cadence@9008b0e:evidence/live-runs/drivers/k-run1.sh",
+   "jtouley/cadence@9008b0e:evidence/live-runs/transcripts/k-run1.jsonl.gz",
+   "jtouley/cadence@9008b0e:evidence/live-runs/live-run-records.md",
+   "jtouley/cadence@9008b0e:evidence/live-runs/requests.md#request-1",
+   "jtouley/cadence@9008b0e:evidence/README.md"
+  ],
+  "note": "claimed by the session that ran it: reached R7; no probe (its own probe script, evidence/live-runs/probe-results-20261022T1558.txt). Plugin copy core-plugin: the driver names no commit (evidence/live-runs/plugin-diffs/core-plugin.diff). The driver passed no --model; the model is the transcript's",
+  "source": "backfill"
+ },
+ "request_id": "LOCAL-3",
+ "run_id": "20261021-k-run1-cadence-core-sonnet",
+ "schema": 1,
+ "session_id": "412420db-14a2-5603-8fea-cbe5692ee926",
+ "started_at": "2026-10-21T01:27:18Z",
+ "stop_point": {
+  "block": "R7",
+  "reason": "the session's own record says the run wrote its session summary"
+ },
+ "task": "LOCAL-3",
+ "timing": {
+  "agent_active_seconds": 253.098,
+  "agent_wall_seconds": 1117.0,
+  "blocks": null,
+  "run_wall_seconds": null
+ },
+ "transcript": {
+  "bytes": 2264415,
+  "path": "evidence/live-runs/transcripts/k-run1.jsonl.gz",
+  "sha256": "192e93558021ba34324f8069ee04193a190a7a1fbaa12c2d9312a2adfede8246",
+  "store": "git:jtouley/cadence@9008b0e2389021aa499aa39798a852d9f444af11"
+ },
+ "tree": {
+  "missing": "the repository was kept only as left after run 2 (jtouley/cadence@9008b0e:evidence/live-runs/runs/k/repo.bundle)",
+  "sha256": null
+ }
+}

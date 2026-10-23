@@ -1,0 +1,85 @@
+{
+ "arm": "cadence",
+ "batch": "2026-10-21-cadence-e2e-budgetcli",
+ "cadence": {
+  "repo": "https://github.com/jtouley/cadence",
+  "sha": "e51cde2a59d4a02c881de00c5629433face342f2",
+  "tree_clean": false
+ },
+ "claude_version": "2.1.307",
+ "command": [
+  "claude",
+  "-p",
+  "/cadence:cadence <golden/cadence/d2.md>",
+  "--model",
+  "haiku",
+  "--plugin-dir",
+  "cadence-plugin-t",
+  "--dangerously-skip-permissions",
+  "--output-format",
+  "stream-json",
+  "--verbose"
+ ],
+ "cost": {
+  "list_usd": "0.773834",
+  "reported_usd": 0.9901930049999987,
+  "tokens": {
+   "cache_read": 31620850,
+   "cache_write": 1542489,
+   "input": 1140,
+   "output": 529401
+  }
+ },
+ "counts": {
+  "counts": false,
+  "why": "self-graded, no outside grader, pre-driver"
+ },
+ "ended_at": "2026-10-22T05:46:11Z",
+ "exit_code": 0,
+ "isolation": null,
+ "kind": "live",
+ "model_requested": "claude-haiku-5-5",
+ "models_served": [
+  "claude-haiku-5-5"
+ ],
+ "provenance": {
+  "evidence": [
+   "jtouley/cadence@9008b0e:evidence/live-runs/drivers/t2-run1.sh",
+   "jtouley/cadence@9008b0e:evidence/live-runs/transcripts/t2-run1.jsonl.gz",
+   "jtouley/cadence@9008b0e:evidence/live-runs/live-run-records.md",
+   "jtouley/cadence@9008b0e:evidence/live-runs/requests.md#request-4",
+   "jtouley/cadence@9008b0e:evidence/README.md",
+   "jtouley/cadence@9008b0e:evidence/live-runs/runs/t2"
+  ],
+  "note": "claimed by the session that ran it: reached R7; probe request 10/10, edge 11/11, scope 1/1, deferral 2/2 (its own probe script, evidence/live-runs/probe-results-20261022T1558.txt). Plugin copy cadence-plugin-t: commit e51cde2 plus the e2e config, and for some copies code copied in by hand (evidence/live-runs/plugin-diffs/cadence-plugin-t.diff), so not a clean commit. The request text equals golden/cadence/d2.md (d2, d3 and d4 hold one text)",
+  "source": "backfill"
+ },
+ "request_id": "LOCAL-4",
+ "run_id": "20261022-t2-run1-cadence-haiku",
+ "schema": 1,
+ "session_id": "412420db-14a2-5603-8fea-cbe5692ee926",
+ "started_at": "2026-10-22T05:05:23Z",
+ "stop_point": {
+  "block": "R7",
+  "reason": "the session's own record says the run wrote its session summary"
+ },
+ "task": "d2",
+ "timing": {
+  "agent_active_seconds": 310.66,
+  "agent_wall_seconds": 2448.0,
+  "blocks": null,
+  "run_wall_seconds": null
+ },
+ "transcript": {
+  "bytes": 6594243,
+  "path": "evidence/live-runs/transcripts/t2-run1.jsonl.gz",
+  "sha256": "b45900b371ce6ce0e66f6b4314ec5c91cbc4ef838d47cddbfdcb9c63c875d1a0",
+  "store": "git:jtouley/cadence@9008b0e2389021aa499aa39798a852d9f444af11"
+ },
+ "tree": {
+  "bytes": 27107,
+  "path": "evidence/live-runs/runs/t2/repo.bundle",
+  "sha256": "62d046c0bbc2d0ff7fcad0089abcf6567da683e68b682daf98be1567d85d17b2",
+  "store": "git:jtouley/cadence@9008b0e2389021aa499aa39798a852d9f444af11"
+ }
+}

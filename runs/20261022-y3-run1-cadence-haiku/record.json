@@ -1,0 +1,85 @@
+{
+ "arm": "cadence",
+ "batch": "2026-10-21-cadence-e2e-budgetcli",
+ "cadence": {
+  "repo": "https://github.com/jtouley/cadence",
+  "sha": "70ae163507b73634e129ce470b0a945f4b095dd2",
+  "tree_clean": false
+ },
+ "claude_version": "2.1.306",
+ "command": [
+  "claude",
+  "-p",
+  "/cadence:cadence <golden/cadence/d2.md>",
+  "--model",
+  "haiku",
+  "--plugin-dir",
+  "cadence-plugin-y",
+  "--dangerously-skip-permissions",
+  "--output-format",
+  "stream-json",
+  "--verbose"
+ ],
+ "cost": {
+  "list_usd": "0.227480",
+  "reported_usd": 0.231311415,
+  "tokens": {
+   "cache_read": 6941594,
+   "cache_write": 541818,
+   "input": 270,
+   "output": 180620
+  }
+ },
+ "counts": {
+  "counts": false,
+  "why": "self-graded, no outside grader, pre-driver"
+ },
+ "ended_at": "2026-10-22T01:28:56Z",
+ "exit_code": 0,
+ "isolation": null,
+ "kind": "live",
+ "model_requested": "claude-haiku-5-5",
+ "models_served": [
+  "claude-haiku-5-5"
+ ],
+ "provenance": {
+  "evidence": [
+   "jtouley/cadence@9008b0e:evidence/live-runs/drivers/y3-run1.sh",
+   "jtouley/cadence@9008b0e:evidence/live-runs/transcripts/y3-run1.jsonl.gz",
+   "jtouley/cadence@9008b0e:evidence/live-runs/live-run-records.md",
+   "jtouley/cadence@9008b0e:evidence/live-runs/requests.md#request-4",
+   "jtouley/cadence@9008b0e:evidence/README.md",
+   "jtouley/cadence@9008b0e:evidence/live-runs/runs/y3"
+  ],
+  "note": "claimed by the session that ran it: did not reach R7; probe request 0/10, edge 9/11, scope 1/1, deferral 2/2 (its own probe script, evidence/live-runs/probe-results-20261022T1558.txt). Plugin copy cadence-plugin-y: commit 70ae163 plus the e2e config, and for some copies code copied in by hand (evidence/live-runs/plugin-diffs/cadence-plugin-y.diff), so not a clean commit. The request text equals golden/cadence/d2.md (d2, d3 and d4 hold one text)",
+  "source": "backfill"
+ },
+ "request_id": "LOCAL-4",
+ "run_id": "20261022-y3-run1-cadence-haiku",
+ "schema": 1,
+ "session_id": "412420db-14a2-5603-8fea-cbe5692ee926",
+ "started_at": "2026-10-22T01:14:45Z",
+ "stop_point": {
+  "block": null,
+  "reason": "did not reach R7 (the session's own record); the stop block is not in the evidence"
+ },
+ "task": "d2",
+ "timing": {
+  "agent_active_seconds": 854.738,
+  "agent_wall_seconds": 851.0,
+  "blocks": null,
+  "run_wall_seconds": null
+ },
+ "transcript": {
+  "bytes": 1425861,
+  "path": "evidence/live-runs/transcripts/y3-run1.jsonl.gz",
+  "sha256": "6b07481da886a47099189f10f41dd4578ffc60728166a2dbd21e706b43c4287c",
+  "store": "git:jtouley/cadence@9008b0e2389021aa499aa39798a852d9f444af11"
+ },
+ "tree": {
+  "bytes": 6287,
+  "path": "evidence/live-runs/runs/y3/repo.bundle",
+  "sha256": "c32917d183fd8f341a83fe098b7e60c477acf8df47b68464f50d9d9ba24e8725",
+  "store": "git:jtouley/cadence@9008b0e2389021aa499aa39798a852d9f444af11"
+ }
+}

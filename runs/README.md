@@ -5,7 +5,7 @@ live or stub). A run that has no folder here is not evidence.
 
 | File | Written by | Rule |
 |---|---|---|
-| `record.json` | `python -m loop.driver` (new runs), the backfill (old runs) | written once, never changed ([schema](../loop/schema/record.schema.json)) |
+| `record.json` | `python -m loop.driver` (new runs), `loop.backfill` and `loop.backfill_live` (old runs) | written once, never changed ([schema](../loop/schema/record.schema.json)) |
 | `scores.jsonl` | the driver with `--grade`, a regrade | one line per grading, appended, never edited ([schema](../loop/schema/score.schema.json)) |
 
 `python -m loop.check --base origin/main` validates every record and score and refuses a change that
@@ -24,7 +24,9 @@ scored. A run counts only if both hold:
 
 - `counts.counts` is true. It is false for a run graded by anything but the harness-benchmark grader
   (a session's own probe), a run whose plugin tree was not a clean published commit, and an
-  infrastructure loss.
+  infrastructure loss. The live runs of 21 and 22 October (`kind` `live`, `loop.backfill_live`) were
+  graded by the sessions that made them, so each says `self-graded, no outside grader, pre-driver` in
+  `counts.why` and has no `scores.jsonl`.
 - It has a score from the harness-benchmark grader. Each score names the grader commit and the git tree
   of `golden/pipeline/pipetask`. When the grader tree changes, every run is regraded and a new line is
   appended; the latest grader tree's line is the run's score.

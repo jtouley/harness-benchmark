@@ -1,0 +1,79 @@
+{
+ "arm": "cadence-core",
+ "batch": "2026-10-21-cadence-e2e-budgetcli",
+ "cadence": null,
+ "claude_version": "2.1.305",
+ "command": [
+  "claude",
+  "-p",
+  "/cadence:cadence <requests.md Request 1>",
+  "--plugin-dir",
+  "core-plugin",
+  "--dangerously-skip-permissions",
+  "--output-format",
+  "stream-json",
+  "--verbose"
+ ],
+ "cost": {
+  "list_usd": "6.492642",
+  "reported_usd": 5.164783700000002,
+  "tokens": {
+   "cache_read": 14135477,
+   "cache_write": 821310,
+   "input": 636,
+   "output": 161100
+  }
+ },
+ "counts": {
+  "counts": false,
+  "why": "self-graded, no outside grader, pre-driver"
+ },
+ "ended_at": "2026-10-21T04:44:50Z",
+ "exit_code": 0,
+ "isolation": null,
+ "kind": "live",
+ "model_requested": "claude-sonnet-5-5",
+ "models_served": [
+  "claude-sonnet-5-5"
+ ],
+ "provenance": {
+  "evidence": [
+   "jtouley/cadence@9008b0e:evidence/live-runs/drivers/k4-run1.sh",
+   "jtouley/cadence@9008b0e:evidence/live-runs/transcripts/k4-run1.jsonl.gz",
+   "jtouley/cadence@9008b0e:evidence/live-runs/live-run-records.md",
+   "jtouley/cadence@9008b0e:evidence/live-runs/requests.md#request-1",
+   "jtouley/cadence@9008b0e:evidence/README.md",
+   "jtouley/cadence@9008b0e:evidence/live-runs/runs/k4"
+  ],
+  "note": "claimed by the session that ran it: did not reach R7; no probe (its own probe script, evidence/live-runs/probe-results-20261022T1558.txt). Plugin copy core-plugin: the driver names no commit (evidence/live-runs/plugin-diffs/core-plugin.diff). The driver passed no --model; the model is the transcript's",
+  "source": "backfill"
+ },
+ "request_id": "LOCAL-3",
+ "run_id": "20261021-k4-run1-cadence-core-sonnet",
+ "schema": 1,
+ "session_id": "412420db-14a2-5603-8fea-cbe5692ee926",
+ "started_at": "2026-10-21T04:19:41Z",
+ "stop_point": {
+  "block": null,
+  "reason": "did not reach R7 (the session's own record); the stop block is not in the evidence"
+ },
+ "task": "LOCAL-3",
+ "timing": {
+  "agent_active_seconds": 324.558,
+  "agent_wall_seconds": 1509.0,
+  "blocks": null,
+  "run_wall_seconds": null
+ },
+ "transcript": {
+  "bytes": 3040290,
+  "path": "evidence/live-runs/transcripts/k4-run1.jsonl.gz",
+  "sha256": "09b7b10e5eccfd7642d5e3a77e6900a9da9eeb77279e671e140b9a7c96e6ea6a",
+  "store": "git:jtouley/cadence@9008b0e2389021aa499aa39798a852d9f444af11"
+ },
+ "tree": {
+  "bytes": 17434,
+  "path": "evidence/live-runs/runs/k4/repo.bundle",
+  "sha256": "109dbb0ce3fee5457f3fbc0fefa8ed908af9bc05232cb7b718a04cb8c60479cc",
+  "store": "git:jtouley/cadence@9008b0e2389021aa499aa39798a852d9f444af11"
+ }
+}

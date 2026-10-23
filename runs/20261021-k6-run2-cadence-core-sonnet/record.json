@@ -1,0 +1,79 @@
+{
+ "arm": "cadence-core",
+ "batch": "2026-10-21-cadence-e2e-budgetcli",
+ "cadence": null,
+ "claude_version": "2.1.305",
+ "command": [
+  "claude",
+  "-p",
+  "/cadence:cadence <requests.md Request 6: a resume of Request 1>",
+  "--plugin-dir",
+  "core-plugin-k6",
+  "--dangerously-skip-permissions",
+  "--output-format",
+  "stream-json",
+  "--verbose"
+ ],
+ "cost": {
+  "list_usd": "2.474958",
+  "reported_usd": 1.9956824999999996,
+  "tokens": {
+   "cache_read": 5398520,
+   "cache_write": 310749,
+   "input": 246,
+   "output": 61789
+  }
+ },
+ "counts": {
+  "counts": false,
+  "why": "self-graded, no outside grader, pre-driver"
+ },
+ "ended_at": "2026-10-21T07:09:46Z",
+ "exit_code": 0,
+ "isolation": null,
+ "kind": "live",
+ "model_requested": "claude-sonnet-5-5",
+ "models_served": [
+  "claude-sonnet-5-5"
+ ],
+ "provenance": {
+  "evidence": [
+   "jtouley/cadence@9008b0e:evidence/live-runs/drivers/k6-run2.sh",
+   "jtouley/cadence@9008b0e:evidence/live-runs/transcripts/k6-run2.jsonl.gz",
+   "jtouley/cadence@9008b0e:evidence/live-runs/live-run-records.md",
+   "jtouley/cadence@9008b0e:evidence/live-runs/requests.md#request-6",
+   "jtouley/cadence@9008b0e:evidence/README.md",
+   "jtouley/cadence@9008b0e:evidence/live-runs/runs/k6"
+  ],
+  "note": "claimed by the session that ran it: reached R7; no probe (its own probe script, evidence/live-runs/probe-results-20261022T1558.txt). Plugin copy core-plugin-k6: the driver names no commit (evidence/live-runs/plugin-diffs/core-plugin-k6.diff). Request 6 resumes the run of request 1 on the same repository. The driver passed no --model; the model is the transcript's",
+  "source": "backfill"
+ },
+ "request_id": "LOCAL-3",
+ "run_id": "20261021-k6-run2-cadence-core-sonnet",
+ "schema": 1,
+ "session_id": "412420db-14a2-5603-8fea-cbe5692ee926",
+ "started_at": "2026-10-21T06:54:01Z",
+ "stop_point": {
+  "block": "R7",
+  "reason": "the session's own record says the run wrote its session summary"
+ },
+ "task": "LOCAL-3",
+ "timing": {
+  "agent_active_seconds": 951.852,
+  "agent_wall_seconds": 945.0,
+  "blocks": null,
+  "run_wall_seconds": null
+ },
+ "transcript": {
+  "bytes": 1112482,
+  "path": "evidence/live-runs/transcripts/k6-run2.jsonl.gz",
+  "sha256": "1229ca65736561292d47b8f48ae7b7c226a1fe968d188b5af7371da321f40c93",
+  "store": "git:jtouley/cadence@9008b0e2389021aa499aa39798a852d9f444af11"
+ },
+ "tree": {
+  "bytes": 27114,
+  "path": "evidence/live-runs/runs/k6/repo.bundle",
+  "sha256": "f840b3520f8706ba4abc155a3876d5b31d9a74727805ac5dadb714f5004c6942",
+  "store": "git:jtouley/cadence@9008b0e2389021aa499aa39798a852d9f444af11"
+ }
+}

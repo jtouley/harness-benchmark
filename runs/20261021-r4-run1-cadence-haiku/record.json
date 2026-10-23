@@ -1,0 +1,81 @@
+{
+ "arm": "cadence",
+ "batch": "2026-10-21-cadence-e2e-budgetcli",
+ "cadence": null,
+ "claude_version": "2.1.306",
+ "command": [
+  "claude",
+  "-p",
+  "/cadence:cadence <golden/cadence/d1.md>",
+  "--model",
+  "haiku",
+  "--plugin-dir",
+  "cadence-plugin-r4",
+  "--dangerously-skip-permissions",
+  "--output-format",
+  "stream-json",
+  "--verbose"
+ ],
+ "cost": {
+  "list_usd": "0.430814",
+  "reported_usd": 0.4346862350000002,
+  "tokens": {
+   "cache_read": 12395266,
+   "cache_write": 1063608,
+   "input": 496,
+   "output": 347721
+  }
+ },
+ "counts": {
+  "counts": false,
+  "why": "self-graded, no outside grader, pre-driver"
+ },
+ "ended_at": "2026-10-21T18:04:19Z",
+ "exit_code": 0,
+ "isolation": null,
+ "kind": "live",
+ "model_requested": "claude-haiku-5-5",
+ "models_served": [
+  "claude-haiku-5-5"
+ ],
+ "provenance": {
+  "evidence": [
+   "jtouley/cadence@9008b0e:evidence/live-runs/drivers/r4-run1.sh",
+   "jtouley/cadence@9008b0e:evidence/live-runs/transcripts/r4-run1.jsonl.gz",
+   "jtouley/cadence@9008b0e:evidence/live-runs/live-run-records.md",
+   "jtouley/cadence@9008b0e:evidence/live-runs/requests.md#request-3",
+   "jtouley/cadence@9008b0e:evidence/README.md",
+   "jtouley/cadence@9008b0e:evidence/live-runs/runs/r4"
+  ],
+  "note": "claimed by the session that ran it: did not reach R7; probe request 0/10, edge 9/11, scope 1/1, deferral 1/2 (its own probe script, evidence/live-runs/probe-results-20261022T1558.txt). Plugin copy cadence-plugin-r4: the driver names no commit (evidence/live-runs/plugin-diffs/cadence-plugin-r4.diff)",
+  "source": "backfill"
+ },
+ "request_id": "LOCAL-4",
+ "run_id": "20261021-r4-run1-cadence-haiku",
+ "schema": 1,
+ "session_id": "412420db-14a2-5603-8fea-cbe5692ee926",
+ "started_at": "2026-10-21T17:38:01Z",
+ "stop_point": {
+  "block": null,
+  "reason": "did not reach R7 (the session's own record); the stop block is not in the evidence"
+ },
+ "task": "d1",
+ "timing": {
+  "agent_active_seconds": 1586.258,
+  "agent_wall_seconds": 1578.0,
+  "blocks": null,
+  "run_wall_seconds": null
+ },
+ "transcript": {
+  "bytes": 2573037,
+  "path": "evidence/live-runs/transcripts/r4-run1.jsonl.gz",
+  "sha256": "5b610c0f50c86b44521afdef13d4bb13045605d091133bed4e0cc6592e877478",
+  "store": "git:jtouley/cadence@9008b0e2389021aa499aa39798a852d9f444af11"
+ },
+ "tree": {
+  "bytes": 3675,
+  "path": "evidence/live-runs/runs/r4/repo.bundle",
+  "sha256": "9e33e4d6e4f53025d41e5f281d421110c6db01142904ad9494ddb18029ad4183",
+  "store": "git:jtouley/cadence@9008b0e2389021aa499aa39798a852d9f444af11"
+ }
+}
