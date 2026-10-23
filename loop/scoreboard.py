@@ -3,6 +3,7 @@ The release gate reads it.
 
     python -m loop.scoreboard [--out scoreboard.md]
     python -m loop.scoreboard gate --model claude-haiku-5-5 --sha <cadence sha> [--n 3]
+    python -m loop.scoreboard done [--n 3]
 
 A cell takes the counted runs of one (arm, cadence commit, model, task) that have a score, and each run's
 latest score. A bar is the mean checks passed of the pinned one-shots of the same task and model
@@ -11,6 +12,12 @@ one-shot record of a later batch is history and moves no bar. The gate passes fo
 scored runs whose mean is at least GOOD_FLOOR (4/7: it beats the pinned Sonnet 3/7); a mean of IDEAL_FLOOR
 (5/7) or more is ideal, and each line prints the tier, GOOD or IDEAL (MISS below the floor). Each line prints
 best and worst beside the mean for Cadence and both one-shots, so a single lucky run shows.
+
+Done (the owner's Done line, docs/rules.md: P1 and P2 means meet the bar on two consecutive batches, at no
+more than 1.25x the one-shot time) is `done`: each batch of counted Cadence-on-Haiku runs passes when, on
+every task in TASKS, it has at least --n scored runs whose mean is GOOD or better (tier_of) and whose mean
+time ratio (time_ratio, against the pinned basis) is at most STRETCH_RATIO; Done is two passing batches in
+a row, batches ordered by the date in their id, then their earliest started_at, then their id.
 """
 
 from __future__ import annotations
@@ -158,6 +165,53 @@ def gate(runs: Path, model: str, sha: str, n: int = 3, pinned: Path = baselines.
     return ok, lines
 
 
+DONE_MODEL = "claude-haiku-5-5"
+
+
+def _batch_key(recs: list[dict]) -> tuple[str, str, str]:
+    batch = recs[0]["batch"]
+    return batch[:10], min((r["started_at"] or "" for r in recs), default=""), batch
+
+
+def done(runs: Path, n: int = 3, pinned: Path = baselines.PATH) -> tuple[bool, list[str]]:
+    """(Done, one line per batch of counted Cadence-on-Haiku runs then the verdict): see the module doc."""
+    batches: dict[str, list[tuple[dict, dict]]] = defaultdict(list)
+    for (arm, _, model, task), rows in cells(runs).items():
+        if arm not in ONE_SHOT_ARMS and model == DONE_MODEL and task in TASKS:
+            for rec, score in rows:
+                batches[rec["batch"]].append((rec, score))
+    order = sorted(batches, key=lambda b: _batch_key([rec for rec, _ in batches[b]]))
+    lines, passing = [], []
+    for batch in order:
+        parts, missed, untimed, slow, ok = [], [], [], [], True
+        for task in TASKS:
+            rows = [(rec, s) for rec, s in batches[batch] if rec["task"] == task]
+            if len(rows) < n:
+                ok = False
+                parts.append(f"{task} {len(rows)} run(s), needs {n}")
+                continue
+            mean = sum(_passed(s) for _, s in rows) / len(rows)
+            ratios, _ = _ratios(runs, [rec for rec, _ in rows], pinned)
+            ratio = sum(ratios) / len(ratios) if ratios else None
+            if tier_of(mean) == "MISS":
+                missed.append(task)
+            if ratio is None:  # no run with a time ratio: Done needs the time, so the batch fails
+                untimed.append(task)
+            elif ratio > STRETCH_RATIO:
+                slow.append(task)
+            parts.append(f"{task} mean {mean:.2f}/7 {tier_of(mean)}, time {_ratio_text(ratios)}")
+        ok = ok and not missed and not untimed and not slow
+        why = [f"below {GOOD_FLOOR}/7 on {', '.join(missed)}"] * bool(missed) + \
+              [f"no time on {', '.join(untimed)}"] * bool(untimed) + \
+              [f"time above {STRETCH_RATIO}x on {', '.join(slow)}"] * bool(slow)
+        lines.append(f"{batch}: {'; '.join(parts)}: {'PASS' if ok else 'FAIL'}" + (f" ({'; '.join(why)})" if why else ""))
+        passing.append(ok)
+    pair = next((i for i in range(1, len(order)) if passing[i - 1] and passing[i]), None)
+    if pair is None:
+        return False, lines + ["NOT DONE: no two consecutive batches pass"]
+    return True, lines + [f"DONE: {order[pair - 1]} and {order[pair]} pass in a row"]
+
+
 def table(runs: Path) -> str:
     grouped = cells(runs)
     lines = ["# Scoreboard", "",
@@ -185,18 +239,27 @@ def table(runs: Path) -> str:
                          f"{', '.join(f'{p}/7' for p in passed)} | {sum(passed) / len(passed):.2f} | "
                          f"{', '.join(f'{m:.0f}' for m in minutes) or '—'} | {'—' if arm in ONE_SHOT_ARMS else _ratio_text(ratios, early)} | {', '.join(trees)} |")
         lines.append("")
+    _, done_lines = done(runs)
+    lines += ["## Done", "",
+              f"The owner's Done line: P1 and P2 means meet the bar on two consecutive batches of Cadence on Haiku, "
+              f"at no more than {STRETCH_RATIO}x the pinned one-shot time (`python -m loop.scoreboard done`).", ""]
+    lines += [f"- {line}" for line in done_lines] + [""]
     return "\n".join(lines)
 
 
 def main(argv: list[str] | None = None) -> int:
     ap = argparse.ArgumentParser(prog="python -m loop.scoreboard", description=__doc__.split("\n\n")[0])
-    ap.add_argument("action", nargs="?", choices=["table", "gate"], default="table")
+    ap.add_argument("action", nargs="?", choices=["table", "gate", "done"], default="table")
     ap.add_argument("--runs", type=Path, default=ROOT / "runs")
     ap.add_argument("--out", type=Path, help="write the table here (default: print it)")
     ap.add_argument("--model")
     ap.add_argument("--sha")
     ap.add_argument("--n", type=int, default=3)
     args = ap.parse_args(argv)
+    if args.action == "done":
+        ok, lines = done(args.runs, args.n)
+        print("\n".join(lines))
+        return 0 if ok else 1
     if args.action == "gate":
         if not (args.model and args.sha):
             ap.error("gate needs --model and --sha")
