@@ -300,7 +300,8 @@ def repo_from_saved(saved: Path, out: Path) -> Path:
 
 
 def run_trial(task: str, out: Path, *, mode: str, model: str | None, plugin_dir: Path | None,
-              replay_seed: int, caps: dict, regrade_of: Path | None = None, holdout: bool = False) -> int:
+              replay_seed: int, caps: dict, regrade_of: Path | None = None, holdout: bool = False,
+              ca: Path | None = None) -> int:
     if task in HOLDOUT_TASKS and not holdout:
         raise HoldoutError(f"{task} is the hold-out task: it runs only when the owner calls for the final check "
                            f"(pass --holdout for that run; golden/pipeline/README.md)")
@@ -340,6 +341,8 @@ def run_trial(task: str, out: Path, *, mode: str, model: str | None, plugin_dir:
         for arg in grader_args:
             cmd += ["--grader-arg", arg]
         env = dict(os.environ)
+        if mode == "agent" and ca is not None:
+            cmd += ["--auth", "proxy", "--ca", str(ca)]  # run_trial.sh --auth proxy: no key goes in
         if mode == "agent":
             cmd += ["--model", model]
             if plugin_dir:
@@ -395,6 +398,8 @@ def main(argv: list[str] | None = None) -> int:
     r.add_argument("--model")
     r.add_argument("--plugin-dir", type=Path)
     r.add_argument("--replay-seed", type=int, default=0, help="the dev replay's seed (the grading seed is 1)")
+    r.add_argument("--ca", type=Path, help="agent trials: reach the API through the host's HTTPS_PROXY with this "
+                   "CA (run_trial.sh --auth proxy) instead of ANTHROPIC_API_KEY")
     c = sub.add_parser("caps", help="set a task's grader caps from its reference trials")
     c.add_argument("task", choices=list(TASKS))
     c.add_argument("runs", type=Path, nargs="+")
@@ -427,7 +432,8 @@ def main(argv: list[str] | None = None) -> int:
         try:
             return run_trial(args.task, args.out, mode=args.mode, model=args.model, plugin_dir=args.plugin_dir,
                              replay_seed=args.replay_seed, caps=caps,
-                             regrade_of=args.regrade_of.resolve() if args.regrade_of else None, holdout=args.holdout)
+                             regrade_of=args.regrade_of.resolve() if args.regrade_of else None, holdout=args.holdout,
+                             ca=args.ca.resolve() if args.ca else None)
         except HoldoutError as exc:
             print(f"refused: {exc}", file=sys.stderr)
             return 2

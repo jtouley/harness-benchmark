@@ -51,6 +51,45 @@ start), 93 (a bad line in the toolchain file), 94 (a guard cap or backstop that 
 130 (interrupted).
 `results/runs/` is in `.gitignore`.
 
+## A host behind an HTTPS proxy (`--auth proxy`)
+
+A host whose outbound traffic goes through a local TLS-terminating proxy (`HTTPS_PROXY=http://127.0.0.1:PORT`,
+a CA of its own) builds and runs the trial images this way:
+
+```sh
+HB_BUILD_CA=ca.pem runner/pipeline/build.sh      # CA as a BuildKit secret: in no image layer (runner/build-net.sh)
+sudo runner/net_guard.sh 3129:3148                # once: from docker0, only the relay ports of the host are open
+runner/run_trial.sh ... --auth proxy --ca ca.pem  # or: python scripts/pipeline_trial.py run P1 ... --ca ca.pem
+```
+
+`ca.pem` must hold the public roots as well as the proxy's CA: the proxy passes some hosts through with their
+own certificates. With `--auth proxy`:
+
+- No key goes in. `HTTPS_PROXY` must be `http://HOST:PORT` with no user, password or path; any other value is
+  refused before Docker runs, and the URL is never printed. `build.sh` applies the same rule when `HB_BUILD_CA`
+  is set, so a credential in the URL never reaches a build container as a build argument.
+- `runner/proxy_relay.py` listens on the bridge's gateway, on `--relay-port` or else on a free port of
+  `--relay-ports` (default `3129:3148`), so two trials at once get two ports, and copies bytes to the proxy.
+  The trial gets `HTTPS_PROXY=http://<gateway>:<port>`, `ANTHROPIC_BASE_URL` and `/trial/ca.crt`, for the
+  agent process only.
+- Before the trial container is created, a probe container must reach the relay and no other port the host
+  listens on for the bridge (`proxy_relay.py --host-ports`) and no address outside. Otherwise the runner
+  exits 2 and names what was open. `runner/net_guard.sh` inserts the host rules for that at the top of their
+  chains, above any distribution, ufw or conntrack rule that accepts docker0 traffic, and cuts forwarding in
+  `DOCKER-USER`; that cut takes egress from every container on docker0, not only trials.
+- The gate is about the host and the network, not about egress: the relay copies bytes and refuses no
+  CONNECT, so what the agent can reach through it is the host proxy's policy.
+- `host.json` records `auth` and the image id.
+
+Not yet working: the Claude Code build in the image stops with "Not logged in" when the proxy, not the client,
+holds the credentials. Until there is an auth route for the image, agent trials on such a host do not run in
+the container (reference and skeleton trials, which have no agent, do).
+
+The one run so far is the P1 reference smoke recorded as `runs/20261023-P1-reference-runner-proxy-smoke`
+(7 of 7, reward 1.0, grader at `6ec59c5`, `counts` false: a smoke of the runner, no agent). Reference mode
+never passes `--auth proxy` (`scripts/pipeline_trial.py` adds it for agent trials only), so that run proves
+the image build and the grader behind the proxy, not the relay and the probe.
+
 ## What happens in a trial
 
 1. `run_trial.sh` creates the container (no bind mount, no published port), copies the inputs in, and
