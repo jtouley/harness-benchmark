@@ -11,7 +11,10 @@ ignored: the plugin must be a published cadence commit, never a hand-patched tre
 writes runs/<run_id>/record.json (the cadence SHA, the models the transcript says served the session,
 the request id, the command, start and end time, cost), stores the transcript and the delivered tree in
 the blob store, and, with --grade, appends the harness-benchmark grader's score with the grader's commit
-and the git tree of golden/pipeline/pipetask. The grader must be a clean checkout for that.
+and the git tree of golden/pipeline/pipetask. The grader must be a clean checkout for that. Then it
+writes the batch's postmortem again (every committed postmortem that covers the batch, or a new
+<batch>.md) and scoreboard.md, so the record, the postmortem and the scoreboard go in one commit
+(runs/README.md, "After a merge").
 """
 
 from __future__ import annotations
@@ -27,7 +30,7 @@ from datetime import datetime, timezone
 from decimal import Decimal
 from pathlib import Path
 
-from loop import blocks, record, store
+from loop import blocks, postmortem, record, scoreboard, store
 
 ROOT = Path(__file__).resolve().parents[1]
 GRADER_PATH = "golden/pipeline/pipetask"
@@ -200,6 +203,8 @@ def main(argv: list[str] | None = None) -> int:
     ap.add_argument("--context", type=Path, help="the run's .context (a copy is fine): time per block comes from it")
     ap.add_argument("--timing", type=Path, help='JSON with "agent_seconds" (the agent session) that the command wrote')
     ap.add_argument("--runs", type=Path, default=ROOT / "runs")
+    ap.add_argument("--postmortems", type=Path, help="the postmortems folder (default: beside --runs)")
+    ap.add_argument("--scoreboard", type=Path, help="the scoreboard file (default: scoreboard.md beside --runs)")
     ap.add_argument("--store", type=Path, required=True, help="a checkout of the runs-store branch")
     ap.add_argument("command", nargs=argparse.REMAINDER)
     args = ap.parse_args(argv)
@@ -276,6 +281,12 @@ def main(argv: list[str] | None = None) -> int:
             "stream_ok": grade.get("stream_ok"), "error": grade.get("error"), "source": "driver",
             "graded_at": ended})
     print(args.runs / args.run_id / "record.json")
+    postmortems = args.postmortems or args.runs.resolve().parent / "postmortems"
+    board = args.scoreboard or args.runs.resolve().parent / "scoreboard.md"
+    for path in postmortem.refresh(args.batch, args.runs, postmortems):
+        print(path)
+    board.write_text(scoreboard.table(args.runs), encoding="utf-8")
+    print(board)
     return 0
 
 

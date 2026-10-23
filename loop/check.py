@@ -4,6 +4,11 @@
 
 Against a base ref: a record.json that existed there must be unchanged, and a scores.jsonl must start
 with the lines it had there.
+
+Postmortems (runs/README.md, "After a merge"): every counted run and every run a finding cites is in a
+committed postmortem under postmortems/; every committed postmortem is what the generator writes from
+its notes; scoreboard.md is what the scoreboard writes. `python -m loop.postmortem --all` and
+`python -m loop.scoreboard --out scoreboard.md` make them so.
 """
 
 from __future__ import annotations
@@ -13,7 +18,7 @@ import subprocess
 import sys
 from pathlib import Path
 
-from loop import record
+from loop import findings, postmortem, record, scoreboard
 
 ROOT = Path(__file__).resolve().parents[1]
 
@@ -48,6 +53,47 @@ def validate_tree(runs: Path) -> list[str]:
     return problems
 
 
+def postmortem_problems(runs: Path, postmortems: Path, findings_path: Path = findings.FINDINGS,
+                        scoreboard_path: Path | None = None, citations: dict | None = None) -> list[str]:
+    """Runs whose batch no committed postmortem covers, a notes file that names a batch with no run,
+    postmortems that are not the generator's output, and a scoreboard that is not the scoreboard's output.
+
+    Coverage is by batch, never by a run id in the text: a notes line that cites a run of another batch
+    (a decision with run_ids) does not document that run's batch."""
+    problems = []
+    covering = postmortem.covering(postmortems)
+    texts = {name: (postmortems / f"{name}.md").read_text(encoding="utf-8") for name in covering}
+    covered = {b for bs in covering.values() for b in bs}
+    cited = {rid for row in findings.load(findings_path) for rid in row["run_ids"]}
+    known_batches = set()
+    for run in sorted(p for p in runs.iterdir() if (p / "record.json").exists()):
+        rec = record.load(run)
+        known_batches.add(rec["batch"])
+        why = "counted" if rec["counts"]["counts"] else "cited by a finding" if run.name in cited else None
+        if why and rec["batch"] not in covered:
+            problems.append(f"{run.name}: {why}, and its batch {rec['batch']} is in no committed postmortem under "
+                            f"{postmortems.name}/ (python -m loop.postmortem {rec['batch']})")
+    for name, batches in covering.items():
+        for batch in batches:
+            if batch not in known_batches:
+                problems.append(f"{postmortems.name}/{name}.notes.json: names batch {batch!r}, which no run in "
+                                f"{runs.name}/ has")
+    for name, batches in covering.items():
+        try:
+            expected = postmortem.render(name, batches, runs, postmortems, findings_path, citations)
+        except postmortem.PostmortemError as exc:
+            problems.append(f"{postmortems.name}/{name}.md: cannot be generated: {exc}")
+            continue
+        if texts[name] != expected:
+            problems.append(f"{postmortems.name}/{name}.md: not what the generator writes (python -m loop.postmortem --all)")
+    if scoreboard_path is not None:
+        current = scoreboard_path.read_text(encoding="utf-8") if scoreboard_path.exists() else None
+        if current != scoreboard.table(runs):
+            problems.append(f"{scoreboard_path.name}: not what the scoreboard writes (python -m loop.scoreboard --out "
+                            f"{scoreboard_path.name})")
+    return problems
+
+
 def _show(repo: Path, ref: str, rel: str) -> str | None:
     proc = subprocess.run(["git", "show", f"{ref}:{rel}"], cwd=repo, capture_output=True, text=True)
     return proc.stdout if proc.returncode == 0 else None
@@ -77,6 +123,7 @@ def main(argv: list[str] | None = None) -> int:
     ap.add_argument("--base", help="git ref to compare with (e.g. origin/main)")
     args = ap.parse_args(argv)
     problems = validate_tree(ROOT / "runs")
+    problems += postmortem_problems(ROOT / "runs", postmortem.POSTMORTEMS, scoreboard_path=ROOT / "scoreboard.md")
     if args.base:
         problems += append_only(ROOT, args.base)
     for p in problems:

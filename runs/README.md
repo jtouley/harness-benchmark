@@ -25,9 +25,16 @@ were in. So two rules hold for this repository:
 - After every merge, the reviewer runs `scripts/ci_local.sh` on `origin/main`, and a red main is fixed
   before the next merge.
 - A pull request that touches `findings.jsonl`, `citations.json`, `runs/` or the generators under
-  `loop/` regenerates `postmortems/` (`python -m loop.postmortem <batch>`) and `scoreboard.md`
+  `loop/` regenerates `postmortems/` (`python -m loop.postmortem --all`) and `scoreboard.md`
   (`python -m loop.scoreboard --out scoreboard.md`) in the same commit, so the committed files are
   what the generators write at that commit.
+
+The loop enforces this. `python -m loop.driver` writes the batch's postmortem (every committed postmortem
+that covers the batch, or a new `postmortems/<batch>.md`) and `scoreboard.md` when it records a run, so
+they go in the record's commit. `python -m loop.check` refuses a counted run, or a run a finding cites,
+that is in no committed postmortem; a committed postmortem that is not what the generator writes from
+its notes; and a `scoreboard.md` that is not what the scoreboard writes. A postmortem named `<name>`
+covers the batches its `<name>.notes.json` lists under `batches`, else the one batch `<name>`.
 
 ## Run ids
 
