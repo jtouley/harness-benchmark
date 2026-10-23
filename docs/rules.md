@@ -5,6 +5,80 @@ enforces it. A reader audits the loop from this page: each link is the place whe
 a refusal or a test, not a sentence. A rule that is only in a pull request not merged yet says so with
 the number. Rule 13 changed on 23 October (the owner pinned the baselines); the others are not new.
 
+## Owner's goals (only the owner changes these)
+
+Copied from the front matter of the owner's postmortem
+(https://claude.ai/artifact/WbaPy7W4Qc2EZL9R68B1oA, rev 224), in its order, the owner's words or a direct restatement of them, with
+the date. Only the owner (Jason Touleyrou) sets, changes or removes anything in this section. Every session
+and agent reads it before acting; a plan, decision or action that would conflict with a line here is not
+taken: it goes to the owner first, citing the line. The numbered rules below are how the code holds these.
+
+**The goal and the only priority**
+
+- **The only priority:** test Cadence on Haiku against the one-shot baselines on harness-benchmark P1 and
+  P2, at n=3 per task. Work that does not serve this is parked unless the owner names it. (Oct 23: "The
+  only priority is testing cadence with Haiku against the One Shot benchmarks.")
+- **The bar:** Cadence on Haiku beats the Sonnet one-shot (a mean above 3/7) and matches the Opus one-shot
+  (5 to 6/7) on P1 and P2 at n=3, on the benchmark's own grader. (Oct 22)
+- **Done:** P1 and P2 means meet the bar on two consecutive batches, at no more than 1.25x the one-shot
+  time. (Oct 22, 19:30)
+- **Stretch goal, speed:** a Cadence run takes at most 120 to 125% of the one-shot's wall time on the same
+  task. Keep running the postmortem loops on speed. (Oct 22)
+- **The loop's only goal:** fix Cadence runs that miss these SLOs (the bar, done, and speed above). Each
+  iteration starts from the Cadence runs that missed, names why from their records, fixes that cause, and
+  re-runs Cadence. Nothing else enters the loop unless the owner names it. (Oct 23: "everything in your loop
+  goal is only focused on fixing any cadence runs not meeting those SLOs.")
+- **The bar, as the owner scored it (Oct 23):** "Original 3/7 of sonnet, must beat and match opus - so 4 is
+  good, 5 or better is ideal." Read as: on each of P1 and P2, at n=3, a Cadence-on-Haiku mean of 4/7 or
+  more passes (good), and 5/7 or more is ideal. The gate reports both tiers. This replaces the
+  coordinator's own "Opus minus one" margin, which made P1 need 5. In the code: `GOOD_FLOOR`,
+  `IDEAL_FLOOR`, rule 13.
+
+**Baselines: fixed, never re-run**
+
+- **The baselines are the Oct 15 one-shots:** P1 Sonnet 3/7, P1 Opus 6/7, P2 Sonnet 3/7, P2 Opus 5/7. Their
+  wall times are the speed basis (P1: Haiku 31, Sonnet 22, Opus 28 min). In the code: `baselines.json`,
+  rule 13.
+- **Only Cadence is ever re-run.** One-shots are never re-run, and a newer one-shot record never moves the
+  bar or the time basis. (Oct 23: "We already have the baselines, we don't need to rerun them." "We only
+  need to be re-running Cadence ever.")
+
+**How a run is done**
+
+- Execution is `/cadence <spec path>` only; the spec is the whole prompt. Cadence's prompts are only the
+  initial spec.
+- Use the subscription; no API key.
+- Golden samples (d1 to d4) are for harness iteration only; no model is trained. Keep the contamination
+  guard and the hold-out task.
+- Jev: verdict text only.
+- **Models for the work itself:** every working session (coordination, fixes, reviews) runs on Opus.
+  Sessions that only monitor a benchmark batch may run on Haiku. The runs under test stay Cadence on Haiku.
+  (Oct 23: "Everything should be opus... for the benchmark monitor runs those can be haiku.")
+
+**Authority**
+
+- **The owner sets the goals; the coordinator does not.** The coordinator has autonomy over how to reach
+  them: sessions (start, interrupt, archive), reviews, merges of dev PRs, branch deletes, fixes and run
+  order. It never sets or changes a goal, a bar, a baseline or a priority. (Oct 23: "You're authorized for
+  autonomy, but I set the goals, not you.")
+- The coordinator does not implement. It makes sure everything gets reviewed and built, and keeps it
+  moving. (Oct 23)
+- **cadence-core:** nothing (no push, PR, merge, branch delete or comment) without the owner and an
+  empirical presentation of proof.
+- This document (the postmortem) is the only place for updates. The coordinator gets the other sessions to
+  good on cadence, then gives the pathway to a cadence-core build.
+- CI: hosted CI is off. Before every push, run what CI would run (ci_local); keep pre-commit enabled on
+  cadence.
+- Everything from all runs is documented in this postmortem structure, traced back, reviewed and built,
+  empirically. The loop and postmortem structure is how Cadence self-learns in dev.
+- #195 is parked.
+
+**Superseded decisions (kept so they are not repeated)**
+
+- Oct 23: the coordinator decided, without the owner, that the gate's bars follow each batch's newest
+  one-shots, and Batch F re-ran all three one-shots. This contradicted the bar above, spent session limit,
+  and moved the Sonnet P1 bar from 3 to 5. Withdrawn by the owner, Oct 23.
+
 ## Runs and what counts
 
 1. **A Cadence run's only prompt is `/cadence <spec path>`.** The driver refuses a Cadence benchmark or
@@ -128,23 +202,26 @@ the number. Rule 13 changed on 23 October (the owner pinned the baselines); the 
 
 13. **The baselines are pinned; only Cadence is re-run.** (Owner, 2026-10-23.) The gate's bars are the
     owner's fixed numbers, from the 15 October one-shots: Cadence on Haiku must beat the Sonnet one-shot
-    (more than 3/7) and match the Opus one-shot (5 to 6/7). `baselines.json` names those runs per task and
+    (more than 3/7) and match the Opus one-shot; as the owner scored it, 4/7 is good and 5/7 or better is
+    ideal. `baselines.json` names those runs per task and
     model with the checks they passed and their agent session, and the bars and every time ratio read it
     and nothing else, so a one-shot record of a later batch (the batch F Haiku and Sonnet P1 one-shots)
     stays in `runs/` as history and moves no bar. `loop.check` holds each entry to its run's record and
     latest score. The driver refuses any arm but `cadence`, of every kind. A cadence commit passes for a
-    model when, on every task in the set, it has at least three scored runs whose mean beats the Sonnet
-    bar and is within one check of the Opus bar; best and worst print beside each mean, so a single
-    lucky run shows; the time ratio is reported against the stretch goal, not gated.
+    model when, on every task in the set, it has at least three scored runs whose mean is at least
+    `GOOD_FLOOR` (4/7); each line names the tier, GOOD, or IDEAL at `IDEAL_FLOOR` (5/7) or more, and MISS
+    below 4. Best and worst print beside each mean, so a single lucky run shows; the time ratio is
+    reported against the stretch goal, not gated.
     [baselines.json](../baselines.json), [loop/baselines.py](../loop/baselines.py),
-    [loop/scoreboard.py](../loop/scoreboard.py) (`bar`, `OPUS_MARGIN`, `gate`),
+    [loop/scoreboard.py](../loop/scoreboard.py) (`bar`, `GOOD_FLOOR`, `IDEAL_FLOOR`, `gate`),
     [loop/driver.py](../loop/driver.py), [loop/check.py](../loop/check.py); tests
     `test_the_baselines_are_the_15_october_one_shots`,
     `test_the_pinned_baselines_are_their_records_and_the_check_says_when_not`,
     `test_a_newer_one_shot_record_does_not_move_the_bar_or_the_time_basis`,
     `test_without_a_pinned_bar_the_gate_says_so`,
     `test_the_gate_line_shows_best_and_worst_beside_each_mean`,
-    `test_the_gate_compares_the_mean_with_sonnet_and_opus`, `test_the_gate_needs_n_runs_per_task` in
+    `test_the_gate_passes_on_good_and_prints_the_tier`, `test_the_floors_are_the_owners_numbers`,
+    `test_the_gate_needs_n_runs_per_task` in
     [tests/test_loop_reports.py](../tests/test_loop_reports.py);
     `test_the_driver_refuses_any_arm_but_cadence` in
     [tests/test_loop_record.py](../tests/test_loop_record.py). The 15 October one-shots ran in the
@@ -238,7 +315,7 @@ the number. Rule 13 changed on 23 October (the owner pinned the baselines); the 
 | 10 fingerprints | `loop/fingerprints.py` | `tests/test_loop_fingerprints.py`, `tests/test_golden_cadence.py` | main |
 | 11 findings with owner, closed by script | `loop/findings.py` | `tests/test_loop_findings.py` | main |
 | 12 trailers and the trace | `loop/findings.py`, `loop/trace.py` | `tests/test_loop_findings.py`, `tests/test_loop_trace.py` | main |
-| 13 pinned baselines; only Cadence is re-run | `baselines.json`, `loop/baselines.py`, `loop/scoreboard.py`, `loop/driver.py` | `tests/test_loop_reports.py`, `tests/test_loop_record.py` | #89 |
+| 13 pinned baselines; only Cadence is re-run | `baselines.json`, `loop/baselines.py`, `loop/scoreboard.py`, `loop/driver.py` | `tests/test_loop_reports.py`, `tests/test_loop_record.py` | main |
 | 14 early stop: no gate ratio, kept in `loop.speed` | `loop/scoreboard.py` | `tests/test_loop_reports.py` | main |
 | 15 postmortems complete and current | `loop/check.py`, `loop/postmortem.py`, `loop/driver.py` | `tests/test_loop_postmortem_complete.py` | main |
 | 16 after-merge rule | `runs/README.md` | rule 15 | main |
