@@ -162,8 +162,9 @@ the number. No rule here is new.
     [tests/test_loop_record.py](../tests/test_loop_record.py).
 19. **A grade needs a clean grader checkout.** With `--grade`, the driver refuses a grader repository
     whose `golden/pipeline/pipetask` has local changes, because no commit would name the grader that
-    scored the run. [loop/driver.py](../loop/driver.py) (`grader_identity`); test
-    `test_a_grade_from_the_benchmark_grader_becomes_a_score_with_the_grader_identity` in
+    scored the run. [loop/driver.py](../loop/driver.py) (`grader_identity`); tests
+    `test_the_driver_refuses_a_grader_with_local_changes` (the refusal) and
+    `test_a_grade_from_the_benchmark_grader_becomes_a_score_with_the_grader_identity` (the clean path) in
     [tests/test_loop_record.py](../tests/test_loop_record.py).
 20. **The P4 key reaches a trial only inside `grader-p4.pyz`.** The starting repository holds the
     skeleton and the P4 data only, and the grader bundle reads the key from its own archive into memory;
