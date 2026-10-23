@@ -52,7 +52,10 @@ scored. A run counts only if both hold:
   infrastructure loss. The live runs of 21 and 22 October (`kind` `live`, `loop.backfill_live`) were
   graded by the sessions that made them, so each says `self-graded, no outside grader, pre-driver` in
   `counts.why` and has no `scores.jsonl`.
-- It has a score from the harness-benchmark grader. Each score names the grader commit and the git tree
+- It has a score from the harness-benchmark grader. A backfilled record counts only with one (`loop.check` refuses it otherwise). The
+  15 October one-shots, the gate's Sonnet and Opus baselines, count: their scores are from this grader, with
+  `grader.commit` null and `basis` "not recorded" (the laptop grades were made before the grader commit was
+  recorded). Each score names the grader commit and the git tree
   of `golden/pipeline/pipetask`. When the grader tree changes, every run is regraded and a new line is
   appended; the latest grader tree's line is the run's score.
 
@@ -88,6 +91,33 @@ The driver refuses (exit 2, before anything runs):
   ignored file);
 - a run that could read another Cadence checkout: it searches `--cwd` and HOME (five levels) and refuses
   any copy other than the plugin. Use `--fresh-home <new folder>` and a `--cwd` that holds only the task.
+- a Cadence benchmark or live run without `--spec` or without `--agent-argv`;
+- a command with a `claude` call that carries any prompt text other than the one prompt: a bare `-p`, a
+  positional argument, input piped into it, or a flag outside the list in `loop/driver.py`
+  (`CLAUDE_VALUE_FLAGS`, `CLAUDE_BARE_FLAGS`).
+
+## The entry and what a run may reach
+
+The only prompt a Cadence run gets is `/cadence <the spec's absolute path>` (owner, 2026-10-22); a one-shot gets
+the spec's text. The driver passes it to the command as `HB_AGENT_PROMPT` and keeps the spec's path, sha256 and
+the prompt in `spec`. `--agent-argv` is the argv the command started the agent with: if it gives the agent more
+than that prompt, the run does not count. What the entry does is the result: an exit 1 at activation (F-9) is
+recorded as it is.
+
+After the run, every tool-call input in the transcript is scanned for the benchmark (`harness-benchmark`, this
+repository's path, `golden/`, `answer_key`, `pipetask`, `grader.pyz`) and for any other Cadence checkout (a
+`/cadence*/` path segment; the plugin's own path is masked). A hit is in `isolation.contact`, and the run does
+not count. `golden/` also matches a task path that happens to contain it; that errs on the safe side.
+
+`isolation.auth` is how the agent authenticated (`scripts/host_trial.py --auth`, the driver's `--auth`):
+
+- `proxy`: the cloud host. Outbound HTTPS goes through a proxy that adds the operator's credentials, so the fresh
+  HOME gets no credential file.
+- `oauth-file`: the owner's machine. Claude Code's OAuth credential, `~/.claude/.credentials.json`, is copied into
+  the fresh HOME and nothing else from the operator's HOME is.
+
+In both, `ANTHROPIC_API_KEY` and `ANTHROPIC_AUTH_TOKEN` are not in the agent's environment. Records written
+before 2026-10-23 18:45 UTC (the first batch F run included) have no `auth`; they ran by the proxy route.
 
 The command runs with `PYTHONDONTWRITEBYTECODE=1`. After it, the plugin must still be at its commit with
 no source change; Python bytecode does not count. Otherwise the record says `tree_clean: false` and the

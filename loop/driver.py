@@ -15,13 +15,27 @@ and the git tree of golden/pipeline/pipetask. The grader must be a clean checkou
 writes the batch's postmortem again (every committed postmortem that covers the batch, or a new
 <batch>.md) and scoreboard.md, so the record, the postmortem and the scoreboard go in one commit
 (runs/README.md, "After a merge").
+
+The entry (owner, 2026-10-22): the only prompt a Cadence run gets is `/cadence <spec path>`. A Cadence
+benchmark or live run needs --spec; the driver gives the command HB_AGENT_PROMPT, exactly `/cadence <the
+spec's absolute path>` (a one-shot gets the spec's text), and refuses a command that passes the agent any
+other `-p` text. With --agent-argv (the argv the command started the agent with) a run whose agent got another
+prompt does not count. What the entry does is the result: an exit 1 at activation is recorded, not worked
+around. The record keeps the spec's path, sha256 and the prompt.
+
+After the run the transcript's tool calls are scanned for the benchmark (harness-benchmark, golden/, the
+answer key, the grader) and for another Cadence checkout; a run with a hit does not count, and the hits are
+in isolation.contact.
 """
 
 from __future__ import annotations
 
 import argparse
+import hashlib
 import json
 import os
+import re
+import shlex
 import subprocess
 import sys
 import tempfile
@@ -67,7 +81,8 @@ def plugin_commit(plugin: Path) -> dict:
                           "anyone can fetch")
     url = subprocess.run(["git", "remote", "get-url", remotes[0].split("/")[0]], cwd=plugin,
                          capture_output=True, text=True).stdout.strip()
-    return {"repo": url, "sha": sha, "tree_clean": True, "published_in": remotes}
+    return {"repo": url, "sha": sha, "tree": _git(plugin, "rev-parse", f"{sha}^{{tree}}"), "tree_clean": True,
+            "published_in": remotes}
 
 
 def _source_changes(plugin: Path) -> list[str]:
@@ -168,6 +183,91 @@ def transcript_facts(lines) -> dict:
             "cost": cost, "agent_active_seconds": round(active_ms / 1000, 3) if result else None}
 
 
+CONTACT_MARKERS = ("harness-benchmark", "golden/", "answer_key", "pipetask", "grader.pyz")
+_OTHER_CADENCE = re.compile(r"(?:~|/[\w.-]+)*/cadence[\w.-]*(?=/)")
+
+
+def contact(lines, plugin: Path | None) -> list[str]:
+    """Each tool-call input of the transcript that names the benchmark or a Cadence checkout other than the
+    plugin (the run's own plugin path is not a hit), as `<tool>: <marker>`."""
+    hits: list[str] = []
+    for line in lines:
+        try:
+            event = json.loads(line)
+        except ValueError:
+            continue
+        content = (event.get("message") or {}).get("content") if isinstance(event, dict) else None
+        for item in content if isinstance(content, list) else []:
+            if not isinstance(item, dict) or item.get("type") != "tool_use":
+                continue
+            text = json.dumps(item.get("input"), ensure_ascii=False)
+            if plugin is not None:
+                text = text.replace(str(plugin.resolve()), "<plugin>")
+            found = [m for m in (str(ROOT), *CONTACT_MARKERS) if m in text] + _OTHER_CADENCE.findall(text)
+            hits += [f"{item.get('name')}: {m}" for m in found if f"{item.get('name')}: {m}" not in hits]
+    return hits
+
+
+def agent_prompt(spec: Path, arm: str) -> str:
+    """`/cadence <the spec's absolute path>` for a Cadence arm, the spec's text for a one-shot."""
+    return f"/cadence {spec.resolve()}" if arm == "cadence" else spec.read_text(encoding="utf-8")
+
+
+# The flags a benchmark agent's `claude` call may carry (scripts/host_trial.py): none adds prompt text.
+CLAUDE_VALUE_FLAGS = frozenset({"--model", "--permission-mode", "--output-format", "--plugin-dir", "--add-dir",
+                                "--max-budget-usd"})
+CLAUDE_BARE_FLAGS = frozenset({"--verbose"})
+_SEPARATORS = frozenset({";", "&&", "||", "|", "&", "(", ")", "\n"})
+
+
+def _words(arg: str) -> list[str]:
+    lexer = shlex.shlex(arg, posix=True, punctuation_chars=";&|()")
+    lexer.whitespace_split = True
+    try:
+        return list(lexer)
+    except ValueError:
+        return arg.split()
+
+
+def claude_calls(command: list[str]) -> list[tuple[list[str], bool]]:
+    """Each `claude` call in an argv, also inside a shell-script argument (`bash -c`): (its arguments, whether
+    something is piped into it)."""
+    streams = [list(command)] + [_words(arg) for arg in command if any(c.isspace() or c in ";|&" for c in arg)]
+    calls = []
+    for words in streams:
+        for i, word in enumerate(words):
+            if Path(word).name != "claude":
+                continue
+            rest = []
+            for w in words[i + 1:]:
+                if w in _SEPARATORS:
+                    break
+                rest.append(w)
+            calls.append((rest, i > 0 and words[i - 1] == "|"))
+    return calls
+
+
+def claude_call_problem(args: list[str], prompt: str, piped: bool = False) -> str | None:
+    """Why one `claude` call gives the agent more than `prompt`, or None: `-p <prompt>` once, then only flags that
+    carry no prompt text. A bare -p, a positional argument, stdin and any other flag are refused."""
+    if piped:
+        return "something is piped into claude (stdin is prompt text)"
+    seen, i = 0, 0
+    while i < len(args):
+        word = args[i]
+        if word in ("-p", "--print"):
+            if i + 1 >= len(args) or args[i + 1] != prompt:
+                return f"{word} is not followed by the one prompt"
+            seen, i = seen + 1, i + 2
+        elif word in CLAUDE_VALUE_FLAGS and i + 1 < len(args):
+            i += 2
+        elif word in CLAUDE_BARE_FLAGS:
+            i += 1
+        else:
+            return f"{word[:60]!r} is not an allowed claude argument"
+    return None if seen == 1 else f"the prompt is given {seen} times"
+
+
 def _now() -> str:
     return datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
 
@@ -178,6 +278,41 @@ def _tree_blob(tree: Path, root: Path) -> dict:
         bundle = Path(tmp) / "tree.bundle"
         _git(tree, "bundle", "create", str(bundle), "--all")
         return store.put(bundle, root)
+
+
+def _load_argv(path: Path) -> list[str]:
+    try:
+        value = json.loads(path.read_text(encoding="utf-8"))
+    except (OSError, ValueError):
+        return []
+    return [str(v) for v in value] if isinstance(value, list) else []
+
+
+def _agent_argv_problem(path: Path, prompt: str) -> str | None:
+    argv = _load_argv(path)
+    if not argv or Path(argv[0]).name != "claude":
+        return f"{path} holds no claude argv"
+    return claude_call_problem(argv[1:], prompt)
+
+
+def _check_entry(args: argparse.Namespace, command: list[str]) -> str | None:
+    """The agent prompt (HB_AGENT_PROMPT), or None without --spec; DriverError for a run the rule refuses."""
+    if args.spec is None:
+        if args.arm == "cadence" and args.kind in ("benchmark", "live"):
+            raise DriverError("a Cadence benchmark or live run needs --spec: its only prompt is /cadence <spec path>")
+        return None
+    if not args.spec.is_file():
+        raise DriverError(f"--spec {args.spec} is not a file")
+    prompt = agent_prompt(args.spec, args.arm)
+    for call, piped in claude_calls(command):
+        problem = claude_call_problem(call, prompt, piped)
+        if problem:
+            raise DriverError(f"the command's claude call carries other prompt text ({problem}); the agent's only "
+                              f"prompt is {prompt.splitlines()[0][:80]!r}, from HB_AGENT_PROMPT")
+    if args.arm == "cadence" and args.kind in ("benchmark", "live") and args.agent_argv is None:
+        raise DriverError("a Cadence benchmark or live run needs --agent-argv: the argv the agent was started with "
+                          "shows that its only prompt was the spec")
+    return prompt
 
 
 def main(argv: list[str] | None = None) -> int:
@@ -206,6 +341,13 @@ def main(argv: list[str] | None = None) -> int:
     ap.add_argument("--postmortems", type=Path, help="the postmortems folder (default: beside --runs)")
     ap.add_argument("--scoreboard", type=Path, help="the scoreboard file (default: scoreboard.md beside --runs)")
     ap.add_argument("--store", type=Path, required=True, help="a checkout of the runs-store branch")
+    ap.add_argument("--spec", type=Path, help="the spec, the run's only input: `/cadence <path>` for a Cadence "
+                    "arm, its text for a one-shot (given to the command as HB_AGENT_PROMPT)")
+    ap.add_argument("--agent-argv", type=Path, help="JSON list: the argv the command started the agent with")
+    ap.add_argument("--isolation-method", default="host", help="host, or container:<image id>")
+    ap.add_argument("--auth", choices=["proxy", "oauth-file"], default="proxy",
+                    help="how the agent authenticates: proxy (the host's HTTPS proxy adds the credentials; HOME gets "
+                    "none) or oauth-file (the operator's ~/.claude/.credentials.json, copied into the fresh HOME)")
     ap.add_argument("command", nargs=argparse.REMAINDER)
     args = ap.parse_args(argv)
     command = args.command[1:] if args.command[:1] == ["--"] else args.command
@@ -231,18 +373,25 @@ def main(argv: list[str] | None = None) -> int:
         if others:
             raise DriverError(f"the run could read another Cadence checkout: {', '.join(others)}; move it, or run "
                               "with --fresh-home and a --cwd that holds only the task")
+        prompt = _check_entry(args, command)
+        cwd_contents = sorted(c.name + ("/" if c.is_dir() else "") for c in args.cwd.iterdir()) \
+            if args.cwd.is_dir() else []
     except DriverError as exc:
         print(f"refused: {exc}", file=sys.stderr)
         return 2
 
-    env = {**os.environ, "PYTHONDONTWRITEBYTECODE": "1", **({"HOME": str(home)} if args.fresh_home else {})}
+    env = {**os.environ, "PYTHONDONTWRITEBYTECODE": "1", **({"HOME": str(home)} if args.fresh_home else {}),
+           **({"HB_AGENT_PROMPT": prompt} if prompt is not None else {})}
     started, t0 = _now(), time.monotonic()
     exit_code = subprocess.run(command, cwd=args.cwd, env=env).returncode
     ended, run_wall = _now(), round(time.monotonic() - t0, 3)
     if cadence and not plugin_unchanged(args.plugin_dir, cadence["sha"]):
         cadence["tree_clean"] = False  # the run changed its own plugin tree
 
-    facts = transcript_facts(args.transcript.read_text(encoding="utf-8", errors="replace").splitlines()) \
+    lines = args.transcript.read_text(encoding="utf-8", errors="replace").splitlines() \
+        if args.transcript.exists() else []
+    hits = contact(lines, args.plugin_dir)
+    facts = transcript_facts(lines) \
         if args.transcript.exists() else {"models_served": None, "session_id": None, "claude_version": None,
                                           "cost": {"list_usd": None, "reported_usd": None}}
     stop = {"block": None, "reason": None}
@@ -257,10 +406,16 @@ def main(argv: list[str] | None = None) -> int:
         counts = {"counts": False, "why": "stub: a session's own probe, not graded"}
     if cadence and not cadence["tree_clean"]:
         counts = {"counts": False, "why": "the plugin tree changed during the run"}
+    elif hits:
+        counts = {"counts": False, "why": f"the transcript touched the benchmark or another checkout: {hits[0]}"}
+    elif prompt is not None and args.agent_argv and (argv_problem := _agent_argv_problem(args.agent_argv, prompt)):
+        counts = {"counts": False, "why": f"the agent's argv: {argv_problem}"}
     rec = {
         "schema": 1, "run_id": args.run_id, "kind": args.kind, "batch": args.batch,
         "provenance": {"source": "driver", "evidence": []}, "task": args.task, "request_id": args.request_id,
         "arm": args.arm, "cadence": cadence, "model_requested": args.model, **facts, "command": command,
+        "spec": None if args.spec is None else {"path": str(args.spec.resolve()), "prompt": prompt,
+                                                "sha256": hashlib.sha256(args.spec.read_bytes()).hexdigest()},
         "started_at": started, "ended_at": ended, "exit_code": exit_code, "stop_point": stop,
         "transcript": store.put(args.transcript, args.store) if args.transcript.exists()
         else store.missing("the command wrote no transcript"),
@@ -269,7 +424,8 @@ def main(argv: list[str] | None = None) -> int:
         "timing": {"agent_wall_seconds": agent_wall, "run_wall_seconds": run_wall, "agent_active_seconds": active,
                    "blocks": blocks.peer_time(args.context) if args.context else None},
         "isolation": {"cwd": str(args.cwd.resolve()), "home": str(home), "fresh_home": bool(args.fresh_home),
-                      "other_cadence_checkouts": others},
+                      "other_cadence_checkouts": others, "method": args.isolation_method, "auth": args.auth, "contact": hits,
+                      "cwd_contents": cwd_contents},
     }
     record.write_record(args.runs, rec)
     if grader:

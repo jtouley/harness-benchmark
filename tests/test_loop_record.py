@@ -6,6 +6,8 @@ from __future__ import annotations
 import gzip
 import hashlib
 import json
+import shlex
+import shutil
 import subprocess
 import sys
 from pathlib import Path
@@ -414,6 +416,100 @@ def test_the_record_has_wall_agent_and_active_time(tmp_path, plugin):
     assert t["blocks"] is None
 
 
+# --- the entry: the only prompt a Cadence run gets is `/cadence <spec path>` (owner, 2026-10-22)
+
+def _spec(tmp_path) -> Path:
+    spec = tmp_path / "spec" / "spec.md"
+    spec.parent.mkdir(exist_ok=True)
+    spec.write_text("Build the thing.\n\n1. It works.\n")
+    return spec
+
+
+def test_a_cadence_benchmark_run_without_a_spec_is_refused(tmp_path, plugin):
+    rc, run = _drive(tmp_path, plugin, extra=["--kind", "benchmark"], script=f"touch {tmp_path}/ran")
+    assert rc == 2 and not run.exists() and not (tmp_path / "ran").exists()
+
+
+def test_a_command_that_gives_the_agent_other_prompt_text_is_refused(tmp_path, plugin):
+    spec = _spec(tmp_path)
+    rc, run = _drive(tmp_path, plugin, extra=["--kind", "benchmark", "--spec", str(spec)],
+                     script=f"claude -p 'Use the cadence skill. /cadence {spec}' ; touch {tmp_path}/ran")
+    assert rc == 2 and not run.exists() and not (tmp_path / "ran").exists()
+
+
+def test_the_command_gets_exactly_slash_cadence_and_the_spec_path_and_the_record_has_the_spec(tmp_path, plugin):
+    spec = _spec(tmp_path)
+    rc, run = _drive(tmp_path, plugin, extra=["--kind", "benchmark", "--spec", str(spec),
+                                              "--agent-argv", str(tmp_path / "argv.json")],
+                     script=f'printf %s "$HB_AGENT_PROMPT" > {tmp_path}/prompt.txt')
+    assert rc == 0
+    assert (tmp_path / "prompt.txt").read_text() == f"/cadence {spec.resolve()}"
+    rec = json.loads((run / "record.json").read_text())
+    assert record.validate(rec, record.RECORD_SCHEMA) == []
+    assert rec["spec"] == {"path": str(spec.resolve()), "sha256": hashlib.sha256(spec.read_bytes()).hexdigest(),
+                           "prompt": f"/cadence {spec.resolve()}"}
+
+
+def test_a_one_shot_gets_the_spec_text_as_its_prompt(tmp_path, plugin):
+    spec = _spec(tmp_path)
+    rc, run = _drive(tmp_path, plugin, extra=["--kind", "benchmark", "--arm", "one-shot", "--spec", str(spec)],
+                     script=f'printf %s "$HB_AGENT_PROMPT" > {tmp_path}/prompt.txt')
+    assert rc == 0 and (tmp_path / "prompt.txt").read_text() == spec.read_text()
+
+
+def test_an_agent_that_ran_with_another_prompt_does_not_count(tmp_path, plugin):
+    spec = _spec(tmp_path)
+    argv_file = tmp_path / "trial" / "agent-argv.json"
+    script = f"""echo '["claude", "-p", "/cadence {spec.resolve()} and be quick"]' > {argv_file}"""
+    rc, run = _drive(tmp_path, plugin, extra=["--kind", "benchmark", "--spec", str(spec),
+                                              "--agent-argv", str(argv_file)], script=script)
+    assert rc == 0
+    counts = json.loads((run / "record.json").read_text())["counts"]
+    assert counts["counts"] is False and "the agent's argv" in counts["why"]
+
+
+def test_an_exit_1_at_entry_is_the_recorded_result(tmp_path, plugin):
+    """Until /cadence <spec path> works (F-9), the run records what the entry did: the driver adds nothing."""
+    spec = _spec(tmp_path)
+    stop = tmp_path / "trial" / "stop.json"
+    script = f"""echo '{{"block": "A1", "reason": "Cannot determine task ID"}}' > {stop}; exit 1"""
+    rc, run = _drive(tmp_path, plugin, extra=["--kind", "benchmark", "--spec", str(spec), "--stop-point-file",
+                                              str(stop), "--agent-argv", str(tmp_path / "argv.json")], script=script)
+    rec = json.loads((run / "record.json").read_text())
+    assert rc == 0 and rec["exit_code"] == 1
+    assert rec["stop_point"] == {"block": "A1", "reason": "Cannot determine task ID"}
+
+
+@pytest.mark.parametrize("tool_input, hit", [
+    ({"file_path": "/x/harness-benchmark/golden/pipeline/key/answer_key.json"}, "harness-benchmark"),
+    ({"command": "cat ../golden/pipeline/P1/reference/oracle_map.yml"}, "golden/"),
+    ({"pattern": "answer", "path": "/srv/pipetask"}, "pipetask"),
+    ({"command": "ls /home/user/cadence-main/scripts"}, "/cadence-main"),
+])
+def test_a_transcript_that_touched_the_benchmark_or_another_checkout_does_not_count(tmp_path, plugin, tool_input, hit):
+    event = {"type": "assistant", "message": {"model": "claude-haiku-5-5", "content": [
+        {"type": "tool_use", "name": "Bash", "input": tool_input}]}}
+    script = f"printf '%s\\n' '{json.dumps(event)}' >> {tmp_path}/trial/transcript.jsonl"
+    rc, run = _drive(tmp_path, plugin, script=script)
+    rec = json.loads((run / "record.json").read_text())
+    assert rc == 0 and rec["counts"]["counts"] is False
+    assert any(hit in h for h in rec["isolation"]["contact"]), rec["isolation"]["contact"]
+    assert rec["isolation"]["method"] == "host"
+
+
+def test_a_clean_transcript_records_no_contact():
+    assert driver.contact([json.dumps(e) for e in TRANSCRIPT], plugin=Path("/srv/plugin-c458a46")) == []
+
+
+def test_the_isolation_block_lists_what_the_cwd_held_before_the_run(tmp_path, plugin):
+    work = tmp_path / "work"
+    (work / "repo").mkdir(parents=True)
+    (work / "spec").mkdir()
+    rc, run = _drive(tmp_path, plugin, extra=["--cwd", str(work)], script=f"touch {work}/made-by-the-run")
+    iso = json.loads((run / "record.json").read_text())["isolation"]
+    assert rc == 0 and iso["cwd_contents"] == ["repo/", "spec/"]
+
+
 @pytest.mark.parametrize("kind, counts", [("benchmark", True), ("live", True), ("stub", False)])
 def test_whether_a_clean_run_counts_is_a_function_of_its_kind(tmp_path, plugin, kind, counts):
     """A stub is a probe the session wrote, not a graded run (review of #71); the other kinds may count."""
@@ -451,3 +547,124 @@ def test_the_check_refuses_a_counting_backfilled_record_without_a_grader_score(t
                                        "error": None, "source": "backfill", "graded_at": None})
     assert check.validate_tree(runs) == [
         "20261015-ungraded/record.json: a backfilled record counts only with a score from the harness-benchmark grader"]
+
+
+# --- review of #73: every way a claude call can carry other prompt text is refused
+
+@pytest.mark.parametrize("call", [
+    "echo hi | claude -p",                           # the prompt from stdin
+    "claude 'do it'",                                # a positional prompt
+    "claude -p {prompt} 'and more'",                 # a second, positional prompt
+    "claude -p {prompt} --append-system-prompt be-quick",  # extra system prompt text
+    "claude --print",                                # a bare print flag
+])
+def test_a_claude_call_with_any_other_prompt_text_is_refused(tmp_path, plugin, call):
+    spec = _spec(tmp_path)
+    prompt = shlex.quote(f"/cadence {spec.resolve()}")
+    rc, run = _drive(tmp_path, plugin, extra=["--kind", "benchmark", "--spec", str(spec), "--agent-argv",
+                                              str(tmp_path / "argv.json")],
+                     script=f"{call.format(prompt=prompt)}; touch {tmp_path}/ran")
+    assert rc == 2 and not run.exists() and not (tmp_path / "ran").exists()
+
+
+def test_a_cadence_benchmark_run_must_report_the_agents_argv(tmp_path, plugin):
+    spec = _spec(tmp_path)
+    rc, run = _drive(tmp_path, plugin, extra=["--kind", "benchmark", "--spec", str(spec)], script=f"touch {tmp_path}/ran")
+    assert rc == 2 and not run.exists() and not (tmp_path / "ran").exists()
+
+
+@pytest.mark.parametrize("argv, counts", [
+    (["claude", "-p", "{prompt}", "--model", "m", "--output-format", "stream-json", "--verbose"], True),
+    (["claude", "-p", "{prompt}", "extra"], False),
+    (["claude", "-p", "{prompt}", "--append-system-prompt", "x"], False),
+    ([], False),                                     # no argv written: nothing shows what the agent got
+])
+def test_the_agents_reported_argv_must_be_the_one_prompt_and_known_flags(tmp_path, plugin, argv, counts):
+    spec = _spec(tmp_path)
+    prompt = f"/cadence {spec.resolve()}"
+    argv_file = tmp_path / "trial" / "agent-argv.json"
+    write = f"echo {shlex.quote(json.dumps([a.format(prompt=prompt) for a in argv]))} > {argv_file}" if argv else "true"
+    rc, run = _drive(tmp_path, plugin, extra=["--kind", "benchmark", "--spec", str(spec), "--agent-argv",
+                                              str(argv_file)], script=write)
+    assert rc == 0 and json.loads((run / "record.json").read_text())["counts"]["counts"] is counts
+
+
+@pytest.mark.parametrize("auth", ["proxy", "oauth-file"])
+def test_the_isolation_block_names_the_auth_route(tmp_path, plugin, auth):
+    rc, run = _drive(tmp_path, plugin, extra=["--auth", auth])
+    assert rc == 0 and json.loads((run / "record.json").read_text())["isolation"]["auth"] == auth
+
+
+def test_the_record_keeps_the_plugins_git_tree_as_well_as_its_commit(tmp_path, plugin):
+    """The fingerprint guard and the trace match a plugin by its tree (coordinator, 2026-10-23)."""
+    rc, run = _drive(tmp_path, plugin)
+    cadence = json.loads((run / "record.json").read_text())["cadence"]
+    assert rc == 0 and cadence["tree"] == _git(plugin, "rev-parse", "HEAD^{tree}")
+
+
+# --- review of #73: a regrade needs a traceable cause, and a batch's scores its pinned grader
+
+def _grader_repo(tmp_path) -> tuple[Path, str, str, str]:
+    """A repository with two grader commits: (repo, first commit, its grader tree, second commit)."""
+    repo = tmp_path / "hb"
+    (repo / "golden/pipeline/pipetask").mkdir(parents=True)
+    _git(repo, "init", "-q", "-b", "main")
+    (repo / "golden/pipeline/pipetask/trial.py").write_text("v = 1\n")
+    _git(repo, "add", "-A")
+    _git(repo, "-c", "user.name=t", "-c", "user.email=t@t", "commit", "-qm", "grader 1")
+    first = _git(repo, "rev-parse", "HEAD")
+    (repo / "golden/pipeline/pipetask/trial.py").write_text("v = 2\n")
+    _git(repo, "-c", "user.name=t", "-c", "user.email=t@t", "commit", "-qam", "grader 2")
+    return repo, first, _git(repo, "rev-parse", f"{first}:golden/pipeline/pipetask"), _git(repo, "rev-parse", "HEAD")
+
+
+def _score(commit: str, tree: str, source: str, passed: int, note: str | None = None) -> dict:
+    row = {"run_id": "20261023-P1-oneshot-haiku-1", "grader": {"repo": "jtouley/harness-benchmark",
+           "commit": commit, "tree": tree}, "reward": passed / 7, "passed": passed, "total": 7, "idempotent": True,
+           "stream_ok": True, "error": None, "source": source, "graded_at": None}
+    return {**row, "note": note} if note else row
+
+
+def _run_with(repo: Path, *scores: dict, batch: str = "2026-10-23-batch-f") -> Path:
+    runs = repo / "runs"
+    run = runs / "20261023-P1-oneshot-haiku-1"
+    run.mkdir(parents=True)
+    (run / "record.json").write_text(json.dumps(minimal("20261023-P1-oneshot-haiku-1", batch=batch)))
+    (run / "scores.jsonl").write_text("".join(json.dumps(s) + "\n" for s in scores))
+    return runs
+
+
+def test_a_forged_regrade_is_refused(tmp_path):
+    repo, first, tree1, _ = _grader_repo(tmp_path)
+    runs = _run_with(repo, _score(first, tree1, "driver", 0),
+                     _score("f" * 40, "f" * 40, "regrade", 7, "looked wrong"))
+    problems = check.validate_tree(runs, repo)
+    assert any("not a commit of this repository's history" in p for p in problems), problems
+
+
+def test_a_regrade_on_the_same_tree_needs_a_note_naming_a_grader_or_host_trial_commit(tmp_path):
+    repo, first, tree1, second = _grader_repo(tmp_path)
+    vague = _run_with(repo, _score(first, tree1, "driver", 0), _score(first, tree1, "regrade", 7, "looked wrong"))
+    assert any("regrade without a traceable cause" in p for p in check.validate_tree(vague, repo))
+    shutil.rmtree(vague)
+    named = _run_with(repo, _score(first, tree1, "driver", 0),
+                      _score(first, tree1, "regrade", 5, f"the grader fix {second[:7]}"))
+    assert check.validate_tree(named, repo) == []
+
+
+def test_a_regrade_on_a_new_grader_tree_is_its_own_cause(tmp_path):
+    repo, first, tree1, second = _grader_repo(tmp_path)
+    tree2 = _git(repo, "rev-parse", f"{second}:golden/pipeline/pipetask")
+    runs = _run_with(repo, _score(first, tree1, "driver", 0), _score(second, tree2, "regrade", 5))
+    assert check.validate_tree(runs, repo) == []
+
+
+def test_a_counted_score_must_be_on_the_batch_pin_or_a_later_grader(tmp_path):
+    repo, first, tree1, second = _grader_repo(tmp_path)
+    tree2 = _git(repo, "rev-parse", f"{second}:golden/pipeline/pipetask")
+    (repo / "batches").mkdir()
+    (repo / "batches" / "2026-10-23-batch-f.json").write_text(json.dumps({"grader_commit": second}))
+    early = _run_with(repo, _score(first, tree1, "driver", 5))
+    assert any("not the batch's pinned grader" in p for p in check.validate_tree(early, repo))
+    shutil.rmtree(early)
+    assert check.validate_tree(_run_with(repo, _score(second, tree2, "driver", 5)), repo) == []

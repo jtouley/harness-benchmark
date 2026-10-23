@@ -26,6 +26,7 @@
       "properties": {
         "repo": {"type": "string"},
         "sha": {"type": "string", "pattern": "^[0-9a-f]{7,40}$"},
+        "tree": {"$comment": "the plugin commit's git tree (loop.driver), for the fingerprint guard and the trace", "type": "string", "pattern": "^[0-9a-f]{40}$"},
         "tree_clean": {"type": ["boolean", "null"]},
         "published_in": {"type": "array", "items": {"type": "string"}}
       }
@@ -74,7 +75,20 @@
         "cwd": {"type": "string"},
         "home": {"type": "string"},
         "fresh_home": {"type": "boolean"},
-        "other_cadence_checkouts": {"type": "array", "items": {"type": "string"}}
+        "other_cadence_checkouts": {"type": "array", "items": {"type": "string"}},
+        "method": {"$comment": "host, or container:<image id>", "type": "string"},
+        "auth": {"$comment": "how the agent authenticated: proxy (the host's proxy adds the credentials) or oauth-file (the operator's OAuth file copied into the fresh HOME)", "enum": ["proxy", "oauth-file"]},
+        "cwd_contents": {"$comment": "the top-level entries of cwd before the run (a folder ends with /)", "type": "array", "items": {"type": "string"}},
+        "contact": {"$comment": "tool calls of the transcript that named the benchmark or another Cadence checkout (loop.driver.contact)", "type": "array", "items": {"type": "string"}}
+      }
+    },
+    "spec": {
+      "$comment": "The run's only input (loop.driver --spec): its path and sha256, and the exact prompt the agent got (/cadence <path> for a Cadence arm, the spec's text for a one-shot). Absent in records before 2026-10-23.",
+      "type": ["object", "null"], "additionalProperties": false, "required": ["path", "sha256", "prompt"],
+      "properties": {
+        "path": {"type": "string"},
+        "sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+        "prompt": {"type": "string"}
       }
     },
     "counts": {
