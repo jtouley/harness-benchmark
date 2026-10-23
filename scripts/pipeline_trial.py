@@ -1,10 +1,12 @@
-"""Run pipeline-family trials (P1, P2, P3) on the isolated runner, and summarize them.
+"""Run pipeline-family trials (P1, P2, P3, and the hold-out P4) on the isolated runner, and summarize them.
 
     # one trial: assemble the starting repository, bundle replay.pyz and grader.pyz, run the runner
     python scripts/pipeline_trial.py run P1 --model claude-haiku-5-5 --out results/runs/pipeline/P1-haiku-1
     # the smoke trial (the reference, no agent) and the negative control (the skeleton, no agent)
     python scripts/pipeline_trial.py run P1 --mode reference --out results/runs/pipeline/P1-ref-1
     python scripts/pipeline_trial.py run P1 --mode skeleton --out results/runs/pipeline/P1-skel-1
+    # the hold-out (golden/pipeline/README.md): refused unless --holdout says this is the owner's final check
+    python scripts/pipeline_trial.py run P4 --holdout --model claude-haiku-5-5 --out results/runs/pipeline/P4-haiku-1
     # grade a run's saved working tree again (same image and runner, no agent), e.g. after a grader fix
     python scripts/pipeline_trial.py run P1 --mode regrade --from results/runs/pipeline/P1-opus-1 \
         --out results/runs/pipeline/P1-opus-1-regrade
@@ -46,6 +48,14 @@ CAPS = ROOT / "runner" / "pipeline" / "caps.json"
 PRICING = ROOT / "pricing.json"
 RUN_TRIAL = ROOT / "runner" / "run_trial.sh"
 NO_AGENT = "#!/usr/bin/env bash\n# No agent: the repository is graded as delivered.\nexit 0\n"
+TASKS = ("P1", "P2", "P3", "P4")
+# The hold-out (golden/pipeline/README.md): it runs only when the owner calls for the final check, so a trial of
+# it is refused unless --holdout says this is that check. It is batch only: its own grader, no replay.
+HOLDOUT_TASKS = ("P4",)
+
+
+class HoldoutError(Exception):
+    pass
 
 API_ERROR = re.compile(r"API Error|Request timed out|overloaded|Connection error|ECONNRESET|socket hang up",
                        re.IGNORECASE)
@@ -290,7 +300,10 @@ def repo_from_saved(saved: Path, out: Path) -> Path:
 
 
 def run_trial(task: str, out: Path, *, mode: str, model: str | None, plugin_dir: Path | None,
-              replay_seed: int, caps: dict, regrade_of: Path | None = None) -> int:
+              replay_seed: int, caps: dict, regrade_of: Path | None = None, holdout: bool = False) -> int:
+    if task in HOLDOUT_TASKS and not holdout:
+        raise HoldoutError(f"{task} is the hold-out task: it runs only when the owner calls for the final check "
+                           f"(pass --holdout for that run; golden/pipeline/README.md)")
     sys.path.insert(0, str(PIPELINE))
     from pipetask import assemble, bundle  # noqa: PLC0415 - builder code, hidden from arms
 
@@ -310,10 +323,14 @@ def run_trial(task: str, out: Path, *, mode: str, model: str | None, plugin_dir:
         else:
             repo = assemble.assemble(task, tmp_path / "repo", with_reference=mode == "reference")
         dist = tmp_path / "dist"
-        bundle.bundle(dist)
+        if task in HOLDOUT_TASKS:
+            bundle.bundle_holdout(dist)
+            grader = [str(dist / "grader-p4.pyz")]  # batch only: no replay service
+        else:
+            bundle.bundle(dist)
+            grader = [str(dist / "grader.pyz"), "--replay", str(dist / "replay.pyz"), "--replay-seed", str(replay_seed)]
         cmd = [str(RUN_TRIAL), "--repo", str(repo), "--prompt", str(PIPELINE / task / "prompt.md"),
-               "--grader", str(dist / "grader.pyz"), "--replay", str(dist / "replay.pyz"),
-               "--replay-seed", str(replay_seed), "--out", str(out), "--image", task_caps["image"],
+               "--grader", *grader, "--out", str(out), "--image", task_caps["image"],
                "--agent-timeout", str(agent_timeout),
                "--grader-timeout", str(task_caps["grader_timeout"])]
         grader_args = ["--make-user", "agent", "--make-env-file", "/opt/hb/toolchain.env",
@@ -335,12 +352,14 @@ def run_trial(task: str, out: Path, *, mode: str, model: str | None, plugin_dir:
             cmd += ["--agent-cmd", str(stub), "--model", "none"]
             env.pop("ANTHROPIC_API_KEY", None)
         meta = {"task": task, "mode": mode, "model": model if mode == "agent" else None,
+                "holdout": task in HOLDOUT_TASKS,
                 "arm": plugin_dir.name if harness_agent else "one-shot" if mode == "agent" else mode,
                 "image": task_caps["image"], "agent_timeout": agent_timeout or None,
                 "harness": harness, "backstop_seconds": backstop_seconds or None, "backstop_usd": backstop_usd,
                 "backstop_source": backstop_source,
                 "grader_timeout": task_caps["grader_timeout"], "grader_deadline": task_caps.get("grader_deadline"),
-                "replay_seed": replay_seed, "regrade_of": str(regrade_of) if regrade_of else None,
+                "replay_seed": None if task in HOLDOUT_TASKS else replay_seed,
+                "regrade_of": str(regrade_of) if regrade_of else None,
                 "started_at": datetime.now().astimezone().isoformat(timespec="seconds")}
         rc = subprocess.call(cmd, env=env)
     out.mkdir(parents=True, exist_ok=True)
@@ -367,7 +386,9 @@ def main(argv: list[str] | None = None) -> int:
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     sub = ap.add_subparsers(dest="cmd", required=True)
     r = sub.add_parser("run", help="run one trial")
-    r.add_argument("task", choices=["P1", "P2", "P3"])
+    r.add_argument("task", choices=list(TASKS))
+    r.add_argument("--holdout", action="store_true",
+                   help="this trial is the owner's final check on the hold-out task (P4); without it P4 is refused")
     r.add_argument("--out", type=Path, required=True)
     r.add_argument("--mode", choices=["agent", "reference", "skeleton", "regrade"], default="agent")
     r.add_argument("--from", dest="regrade_of", type=Path, help="regrade: the run whose repo/ is graded")
@@ -375,7 +396,7 @@ def main(argv: list[str] | None = None) -> int:
     r.add_argument("--plugin-dir", type=Path)
     r.add_argument("--replay-seed", type=int, default=0, help="the dev replay's seed (the grading seed is 1)")
     c = sub.add_parser("caps", help="set a task's grader caps from its reference trials")
-    c.add_argument("task", choices=["P1", "P2", "P3"])
+    c.add_argument("task", choices=list(TASKS))
     c.add_argument("runs", type=Path, nargs="+")
     v = sub.add_parser("void", help="mark a run void (lost to a harness defect, not a result)")
     v.add_argument("run", type=Path)
@@ -403,9 +424,13 @@ def main(argv: list[str] | None = None) -> int:
             ap.error("--model is required for an agent trial")
         if args.mode == "regrade" and not (args.regrade_of and (args.regrade_of / "repo").is_dir()):
             ap.error("--mode regrade needs --from RUN with a repo/ folder")
-        return run_trial(args.task, args.out, mode=args.mode, model=args.model, plugin_dir=args.plugin_dir,
-                         replay_seed=args.replay_seed, caps=caps,
-                         regrade_of=args.regrade_of.resolve() if args.regrade_of else None)
+        try:
+            return run_trial(args.task, args.out, mode=args.mode, model=args.model, plugin_dir=args.plugin_dir,
+                             replay_seed=args.replay_seed, caps=caps,
+                             regrade_of=args.regrade_of.resolve() if args.regrade_of else None, holdout=args.holdout)
+        except HoldoutError as exc:
+            print(f"refused: {exc}", file=sys.stderr)
+            return 2
     if args.cmd == "caps":
         grades = [{**_load(run / "grade.json"), "grader_seconds": _load(run / "timing.json")["grader_seconds"]}
                   for run in args.runs]

@@ -1,6 +1,7 @@
 """Build the two single-file executables a trial container needs (Python zipapps).
 
-    python -m pipetask.bundle --out dist/
+    python -m pipetask.bundle --out dist/            # replay.pyz and grader.pyz (P1, P2, P3)
+    python -m pipetask.bundle --out dist/ --task P4  # grader-p4.pyz (the hold-out: batch only, no replay)
 
 - `replay.pyz`: the replay server with the frozen capture inside. Stdlib only. The runner starts it as
   root before the agent, from a path the agent cannot read, so the arm can develop against
@@ -13,6 +14,8 @@
   itself: the dev replay server must be stopped first, because the grader serves the grading seed on
   the same port. It needs duckdb and pyyaml, so it re-runs itself under
   `uv run --with duckdb==... --with pyyaml==...` when they are missing.
+- `grader-p4.pyz`: the same for P4, the hold-out (`pipetask.p4trial` with the P4 key inside, no capture
+  and no replay). The runner runs it the same way; `scripts/pipeline_trial.py run P4 --holdout` builds it.
 """
 
 from __future__ import annotations
@@ -26,6 +29,7 @@ from pathlib import Path
 HERE = Path(__file__).resolve().parent.parent
 CAPTURE = HERE / "data" / "capture" / "recentchange.jsonl.gz"
 KEY = HERE / "key" / "answer_key.json"
+KEY_P4 = HERE / "P4" / "key" / "answer_key.json"
 GRADER_DEPS = ("duckdb==1.5.6", "pyyaml==6.0.3")
 
 REPLAY_MAIN = """\
@@ -65,6 +69,28 @@ with tempfile.TemporaryDirectory() as tmp:
 """
 
 
+GRADER_P4_MAIN = """\
+import os, sys, json, zipfile, subprocess
+DEPS = {deps!r}
+try:
+    import duckdb, yaml  # noqa: F401
+except ImportError:
+    if os.environ.get("HB_GRADER_REEXEC"):
+        raise
+    cmd = ["uv", "run", "--no-project", "--python", "3.12"]
+    for dep in DEPS:
+        cmd += ["--with", dep]
+    env = dict(os.environ, HB_GRADER_REEXEC="1")
+    sys.exit(subprocess.call(cmd + ["python", sys.argv[0], *sys.argv[1:]], env=env))
+from pipetask import p4trial
+if len(sys.argv) < 2:
+    sys.exit("usage: grader-p4.pyz REPO [trial options]")
+with zipfile.ZipFile(sys.argv[0]) as zf:
+    key = json.loads(zf.read("answer_key.json"))  # in memory only: make runs while we do
+p4trial.main(["--repo", sys.argv[1], *sys.argv[2:]], key=key)
+"""
+
+
 def _build(out: Path, modules: list[str], data: list[Path], main: str) -> Path:
     with tempfile.TemporaryDirectory() as tmp:
         root = Path(tmp)
@@ -88,11 +114,22 @@ def bundle(out_dir: Path) -> list[Path]:
     ]
 
 
+def bundle_holdout(out_dir: Path) -> list[Path]:
+    """grader-p4.pyz: the P4 grader with the P4 key inside. trial.py comes along for the reset, the mart
+    digest and the make runner it shares with P1 to P3 (and its imports, replay and schedule)."""
+    out_dir.mkdir(parents=True, exist_ok=True)
+    return [_build(out_dir / "grader-p4.pyz", ["schedule.py", "replay.py", "oracle.py", "grade.py", "trial.py",
+                                               "p4grade.py", "p4trial.py"], [KEY_P4],
+                   GRADER_P4_MAIN.format(deps=GRADER_DEPS))]
+
+
 def main(argv: list[str] | None = None) -> None:
-    ap = argparse.ArgumentParser(description="Build replay.pyz and grader.pyz.")
+    ap = argparse.ArgumentParser(description="Build replay.pyz and grader.pyz, or grader-p4.pyz for the hold-out.")
     ap.add_argument("--out", type=Path, required=True)
+    ap.add_argument("--task", choices=["P1", "P2", "P3", "P4"], default="P1",
+                    help="P4 builds grader-p4.pyz; any other task builds replay.pyz and grader.pyz")
     args = ap.parse_args(argv)
-    for path in bundle(args.out):
+    for path in (bundle_holdout(args.out) if args.task == "P4" else bundle(args.out)):
         print(path)
 
 

@@ -16,6 +16,19 @@ every counted run and every cited run, and `python -m loop.postmortem --run <run
 `python -m loop.check --base origin/main` validates every record and score and refuses a change that
 edits or deletes a record or rewrites a score. Run it before pushing a change to `runs/`.
 
+## After a merge
+
+Two green pull requests can make a red main: #71 added findings while #72 changed the postmortem
+generator, each was green on its own base, and main was red on the committed postmortems once both
+were in. So two rules hold for this repository:
+
+- After every merge, the reviewer runs `scripts/ci_local.sh` on `origin/main`, and a red main is fixed
+  before the next merge.
+- A pull request that touches `findings.jsonl`, `citations.json`, `runs/` or the generators under
+  `loop/` regenerates `postmortems/` (`python -m loop.postmortem <batch>`) and `scoreboard.md`
+  (`python -m loop.scoreboard --out scoreboard.md`) in the same commit, so the committed files are
+  what the generators write at that commit.
+
 ## Run ids
 
 `YYYYMMDD-words`: the run's start date (UTC), then dash-separated letters and digits, for example

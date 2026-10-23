@@ -49,6 +49,11 @@
     "P3-ref-1",
     "P3-ref-2"
    ]
+  },
+  "P4": {
+   "image": "harness-benchmark/runner-pipeline:py",
+   "grader_timeout": 900,
+   "note": "The hold-out (golden/pipeline/README.md): pipeline_trial.py refuses it without --holdout, a reference run included (`run P4 --holdout --mode reference`). Batch only (grader-p4.pyz, no replay). Not measured yet, so no grader_deadline: the grader's own build timeout applies; `pipeline_trial.py caps P4 <reference runs>` sets one from its reference trials."
   }
  },
  "harness_backstop": {
