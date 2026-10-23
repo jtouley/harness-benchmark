@@ -78,7 +78,8 @@ def plugin_commit(plugin: Path) -> dict:
                           "anyone can fetch")
     url = subprocess.run(["git", "remote", "get-url", remotes[0].split("/")[0]], cwd=plugin,
                          capture_output=True, text=True).stdout.strip()
-    return {"repo": url, "sha": sha, "tree_clean": True, "published_in": remotes}
+    return {"repo": url, "sha": sha, "tree": _git(plugin, "rev-parse", f"{sha}^{{tree}}"), "tree_clean": True,
+            "published_in": remotes}
 
 
 def _source_changes(plugin: Path) -> list[str]:
