@@ -25,7 +25,7 @@ import json
 import sys
 from pathlib import Path
 
-from loop import findings, record, scoreboard, trace
+from loop import findings, record, scoreboard, speed, trace
 
 ROOT = Path(__file__).resolve().parents[1]
 POSTMORTEMS = ROOT / "postmortems"
@@ -129,28 +129,24 @@ def generate(batch: str | list[str], runs: Path, notes: dict, findings_path: Pat
 
 
 def _speed(rows: list[tuple[dict, dict | None]], runs: Path) -> list[str]:
-    """Agent time per run against the one-shot of the same task and model, the slowest runs, and time per
-    block when the record has it."""
+    """Each Cadence run's agent time against the one-shot of the same task and model (loop.speed, the one
+    code path), the runs above the stretch goal, the slowest runs, and time per block when the record has it."""
+    ids = [rec["run_id"] for rec, _ in rows]
+    speed_rows = speed.rows(runs, run_ids=ids)
     out = ["## Speed", "",
-           f"Agent session per run, and its ratio to the mean one-shot session of the same task and model "
-           f"(stretch goal: at most {scoreboard.STRETCH_RATIO}). A run that stopped before the end with no check "
-           f"passed has no ratio: its time says nothing about a finished pipeline.", "",
-           "| Run | Task | Model | Agent min | One-shot min | Ratio | Stop |", "|---|---|---|---|---|---|---|"]
-    timed = []
-    for rec, _ in rows:
-        seconds = rec["timing"]["agent_wall_seconds"]
-        base = scoreboard.oneshot_seconds(runs, rec["task"], rec["model_requested"])
-        ratio = scoreboard.time_ratio(runs, rec)
-        ratio_text = f"{ratio:.2f}" if ratio is not None else (
-            "— (stopped early)" if seconds is not None and base and not scoreboard.reached_end(runs, rec) else "—")
-        if seconds is not None:
-            timed.append((seconds, rec["run_id"]))
-        out.append(f"| `{rec['run_id']}` | {rec['task']} | {rec['model_requested']} | "
-                   f"{f'{seconds / 60:.1f}' if seconds is not None else 'not recorded'} | "
-                   f"{f'{base / 60:.1f}' if base else '—'} | {ratio_text} | "
-                   f"{rec['stop_point']['block'] or '—'} |")
+           f"Each Cadence run's agent session, and its ratio to the mean one-shot session of the same task and "
+           f"model (loop.speed; stretch goal: at most {speed.STRETCH_RATIO}). The one-shots are the counted "
+           f"ones on the run's grader tree, else every counted one-shot of the task and model (Basis). A run "
+           f"above the goal is flagged, with its three slowest blocks. Cap: whether the run hit its guard cap "
+           f"or backstop. A run that stopped early keeps its ratio and says so.", "", *speed.HEADER]
+    out += [speed.line(r) for r in speed_rows]
+    flagged = [r for r in speed_rows if r["flagged"]]
+    out += ["", "Above the stretch goal: " + (", ".join(
+        f"`{r['run_id']}` ({r['ratio']:.2f}; slowest blocks {speed.slowest_text(r)})" for r in flagged) or "none") + "."]
+    timed = [(rec["timing"]["agent_wall_seconds"], rec["run_id"]) for rec, _ in rows
+             if rec["timing"]["agent_wall_seconds"] is not None]
     slowest = sorted(timed, reverse=True)[:3]
-    out += ["", "Slowest runs: " + (", ".join(f"`{rid}` ({s / 60:.1f} min)" for s, rid in slowest) or "none timed") + "."]
+    out += ["Slowest runs: " + (", ".join(f"`{rid}` ({s / 60:.1f} min)" for s, rid in slowest) or "none timed") + "."]
     stages: dict[str, dict] = {}
     for rec, _ in rows:
         for stage, t in (record.blocks(runs / rec["run_id"], rec) or {}).items():

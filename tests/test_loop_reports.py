@@ -161,7 +161,9 @@ def test_the_postmortem_has_a_speed_section_with_each_run_and_the_slowest():
     text = postmortem.generate(BATCH, RUNS, {})
     speed = text.split("## Speed", 1)[1].split("\n## ", 1)[0]
     row = next(line for line in speed.splitlines() if line.startswith("| `20261022-P2-cadence-core-haiku-3`"))
-    assert "81.3" in row and "— (stopped early)" in row  # 3.06x the one-shot, but it never finished
+    assert "81.3" in row and "3.06 (above 1.25) (stopped early)" in row  # 3.06x the one-shot, and it never finished
+    assert "any grader tree (no counted one-shot on 423b34a)" in row  # the 15 October one-shots recorded no tree
+    assert "Above the stretch goal: " in speed and "`20261022-P2-cadence-core-haiku-3` (3.06; slowest blocks" in speed
     assert "Slowest runs: `20261022-P2-cadence-core-haiku-3`" in speed
     assert "Peer time per block" in speed and "| plan-review | 51.4 | 28 | 6 | 22 |" in speed
 

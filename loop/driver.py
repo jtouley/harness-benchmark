@@ -336,7 +336,8 @@ def main(argv: list[str] | None = None) -> int:
     ap.add_argument("--cwd", type=Path, default=Path.cwd(), help="where the command runs")
     ap.add_argument("--fresh-home", type=Path, help="an empty or new folder to give the command as HOME")
     ap.add_argument("--context", type=Path, help="the run's .context (a copy is fine): time per block comes from it")
-    ap.add_argument("--timing", type=Path, help='JSON with "agent_seconds" (the agent session) that the command wrote')
+    ap.add_argument("--timing", type=Path, help='JSON the command wrote: "agent_seconds" (the agent session), and '
+                    '"hit_cap" and "agent_cap_seconds" when it knows them (scripts/host_trial.py writes all three)')
     ap.add_argument("--runs", type=Path, default=ROOT / "runs")
     ap.add_argument("--postmortems", type=Path, help="the postmortems folder (default: beside --runs)")
     ap.add_argument("--scoreboard", type=Path, help="the scoreboard file (default: scoreboard.md beside --runs)")
@@ -398,9 +399,10 @@ def main(argv: list[str] | None = None) -> int:
     if args.stop_point_file and args.stop_point_file.exists():
         stop.update(json.loads(args.stop_point_file.read_text(encoding="utf-8")))
     active = facts.pop("agent_active_seconds", None)
-    agent_wall = None
+    agent_wall, hit_cap, cap_seconds = None, None, None
     if args.timing and args.timing.exists():
-        agent_wall = json.loads(args.timing.read_text(encoding="utf-8")).get("agent_seconds")
+        timing = json.loads(args.timing.read_text(encoding="utf-8"))
+        agent_wall, hit_cap, cap_seconds = timing.get("agent_seconds"), timing.get("hit_cap"), timing.get("agent_cap_seconds")
     counts = {"counts": True, "why": "driver run" + (" on a clean published plugin tree" if cadence else "")}
     if args.kind in record.NON_COUNTING_KINDS:
         counts = {"counts": False, "why": "stub: a session's own probe, not graded"}
@@ -422,7 +424,9 @@ def main(argv: list[str] | None = None) -> int:
         "tree": _tree_blob(args.tree, args.store) if args.tree else store.missing("--tree not given"),
         "counts": counts,
         "timing": {"agent_wall_seconds": agent_wall, "run_wall_seconds": run_wall, "agent_active_seconds": active,
-                   "blocks": blocks.peer_time(args.context) if args.context else None},
+                   "blocks": blocks.peer_time(args.context) if args.context else None,
+                   "hit_cap": hit_cap if isinstance(hit_cap, bool) else None,
+                   "cap_seconds": cap_seconds if isinstance(cap_seconds, (int, float)) and not isinstance(cap_seconds, bool) else None},
         "isolation": {"cwd": str(args.cwd.resolve()), "home": str(home), "fresh_home": bool(args.fresh_home),
                       "other_cadence_checkouts": others, "method": args.isolation_method, "auth": args.auth, "contact": hits,
                       "cwd_contents": cwd_contents},

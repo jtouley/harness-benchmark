@@ -5,6 +5,9 @@
 Against a base ref: a record.json that existed there must be unchanged, and a scores.jsonl must start
 with the lines it had there.
 
+Speed (loop.speed): a counted Cadence run has an agent session time and a time per block, or the loop
+cannot measure it against the one-shot.
+
 Postmortems (runs/README.md, "After a merge"): every counted run and every run a finding cites is in a
 committed postmortem under postmortems/; every committed postmortem is what the generator writes from
 its notes; scoreboard.md is what the scoreboard writes. `python -m loop.postmortem --all` and
@@ -26,7 +29,7 @@ import subprocess
 import sys
 from pathlib import Path
 
-from loop import findings, postmortem, record, scoreboard
+from loop import findings, postmortem, record, scoreboard, speed
 
 ROOT = Path(__file__).resolve().parents[1]
 GRADER_PATH = "golden/pipeline/pipetask"
@@ -190,6 +193,7 @@ def main(argv: list[str] | None = None) -> int:
     ap.add_argument("--base", help="git ref to compare with (e.g. origin/main)")
     args = ap.parse_args(argv)
     problems = validate_tree(ROOT / "runs")
+    problems += speed.problems(ROOT / "runs")
     problems += postmortem_problems(ROOT / "runs", postmortem.POSTMORTEMS, scoreboard_path=ROOT / "scoreboard.md")
     if args.base:
         problems += append_only(ROOT, args.base)
