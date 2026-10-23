@@ -42,3 +42,28 @@ def test_a_one_shot_gets_the_guard_cap_and_a_cadence_arm_only_the_backstop():
     caps = json.loads((ROOT / "runner" / "pipeline" / "caps.json").read_text())
     assert host_trial.agent_cap(None) == caps["agent_timeout"] == 7200
     assert host_trial.agent_cap(Path("/srv/plugin")) == caps["harness_backstop"]["default"]["seconds"] == 86400
+
+
+def test_the_fresh_home_gets_exactly_what_the_auth_route_needs(tmp_path):
+    """proxy (this host): the proxy adds the credentials, so HOME gets no credential file. oauth-file (the
+    owner's machine): HOME gets the one OAuth file, mode 0600, and nothing else."""
+    proxy_home, oauth_home = tmp_path / "p", tmp_path / "o"
+    proxy_home.mkdir()
+    oauth_home.mkdir()
+    source = tmp_path / "operator" / ".credentials.json"
+    source.parent.mkdir()
+    source.write_text('{"claudeAiOauth": "fake"}')
+    host_trial.prepare_home(proxy_home, "proxy", None)
+    assert sorted(p.relative_to(proxy_home).as_posix() for p in proxy_home.rglob("*")) == []
+    host_trial.prepare_home(oauth_home, "oauth-file", source)
+    files = sorted(p.relative_to(oauth_home).as_posix() for p in oauth_home.rglob("*") if p.is_file())
+    assert files == [".claude/.credentials.json"]
+    assert (oauth_home / ".claude" / ".credentials.json").read_text() == source.read_text()
+    assert (oauth_home / ".claude" / ".credentials.json").stat().st_mode & 0o777 == 0o600
+
+
+def test_the_agent_environment_carries_no_api_key_or_token(monkeypatch, tmp_path):
+    monkeypatch.setenv("ANTHROPIC_API_KEY", "sk-fake")
+    monkeypatch.setenv("ANTHROPIC_AUTH_TOKEN", "fake")
+    env = host_trial.agent_env(tmp_path, None)
+    assert "ANTHROPIC_API_KEY" not in env and "ANTHROPIC_AUTH_TOKEN" not in env

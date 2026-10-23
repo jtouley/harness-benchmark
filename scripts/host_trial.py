@@ -4,7 +4,15 @@ subscription"; the container runner cannot authenticate the agent yet, see runne
     python -m loop.driver ... --spec RUN/spec/spec.md --cwd RUN --fresh-home RUN/home \\
         --agent-argv RUN/agent-argv.json --transcript RUN/transcript.jsonl --grade RUN/grade.json \\
         --stop-point-file RUN/stop.json --timing RUN/timing.json --context RUN/context --tree RUN/repo-as-left \\
-        -- python scripts/host_trial.py P1 --out RUN --model claude-haiku-5-5 [--plugin-dir PLUGIN --peer-model haiku]
+        -- python scripts/host_trial.py P1 --out RUN --model claude-haiku-5-5 [--plugin-dir PLUGIN --peer-model haiku] \
+           [--auth proxy | --auth oauth-file --oauth-file ~/.claude/.credentials.json]
+
+Auth (the driver's --auth records the same value in isolation.auth):
+- proxy: this cloud host. Outbound HTTPS goes through a proxy that adds the operator's credentials, so the fresh
+  HOME gets no credential file and the agent's environment keeps HTTPS_PROXY and the CA variables only.
+- oauth-file: the owner's machine. Claude Code's OAuth credential is ~/.claude/.credentials.json; that one file is
+  copied into the fresh HOME (mode 0600) and nothing else from the operator's HOME.
+In both, ANTHROPIC_API_KEY and ANTHROPIC_AUTH_TOKEN are dropped from the agent's environment.
 
 The agent's prompt is HB_AGENT_PROMPT, as the driver sets it (`/cadence <spec path>`, or the spec's text for a
 one-shot): this script adds no prompt text. In order:
@@ -78,7 +86,7 @@ def setup_repo(task: str, out: Path) -> Path:
 
 def agent_env(home: Path, plugin: Path | None) -> dict[str, str]:
     env = {k: v for k, v in os.environ.items() if not k.startswith(DROPPED_PREFIXES + ("UV_",))
-           and k not in ("HB_AGENT_PROMPT", "VIRTUAL_ENV", "PYTHONPATH")}
+           and k not in ("HB_AGENT_PROMPT", "VIRTUAL_ENV", "PYTHONPATH", "ANTHROPIC_API_KEY", "ANTHROPIC_AUTH_TOKEN")}
     # This script runs in harness-benchmark's environment (uv run): its python must not be the agent's.
     venv = os.environ.get("VIRTUAL_ENV")
     env["PATH"] = os.pathsep.join(d for d in env.get("PATH", "").split(os.pathsep)
@@ -88,6 +96,18 @@ def agent_env(home: Path, plugin: Path | None) -> dict[str, str]:
     if plugin is not None:
         env["CADENCE_HOME"] = str(plugin)
     return env
+
+
+def prepare_home(home: Path, auth: str, oauth_file: Path | None) -> None:
+    """Give the fresh HOME exactly what the auth route needs: nothing for proxy, the one OAuth file for oauth-file."""
+    if auth == "proxy":
+        return
+    if auth != "oauth-file" or oauth_file is None or not oauth_file.is_file():
+        raise SystemExit(f"host_trial: --auth {auth} needs --oauth-file, the operator's .credentials.json")
+    target = home / ".claude" / ".credentials.json"
+    target.parent.mkdir(parents=True, exist_ok=True)
+    target.write_bytes(oauth_file.read_bytes())
+    target.chmod(0o600)
 
 
 def stop_point(repo: Path, plugin: Path, env: dict[str, str]) -> dict:
@@ -124,6 +144,8 @@ def main(argv: list[str] | None = None) -> int:
     ap.add_argument("--model", required=True)
     ap.add_argument("--plugin-dir", type=Path)
     ap.add_argument("--peer-model", help="Cadence arm: peer_models.default in the run's Cadence config")
+    ap.add_argument("--auth", choices=["proxy", "oauth-file"], default="proxy")
+    ap.add_argument("--oauth-file", type=Path, help="--auth oauth-file: the operator's ~/.claude/.credentials.json")
     args = ap.parse_args(argv)
     prompt = os.environ.get("HB_AGENT_PROMPT")
     if not prompt:
@@ -131,6 +153,7 @@ def main(argv: list[str] | None = None) -> int:
         return 2
     out, home = args.out.resolve(), Path(os.environ["HOME"])
     plugin = args.plugin_dir.resolve() if args.plugin_dir else None
+    prepare_home(home, args.auth, args.oauth_file)
     repo = setup_repo(args.task, out)
     if plugin is not None and args.peer_model:
         (home / ".config" / "cadence").mkdir(parents=True, exist_ok=True)

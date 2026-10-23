@@ -6,6 +6,7 @@ from __future__ import annotations
 import gzip
 import hashlib
 import json
+import shlex
 import subprocess
 import sys
 from pathlib import Path
@@ -421,7 +422,8 @@ def test_a_command_that_gives_the_agent_other_prompt_text_is_refused(tmp_path, p
 
 def test_the_command_gets_exactly_slash_cadence_and_the_spec_path_and_the_record_has_the_spec(tmp_path, plugin):
     spec = _spec(tmp_path)
-    rc, run = _drive(tmp_path, plugin, extra=["--kind", "benchmark", "--spec", str(spec)],
+    rc, run = _drive(tmp_path, plugin, extra=["--kind", "benchmark", "--spec", str(spec),
+                                              "--agent-argv", str(tmp_path / "argv.json")],
                      script=f'printf %s "$HB_AGENT_PROMPT" > {tmp_path}/prompt.txt')
     assert rc == 0
     assert (tmp_path / "prompt.txt").read_text() == f"/cadence {spec.resolve()}"
@@ -446,7 +448,7 @@ def test_an_agent_that_ran_with_another_prompt_does_not_count(tmp_path, plugin):
                                               "--agent-argv", str(argv_file)], script=script)
     assert rc == 0
     counts = json.loads((run / "record.json").read_text())["counts"]
-    assert counts["counts"] is False and "/cadence" in counts["why"]
+    assert counts["counts"] is False and "the agent's argv" in counts["why"]
 
 
 def test_an_exit_1_at_entry_is_the_recorded_result(tmp_path, plugin):
@@ -454,8 +456,8 @@ def test_an_exit_1_at_entry_is_the_recorded_result(tmp_path, plugin):
     spec = _spec(tmp_path)
     stop = tmp_path / "trial" / "stop.json"
     script = f"""echo '{{"block": "A1", "reason": "Cannot determine task ID"}}' > {stop}; exit 1"""
-    rc, run = _drive(tmp_path, plugin, extra=["--kind", "benchmark", "--spec", str(spec),
-                                              "--stop-point-file", str(stop)], script=script)
+    rc, run = _drive(tmp_path, plugin, extra=["--kind", "benchmark", "--spec", str(spec), "--stop-point-file",
+                                              str(stop), "--agent-argv", str(tmp_path / "argv.json")], script=script)
     rec = json.loads((run / "record.json").read_text())
     assert rc == 0 and rec["exit_code"] == 1
     assert rec["stop_point"] == {"block": "A1", "reason": "Cannot determine task ID"}
@@ -528,3 +530,49 @@ def test_the_check_refuses_a_counting_backfilled_record_without_a_grader_score(t
                                        "error": None, "source": "backfill", "graded_at": None})
     assert check.validate_tree(runs) == [
         "20261015-ungraded/record.json: a backfilled record counts only with a score from the harness-benchmark grader"]
+
+
+# --- review of #73: every way a claude call can carry other prompt text is refused
+
+@pytest.mark.parametrize("call", [
+    "echo hi | claude -p",                           # the prompt from stdin
+    "claude 'do it'",                                # a positional prompt
+    "claude -p {prompt} 'and more'",                 # a second, positional prompt
+    "claude -p {prompt} --append-system-prompt be-quick",  # extra system prompt text
+    "claude --print",                                # a bare print flag
+])
+def test_a_claude_call_with_any_other_prompt_text_is_refused(tmp_path, plugin, call):
+    spec = _spec(tmp_path)
+    prompt = shlex.quote(f"/cadence {spec.resolve()}")
+    rc, run = _drive(tmp_path, plugin, extra=["--kind", "benchmark", "--spec", str(spec), "--agent-argv",
+                                              str(tmp_path / "argv.json")],
+                     script=f"{call.format(prompt=prompt)}; touch {tmp_path}/ran")
+    assert rc == 2 and not run.exists() and not (tmp_path / "ran").exists()
+
+
+def test_a_cadence_benchmark_run_must_report_the_agents_argv(tmp_path, plugin):
+    spec = _spec(tmp_path)
+    rc, run = _drive(tmp_path, plugin, extra=["--kind", "benchmark", "--spec", str(spec)], script=f"touch {tmp_path}/ran")
+    assert rc == 2 and not run.exists() and not (tmp_path / "ran").exists()
+
+
+@pytest.mark.parametrize("argv, counts", [
+    (["claude", "-p", "{prompt}", "--model", "m", "--output-format", "stream-json", "--verbose"], True),
+    (["claude", "-p", "{prompt}", "extra"], False),
+    (["claude", "-p", "{prompt}", "--append-system-prompt", "x"], False),
+    ([], False),                                     # no argv written: nothing shows what the agent got
+])
+def test_the_agents_reported_argv_must_be_the_one_prompt_and_known_flags(tmp_path, plugin, argv, counts):
+    spec = _spec(tmp_path)
+    prompt = f"/cadence {spec.resolve()}"
+    argv_file = tmp_path / "trial" / "agent-argv.json"
+    write = f"echo {shlex.quote(json.dumps([a.format(prompt=prompt) for a in argv]))} > {argv_file}" if argv else "true"
+    rc, run = _drive(tmp_path, plugin, extra=["--kind", "benchmark", "--spec", str(spec), "--agent-argv",
+                                              str(argv_file)], script=write)
+    assert rc == 0 and json.loads((run / "record.json").read_text())["counts"]["counts"] is counts
+
+
+@pytest.mark.parametrize("auth", ["proxy", "oauth-file"])
+def test_the_isolation_block_names_the_auth_route(tmp_path, plugin, auth):
+    rc, run = _drive(tmp_path, plugin, extra=["--auth", auth])
+    assert rc == 0 and json.loads((run / "record.json").read_text())["isolation"]["auth"] == auth

@@ -76,6 +76,7 @@
         "fresh_home": {"type": "boolean"},
         "other_cadence_checkouts": {"type": "array", "items": {"type": "string"}},
         "method": {"$comment": "host, or container:<image id>", "type": "string"},
+        "auth": {"$comment": "how the agent authenticated: proxy (the host's proxy adds the credentials) or oauth-file (the operator's OAuth file copied into the fresh HOME)", "enum": ["proxy", "oauth-file"]},
         "cwd_contents": {"$comment": "the top-level entries of cwd before the run (a folder ends with /)", "type": "array", "items": {"type": "string"}},
         "contact": {"$comment": "tool calls of the transcript that named the benchmark or another Cadence checkout (loop.driver.contact)", "type": "array", "items": {"type": "string"}}
       }

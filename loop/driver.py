@@ -209,24 +209,59 @@ def agent_prompt(spec: Path, arm: str) -> str:
     return f"/cadence {spec.resolve()}" if arm == "cadence" else spec.read_text(encoding="utf-8")
 
 
-def _prompt_args(command: list[str]) -> list[str]:
-    """The `-p`/`--print` values of each `claude` command in an argv, also inside a shell-script argument (`bash -c`)."""
-    words = list(command)
-    for arg in command:
-        if any(c.isspace() for c in arg):
-            try:
-                words += shlex.split(arg)
-            except ValueError:
-                words += arg.split()
-    found, in_claude = [], False
-    for i, word in enumerate(words):
-        if Path(word).name == "claude":
-            in_claude = True
-        elif word in (";", "&&", "||", "|") or word.endswith(";"):
-            in_claude = False
-        elif in_claude and word in ("-p", "--print") and i + 1 < len(words):
-            found.append(words[i + 1])
-    return found
+# The flags a benchmark agent's `claude` call may carry (scripts/host_trial.py): none adds prompt text.
+CLAUDE_VALUE_FLAGS = frozenset({"--model", "--permission-mode", "--output-format", "--plugin-dir", "--add-dir",
+                                "--max-budget-usd"})
+CLAUDE_BARE_FLAGS = frozenset({"--verbose"})
+_SEPARATORS = frozenset({";", "&&", "||", "|", "&", "(", ")", "\n"})
+
+
+def _words(arg: str) -> list[str]:
+    lexer = shlex.shlex(arg, posix=True, punctuation_chars=";&|()")
+    lexer.whitespace_split = True
+    try:
+        return list(lexer)
+    except ValueError:
+        return arg.split()
+
+
+def claude_calls(command: list[str]) -> list[tuple[list[str], bool]]:
+    """Each `claude` call in an argv, also inside a shell-script argument (`bash -c`): (its arguments, whether
+    something is piped into it)."""
+    streams = [list(command)] + [_words(arg) for arg in command if any(c.isspace() or c in ";|&" for c in arg)]
+    calls = []
+    for words in streams:
+        for i, word in enumerate(words):
+            if Path(word).name != "claude":
+                continue
+            rest = []
+            for w in words[i + 1:]:
+                if w in _SEPARATORS:
+                    break
+                rest.append(w)
+            calls.append((rest, i > 0 and words[i - 1] == "|"))
+    return calls
+
+
+def claude_call_problem(args: list[str], prompt: str, piped: bool = False) -> str | None:
+    """Why one `claude` call gives the agent more than `prompt`, or None: `-p <prompt>` once, then only flags that
+    carry no prompt text. A bare -p, a positional argument, stdin and any other flag are refused."""
+    if piped:
+        return "something is piped into claude (stdin is prompt text)"
+    seen, i = 0, 0
+    while i < len(args):
+        word = args[i]
+        if word in ("-p", "--print"):
+            if i + 1 >= len(args) or args[i + 1] != prompt:
+                return f"{word} is not followed by the one prompt"
+            seen, i = seen + 1, i + 2
+        elif word in CLAUDE_VALUE_FLAGS and i + 1 < len(args):
+            i += 2
+        elif word in CLAUDE_BARE_FLAGS:
+            i += 1
+        else:
+            return f"{word[:60]!r} is not an allowed claude argument"
+    return None if seen == 1 else f"the prompt is given {seen} times"
 
 
 def _now() -> str:
@@ -249,6 +284,13 @@ def _load_argv(path: Path) -> list[str]:
     return [str(v) for v in value] if isinstance(value, list) else []
 
 
+def _agent_argv_problem(path: Path, prompt: str) -> str | None:
+    argv = _load_argv(path)
+    if not argv or Path(argv[0]).name != "claude":
+        return f"{path} holds no claude argv"
+    return claude_call_problem(argv[1:], prompt)
+
+
 def _check_entry(args: argparse.Namespace, command: list[str]) -> str | None:
     """The agent prompt (HB_AGENT_PROMPT), or None without --spec; DriverError for a run the rule refuses."""
     if args.spec is None:
@@ -258,10 +300,14 @@ def _check_entry(args: argparse.Namespace, command: list[str]) -> str | None:
     if not args.spec.is_file():
         raise DriverError(f"--spec {args.spec} is not a file")
     prompt = agent_prompt(args.spec, args.arm)
-    others = [p for p in _prompt_args(command) if p != prompt]
-    if others:
-        raise DriverError(f"the command gives the agent another prompt ({others[0][:60]!r}); its only prompt is "
-                          f"{prompt.splitlines()[0][:80]!r}, from HB_AGENT_PROMPT")
+    for call, piped in claude_calls(command):
+        problem = claude_call_problem(call, prompt, piped)
+        if problem:
+            raise DriverError(f"the command's claude call carries other prompt text ({problem}); the agent's only "
+                              f"prompt is {prompt.splitlines()[0][:80]!r}, from HB_AGENT_PROMPT")
+    if args.arm == "cadence" and args.kind in ("benchmark", "live") and args.agent_argv is None:
+        raise DriverError("a Cadence benchmark or live run needs --agent-argv: the argv the agent was started with "
+                          "shows that its only prompt was the spec")
     return prompt
 
 
@@ -293,6 +339,9 @@ def main(argv: list[str] | None = None) -> int:
                     "arm, its text for a one-shot (given to the command as HB_AGENT_PROMPT)")
     ap.add_argument("--agent-argv", type=Path, help="JSON list: the argv the command started the agent with")
     ap.add_argument("--isolation-method", default="host", help="host, or container:<image id>")
+    ap.add_argument("--auth", choices=["proxy", "oauth-file"], default="proxy",
+                    help="how the agent authenticates: proxy (the host's HTTPS proxy adds the credentials; HOME gets "
+                    "none) or oauth-file (the operator's ~/.claude/.credentials.json, copied into the fresh HOME)")
     ap.add_argument("command", nargs=argparse.REMAINDER)
     args = ap.parse_args(argv)
     command = args.command[1:] if args.command[:1] == ["--"] else args.command
@@ -353,8 +402,8 @@ def main(argv: list[str] | None = None) -> int:
         counts = {"counts": False, "why": "the plugin tree changed during the run"}
     elif hits:
         counts = {"counts": False, "why": f"the transcript touched the benchmark or another checkout: {hits[0]}"}
-    elif prompt is not None and args.agent_argv and _prompt_args(_load_argv(args.agent_argv)) != [prompt]:
-        counts = {"counts": False, "why": f"the agent's prompt was not {prompt.splitlines()[0][:80]!r} alone"}
+    elif prompt is not None and args.agent_argv and (argv_problem := _agent_argv_problem(args.agent_argv, prompt)):
+        counts = {"counts": False, "why": f"the agent's argv: {argv_problem}"}
     rec = {
         "schema": 1, "run_id": args.run_id, "kind": args.kind, "batch": args.batch,
         "provenance": {"source": "driver", "evidence": []}, "task": args.task, "request_id": args.request_id,
@@ -369,7 +418,7 @@ def main(argv: list[str] | None = None) -> int:
         "timing": {"agent_wall_seconds": agent_wall, "run_wall_seconds": run_wall, "agent_active_seconds": active,
                    "blocks": blocks.peer_time(args.context) if args.context else None},
         "isolation": {"cwd": str(args.cwd.resolve()), "home": str(home), "fresh_home": bool(args.fresh_home),
-                      "other_cadence_checkouts": others, "method": args.isolation_method, "contact": hits,
+                      "other_cadence_checkouts": others, "method": args.isolation_method, "auth": args.auth, "contact": hits,
                       "cwd_contents": cwd_contents},
     }
     record.write_record(args.runs, rec)
