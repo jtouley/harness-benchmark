@@ -140,7 +140,9 @@ the number. No rule here is new.
     `test_the_gate_line_shows_best_and_worst_beside_each_mean`,
     `test_the_gate_compares_the_mean_with_sonnet_and_opus`, `test_the_gate_needs_n_runs_per_task` in
     [tests/test_loop_reports.py](../tests/test_loop_reports.py). Today the counted one-shots are the
-    15 October runs; from batch F iteration 0 on, the bars are each batch's own one-shots.
+    15 October runs; they ran in the runner's container, and the Cadence runs compared with them ran on
+    the host (coordinator, 2026-10-23), so a bar or a time ratio against them crosses the two. From
+    batch F iteration 0 on, the bars are each batch's own one-shots.
 14. **A run that stopped early has no time ratio.** The speed ratio counts only runs that reached the
     end of the pipeline or passed a check. [loop/scoreboard.py](../loop/scoreboard.py) (`reached_end`);
     test `test_a_run_that_stopped_early_with_no_check_passed_has_no_ratio` in
