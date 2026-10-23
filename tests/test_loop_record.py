@@ -7,6 +7,7 @@ import gzip
 import hashlib
 import json
 import shlex
+import shutil
 import subprocess
 import sys
 from pathlib import Path
@@ -576,3 +577,78 @@ def test_the_agents_reported_argv_must_be_the_one_prompt_and_known_flags(tmp_pat
 def test_the_isolation_block_names_the_auth_route(tmp_path, plugin, auth):
     rc, run = _drive(tmp_path, plugin, extra=["--auth", auth])
     assert rc == 0 and json.loads((run / "record.json").read_text())["isolation"]["auth"] == auth
+
+
+def test_the_record_keeps_the_plugins_git_tree_as_well_as_its_commit(tmp_path, plugin):
+    """The fingerprint guard and the trace match a plugin by its tree (coordinator, 2026-10-23)."""
+    rc, run = _drive(tmp_path, plugin)
+    cadence = json.loads((run / "record.json").read_text())["cadence"]
+    assert rc == 0 and cadence["tree"] == _git(plugin, "rev-parse", "HEAD^{tree}")
+
+
+# --- review of #73: a regrade needs a traceable cause, and a batch's scores its pinned grader
+
+def _grader_repo(tmp_path) -> tuple[Path, str, str, str]:
+    """A repository with two grader commits: (repo, first commit, its grader tree, second commit)."""
+    repo = tmp_path / "hb"
+    (repo / "golden/pipeline/pipetask").mkdir(parents=True)
+    _git(repo, "init", "-q", "-b", "main")
+    (repo / "golden/pipeline/pipetask/trial.py").write_text("v = 1\n")
+    _git(repo, "add", "-A")
+    _git(repo, "-c", "user.name=t", "-c", "user.email=t@t", "commit", "-qm", "grader 1")
+    first = _git(repo, "rev-parse", "HEAD")
+    (repo / "golden/pipeline/pipetask/trial.py").write_text("v = 2\n")
+    _git(repo, "-c", "user.name=t", "-c", "user.email=t@t", "commit", "-qam", "grader 2")
+    return repo, first, _git(repo, "rev-parse", f"{first}:golden/pipeline/pipetask"), _git(repo, "rev-parse", "HEAD")
+
+
+def _score(commit: str, tree: str, source: str, passed: int, note: str | None = None) -> dict:
+    row = {"run_id": "20261023-P1-oneshot-haiku-1", "grader": {"repo": "jtouley/harness-benchmark",
+           "commit": commit, "tree": tree}, "reward": passed / 7, "passed": passed, "total": 7, "idempotent": True,
+           "stream_ok": True, "error": None, "source": source, "graded_at": None}
+    return {**row, "note": note} if note else row
+
+
+def _run_with(repo: Path, *scores: dict, batch: str = "2026-10-23-batch-f") -> Path:
+    runs = repo / "runs"
+    run = runs / "20261023-P1-oneshot-haiku-1"
+    run.mkdir(parents=True)
+    (run / "record.json").write_text(json.dumps(minimal("20261023-P1-oneshot-haiku-1", batch=batch)))
+    (run / "scores.jsonl").write_text("".join(json.dumps(s) + "\n" for s in scores))
+    return runs
+
+
+def test_a_forged_regrade_is_refused(tmp_path):
+    repo, first, tree1, _ = _grader_repo(tmp_path)
+    runs = _run_with(repo, _score(first, tree1, "driver", 0),
+                     _score("f" * 40, "f" * 40, "regrade", 7, "looked wrong"))
+    problems = check.validate_tree(runs, repo)
+    assert any("not a commit of this repository's history" in p for p in problems), problems
+
+
+def test_a_regrade_on_the_same_tree_needs_a_note_naming_a_grader_or_host_trial_commit(tmp_path):
+    repo, first, tree1, second = _grader_repo(tmp_path)
+    vague = _run_with(repo, _score(first, tree1, "driver", 0), _score(first, tree1, "regrade", 7, "looked wrong"))
+    assert any("regrade without a traceable cause" in p for p in check.validate_tree(vague, repo))
+    shutil.rmtree(vague)
+    named = _run_with(repo, _score(first, tree1, "driver", 0),
+                      _score(first, tree1, "regrade", 5, f"the grader fix {second[:7]}"))
+    assert check.validate_tree(named, repo) == []
+
+
+def test_a_regrade_on_a_new_grader_tree_is_its_own_cause(tmp_path):
+    repo, first, tree1, second = _grader_repo(tmp_path)
+    tree2 = _git(repo, "rev-parse", f"{second}:golden/pipeline/pipetask")
+    runs = _run_with(repo, _score(first, tree1, "driver", 0), _score(second, tree2, "regrade", 5))
+    assert check.validate_tree(runs, repo) == []
+
+
+def test_a_counted_score_must_be_on_the_batch_pin_or_a_later_grader(tmp_path):
+    repo, first, tree1, second = _grader_repo(tmp_path)
+    tree2 = _git(repo, "rev-parse", f"{second}:golden/pipeline/pipetask")
+    (repo / "batches").mkdir()
+    (repo / "batches" / "2026-10-23-batch-f.json").write_text(json.dumps({"grader_commit": second}))
+    early = _run_with(repo, _score(first, tree1, "driver", 5))
+    assert any("not the batch's pinned grader" in p for p in check.validate_tree(early, repo))
+    shutil.rmtree(early)
+    assert check.validate_tree(_run_with(repo, _score(second, tree2, "driver", 5)), repo) == []
