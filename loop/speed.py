@@ -3,18 +3,22 @@
     python -m loop.speed [--batch <id>] [--runs runs]
 
 The owner's stretch goal: a Cadence run takes at most 120 to 125 percent of a one-shot's time
-(STRETCH_RATIO, from loop.scoreboard). For each task and model, the one-shot time is the mean agent
-session of the counted one-shots (arm `baseline` or `one-shot`) whose latest score is from the same
-grader tree as the Cadence run's; when no counted one-shot is on that tree, every counted one-shot of
-the task and model is the basis, and the row says so. For each Cadence run: its agent session, the
+(STRETCH_RATIO, from loop.scoreboard). The one-shot time takes the rule of the gate's bars: the mean
+agent session of the counted one-shots (arm `baseline` or `one-shot`) of the task and model in the
+newest batch that has one, on the Cadence run's grader tree; when no batch has one on that tree, the
+newest batch on any tree, and the row says so. "Newest" stops at the run's own batch (batch ids carry
+their date, so a later id is a later batch): a later batch's one-shots never move an earlier run's
+ratio, so a committed postmortem keeps its numbers when the next batch lands. The Basis column names
+the batch and the tree. For each Cadence run: its agent session, the
 ratio, whether it hit its cap (`timing.hit_cap`, from the trial's timing.json), whether it reached the
 end of the pipeline, and its time per block (loop.blocks) with the three slowest blocks named. A run
 whose ratio is above the stretch goal is flagged. The postmortem's Speed section reads these rows, so
-the two never disagree.
+the two never disagree, and loop.scoreboard.time_ratio (the gate, the scoreboard table and the findings'
+`max_time_ratio`) takes its one-shot mean from oneshot_mean here, so every ratio in the loop has one basis.
 
 The runs below the ratio or above it are shown alike; a run that stopped early keeps its ratio here
-(a slow stop is still slow) and says it stopped early. loop.scoreboard.time_ratio, which the gate and
-the findings read, keeps its own rule (no ratio for an early stop).
+(a slow stop is still slow) and says it stopped early. loop.scoreboard.time_ratio keeps its own rule
+(no ratio for an early stop).
 """
 
 from __future__ import annotations
@@ -31,31 +35,38 @@ STRETCH_RATIO = scoreboard.STRETCH_RATIO
 SLOWEST = 3
 
 
-def _latest_tree(run: Path) -> str | None:
-    scores = record.scores(run)
-    return (scores[-1].get("grader") or {}).get("tree") if scores else None
-
-
 def _records(runs: Path) -> list[tuple[Path, dict]]:
     return [(p, record.load(p)) for p in sorted(runs.iterdir()) if (p / "record.json").exists()]
 
 
-def oneshot_mean(runs: Path, task: str | None, model: str | None, tree: str | None) -> tuple[float | None, str]:
-    """(the mean agent session of the counted one-shots of `task` and `model`, the basis). The basis is the
-    one-shots on grader tree `tree`, else every counted one-shot of the task and model, labelled so."""
+def _newest_batch_mean(found: list[tuple[str, float]]) -> tuple[float, str]:
+    """(the mean of the (batch, seconds) pairs in the newest batch, that batch). Batch ids sort by date."""
+    newest = max(batch for batch, _ in found)
+    values = [seconds for batch, seconds in found if batch == newest]
+    return round(sum(values) / len(values), 3), newest
+
+
+def oneshot_mean(runs: Path, task: str | None, model: str | None, tree: str | None,
+                 batch: str | None = None) -> tuple[float | None, str]:
+    """(the mean agent session of the counted one-shots of `task` and `model`, the basis). The one-shots are
+    those of the newest batch no later than `batch` (every batch when None) on grader tree `tree`, else of
+    the newest such batch on any tree, labelled so; None with no counted one-shot."""
     same, any_tree = [], []
     for run, rec in _records(runs):
         seconds = rec["timing"]["agent_wall_seconds"]
         if (rec["arm"] in ONESHOT_ARMS and rec["counts"]["counts"] and rec["task"] == task
-                and rec["model_requested"] == model and seconds is not None):
-            any_tree.append(seconds)
-            if tree is not None and _latest_tree(run) == tree:
-                same.append(seconds)
+                and rec["model_requested"] == model and seconds is not None
+                and (batch is None or rec["batch"] <= batch)):
+            any_tree.append((rec["batch"], seconds))
+            if tree is not None and scoreboard.latest_tree(run) == tree:
+                same.append((rec["batch"], seconds))
     if same:
-        return round(sum(same) / len(same), 3), f"same grader tree {tree[:7]}"
+        mean, newest = _newest_batch_mean(same)
+        return mean, f"batch {newest}, same grader tree {tree[:7]}"
     if any_tree:
+        mean, newest = _newest_batch_mean(any_tree)
         label = f"any grader tree (no counted one-shot on {tree[:7]})" if tree else "any grader tree"
-        return round(sum(any_tree) / len(any_tree), 3), label
+        return mean, f"batch {newest}, {label}"
     return None, "no counted one-shot of this task and model"
 
 
@@ -68,7 +79,7 @@ def slowest_blocks(blocks: dict | None, n: int = SLOWEST) -> list[tuple[str, flo
 def row(runs: Path, run: Path, rec: dict) -> dict:
     """One Cadence run's speed row."""
     seconds = rec["timing"]["agent_wall_seconds"]
-    base, basis = oneshot_mean(runs, rec["task"], rec["model_requested"], _latest_tree(run))
+    base, basis = oneshot_mean(runs, rec["task"], rec["model_requested"], scoreboard.latest_tree(run), rec["batch"])
     ratio = round(seconds / base, 4) if seconds is not None and base else None
     blocks = record.blocks(run, rec)
     return {"run_id": rec["run_id"], "task": rec["task"], "model": rec["model_requested"], "arm": rec["arm"],
@@ -128,8 +139,10 @@ def line(r: dict) -> str:
 def table(runs: Path, batch: str | None = None) -> str:
     found = rows(runs, batch)
     out = [f"# Speed{' of batch ' + batch if batch else ''}", "",
-           f"Each Cadence run's agent session against the mean one-shot session of the same task and model "
-           f"(stretch goal: at most {STRETCH_RATIO}). Cap: whether the run hit its guard cap or backstop. "
+           f"Each Cadence run's agent session against the mean one-shot session of the same task and model, "
+           f"from the newest batch no later than the run's with a counted one-shot on the run's grader tree, "
+           f"else on any tree (Basis; stretch goal: at most {STRETCH_RATIO}). Cap: whether the run hit its guard "
+           f"cap or backstop. "
            f"Slowest blocks: peer time per block from the run's attest logs (loop.blocks).", ""]
     groups: dict[tuple, list[dict]] = {}
     for r in found:
