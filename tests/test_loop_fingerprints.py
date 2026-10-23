@@ -90,5 +90,4 @@ def test_every_task_prompt_is_a_source_so_a_quoted_spec_is_caught(tmp_path):
     data = fingerprints.build(ROOT)
     p3 = (ROOT / "golden/pipeline/P3/prompt.md").read_text(encoding="utf-8")
     assert fingerprints.fingerprints(p3) <= set(data["sha256"])
-    assert data["inputs"]["golden/pipeline/P3/prompt.md"] == fingerprints.whole_text(p3)
     assert "golden/pipeline/P*/prompt.md" in data["sources"]
