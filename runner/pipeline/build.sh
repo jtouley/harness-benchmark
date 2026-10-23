@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Build the pipeline trial images on top of the runner image. The build context holds only the three
+# Build the pipeline trial images on top of the runner image. The build context holds only the four
 # task skeletons and this folder's toolchain files: nothing else under golden/pipeline/ goes in.
 #
 #   runner/pipeline/build.sh [py|p3|all]     -> harness-benchmark/runner-pipeline:py, :p3
@@ -10,7 +10,7 @@ targets=${1:-all}
 [ "$targets" = all ] && targets="py p3"
 ctx=$(mktemp -d)
 trap 'rm -rf "$ctx"' EXIT
-for t in P1 P2 P3; do
+for t in P1 P2 P3 P4; do
   mkdir -p "$ctx/$t"
   rsync -a --exclude .venv --exclude target --exclude out --exclude lake "$root/golden/pipeline/$t/skeleton" "$ctx/$t/"
 done
