@@ -4,7 +4,10 @@
 
 Reference material: the pipeline references (golden/pipeline/P*/reference), the answer key, and the live
 tier's reference patches and hidden tests (golden/tasks/*). Lockfiles are left out: they list public
-packages, not solutions.
+packages, not solutions. The saved golden inputs (golden/cadence/*.md, the specs a Cadence run is
+given) are fingerprinted too, under the same algorithm, and each one also gets a whole-text
+fingerprint (`inputs`: the sha256 of the file's text after the step 1 normalisation of every line, the
+lines joined with a newline), because a one-line spec gives no shingle.
 
 Algorithm 1 (Cadence's contract test implements the same; the fixed vector in tests/test_loop_fingerprints.py
 is tested in both repositories):
@@ -53,7 +56,8 @@ def fingerprints(text: str, patch: bool = False) -> set[str]:
             for i in range(len(lines) - SHINGLE + 1) if max(map(len, lines[i:i + SHINGLE])) >= LONG_LINE}
 
 
-def sources(root: Path = ROOT) -> list[Path]:
+def reference_sources(root: Path = ROOT) -> list[Path]:
+    """The answer key, the reference solutions, the reference patches and the hidden tests."""
     found = [p for p in root.glob("golden/pipeline/P*/reference/**/*") if p.is_file()]
     found += list(root.glob("golden/tasks/*/reference.patch"))
     found += [p for p in root.glob("golden/tasks/*/hidden/**/*") if p.is_file()]
@@ -61,15 +65,30 @@ def sources(root: Path = ROOT) -> list[Path]:
     return sorted(p for p in found if not p.name.endswith(".lock") and "__pycache__" not in p.parts)
 
 
+def input_sources(root: Path = ROOT) -> list[Path]:
+    """The saved golden inputs: the specs a Cadence run is given (golden/cadence/README.md)."""
+    return sorted(p for p in root.glob("golden/cadence/*.md") if p.name != "README.md")
+
+
+def sources(root: Path = ROOT) -> list[Path]:
+    return reference_sources(root) + input_sources(root)
+
+
+def whole_text(text: str) -> str:
+    """The whole-text fingerprint of a golden input: every line normalised as in step 1, joined with a newline."""
+    return hashlib.sha256("\n".join(_lines(text, patch=False)).encode()).hexdigest()
+
+
 def build(root: Path = ROOT) -> dict:
     hashes: set[str] = set()
     for path in sources(root):
         hashes |= fingerprints(path.read_text(encoding="utf-8", errors="ignore"), patch=path.suffix == ".patch")
+    inputs = {p.relative_to(root).as_posix(): whole_text(p.read_text(encoding="utf-8")) for p in input_sources(root)}
     commit = subprocess.run(["git", "rev-parse", "HEAD"], cwd=root, capture_output=True, text=True).stdout.strip()
     return {"algorithm": ALGORITHM, "source": "jtouley/harness-benchmark", "source_commit": commit,
             "sources": ["golden/pipeline/P*/reference/**", "golden/pipeline/key/answer_key.json",
-                        "golden/tasks/*/reference.patch", "golden/tasks/*/hidden/**"],
-            "count": len(hashes), "sha256": sorted(hashes)}
+                        "golden/tasks/*/reference.patch", "golden/tasks/*/hidden/**", "golden/cadence/*.md"],
+            "count": len(hashes), "sha256": sorted(hashes), "inputs": inputs}
 
 
 def main(argv: list[str] | None = None) -> int:
