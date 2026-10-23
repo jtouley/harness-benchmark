@@ -95,8 +95,9 @@ def _scored(runs: Path, run_id: str, task: str, passed: int, seconds: float | No
 
 @pytest.mark.parametrize(("p1", "p2", "ok"), [
     ((6, 6, 6), (5, 5, 5), True),   # matches Opus on both
-    ((6, 6, 5), (5, 5, 5), False),  # P1 mean 5.67 is below Opus 6
-    ((7, 7, 7), (4, 4, 4), False),  # P2 beats Sonnet but not Opus
+    ((5, 5, 5), (4, 4, 4), True),   # within 1 of Opus 6 and 5, and above Sonnet 3
+    ((5, 5, 4), (5, 5, 5), False),  # P1 mean 4.67 is more than 1 below Opus 6
+    ((7, 7, 7), (3, 3, 3), False),  # P2 mean 3 does not beat Sonnet 3
 ])
 def test_the_gate_compares_the_mean_with_sonnet_and_opus(tmp_path, p1, p2, ok):
     _copy_baselines(tmp_path)
@@ -229,8 +230,8 @@ def test_the_bar_is_the_newest_batch_of_one_shots_on_the_same_grader_tree(tmp_pa
               started="2026-10-15T10:00:00Z")
     _one_shot(runs, "20261023-P1-oneshot-sonnet-1", "2026-10-23-batch-f", scoreboard.SONNET, 5, "c" * 40)
     _one_shot(runs, "20261023-P1-oneshot-sonnet-2", "2026-10-23-batch-f", scoreboard.SONNET, 4, "c" * 40)
-    assert scoreboard.baseline(runs, "P1", scoreboard.SONNET) == 5           # the newest batch, its best run
-    assert scoreboard.baseline(runs, "P1", scoreboard.SONNET, tree="c" * 40) == 5
+    assert scoreboard.baseline(runs, "P1", scoreboard.SONNET) == 4.5         # the newest batch's mean
+    assert scoreboard.bar(runs, "P1", scoreboard.SONNET, tree="c" * 40) == {"mean": 4.5, "best": 5, "worst": 4, "n": 2}
     assert scoreboard.baseline(runs, "P1", scoreboard.SONNET, tree="a" * 40) == 3  # history, on its own tree
     assert scoreboard.baseline(runs, "P1", scoreboard.SONNET, tree="d" * 40) is None
 
@@ -251,7 +252,8 @@ def test_the_gate_takes_the_bars_from_one_shots_on_the_runs_grader_tree(tmp_path
         for i in (1, 2, 3):
             _scored(tmp_path, f"20261023-{task}-cadence-haiku-{i}", task, 5)
     ok, lines = scoreboard.gate(tmp_path, "claude-haiku-5-5", "abcdef1")
-    assert ok and "Sonnet one-shot 2/7, Opus one-shot 4/7: PASS" in lines[0] and "another grader tree" not in lines[0]
+    assert ok and "Sonnet one-shot mean 2.00/7 (best 2, worst 2, n=1)" in lines[0]
+    assert "Opus one-shot mean 4.00/7" in lines[0] and lines[0].endswith("PASS")
 
 
 def test_without_one_shots_on_the_runs_tree_the_gate_says_its_bars_are_from_another_tree(tmp_path):
@@ -259,4 +261,18 @@ def test_without_one_shots_on_the_runs_tree_the_gate_says_its_bars_are_from_anot
     for i in (1, 2, 3):
         _scored(tmp_path, f"20261023-P1-cadence-haiku-{i}", "P1", 6)
     _, lines = scoreboard.gate(tmp_path, "claude-haiku-5-5", "abcdef1")
-    assert "Opus one-shot 6/7" in lines[0] and "bars from another grader tree" in lines[0]
+    assert "Opus one-shot mean 6.00/7" in lines[0] and "bars from another grader tree" in lines[0]
+
+
+def test_the_gate_line_shows_best_and_worst_beside_each_mean(tmp_path):
+    _copy_baselines(tmp_path)
+    for model, runs_passed in ((scoreboard.SONNET, (1, 2, 6)), (scoreboard.OPUS, (4, 5, 6))):
+        for i, passed in enumerate(runs_passed, 1):
+            _one_shot(tmp_path, f"20261023-P1-oneshot-{model[7:-4]}-{i}", "2026-10-23-batch-f", model, passed,
+                      "b" * 40)
+    for i, passed in enumerate((3, 4, 7), 1):
+        _scored(tmp_path, f"20261023-P1-cadence-haiku-{i}", "P1", passed)
+    line = scoreboard.gate(tmp_path, "claude-haiku-5-5", "abcdef1")[1][0]
+    assert "claude-haiku-5-5 mean 4.67/7 (best 7, worst 3, n=3)" in line
+    assert "Sonnet one-shot mean 3.00/7 (best 6, worst 1, n=3)" in line   # one lucky Sonnet run shows
+    assert "beats Sonnet yes, matches Opus (within 1) yes: PASS" in line
