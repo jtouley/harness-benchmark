@@ -1,0 +1,68 @@
+{
+ "arm": "cadence",
+ "batch": "2026-10-23-stubs",
+ "cadence": {
+  "published_in": [
+   "origin/main"
+  ],
+  "repo": "https://github.com/jtouley/cadence",
+  "sha": "c458a469f89c887df7f3aab90e728a1091df1df1",
+  "tree_clean": true
+ },
+ "claude_version": null,
+ "command": [
+  "/home/user/hb-findings/loop/stubs/hook_env_core_bare.sh",
+  "/home/user/bf/plugin-c458a46",
+  "/home/user/bf/runs/20261023-stub-f10-hook-env-core-bare/out",
+  "/home/user/bf/runs/20261023-stub-f10-hook-env-core-bare/venv"
+ ],
+ "cost": {
+  "list_usd": null,
+  "reported_usd": null
+ },
+ "counts": {
+  "counts": false,
+  "why": "stub: a session's own probe, not graded"
+ },
+ "ended_at": "2026-10-23T18:04:10Z",
+ "exit_code": 1,
+ "isolation": {
+  "cwd": "/home/user/bf/runs/20261023-stub-f10-hook-env-core-bare/cwd",
+  "fresh_home": true,
+  "home": "/home/user/bf/runs/20261023-stub-f10-hook-env-core-bare/home",
+  "other_cadence_checkouts": []
+ },
+ "kind": "stub",
+ "model_requested": null,
+ "models_served": null,
+ "provenance": {
+  "evidence": [],
+  "source": "driver"
+ },
+ "request_id": null,
+ "run_id": "20261023-stub-f10-hook-env-core-bare",
+ "schema": 1,
+ "session_id": null,
+ "started_at": "2026-10-23T18:04:04Z",
+ "stop_point": {
+  "block": null,
+  "reason": "core.bare false -> true"
+ },
+ "task": null,
+ "timing": {
+  "agent_active_seconds": null,
+  "agent_wall_seconds": null,
+  "blocks": null,
+  "run_wall_seconds": 5.737
+ },
+ "transcript": {
+  "bytes": 301,
+  "path": "blobs/bb8a854ea56500d9c0787071543bdade5eec3af0c3f7e4ce4d7394fa630587ea.gz",
+  "sha256": "bb8a854ea56500d9c0787071543bdade5eec3af0c3f7e4ce4d7394fa630587ea",
+  "store": "git:jtouley/harness-benchmark@runs-store"
+ },
+ "tree": {
+  "missing": "--tree not given",
+  "sha256": null
+ }
+}
