@@ -7,7 +7,9 @@ tier's reference patches and hidden tests (golden/tasks/*). Lockfiles are left o
 packages, not solutions. The saved golden inputs (golden/cadence/*.md, the specs a Cadence run is
 given) are fingerprinted too, under the same algorithm, and each one also gets a whole-text
 fingerprint (`inputs`: the sha256 of the file's text after the step 1 normalisation of every line, the
-lines joined with a newline), because a one-line spec gives no shingle.
+lines joined with a newline), because a one-line spec gives no shingle. The task prompts
+(golden/pipeline/P*/prompt.md) get the shingle fingerprints (not the whole-text one): a spec quoted at length in a Cadence file
+(a fixture made from a run's own report, say) is a leak although the spec itself is not secret.
 
 Algorithm 1 (Cadence's contract test implements the same; the fixed vector in tests/test_loop_fingerprints.py
 is tested in both repositories):
@@ -71,8 +73,13 @@ def input_sources(root: Path = ROOT) -> list[Path]:
     return sorted(p for p in root.glob("golden/cadence/*.md") if p.name != "README.md")
 
 
+def prompt_sources(root: Path = ROOT) -> list[Path]:
+    """The task prompts, P1 to P4 (P4 is the hold-out): the spec text every benchmark run starts from."""
+    return sorted(root.glob("golden/pipeline/P*/prompt.md"))
+
+
 def sources(root: Path = ROOT) -> list[Path]:
-    return reference_sources(root) + input_sources(root)
+    return reference_sources(root) + input_sources(root) + prompt_sources(root)
 
 
 def whole_text(text: str) -> str:
@@ -89,7 +96,8 @@ def build(root: Path = ROOT) -> dict:
     return {"algorithm": ALGORITHM, "source": "jtouley/harness-benchmark", "source_commit": commit,
             "sources": ["golden/pipeline/P*/reference/**", "golden/pipeline/key/answer_key.json",
                         "golden/pipeline/P*/key/answer_key.json",
-                        "golden/tasks/*/reference.patch", "golden/tasks/*/hidden/**", "golden/cadence/*.md"],
+                        "golden/tasks/*/reference.patch", "golden/tasks/*/hidden/**", "golden/cadence/*.md",
+                        "golden/pipeline/P*/prompt.md"],
             "count": len(hashes), "sha256": sorted(hashes), "inputs": inputs}
 
 
