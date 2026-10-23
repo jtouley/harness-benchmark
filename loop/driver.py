@@ -406,6 +406,7 @@ def main(argv: list[str] | None = None) -> int:
     lines = args.transcript.read_text(encoding="utf-8", errors="replace").splitlines() \
         if args.transcript.exists() else []
     hits = contact(lines, args.plugin_dir)
+    lost = api_error(lines)
     facts = transcript_facts(lines) \
         if args.transcript.exists() else {"models_served": None, "session_id": None, "claude_version": None,
                                           "cost": {"list_usd": None, "reported_usd": None}}
@@ -423,7 +424,7 @@ def main(argv: list[str] | None = None) -> int:
         counts = {"counts": False, "why": "the plugin tree changed during the run"}
     elif hits:
         counts = {"counts": False, "why": f"the transcript touched the benchmark or another checkout: {hits[0]}"}
-    elif (lost := api_error(lines)) is not None:
+    elif lost is not None:
         counts = {"counts": False, "why": f"infrastructure loss: the API answered {lost}"}
     elif prompt is not None and args.agent_argv and (argv_problem := _agent_argv_problem(args.agent_argv, prompt)):
         counts = {"counts": False, "why": f"the agent's argv: {argv_problem}"}
@@ -431,6 +432,7 @@ def main(argv: list[str] | None = None) -> int:
         "schema": 1, "run_id": args.run_id, "kind": args.kind, "batch": args.batch,
         "provenance": {"source": "driver", "evidence": []}, "task": args.task, "request_id": args.request_id,
         "arm": args.arm, "cadence": cadence, "model_requested": args.model, **facts, "command": command,
+        "api_error": lost,
         "spec": None if args.spec is None else {"path": str(args.spec.resolve()), "prompt": prompt,
                                                 "sha256": hashlib.sha256(args.spec.read_bytes()).hexdigest()},
         "started_at": started, "ended_at": ended, "exit_code": exit_code, "stop_point": stop,
