@@ -8,22 +8,18 @@ the number. Rule 13 changed on 23 October (the owner pinned the baselines); the 
 ## Owner's goals (only the owner changes these)
 
 Copied from the front matter of the owner's postmortem
-(https://claude.ai/artifact/WbaPy7W4Qc2EZL9R68B1oA), the owner's words or a direct restatement of them, with
+(https://claude.ai/artifact/WbaPy7W4Qc2EZL9R68B1oA, rev 224), in its order, the owner's words or a direct restatement of them, with
 the date. Only the owner (Jason Touleyrou) sets, changes or removes anything in this section. Every session
 and agent reads it before acting; a plan, decision or action that would conflict with a line here is not
 taken: it goes to the owner first, citing the line. The numbered rules below are how the code holds these.
 
-**The goal and the bar**
+**The goal and the only priority**
 
 - **The only priority:** test Cadence on Haiku against the one-shot baselines on harness-benchmark P1 and
   P2, at n=3 per task. Work that does not serve this is parked unless the owner names it. (Oct 23: "The
   only priority is testing cadence with Haiku against the One Shot benchmarks.")
 - **The bar:** Cadence on Haiku beats the Sonnet one-shot (a mean above 3/7) and matches the Opus one-shot
   (5 to 6/7) on P1 and P2 at n=3, on the benchmark's own grader. (Oct 22)
-- **The bar, as the owner scored it (Oct 23):** "Original 3/7 of sonnet, must beat and match opus - so 4 is
-  good, 5 or better is ideal." Read as: on each of P1 and P2, at n=3, a Cadence-on-Haiku mean of 4/7 or
-  more passes (good), and 5/7 or more is ideal. The gate reports both tiers. This replaces the
-  coordinator's own "Opus minus one" margin, which made P1 need 5.
 - **Done:** P1 and P2 means meet the bar on two consecutive batches, at no more than 1.25x the one-shot
   time. (Oct 22, 19:30)
 - **Stretch goal, speed:** a Cadence run takes at most 120 to 125% of the one-shot's wall time on the same
@@ -32,6 +28,11 @@ taken: it goes to the owner first, citing the line. The numbered rules below are
   iteration starts from the Cadence runs that missed, names why from their records, fixes that cause, and
   re-runs Cadence. Nothing else enters the loop unless the owner names it. (Oct 23: "everything in your loop
   goal is only focused on fixing any cadence runs not meeting those SLOs.")
+- **The bar, as the owner scored it (Oct 23):** "Original 3/7 of sonnet, must beat and match opus - so 4 is
+  good, 5 or better is ideal." Read as: on each of P1 and P2, at n=3, a Cadence-on-Haiku mean of 4/7 or
+  more passes (good), and 5/7 or more is ideal. The gate reports both tiers. This replaces the
+  coordinator's own "Opus minus one" margin, which made P1 need 5. In the code: `GOOD_FLOOR`,
+  `IDEAL_FLOOR`, rule 13.
 
 **Baselines: fixed, never re-run**
 
@@ -42,7 +43,7 @@ taken: it goes to the owner first, citing the line. The numbered rules below are
   bar or the time basis. (Oct 23: "We already have the baselines, we don't need to rerun them." "We only
   need to be re-running Cadence ever.")
 
-**How a run is made**
+**How a run is done**
 
 - Execution is `/cadence <spec path>` only; the spec is the whole prompt. Cadence's prompts are only the
   initial spec.
@@ -50,6 +51,9 @@ taken: it goes to the owner first, citing the line. The numbered rules below are
 - Golden samples (d1 to d4) are for harness iteration only; no model is trained. Keep the contamination
   guard and the hold-out task.
 - Jev: verdict text only.
+- **Models for the work itself:** every working session (coordination, fixes, reviews) runs on Opus.
+  Sessions that only monitor a benchmark batch may run on Haiku. The runs under test stay Cadence on Haiku.
+  (Oct 23: "Everything should be opus... for the benchmark monitor runs those can be haiku.")
 
 **Authority**
 
@@ -61,15 +65,15 @@ taken: it goes to the owner first, citing the line. The numbered rules below are
   moving. (Oct 23)
 - **cadence-core:** nothing (no push, PR, merge, branch delete or comment) without the owner and an
   empirical presentation of proof.
-- The owner's postmortem is the only place for updates. The coordinator gets the other sessions to good on
-  cadence, then gives the pathway to a cadence-core build.
+- This document (the postmortem) is the only place for updates. The coordinator gets the other sessions to
+  good on cadence, then gives the pathway to a cadence-core build.
 - CI: hosted CI is off. Before every push, run what CI would run (ci_local); keep pre-commit enabled on
   cadence.
 - Everything from all runs is documented in this postmortem structure, traced back, reviewed and built,
   empirically. The loop and postmortem structure is how Cadence self-learns in dev.
 - #195 is parked.
 
-**Superseded decisions**
+**Superseded decisions (kept so they are not repeated)**
 
 - Oct 23: the coordinator decided, without the owner, that the gate's bars follow each batch's newest
   one-shots, and Batch F re-ran all three one-shots. This contradicted the bar above, spent session limit,

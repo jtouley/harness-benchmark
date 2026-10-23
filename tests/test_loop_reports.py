@@ -150,6 +150,12 @@ def test_the_floors_are_the_owners_numbers():
     assert not hasattr(scoreboard, "OPUS_MARGIN")
 
 
+@pytest.mark.parametrize(("mean", "tier"), [(3.99, "MISS"), (4.0, "GOOD"), (4.99, "GOOD"), (5.0, "IDEAL"),
+                                            (7.0, "IDEAL"), (0.0, "MISS")])
+def test_the_tier_edges(mean, tier):
+    assert scoreboard.tier_of(mean) == tier
+
+
 def test_the_committed_scoreboard_is_what_the_generator_writes():
     assert scoreboard.table(RUNS) == (ROOT / "scoreboard.md").read_text(encoding="utf-8")
 
