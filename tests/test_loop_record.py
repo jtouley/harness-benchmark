@@ -417,3 +417,21 @@ def test_the_check_refuses_a_counting_record_of_a_kind_that_never_counts(tmp_pat
         (runs / rid / "record.json").write_text(json.dumps(rec))
     problems = check.validate_tree(runs)
     assert problems == ["20261023-stub-bad/record.json: a stub run never counts (counts.counts is true)"]
+
+
+def test_the_check_refuses_a_counting_backfilled_record_without_a_grader_score(tmp_path):
+    """A backfilled record counts only with a score from the harness-benchmark grader (owner, 2026-10-23); its
+    commit may be unrecorded (the 15 October baselines say why in grader.basis)."""
+    runs = tmp_path / "runs"
+    backfill = {"source": "backfill", "evidence": ["ec54dbc"]}
+    for rid, score in (("20261015-graded", True), ("20261015-ungraded", False)):
+        (runs / rid).mkdir(parents=True)
+        (runs / rid / "record.json").write_text(json.dumps(
+            minimal(rid, provenance=backfill, counts={"counts": True, "why": "x"})))
+        if score:
+            record.append_score(runs, {"run_id": rid, "grader": {"repo": "jtouley/harness-benchmark", "commit": None,
+                                                              "tree": None, "basis": "not recorded"},
+                                       "reward": 0.0, "passed": 0, "total": 7, "idempotent": True, "stream_ok": True,
+                                       "error": None, "source": "backfill", "graded_at": None})
+    assert check.validate_tree(runs) == [
+        "20261015-ungraded/record.json: a backfilled record counts only with a score from the harness-benchmark grader"]

@@ -16,6 +16,7 @@ SCORE_SCHEMA = json.loads((SCHEMAS / "score.schema.json").read_text(encoding="ut
 # A run id: the run's start date (YYYYMMDD), then dash-separated words, e.g. 20261021-P1-cadence-core-haiku-1.
 # A stub is a probe the session wrote, not a graded run: it never counts (review of #71).
 NON_COUNTING_KINDS = frozenset({"stub"})
+GRADER_REPO = "jtouley/harness-benchmark"  # the only grader whose scores count
 RUN_ID = re.compile(RECORD_SCHEMA["properties"]["run_id"]["pattern"].strip("^$"))
 
 _TYPES = {"string": str, "boolean": bool, "object": dict, "array": list, "null": type(None)}
