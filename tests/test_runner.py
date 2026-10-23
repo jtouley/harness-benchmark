@@ -182,6 +182,113 @@ def test_auth_proxy_gives_the_trial_the_relay_and_the_ca_and_no_key(tmp_path):
     assert json.loads((tmp_path / "out" / "host.json").read_text())["auth"] == "proxy"
 
 
+NET_GUARD = RUNNER / "net_guard.sh"
+BUILD = RUNNER / "pipeline" / "build.sh"
+FAKE_IPTABLES = """#!/bin/sh
+# Fake iptables: -C says a rule is absent (exit 1) unless HB_HAVE lists the chain; -L DOCKER-USER follows HB_DOCKER_USER.
+echo "iptables $*" >>"$HB_IPT_LOG"
+case "$1" in
+  -C) case " $HB_HAVE " in *" $2 "*) exit 0 ;; *) exit 1 ;; esac ;;
+  -L) [ "$HB_DOCKER_USER" = 1 ] ;;
+  *) exit 0 ;;
+esac
+"""
+
+
+def _guard(tmp_path: Path, *args: str, docker_user: str = "1", have: str = "") -> tuple[subprocess.CompletedProcess, list[str]]:
+    ipt = tmp_path / "iptables"
+    ipt.write_text(FAKE_IPTABLES)
+    ipt.chmod(0o755)
+    log = tmp_path / "ipt.log"
+    env = {**os.environ, "HB_IPTABLES": str(ipt), "HB_IPT_LOG": str(log), "HB_DOCKER_USER": docker_user, "HB_HAVE": have}
+    r = subprocess.run(["bash", str(NET_GUARD), *args], capture_output=True, text=True, env=env)
+    return r, [line for line in log.read_text().splitlines() if "-I " in line] if log.exists() else []
+
+
+def test_net_guard_inserts_at_the_top_reject_first_then_the_relay_accept_above_it(tmp_path):
+    """An appended REJECT would sit below a distribution, ufw or conntrack ACCEPT for docker0 and leave the
+    bridge open: every rule is inserted at position 1, the REJECT first so the ACCEPT lands above it."""
+    r, inserted = _guard(tmp_path, "3129:3148")
+    assert r.returncode == 0, r.stderr
+    assert inserted == ["iptables -I INPUT 1 -i docker0 -j REJECT",
+                        "iptables -I INPUT 1 -i docker0 -p tcp --dport 3129:3148 -j ACCEPT",
+                        "iptables -I DOCKER-USER 1 -i docker0 -j REJECT"]
+    assert "nothing is forwarded" in r.stdout
+
+
+def test_net_guard_falls_back_to_forward_without_docker_user_and_adds_nothing_twice(tmp_path):
+    r, inserted = _guard(tmp_path, docker_user="0")
+    assert r.returncode == 0 and inserted[-1] == "iptables -I FORWARD 1 -i docker0 -j REJECT"
+    (tmp_path / "again").mkdir()
+    r, inserted = _guard(tmp_path / "again", have="INPUT DOCKER-USER")
+    assert r.returncode == 0 and inserted == []  # every rule was there already (-C found it)
+
+
+def test_net_guard_refuses_a_port_argument_that_is_not_a_range(tmp_path):
+    r, inserted = _guard(tmp_path, "3129;rm")
+    assert r.returncode == 2 and "FIRST:LAST" in r.stderr and inserted == []
+
+
+def _build_env(tmp_path: Path) -> dict:
+    """A PATH whose docker and rsync log their calls and refuse to run."""
+    for tool in ("docker", "rsync"):
+        (tmp_path / tool).write_text(f'#!/bin/sh\necho "{tool} $*" >>"$HB_DOCKER_LOG"\nexit 99\n')
+        (tmp_path / tool).chmod(0o755)
+    ca = tmp_path / "ca.pem"
+    ca.write_text("-----BEGIN CERTIFICATE-----\n-----END CERTIFICATE-----\n")
+    return {**os.environ, "PATH": f"{tmp_path}:{os.environ['PATH']}", "HB_DOCKER_LOG": str(tmp_path / "docker.log"),
+            "HB_BUILD_CA": str(ca)}
+
+
+@pytest.mark.parametrize("proxy, message", [
+    (f"http://hb:{FAKE_PROXY_TOKEN}@127.0.0.1:41549", "HTTP://HOST:PORT only"),
+    (f"http://127.0.0.1:41549/{FAKE_PROXY_TOKEN}", "HTTP://HOST:PORT only"),
+    (f"https://{FAKE_PROXY_TOKEN}.example:443", "HTTP://HOST:PORT only"),
+    ("", "needs HTTPS_PROXY"),
+])
+def test_build_refuses_a_proxy_url_with_a_credential_before_anything_runs(proxy, message, tmp_path):
+    """With HB_BUILD_CA, HTTPS_PROXY becomes a build argument of every image: the same http://HOST:PORT rule as
+    run_trial.sh --auth proxy, checked before rsync or docker run, and the URL is never printed."""
+    env = {k: v for k, v in _build_env(tmp_path).items() if k.lower() != "https_proxy"}
+    env["HTTPS_PROXY"] = proxy
+    r = subprocess.run(["bash", str(BUILD), "py"], capture_output=True, text=True, env=env)
+    assert r.returncode == 2 and message.lower() in r.stderr.lower()
+    assert FAKE_PROXY_TOKEN not in r.stdout + r.stderr
+    assert not (tmp_path / "docker.log").exists()
+
+
+def test_build_passes_a_plain_proxy_url_on_as_the_build_argument(tmp_path):
+    env = _build_env(tmp_path)
+    env["HTTPS_PROXY"] = "http://127.0.0.1:41549"
+    r = subprocess.run(["bash", str(BUILD), "py"], capture_output=True, text=True, env=env)
+    assert r.returncode != 0  # the fake rsync refuses, after the check passed
+    assert (tmp_path / "docker.log").read_text().startswith("rsync ")
+
+
+def test_auth_proxy_takes_a_free_relay_port_from_the_range_so_two_trials_do_not_collide(tmp_path):
+    args, env = _proxy_args(tmp_path)
+    (tmp_path / "docker").write_text(PROBE_DOCKER)
+    env.update(HTTPS_PROXY="http://127.0.0.1:9", HB_FAKE_PROBE="")
+    with socket.socket() as first, socket.socket() as second:
+        first.bind(("127.0.0.1", 0))
+        second.bind(("127.0.0.1", 0))
+        taken, free = first.getsockname()[1], second.getsockname()[1]
+        second.close()
+        lo, hi = sorted((taken, free))
+        r = sh(str(RUN_TRIAL), *args, "--auth", "proxy", "--relay-ports", f"{lo}:{hi}", check=False, env=env)
+    assert r.returncode == 0, r.stderr
+    create = next(line for line in (tmp_path / "docker.log").read_text().splitlines() if line.startswith("docker create"))
+    port = int(re.search(r"HB_PROXY=http://127\.0\.0\.1:(\d+)", create).group(1))
+    assert lo <= port <= hi and port != taken
+
+
+def test_auth_proxy_refuses_a_bad_relay_range(tmp_path):
+    args, env = _proxy_args(tmp_path)
+    env["HTTPS_PROXY"] = "http://127.0.0.1:41549"
+    r = sh(str(RUN_TRIAL), *args, "--auth", "proxy", "--relay-ports", "3148:3129", check=False, env=env)
+    assert r.returncode == 2 and "FIRST:LAST" in r.stderr and not (tmp_path / "docker.log").exists()
+
+
 def test_ca_is_only_for_auth_proxy(tmp_path):
     args, env = _proxy_args(tmp_path)
     r = sh(str(RUN_TRIAL), *args, check=False, env=env)

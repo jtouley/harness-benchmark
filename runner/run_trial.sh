@@ -8,7 +8,7 @@
 #                       [--agent-timeout SEC | --agent-backstop SEC [--max-budget-usd USD]]
 #                       [--grader-timeout SEC] [--image IMAGE] [--name NAME]
 #                       [--agent-cmd FILE] [--replay FILE [--replay-seed N]] [--grader-arg ARG]...
-#                       [--auth key | --auth proxy --ca FILE [--relay-port PORT]]
+#                       [--auth key | --auth proxy --ca FILE [--relay-port PORT | --relay-ports FIRST:LAST]]
 #
 #   --repo         task repository; copied into the container (the host copy is not changed)
 #   --prompt       task prompt; the arm's --suffix is appended after one space
@@ -31,12 +31,16 @@
 #   --auth         how the agent reaches the API. `key` (default): ANTHROPIC_API_KEY, below. `proxy`: a host
 #                  whose outbound traffic goes through a local HTTPS proxy that adds the credentials
 #                  (HTTPS_PROXY=http://HOST:PORT, no user or password in it). No key is sent. The runner
-#                  starts runner/proxy_relay.py on the Docker bridge's gateway at --relay-port (default
-#                  3129); the agent gets HTTPS_PROXY=http://<gateway>:<port>, ANTHROPIC_BASE_URL (if set
-#                  here) and --ca as NODE_EXTRA_CA_CERTS. Before the trial container is created, a probe
-#                  container must reach the relay and nothing else (no other port of the host, no address
-#                  outside; runner/net_guard.sh sets the host's firewall so), or the runner exits 2.
+#                  starts runner/proxy_relay.py on the Docker bridge's gateway, on --relay-port or else on
+#                  a free port of --relay-ports (default 3129:3148, the range runner/net_guard.sh opens),
+#                  so two trials at once get two ports; the agent gets HTTPS_PROXY=http://<gateway>:<port>,
+#                  ANTHROPIC_BASE_URL (if set here) and --ca as NODE_EXTRA_CA_CERTS. Before the trial
+#                  container is created, a probe container must reach the relay and no other port of the
+#                  host and no address outside (runner/net_guard.sh sets the host's firewall so), or the
+#                  runner exits 2. The relay copies bytes and refuses no CONNECT: what the agent can reach
+#                  through it is the host proxy's policy, not the runner's.
 #   --ca           the proxy's CA certificate (PEM), copied into the container (--auth proxy only)
+#   --relay-ports  FIRST:LAST, the range a free relay port is taken from (default 3129:3148)
 #
 # ANTHROPIC_API_KEY is read from this process's environment and written to the container's standard
 # input (a shell builtin, so it is in no process's arguments). It is not in the container's
@@ -51,7 +55,7 @@ die() { printf 'run_trial: %s\n' "$*" >&2; exit 2; }
 IMAGE="${HB_RUNNER_IMAGE:-harness-benchmark/runner:local}"
 MODEL=claude-opus-5-5 PLUGIN="" SUFFIX="" REPO="" PROMPT="" GRADER="" OUT="" AGENT_CMD=""
 PERMISSION_MODE=auto AGENT_TIMEOUT="" AGENT_BACKSTOP="" MAX_BUDGET_USD="" GRADER_TIMEOUT=900 REPLAY="" REPLAY_SEED=0
-AUTH=key CA="" RELAY_PORT=3129
+AUTH=key CA="" RELAY_PORT="" RELAY_PORTS=3129:3148
 GRADER_ARGS=()
 NAME="hb-trial-$(date +%Y%m%d-%H%M%S)-$$"
 
@@ -78,6 +82,7 @@ while [ $# -gt 0 ]; do
     --auth) AUTH="${2:?}"; shift 2 ;;
     --ca) CA="${2:?}"; shift 2 ;;
     --relay-port) RELAY_PORT="${2:?}"; shift 2 ;;
+    --relay-ports) RELAY_PORTS="${2:?}"; shift 2 ;;
     -h|--help) usage; exit 0 ;;
     *) usage >&2; die "unknown argument: $1" ;;
   esac
@@ -110,7 +115,9 @@ AGENT_TIMEOUT=$((10#$AGENT_TIMEOUT)) AGENT_BACKSTOP=$((10#$AGENT_BACKSTOP))  # 0
 [ -n "$PLUGIN" ] || { [ "$AGENT_BACKSTOP" -eq 0 ] && [ -z "$MAX_BUDGET_USD" ]; } ||
   die "--agent-backstop and --max-budget-usd are for a harness arm (--plugin-dir); a one-shot has its guard cap"
 case "$AUTH" in key|proxy) ;; *) die "--auth must be key or proxy" ;; esac
-case "$RELAY_PORT" in ''|*[!0-9]*) die "--relay-port must be a number" ;; esac
+case "$RELAY_PORT" in *[!0-9]*) die "--relay-port must be a number" ;; esac
+[[ "$RELAY_PORTS" =~ ^([0-9]+):([0-9]+)$ ]] && [ "${BASH_REMATCH[1]}" -le "${BASH_REMATCH[2]}" ] ||
+  die "--relay-ports must be FIRST:LAST"
 UPSTREAM=""
 if [ "$AUTH" = proxy ]; then
   [ -f "$CA" ] || die "--auth proxy needs --ca, the proxy's CA certificate"
@@ -183,6 +190,23 @@ PROXY_ENV=()
 if [ "$AUTH" = proxy ]; then
   GATEWAY=$(docker network inspect bridge --format '{{range .IPAM.Config}}{{.Gateway}}{{end}}')
   [ -n "$GATEWAY" ] || die "--auth proxy: the Docker bridge has no gateway address"
+  if [ -z "$RELAY_PORT" ]; then
+    # A free port of the range, so two trials at once do not collide on one relay port.
+    RELAY_PORT=$(python3 - "$GATEWAY" "$RELAY_PORTS" <<'PYPORT'
+import socket, sys
+gateway, (first, last) = sys.argv[1], (int(x) for x in sys.argv[2].split(":"))
+for port in range(first, last + 1):
+    with socket.socket() as s:
+        try:
+            s.bind((gateway, port))
+        except OSError:
+            continue
+        print(port)
+        break
+PYPORT
+)
+    [ -n "$RELAY_PORT" ] || die "--auth proxy: no free relay port in $RELAY_PORTS on $GATEWAY (other trials running?)"
+  fi
   python3 "$(dirname "$0")/proxy_relay.py" --listen "$GATEWAY:$RELAY_PORT" --upstream "$UPSTREAM" \
     >"$STAGE/relay.log" 2>&1 &
   RELAY_PID=$!
@@ -199,7 +223,7 @@ if [ "$AUTH" = proxy ]; then
     exit 0' probe "$GATEWAY" "$RELAY_PORT" $host_ports 2>&1) ||
     die "--auth proxy: the network probe did not run: $probe"
   [ -z "$probe" ] ||
-    die "--auth proxy: the trial network is not closed: $(echo $probe). Run runner/net_guard.sh $RELAY_PORT as root"
+    die "--auth proxy: the trial network is not closed: $(echo $probe). Run runner/net_guard.sh $RELAY_PORTS as root"
   PROXY_ENV=(-e HB_PROXY="http://$GATEWAY:$RELAY_PORT")
   [ -z "${ANTHROPIC_BASE_URL:-}" ] || PROXY_ENV+=(-e ANTHROPIC_BASE_URL="$ANTHROPIC_BASE_URL")
 fi
