@@ -205,3 +205,58 @@ def test_a_reference_diff_is_hand_written_and_cites_runs():
         {"text": "The map answers its own invariants, not the ticket's checks.",
          "run_ids": ["20261022-P1-cadence-core-haiku-3"]}]}, title="batch 0")
     assert "The map answers its own invariants" in _section(text, "Diagnosis")
+
+
+# --- the bars are the newest counted one-shots of the same task and grader tree (coordinator, 2026-10-23)
+
+def _one_shot(runs: Path, rid: str, batch: str, model: str, passed: int, tree: str, arm: str = "one-shot",
+              task: str = "P1", started: str = "2026-10-23T18:00:00Z") -> None:
+    rec = json.loads((RUNS / "20261015-P1-sonnet-1" / "record.json").read_text())
+    rec.update(run_id=rid, batch=batch, arm=arm, model_requested=model, task=task, started_at=started,
+               counts={"counts": True, "why": "test"})
+    rec["timing"] = {**rec["timing"], "agent_wall_seconds": 100.0}
+    (runs / rid).mkdir(parents=True)
+    (runs / rid / "record.json").write_text(json.dumps(rec))
+    record.append_score(runs, {"run_id": rid, "grader": {"repo": "jtouley/harness-benchmark", "commit": "abc1234",
+                                                      "tree": tree}, "reward": passed / 7, "passed": passed,
+                               "total": 7, "idempotent": True, "stream_ok": True, "error": None,
+                               "source": "driver", "graded_at": None})
+
+
+def test_the_bar_is_the_newest_batch_of_one_shots_on_the_same_grader_tree(tmp_path):
+    runs = tmp_path / "runs"
+    _one_shot(runs, "20261015-P1-sonnet-1", "2026-10-15-p1", scoreboard.SONNET, 3, "a" * 40, arm="baseline",
+              started="2026-10-15T10:00:00Z")
+    _one_shot(runs, "20261023-P1-oneshot-sonnet-1", "2026-10-23-batch-f", scoreboard.SONNET, 5, "c" * 40)
+    _one_shot(runs, "20261023-P1-oneshot-sonnet-2", "2026-10-23-batch-f", scoreboard.SONNET, 4, "c" * 40)
+    assert scoreboard.baseline(runs, "P1", scoreboard.SONNET) == 5           # the newest batch, its best run
+    assert scoreboard.baseline(runs, "P1", scoreboard.SONNET, tree="c" * 40) == 5
+    assert scoreboard.baseline(runs, "P1", scoreboard.SONNET, tree="a" * 40) == 3  # history, on its own tree
+    assert scoreboard.baseline(runs, "P1", scoreboard.SONNET, tree="d" * 40) is None
+
+
+def test_a_driver_one_shot_counts_as_a_one_shot_for_the_time_ratio(tmp_path):
+    runs = tmp_path / "runs"
+    _one_shot(runs, "20261023-P1-oneshot-haiku-1", "2026-10-23-batch-f", "claude-haiku-5-5", 5, "c" * 40)
+    assert scoreboard.oneshot_seconds(runs, "P1", "claude-haiku-5-5") is not None
+
+
+def test_the_gate_takes_the_bars_from_one_shots_on_the_runs_grader_tree(tmp_path):
+    _copy_baselines(tmp_path)  # 15 October: Sonnet 3/7 and Opus 6/7 on P1, grader tree not recorded
+    for model, passed in ((scoreboard.SONNET, 2), (scoreboard.OPUS, 4)):
+        for task in ("P1", "P2"):
+            _one_shot(tmp_path, f"20261023-{task}-oneshot-{model[7:-4]}-1", "2026-10-23-batch-f", model, passed,
+                      "b" * 40, task=task)
+    for task in ("P1", "P2"):
+        for i in (1, 2, 3):
+            _scored(tmp_path, f"20261023-{task}-cadence-haiku-{i}", task, 5)
+    ok, lines = scoreboard.gate(tmp_path, "claude-haiku-5-5", "abcdef1")
+    assert ok and "Sonnet one-shot 2/7, Opus one-shot 4/7: PASS" in lines[0] and "another grader tree" not in lines[0]
+
+
+def test_without_one_shots_on_the_runs_tree_the_gate_says_its_bars_are_from_another_tree(tmp_path):
+    _copy_baselines(tmp_path)
+    for i in (1, 2, 3):
+        _scored(tmp_path, f"20261023-P1-cadence-haiku-{i}", "P1", 6)
+    _, lines = scoreboard.gate(tmp_path, "claude-haiku-5-5", "abcdef1")
+    assert "Opus one-shot 6/7" in lines[0] and "bars from another grader tree" in lines[0]
