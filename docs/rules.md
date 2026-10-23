@@ -11,10 +11,12 @@ the number. No rule here is new.
    live run without `--spec`, gives the command exactly `/cadence <the spec's absolute path>` as
    `HB_AGENT_PROMPT`, refuses a command whose `claude` call carries any other prompt text, and keeps the
    spec's path, sha256 and the prompt in `record.spec`. A run whose agent argv shows another prompt does
-   not count. (Only in #73: `loop/driver.py`, `loop/schema/record.schema.json`; tests
+   not count. [loop/driver.py](../loop/driver.py),
+   [loop/schema/record.schema.json](../loop/schema/record.schema.json); tests
    `test_the_command_gets_exactly_slash_cadence_and_the_spec_path_and_the_record_has_the_spec`,
    `test_a_command_that_gives_the_agent_other_prompt_text_is_refused`,
-   `test_an_agent_that_ran_with_another_prompt_does_not_count` in `tests/test_loop_record.py`.)
+   `test_an_agent_that_ran_with_another_prompt_does_not_count` in
+   [tests/test_loop_record.py](../tests/test_loop_record.py).
    The saved specs are the golden inputs: [golden/cadence/README.md](../golden/cadence/README.md),
    [tests/test_golden_cadence.py](../tests/test_golden_cadence.py).
 2. **Whether a clean run counts is a function of its kind.** A stub never counts; a backfilled record
@@ -47,8 +49,9 @@ the number. No rule here is new.
    `test_the_driver_refuses_a_run_that_can_reach_another_cadence_checkout` in
    [tests/test_loop_record.py](../tests/test_loop_record.py)). After the run, every tool-call input in the
    transcript is scanned for the benchmark and for any other Cadence checkout; a hit goes in
-   `isolation.contact` and the run does not count. (The second scan is only in #73; test
-   `test_a_transcript_that_touched_the_benchmark_or_another_checkout_does_not_count`.)
+   `isolation.contact` and the run does not count. Test
+   `test_a_transcript_that_touched_the_benchmark_or_another_checkout_does_not_count` in
+   [tests/test_loop_record.py](../tests/test_loop_record.py).
 6. **A fresh HOME.** `--fresh-home` must be empty or new, and the record says whether the run had one.
    [loop/driver.py](../loop/driver.py); tests `test_a_fresh_home_is_empty_and_is_recorded`,
    `test_a_fresh_home_that_exists_and_is_not_empty_is_refused` in
@@ -65,10 +68,11 @@ the number. No rule here is new.
    credential file copied into the fresh HOME and nothing else). (The container side of `proxy` is the
    draft #70: [runner/run_trial.sh](../runner/run_trial.sh), `runner/proxy_relay.py`,
    `runner/net_guard.sh`; test `test_auth_proxy_refuses_a_proxy_url_with_a_credential_and_never_prints_it`
-   in [tests/test_runner.py](../tests/test_runner.py) on that branch.) (The host side of both routes is
-   only in #73: `scripts/host_trial.py`, the driver's `--auth` and `isolation.auth`; tests
+   in [tests/test_runner.py](../tests/test_runner.py) on that branch.) The host side of both routes:
+   [scripts/host_trial.py](../scripts/host_trial.py), the driver's `--auth` and `isolation.auth`; tests
    `test_the_fresh_home_gets_exactly_what_the_auth_route_needs`,
-   `test_the_agent_environment_carries_no_api_key_or_token` in `tests/test_host_trial.py`.)
+   `test_the_agent_environment_carries_no_api_key_or_token` in
+   [tests/test_host_trial.py](../tests/test_host_trial.py).
 
 ## Caps
 
@@ -122,13 +126,21 @@ the number. No rule here is new.
 
 ## The scoreboard and the gate
 
-13. **The gate bars are the counted one-shots.** A cadence commit passes for a model when, on every task
-    in the set, it has at least three scored runs whose mean checks passed is above the best counted
-    Sonnet one-shot and at least the best counted Opus one-shot of that task; the time ratio is reported
-    against the stretch goal, not gated. [loop/scoreboard.py](../loop/scoreboard.py) (`baseline`, `gate`);
-    tests `test_the_baselines_are_the_15_october_one_shots`, `test_the_gate_compares_the_mean_with_sonnet_and_opus`,
-    `test_the_gate_needs_n_runs_per_task` in [tests/test_loop_reports.py](../tests/test_loop_reports.py).
-    Today the counted one-shots are the 15 October runs.
+13. **The gate bars are the newest batch's one-shot means.** A bar is the mean checks passed of the
+    counted one-shots (arm `baseline` or `one-shot`) of the task and model in the newest batch that has
+    one, taken on the grader tree of the Cadence runs it is compared with; when no one-shot is on that
+    tree, the bar is the newest on any tree and the gate line says so. A cadence commit passes for a
+    model when, on every task in the set, it has at least three scored runs whose mean beats the Sonnet
+    bar and is within one check of the Opus bar; best and worst print beside each mean, so a single
+    lucky run shows; the time ratio is reported against the stretch goal, not gated.
+    [loop/scoreboard.py](../loop/scoreboard.py) (`bar`, `OPUS_MARGIN`, `gate`); tests
+    `test_the_bar_is_the_newest_batch_of_one_shots_on_the_same_grader_tree`,
+    `test_the_gate_takes_the_bars_from_one_shots_on_the_runs_grader_tree`,
+    `test_without_one_shots_on_the_runs_tree_the_gate_says_its_bars_are_from_another_tree`,
+    `test_the_gate_line_shows_best_and_worst_beside_each_mean`,
+    `test_the_gate_compares_the_mean_with_sonnet_and_opus`, `test_the_gate_needs_n_runs_per_task` in
+    [tests/test_loop_reports.py](../tests/test_loop_reports.py). Today the counted one-shots are the
+    15 October runs; from batch F iteration 0 on, the bars are each batch's own one-shots.
 14. **A run that stopped early has no time ratio.** The speed ratio counts only runs that reached the
     end of the pipeline or passed a check. [loop/scoreboard.py](../loop/scoreboard.py) (`reached_end`);
     test `test_a_run_that_stopped_early_with_no_check_passed_has_no_ratio` in
@@ -179,13 +191,13 @@ the number. No rule here is new.
 
 | Rule | Code | Tests | State |
 |---|---|---|---|
-| 1 entry prompt and spec sha | `loop/driver.py` | `tests/test_loop_record.py` | #73 |
+| 1 entry prompt and spec sha | `loop/driver.py` | `tests/test_loop_record.py` | main |
 | 2 counting by kind | `loop/record.py`, `loop/check.py` | `tests/test_loop_record.py` | main |
 | 3 append-only records | `loop/check.py` | `tests/test_loop_record.py` | main |
 | 4 clean published plugin | `loop/driver.py` | `tests/test_loop_record.py` | main |
-| 5 two isolation scans | `loop/driver.py` | `tests/test_loop_record.py` | checkout scan main; contact scan #73 |
+| 5 two isolation scans | `loop/driver.py` | `tests/test_loop_record.py` | main |
 | 6 fresh HOME | `loop/driver.py` | `tests/test_loop_record.py` | main |
-| 7 no key to the agent; auth routes | `runner/run_trial.sh`, `scripts/host_trial.py` | `tests/test_runner.py`, `tests/test_host_trial.py` | container key rules main; `proxy` container side #70 (draft); host routes #73 |
+| 7 no key to the agent; auth routes | `runner/run_trial.sh`, `scripts/host_trial.py` | `tests/test_runner.py`, `tests/test_host_trial.py` | container key rules and host routes main; `proxy` container side #70 (draft) |
 | 8 cap per arm | `runner/run_trial.sh`, `scripts/pipeline_trial.py` | `tests/test_runner.py`, `tests/test_pipeline_trials.py` | main |
 | 9 P4 hold-out | `loop/driver.py`, `scripts/pipeline_trial.py` | `tests/test_pipeline_p4.py`, `tests/test_pipeline_p4_runner.py` | main |
 | 10 fingerprints | `loop/fingerprints.py` | `tests/test_loop_fingerprints.py`, `tests/test_golden_cadence.py` | main |
