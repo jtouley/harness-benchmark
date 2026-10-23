@@ -240,6 +240,8 @@ def main(argv: list[str] | None = None) -> int:
     if args.timing and args.timing.exists():
         agent_wall = json.loads(args.timing.read_text(encoding="utf-8")).get("agent_seconds")
     counts = {"counts": True, "why": "driver run" + (" on a clean published plugin tree" if cadence else "")}
+    if args.kind == "stub":
+        counts = {"counts": False, "why": "stub: a session's own probe, not graded"}
     if cadence and not cadence["tree_clean"]:
         counts = {"counts": False, "why": "the plugin tree changed during the run"}
     rec = {

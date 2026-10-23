@@ -11,7 +11,7 @@
  },
  "claude_version": null,
  "command": [
-  "/home/user/bf/stubs/hook_env_core_bare.sh",
+  "/home/user/hb-findings/loop/stubs/hook_env_core_bare.sh",
   "/home/user/bf/plugin-c458a46",
   "/home/user/bf/runs/20261023-stub-f10-hook-env-core-bare/out",
   "/home/user/bf/runs/20261023-stub-f10-hook-env-core-bare/venv"
@@ -21,10 +21,10 @@
   "reported_usd": null
  },
  "counts": {
-  "counts": true,
-  "why": "driver run on a clean published plugin tree"
+  "counts": false,
+  "why": "stub: a session's own probe, not graded"
  },
- "ended_at": "2026-10-23T17:46:54Z",
+ "ended_at": "2026-10-23T18:04:10Z",
  "exit_code": 1,
  "isolation": {
   "cwd": "/home/user/bf/runs/20261023-stub-f10-hook-env-core-bare/cwd",
@@ -43,7 +43,7 @@
  "run_id": "20261023-stub-f10-hook-env-core-bare",
  "schema": 1,
  "session_id": null,
- "started_at": "2026-10-23T17:46:47Z",
+ "started_at": "2026-10-23T18:04:04Z",
  "stop_point": {
   "block": null,
   "reason": "core.bare false -> true"
@@ -53,7 +53,7 @@
   "agent_active_seconds": null,
   "agent_wall_seconds": null,
   "blocks": null,
-  "run_wall_seconds": 7.304
+  "run_wall_seconds": 5.737
  },
  "transcript": {
   "bytes": 301,

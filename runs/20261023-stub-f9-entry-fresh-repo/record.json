@@ -11,7 +11,7 @@
  },
  "claude_version": null,
  "command": [
-  "/home/user/bf/stubs/entry_fresh_repo.sh",
+  "/home/user/hb-findings/loop/stubs/entry_fresh_repo.sh",
   "/home/user/bf/plugin-c458a46",
   "/home/user/bf/runs/20261023-stub-f9-entry-fresh-repo/out"
  ],
@@ -20,10 +20,10 @@
   "reported_usd": null
  },
  "counts": {
-  "counts": true,
-  "why": "driver run on a clean published plugin tree"
+  "counts": false,
+  "why": "stub: a session's own probe, not graded"
  },
- "ended_at": "2026-10-23T17:46:25Z",
+ "ended_at": "2026-10-23T18:04:04Z",
  "exit_code": 1,
  "isolation": {
   "cwd": "/home/user/bf/runs/20261023-stub-f9-entry-fresh-repo/cwd",
@@ -42,7 +42,7 @@
  "run_id": "20261023-stub-f9-entry-fresh-repo",
  "schema": 1,
  "session_id": null,
- "started_at": "2026-10-23T17:46:25Z",
+ "started_at": "2026-10-23T18:04:04Z",
  "stop_point": {
   "block": "A1",
   "reason": "ERROR: Cannot determine task ID. Provide --task-id, --task-desc, or --from-branch"
@@ -52,7 +52,7 @@
   "agent_active_seconds": null,
   "agent_wall_seconds": null,
   "blocks": null,
-  "run_wall_seconds": 0.244
+  "run_wall_seconds": 0.228
  },
  "transcript": {
   "bytes": 256,

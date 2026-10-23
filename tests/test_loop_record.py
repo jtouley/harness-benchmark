@@ -259,8 +259,8 @@ def test_the_driver_runs_the_command_and_writes_a_valid_record(tmp_path, plugin)
     assert rec["command"][:2] == ["bash", "-c"] and rec["exit_code"] == 0
     assert rec["started_at"] <= rec["ended_at"]
     assert store.verify(rec["transcript"], tmp_path / "store")
-    # Eligibility only; a run is scored by the scores.jsonl lines the grader adds.
-    assert rec["counts"]["counts"] is True
+    # A stub never counts; a run is scored by the scores.jsonl lines the grader adds.
+    assert rec["cadence"]["tree_clean"] is True and rec["counts"]["counts"] is False
     assert not (run / "scores.jsonl").exists()
 
 
@@ -309,7 +309,7 @@ def test_bytecode_written_into_the_plugin_during_the_run_does_not_make_it_unclea
                        f"{plugin}/stray.pyc")
     rc, run = _drive(tmp_path, plugin, script=leaves_bytecode)
     rec = json.loads((run / "record.json").read_text())
-    assert rc == 0 and rec["cadence"]["tree_clean"] is True and rec["counts"]["counts"] is True
+    assert rc == 0 and rec["cadence"]["tree_clean"] is True
 
 
 def test_the_command_runs_without_writing_bytecode(tmp_path, plugin):
@@ -317,7 +317,7 @@ def test_the_command_runs_without_writing_bytecode(tmp_path, plugin):
     imports_the_hook = f"cd {plugin}/hooks && {sys.executable} -c 'import guard'"
     rc, run = _drive(tmp_path, plugin, script=imports_the_hook)
     assert rc == 0 and not (plugin / "hooks" / "__pycache__").exists()
-    assert json.loads((run / "record.json").read_text())["counts"]["counts"] is True
+    assert json.loads((run / "record.json").read_text())["cadence"]["tree_clean"] is True
 
 
 @pytest.mark.parametrize("change", ["echo patched >> {p}/plugin.json", "touch {p}/hotfix.py"])
@@ -396,3 +396,10 @@ def test_the_record_has_wall_agent_and_active_time(tmp_path, plugin):
     assert t["run_wall_seconds"] >= 0
     assert t["agent_active_seconds"] == 2.5  # the transcript's result lines: 1500 + 1000 ms
     assert t["blocks"] is None
+
+
+def test_a_stub_run_never_counts(tmp_path, plugin):
+    """A stub is a probe the session wrote, not a graded run (review of #71)."""
+    rc, run = _drive(tmp_path, plugin)
+    counts = json.loads((run / "record.json").read_text())["counts"]
+    assert rc == 0 and counts == {"counts": False, "why": "stub: a session's own probe, not graded"}
