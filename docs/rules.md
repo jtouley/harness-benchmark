@@ -304,7 +304,7 @@ taken: it goes to the owner first, citing the line. The numbered rules below are
 | 10 fingerprints | `loop/fingerprints.py` | `tests/test_loop_fingerprints.py`, `tests/test_golden_cadence.py` | main |
 | 11 findings with owner, closed by script | `loop/findings.py` | `tests/test_loop_findings.py` | main |
 | 12 trailers and the trace | `loop/findings.py`, `loop/trace.py` | `tests/test_loop_findings.py`, `tests/test_loop_trace.py` | main |
-| 13 pinned baselines; only Cadence is re-run | `baselines.json`, `loop/baselines.py`, `loop/scoreboard.py`, `loop/driver.py` | `tests/test_loop_reports.py`, `tests/test_loop_record.py` | #89 |
+| 13 pinned baselines; only Cadence is re-run | `baselines.json`, `loop/baselines.py`, `loop/scoreboard.py`, `loop/driver.py` | `tests/test_loop_reports.py`, `tests/test_loop_record.py` | main |
 | 14 early stop: no gate ratio, kept in `loop.speed` | `loop/scoreboard.py` | `tests/test_loop_reports.py` | main |
 | 15 postmortems complete and current | `loop/check.py`, `loop/postmortem.py`, `loop/driver.py` | `tests/test_loop_postmortem_complete.py` | main |
 | 16 after-merge rule | `runs/README.md` | rule 15 | main |
