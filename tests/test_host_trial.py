@@ -33,3 +33,12 @@ def test_the_agent_gets_its_own_session_and_not_this_repositorys_environment(mon
         assert name not in env
     assert env["HOME"] == str(tmp_path / "home") and env["CADENCE_HOME"] == "/srv/plugin"
     assert "CADENCE_HOME" not in host_trial.agent_env(tmp_path / "home", None)
+
+
+def test_a_one_shot_gets_the_guard_cap_and_a_cadence_arm_only_the_backstop():
+    """Criteria v2 section 5.3, runner/pipeline/caps.json: a one-shot stops at agent_timeout; a harness arm
+    has no guard cap, only the backstop."""
+    import json
+    caps = json.loads((ROOT / "runner" / "pipeline" / "caps.json").read_text())
+    assert host_trial.agent_cap(None) == caps["agent_timeout"] == 7200
+    assert host_trial.agent_cap(Path("/srv/plugin")) == caps["harness_backstop"]["default"]["seconds"] == 86400

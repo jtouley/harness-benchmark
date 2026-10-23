@@ -15,7 +15,7 @@ one-shot): this script adds no prompt text. In order:
 2. The dev replay (seed 0) on localhost:8099 while the agent runs.
 3. The agent: `claude -p "$HB_AGENT_PROMPT"` in RUN/repo, in its own session (the operator's Claude Code
    variables dropped), HOME as the driver gives it, with the plugin and, for a Cadence arm, peer models from
-   `--peer-model` in $HOME/.config/cadence/config.json. No time cap but the harness backstop (criteria v2 5.3).
+   `--peer-model` in $HOME/.config/cadence/config.json. It stops at its cap (criteria v2 5.3): a one-shot's guard cap, a Cadence arm's backstop.
    Every process it leaves is stopped before grading.
 4. The records the grader's reset would lose: RUN/context (a copy of .context), RUN/repo-as-left, the stop
    point (Cadence's own headless.py `next` on a copy of the repository, and the session's hard stop).
@@ -38,10 +38,17 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 GP = ROOT / "golden" / "pipeline"
-BACKSTOP = 86400  # runner/pipeline/caps.json harness_backstop default
+CAPS = ROOT / "runner" / "pipeline" / "caps.json"
 PORT = 8099
 GATED = ["src/", "lib/", "app/", "packages/", "pipeline/", "engine/", "pipelines/", "transform/", "Makefile"]
 DROPPED_PREFIXES = ("CLAUDE", "CCR_", "AI_AGENT", "DOCUMENTS_")
+
+
+def agent_cap(plugin: Path | None) -> int:
+    """Seconds after which the agent is stopped (criteria v2 section 5.3, runner/pipeline/caps.json): a one-shot
+    at its guard cap, a harness arm (a plugin) only at the harness backstop."""
+    caps = json.loads(CAPS.read_text(encoding="utf-8"))
+    return caps["harness_backstop"]["default"]["seconds"] if plugin is not None else caps["agent_timeout"]
 
 
 def _port_open() -> bool:
@@ -150,9 +157,10 @@ def main(argv: list[str] | None = None) -> int:
         argv_agent += ["--add-dir", str(spec_dir)]
     (out / "agent-argv.json").write_text(json.dumps(argv_agent) + "\n")
     env = agent_env(home, plugin)
+    cap = agent_cap(plugin)
     t0 = time.monotonic()
     with open(out / "transcript.jsonl", "w") as stdout, open(out / "agent.stderr", "w") as stderr:
-        agent = subprocess.Popen(["timeout", str(BACKSTOP), *argv_agent], cwd=repo, env=env, stdout=stdout,
+        agent = subprocess.Popen(["timeout", str(cap), *argv_agent], cwd=repo, env=env, stdout=stdout,
                                  stderr=stderr, start_new_session=True)
         rc = agent.wait()
     agent_seconds = round(time.monotonic() - t0, 1)
@@ -179,7 +187,7 @@ def main(argv: list[str] | None = None) -> int:
                              cwd=GP, stdout=grade, stderr=gerr).returncode
     (out / "timing.json").write_text(json.dumps({
         "agent_seconds": agent_seconds, "grader_seconds": round(time.monotonic() - t1, 1), "agent_exit": rc,
-        "grader_exit": grc, "backstop_seconds": BACKSTOP, "hit_backstop": rc == 124}, indent=1) + "\n")
+        "grader_exit": grc, "agent_cap_seconds": cap, "hit_cap": rc == 124}, indent=1) + "\n")
     return rc
 
 
