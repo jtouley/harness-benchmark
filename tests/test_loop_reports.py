@@ -114,9 +114,9 @@ def test_the_committed_scoreboard_is_what_the_generator_writes():
 # --- speed: agent time against the one-shot of the same task and model
 
 def test_the_one_shot_time_is_the_mean_agent_session_of_the_counted_baseline_runs():
-    assert scoreboard.oneshot_seconds(RUNS, "P1", "claude-haiku-5-5") == 1882.6
-    assert scoreboard.oneshot_seconds(RUNS, "P2", "claude-opus-5-5") == 2465.2
-    assert scoreboard.oneshot_seconds(RUNS, "P1", "claude-fable-5-1") is None
+    assert scoreboard.oneshot_seconds(RUNS, "P1", "claude-haiku-5-5", batch="2026-10-15-pipeline-trials") == 1882.6
+    assert scoreboard.oneshot_seconds(RUNS, "P2", "claude-opus-5-5", batch="2026-10-15-pipeline-trials") == 2465.2
+    assert scoreboard.oneshot_seconds(RUNS, "P1", "claude-fable-5-1", batch="2026-10-15-pipeline-trials") is None
 
 
 def test_the_time_ratio_of_a_cadence_run_that_passed_a_check():

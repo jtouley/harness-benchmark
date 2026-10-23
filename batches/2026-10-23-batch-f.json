@@ -1,0 +1,16 @@
+{
+ "batch": "2026-10-23-batch-f",
+ "grader_commit": "563a74c551e6735581474fcff06e0429c965e00b",
+ "grader_tree": "8a0977e42fa02981802090d1f9517efe537994c4",
+ "note": "batch F iteration 0: every run is graded with this grader (the pinned worktree of #73 at 563a74c); cadence 748a729, host method, auth proxy",
+ "agent_caps": {
+  "one-shot": 7200,
+  "cadence": 21600,
+  "why": "the Cadence arm at 3 x the one-shot cap, not the 86,400 s backstop (coordinator, 2026-10-23); a run that hits it is graded as it stands, with hit_cap in timing.json"
+ },
+ "lost_to_infrastructure": {
+  "what": "From 19:27 UTC on 2026-10-23 the account's session limit answered every call with 429 usage_limit_reached until 21:10. 20261023-P1-cadence-haiku-1 died on it after 1,864 s; 15 one-shots failed within 2 s; 5 Cadence runs were refused before starting (the plugin clone held __pycache__ from the run before).",
+  "records": "not published: the driver at 563a74c recorded the 429 runs as counted 0/7 results, a defect fixed in #73 (4132b0c, an API error is an infrastructure loss). The local records are kept outside the repository.",
+  "reruns": "the lost runs are run again with the suffix -r2, so no run id is used twice"
+ }
+}
