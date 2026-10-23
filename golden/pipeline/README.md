@@ -58,6 +58,11 @@ uv run --project ../.. python -m pipetask.p4trial --repo /tmp/p4-ref --key P4/ke
 `tests/test_pipeline_p4.py` is the proof: the reference grades 7 of 7 and rebuilds identically, and a
 variant with one check removed grades 6 of 7.
 
+On the isolated runner, P4 is wired like the others and gated the same way: `scripts/pipeline_trial.py run
+P4 --holdout ...` builds `grader-p4.pyz` (`pipetask.bundle --task P4`: the P4 grader with its key inside, no
+replay) and runs the `py` image; without `--holdout` the script refuses before it builds anything.
+`runner/pipeline/caps.json` has P4 with no grading deadline until its reference trials are measured.
+
 ## Commands
 
 All of them run in a project virtual environment (`uv run`); nothing is installed on the host.

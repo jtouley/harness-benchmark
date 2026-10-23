@@ -1,9 +1,9 @@
 # The pipeline family's trial images: the runner image plus each task's toolchain, with every package
 # the skeleton pins already in a cache, so no trial reads a package index (golden/pipeline/README.md,
 # "A trial on the isolated runner"). Built by runner/pipeline/build.sh, whose context holds only the
-# three skeletons: no reference, key, capture or grader is ever in this image.
+# four skeletons: no reference, key, capture or grader is ever in this image.
 #
-#   target py  (P1, P2): make, Python 3.12 (uv-managed), the P1 and P2 locks in the uv cache, the
+#   target py  (P1, P2, P4): make, Python 3.12 (uv-managed), the P1, P2 and P4 locks in the uv cache, the
 #                        grader's own environment in /opt/grader (duckdb, pyyaml).
 #   target p3  (P3):     py, plus JDK 17, sbt, the Spark/Scala/ScalaTest closure in the coursier and ivy
 #                        caches, and the dbt-spark closure (with pyspark) in a wheelhouse.
@@ -22,10 +22,13 @@ RUN uv python install "${PYTHON_VERSION}" \
  && UV_CACHE_DIR=/tmp/grader-cache uv venv -q --python "${PYTHON_VERSION}" /opt/grader \
  && UV_CACHE_DIR=/tmp/grader-cache uv pip install -q --python /opt/grader/bin/python duckdb==1.5.6 pyyaml==6.0.3 \
  && rm -rf /tmp/grader-cache
-# Warm the uv cache from the P1 and P2 locks, then drop the environments: only the cache stays.
+# Warm the uv cache from the P1, P2 and P4 locks, then drop the environments: only the cache stays.
+# P4 is the hold-out, so its pins must stay a subset of P1's and P2's: a package only P4 pins would sit in
+# the shared cache and tell a P1 or P2 arm that another task exists (tests/test_pipeline_p4_runner.py).
 COPY P1/skeleton /tmp/warm/P1
 COPY P2/skeleton /tmp/warm/P2
-RUN cd /tmp/warm/P1 && uv sync -q --frozen && cd /tmp/warm/P2 && uv sync -q --frozen \
+COPY P4/skeleton /tmp/warm/P4
+RUN cd /tmp/warm/P1 && uv sync -q --frozen && cd /tmp/warm/P2 && uv sync -q --frozen && cd /tmp/warm/P4 && uv sync -q --frozen \
  && rm -rf /tmp/warm && chown -R agent:agent /opt/hb/cache
 COPY toolchain-py.env /opt/hb/toolchain.env
 
