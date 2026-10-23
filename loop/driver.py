@@ -208,6 +208,21 @@ def contact(lines, plugin: Path | None) -> list[str]:
     return hits
 
 
+def api_error(lines) -> str | None:
+    """The API error a transcript's result reports (a 429 usage limit, a 529 overload), or None: such a run was
+    cut off from outside the agent, an infrastructure loss and not a result."""
+    found = None
+    for line in lines:
+        try:
+            event = json.loads(line)
+        except ValueError:
+            continue
+        if isinstance(event, dict) and event.get("type") == "result" and event.get("is_error") \
+                and (event.get("api_error_status") or event.get("api_error")):
+            found = f"{event.get('api_error_status')} {event.get('api_error') or ''}".strip()
+    return found
+
+
 def agent_prompt(spec: Path, arm: str) -> str:
     """`/cadence <the spec's absolute path>` for a Cadence arm, the spec's text for a one-shot."""
     return f"/cadence {spec.resolve()}" if arm == "cadence" else spec.read_text(encoding="utf-8")
@@ -392,6 +407,7 @@ def main(argv: list[str] | None = None) -> int:
     lines = args.transcript.read_text(encoding="utf-8", errors="replace").splitlines() \
         if args.transcript.exists() else []
     hits = contact(lines, args.plugin_dir)
+    lost = api_error(lines)
     facts = transcript_facts(lines) \
         if args.transcript.exists() else {"models_served": None, "session_id": None, "claude_version": None,
                                           "cost": {"list_usd": None, "reported_usd": None}}
@@ -410,12 +426,15 @@ def main(argv: list[str] | None = None) -> int:
         counts = {"counts": False, "why": "the plugin tree changed during the run"}
     elif hits:
         counts = {"counts": False, "why": f"the transcript touched the benchmark or another checkout: {hits[0]}"}
+    elif lost is not None:
+        counts = {"counts": False, "why": f"infrastructure loss: the API answered {lost}"}
     elif prompt is not None and args.agent_argv and (argv_problem := _agent_argv_problem(args.agent_argv, prompt)):
         counts = {"counts": False, "why": f"the agent's argv: {argv_problem}"}
     rec = {
         "schema": 1, "run_id": args.run_id, "kind": args.kind, "batch": args.batch,
         "provenance": {"source": "driver", "evidence": []}, "task": args.task, "request_id": args.request_id,
         "arm": args.arm, "cadence": cadence, "model_requested": args.model, **facts, "command": command,
+        "api_error": lost,
         "spec": None if args.spec is None else {"path": str(args.spec.resolve()), "prompt": prompt,
                                                 "sha256": hashlib.sha256(args.spec.read_bytes()).hexdigest()},
         "started_at": started, "ended_at": ended, "exit_code": exit_code, "stop_point": stop,

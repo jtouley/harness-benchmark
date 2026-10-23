@@ -668,3 +668,38 @@ def test_a_counted_score_must_be_on_the_batch_pin_or_a_later_grader(tmp_path):
     assert any("not the batch's pinned grader" in p for p in check.validate_tree(early, repo))
     shutil.rmtree(early)
     assert check.validate_tree(_run_with(repo, _score(second, tree2, "driver", 5)), repo) == []
+
+
+@pytest.mark.parametrize("result, counts", [
+    ({"type": "result", "is_error": True, "api_error_status": 429, "api_error": "usage_limit_reached",
+      "result": "You've hit your session limit"}, False),
+    ({"type": "result", "is_error": True, "api_error_status": 529, "api_error": "overloaded_error"}, False),
+    ({"type": "result", "is_error": False, "api_error_status": None, "result": "done"}, True),
+])
+def test_a_run_the_api_cut_off_is_an_infrastructure_loss_not_a_result(tmp_path, plugin, result, counts):
+    """Batch F, 19:27 on 2026-10-23: the account's session limit failed every call with 429 in 2 s, and the
+    driver recorded those runs as counted 0/7 results."""
+    script = f"printf '%s\\n' {shlex.quote(json.dumps(result))} >> {tmp_path}/trial/transcript.jsonl"
+    rc, run = _drive(tmp_path, plugin, extra=["--kind", "benchmark", "--arm", "one-shot"], script=script)
+    rec = json.loads((run / "record.json").read_text())
+    assert rc == 0 and rec["counts"]["counts"] is counts
+    if not counts:
+        assert rec["counts"]["why"].startswith("infrastructure loss: the API answered")
+
+
+def test_the_check_refuses_a_counting_record_whose_run_the_api_cut_off(tmp_path):
+    """The rule holds even if a driver bug recurs: a record whose api_error is set never counts."""
+    runs = tmp_path / "runs"
+    for rid, err in (("20261023-lost", "429 usage_limit_reached"), ("20261023-fine", None)):
+        (runs / rid).mkdir(parents=True)
+        (runs / rid / "record.json").write_text(json.dumps(minimal(rid, api_error=err,
+                                                                   counts={"counts": True, "why": "x"})))
+    assert check.validate_tree(runs) == [
+        "20261023-lost/record.json: the API cut the run off (429 usage_limit_reached); it never counts"]
+
+
+def test_the_driver_records_the_api_error(tmp_path, plugin):
+    result = {"type": "result", "is_error": True, "api_error_status": 429, "api_error": "usage_limit_reached"}
+    script = f"printf '%s\\n' {shlex.quote(json.dumps(result))} >> {tmp_path}/trial/transcript.jsonl"
+    rc, run = _drive(tmp_path, plugin, extra=["--kind", "benchmark", "--arm", "one-shot"], script=script)
+    assert json.loads((run / "record.json").read_text())["api_error"] == "429 usage_limit_reached"

@@ -100,6 +100,8 @@ def validate_tree(runs: Path, repo: Path = ROOT) -> list[str]:
             problems.append(f"{run.name}/record.json: {exc}")
             continue
         problems += [f"{run.name}/record.json: {e}" for e in record.validate(rec, record.RECORD_SCHEMA)]
+        if rec.get("api_error") and (rec.get("counts") or {}).get("counts") is True:
+            problems.append(f"{run.name}/record.json: the API cut the run off ({rec['api_error']}); it never counts")
         if rec.get("kind") in record.NON_COUNTING_KINDS and (rec.get("counts") or {}).get("counts") is True:
             problems.append(f"{run.name}/record.json: a {rec['kind']} run never counts (counts.counts is true)")
         graded = any((s.get("grader") or {}).get("repo") == record.GRADER_REPO for s in record.scores(run))
