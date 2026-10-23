@@ -119,9 +119,10 @@ def test_the_committed_scoreboard_is_what_the_generator_writes():
 # --- speed: agent time against the one-shot of the same task and model
 
 def test_the_one_shot_time_is_the_mean_agent_session_of_the_counted_baseline_runs():
-    assert scoreboard.oneshot_seconds(RUNS, "P1", "claude-haiku-5-5", batch="2026-10-15-pipeline-trials") == 1882.6
-    assert scoreboard.oneshot_seconds(RUNS, "P2", "claude-opus-5-5", batch="2026-10-15-pipeline-trials") == 2465.2
-    assert scoreboard.oneshot_seconds(RUNS, "P1", "claude-fable-5-1", batch="2026-10-15-pipeline-trials") is None
+    batch = "2026-10-15-pipeline-trials"  # read for that batch, so a later batch's one-shots never move these
+    assert scoreboard.oneshot_seconds(RUNS, "P1", "claude-haiku-5-5", None, batch) == 1882.6
+    assert scoreboard.oneshot_seconds(RUNS, "P2", "claude-opus-5-5", None, batch) == 2465.2
+    assert scoreboard.oneshot_seconds(RUNS, "P1", "claude-fable-5-1", None, batch) is None
 
 
 def test_the_time_ratio_of_a_cadence_run_that_passed_a_check():
@@ -246,7 +247,7 @@ def test_the_bar_is_the_newest_batch_of_one_shots_on_the_same_grader_tree(tmp_pa
 def test_a_driver_one_shot_counts_as_a_one_shot_for_the_time_ratio(tmp_path):
     runs = tmp_path / "runs"
     _one_shot(runs, "20261023-P1-oneshot-haiku-1", "2026-10-23-batch-f", "claude-haiku-5-5", 5, "c" * 40)
-    assert scoreboard.oneshot_seconds(runs, "P1", "claude-haiku-5-5") is not None
+    assert scoreboard.oneshot_seconds(runs, "P1", "claude-haiku-5-5", None, "2026-10-23-batch-f") is not None
 
 
 def test_the_gate_takes_the_bars_from_one_shots_on_the_runs_grader_tree(tmp_path):

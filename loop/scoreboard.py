@@ -92,12 +92,11 @@ def latest_tree(run: Path) -> str | None:
     return _tree(scores[-1]) if scores else None
 
 
-def oneshot_seconds(runs: Path, task: str, model: str, tree: str | None = None,
-                    batch: str | None = None) -> float | None:
+def oneshot_seconds(runs: Path, task: str, model: str, tree: str | None, batch: str) -> float | None:
     """The mean agent session (seconds) of the counted one-shot runs of `model` on `task` in the newest batch
-    no later than `batch` (any batch when None) that has one on grader `tree`, else on any tree: the bars'
-    rule. This is loop.speed.oneshot_mean, the one basis the gate, the findings and the postmortem read;
-    None without a one-shot."""
+    no later than `batch` (speed.batch_order) that has one on grader `tree`, else on any tree: the bars' rule.
+    This is loop.speed.oneshot_mean, the one basis the gate, the findings and the postmortem read; None
+    without a one-shot. `batch` is required, so no number follows the newest batch wherever it lands."""
     from loop import speed  # speed reads STRETCH_RATIO, reached_end and latest_tree from this module
 
     return speed.oneshot_mean(runs, task, model, tree, batch)[0]
