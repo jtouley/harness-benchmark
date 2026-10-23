@@ -62,6 +62,7 @@ def reference_sources(root: Path = ROOT) -> list[Path]:
     found += list(root.glob("golden/tasks/*/reference.patch"))
     found += [p for p in root.glob("golden/tasks/*/hidden/**/*") if p.is_file()]
     found += [root / "golden/pipeline/key/answer_key.json"]
+    found += list(root.glob("golden/pipeline/P*/key/answer_key.json"))  # P4, the hold-out, has its own key
     return sorted(p for p in found if not p.name.endswith(".lock") and "__pycache__" not in p.parts)
 
 
@@ -87,6 +88,7 @@ def build(root: Path = ROOT) -> dict:
     commit = subprocess.run(["git", "rev-parse", "HEAD"], cwd=root, capture_output=True, text=True).stdout.strip()
     return {"algorithm": ALGORITHM, "source": "jtouley/harness-benchmark", "source_commit": commit,
             "sources": ["golden/pipeline/P*/reference/**", "golden/pipeline/key/answer_key.json",
+                        "golden/pipeline/P*/key/answer_key.json",
                         "golden/tasks/*/reference.patch", "golden/tasks/*/hidden/**", "golden/cadence/*.md"],
             "count": len(hashes), "sha256": sorted(hashes), "inputs": inputs}
 

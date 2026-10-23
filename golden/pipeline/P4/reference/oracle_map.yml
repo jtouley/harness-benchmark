@@ -1,0 +1,25 @@
+# Each check the analysts run, answered from the published marts under out/marts/. Each mart is
+# queryable by its folder name.
+checks:
+  1:
+    question: Checkouts per branch in 2025
+    sql: select branch_code, checkouts from mart_branch_checkouts
+  2:
+    question: The ten items with the most checkouts in 2025, ties in item id order
+    sql: select item_id, checkouts from mart_item_checkouts order by checkouts desc, item_id limit 10
+  3:
+    question: The number of loans returned late in 2025
+    sql: select count(*) as late_returns from mart_late_returns
+  4:
+    question: For March 2025, net fines per branch add up to the system total
+    table: mart_monthly_fines
+    columns: [month_start, branch_code, net_fines]
+  5:
+    question: Net fine income per month
+    sql: select month_start, sum(net_fines) as net_fines from mart_monthly_fines group by month_start
+  6:
+    question: Active patrons per home branch
+    sql: select branch_code, active_patrons from mart_active_patrons
+  7:
+    question: The replacement value of the items on loan at the end of 2025
+    sql: select sum(replacement_cost) as replacement_value from mart_items_on_loan

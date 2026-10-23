@@ -63,6 +63,7 @@ python -m loop.driver --run-id 20261022-P1-cadence-haiku-1 --kind benchmark --ba
 The driver refuses (exit 2, before anything runs):
 
 - a run id that exists;
+- `--task P4`, the hold-out, unless `--holdout` says the run is the owner's final check;
 - a `--plugin-dir` that is not a clean checkout of a commit on a remote branch (no modified, untracked or
   ignored file);
 - a run that could read another Cadence checkout: it searches `--cwd` and HOME (five levels) and refuses
