@@ -59,7 +59,8 @@ def test_lockfiles_are_not_reference_material():
 def test_the_golden_inputs_are_sources_too_and_the_readme_is_not():
     inputs = fingerprints.input_sources(ROOT)
     assert inputs and all(p.parent == ROOT / "golden" / "cadence" and p.name != "README.md" for p in inputs)
-    assert fingerprints.sources(ROOT) == fingerprints.reference_sources(ROOT) + inputs
+    assert fingerprints.sources(ROOT) == (fingerprints.reference_sources(ROOT) + inputs
+                                          + fingerprints.prompt_sources(ROOT))
     assert not (set(inputs) & set(fingerprints.reference_sources(ROOT)))
 
 
@@ -78,3 +79,16 @@ def test_the_cli_writes_the_hashes_and_never_the_text(tmp_path):
     assert "golden/cadence/*.md" in data["sources"] and "golden/cadence/d1.md" in data["inputs"]
     assert "select" not in out.read_text().lower()  # no reference text, only hashes
     assert "csv export" not in out.read_text().lower()  # no golden input text either
+
+
+def test_every_task_prompt_is_a_source_so_a_quoted_spec_is_caught(tmp_path):
+    """A spec quoted at length in a Cadence file is a leak even though the spec is not secret (coordinator,
+    2026-10-23): a run's own report restated the P1 task, and only the references were fingerprinted."""
+    prompts = fingerprints.prompt_sources(ROOT)
+    assert [p.relative_to(ROOT).as_posix() for p in prompts] == [
+        f"golden/pipeline/{t}/prompt.md" for t in ("P1", "P2", "P3", "P4")]
+    data = fingerprints.build(ROOT)
+    p3 = (ROOT / "golden/pipeline/P3/prompt.md").read_text(encoding="utf-8")
+    assert fingerprints.fingerprints(p3) <= set(data["sha256"])
+    assert data["inputs"]["golden/pipeline/P3/prompt.md"] == fingerprints.whole_text(p3)
+    assert "golden/pipeline/P*/prompt.md" in data["sources"]
