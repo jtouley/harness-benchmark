@@ -3,7 +3,7 @@
 The rules the loop acquired in the week of 19 to 23 October 2026, each with the code or the test that
 enforces it. A reader audits the loop from this page: each link is the place where the rule is a check,
 a refusal or a test, not a sentence. A rule that is only in a pull request not merged yet says so with
-the number. No rule here is new.
+the number. Rule 13 changed on 23 October (the owner pinned the baselines); the others are not new.
 
 ## Runs and what counts
 
@@ -126,42 +126,44 @@ the number. No rule here is new.
 
 ## The scoreboard and the gate
 
-13. **The gate bars are the newest batch's one-shot means.** A bar is the mean checks passed of the
-    counted one-shots (arm `baseline` or `one-shot`) of the task and model in the newest batch that has
-    one, taken on the grader tree of the Cadence runs it is compared with; when no one-shot is on that
-    tree, the bar is the newest on any tree and the gate line says so. A cadence commit passes for a
+13. **The baselines are pinned; only Cadence is re-run.** (Owner, 2026-10-23.) The gate's bars are the
+    owner's fixed numbers, from the 15 October one-shots: Cadence on Haiku must beat the Sonnet one-shot
+    (more than 3/7) and match the Opus one-shot (5 to 6/7). `baselines.json` names those runs per task and
+    model with the checks they passed and their agent session, and the bars and every time ratio read it
+    and nothing else, so a one-shot record of a later batch (the batch F Haiku and Sonnet P1 one-shots)
+    stays in `runs/` as history and moves no bar. `loop.check` holds each entry to its run's record and
+    latest score. The driver refuses any arm but `cadence`, of every kind. A cadence commit passes for a
     model when, on every task in the set, it has at least three scored runs whose mean beats the Sonnet
     bar and is within one check of the Opus bar; best and worst print beside each mean, so a single
     lucky run shows; the time ratio is reported against the stretch goal, not gated.
-    [loop/scoreboard.py](../loop/scoreboard.py) (`bar`, `OPUS_MARGIN`, `gate`); tests
-    `test_the_bar_is_the_newest_batch_of_one_shots_on_the_same_grader_tree`,
-    `test_the_gate_takes_the_bars_from_one_shots_on_the_runs_grader_tree`,
-    `test_without_one_shots_on_the_runs_tree_the_gate_says_its_bars_are_from_another_tree`,
+    [baselines.json](../baselines.json), [loop/baselines.py](../loop/baselines.py),
+    [loop/scoreboard.py](../loop/scoreboard.py) (`bar`, `OPUS_MARGIN`, `gate`),
+    [loop/driver.py](../loop/driver.py), [loop/check.py](../loop/check.py); tests
+    `test_the_baselines_are_the_15_october_one_shots`,
+    `test_the_pinned_baselines_are_their_records_and_the_check_says_when_not`,
+    `test_a_newer_one_shot_record_does_not_move_the_bar_or_the_time_basis`,
+    `test_without_a_pinned_bar_the_gate_says_so`,
     `test_the_gate_line_shows_best_and_worst_beside_each_mean`,
     `test_the_gate_compares_the_mean_with_sonnet_and_opus`, `test_the_gate_needs_n_runs_per_task` in
-    [tests/test_loop_reports.py](../tests/test_loop_reports.py). Today the counted one-shots are the
-    15 October runs; they ran in the runner's container, and the batch F runs run on the host
-    (coordinator, 2026-10-23), so a bar or a time ratio against them crosses the two. From batch F
-    iteration 0 on, the bars are each batch's own one-shots.
+    [tests/test_loop_reports.py](../tests/test_loop_reports.py);
+    `test_the_driver_refuses_any_arm_but_cadence` in
+    [tests/test_loop_record.py](../tests/test_loop_record.py). The 15 October one-shots ran in the
+    runner's container and the batch F runs run on the host (coordinator, 2026-10-23), so a bar or a
+    time ratio against them crosses the two.
 14. **A run that stopped early has no time ratio in the gate; `loop.speed` keeps it and says so; every
     ratio has one basis.** `scoreboard.time_ratio`, which the gate, the scoreboard table and a finding's
     `max_time_ratio` read, counts only runs that reached the end of the pipeline or passed a check: a stop
     with nothing passed would make a broken pipeline look fast. `loop.speed` and the postmortem's Speed
     section keep the ratio of such a run and mark it "(stopped early)": a slow stop is still slow. Both
-    read one one-shot mean, `oneshot_mean` in `loop/speed.py`, with the bars' rule pinned by batch: the
-    counted one-shots of the newest batch no later than the run's own on the run's grader tree, else of
-    the newest such batch on any tree, labelled so; batches order by the date in their id, then by the
-    earliest `started_at` of their records (`batch_order`), and every read of the basis names its batch
-    (`batch` is a required argument). A later batch's one-shots never move an earlier run's ratio, so a
-    committed postmortem keeps its numbers when the next batch lands. [loop/scoreboard.py](../loop/scoreboard.py) (`reached_end`, `time_ratio`, `oneshot_seconds`),
+    read one one-shot mean, `oneshot_mean` in `loop/speed.py`: the pinned one-shots of the task and model
+    (rule 13), named in the Basis column. No one-shot record moves a ratio, so a committed postmortem
+    keeps its numbers when the next batch lands. [loop/scoreboard.py](../loop/scoreboard.py) (`reached_end`, `time_ratio`, `oneshot_seconds`),
     [loop/speed.py](../loop/speed.py) (`oneshot_mean`, `ratio_text`); tests
     `test_a_run_that_stopped_early_with_no_check_passed_has_no_ratio` in
     [tests/test_loop_reports.py](../tests/test_loop_reports.py),
     `test_a_run_that_hit_its_cap_shows_it_and_an_early_stop_keeps_its_ratio`,
     `test_the_scoreboards_time_ratio_takes_the_same_basis_as_speed_and_keeps_the_early_stop_rule`,
-    `test_the_basis_is_the_newest_batch_no_later_than_the_run_so_a_later_batch_leaves_a_postmortem_byte_identical`,
-    `test_a_basis_is_always_read_for_a_batch`,
-    `test_two_batches_of_one_day_order_by_when_they_began_not_by_their_names` in
+    `test_a_later_one_shot_record_moves_no_ratio_and_leaves_a_postmortem_byte_identical` in
     [tests/test_loop_speed.py](../tests/test_loop_speed.py).
 
 ## Postmortems and merges
@@ -236,7 +238,7 @@ the number. No rule here is new.
 | 10 fingerprints | `loop/fingerprints.py` | `tests/test_loop_fingerprints.py`, `tests/test_golden_cadence.py` | main |
 | 11 findings with owner, closed by script | `loop/findings.py` | `tests/test_loop_findings.py` | main |
 | 12 trailers and the trace | `loop/findings.py`, `loop/trace.py` | `tests/test_loop_findings.py`, `tests/test_loop_trace.py` | main |
-| 13 gate bars | `loop/scoreboard.py` | `tests/test_loop_reports.py` | main |
+| 13 pinned baselines; only Cadence is re-run | `baselines.json`, `loop/baselines.py`, `loop/scoreboard.py`, `loop/driver.py` | `tests/test_loop_reports.py`, `tests/test_loop_record.py` | #89 |
 | 14 early stop: no gate ratio, kept in `loop.speed` | `loop/scoreboard.py` | `tests/test_loop_reports.py` | main |
 | 15 postmortems complete and current | `loop/check.py`, `loop/postmortem.py`, `loop/driver.py` | `tests/test_loop_postmortem_complete.py` | main |
 | 16 after-merge rule | `runs/README.md` | rule 15 | main |

@@ -29,7 +29,7 @@ import subprocess
 import sys
 from pathlib import Path
 
-from loop import findings, postmortem, record, scoreboard, speed
+from loop import baselines, findings, postmortem, record, scoreboard, speed
 
 ROOT = Path(__file__).resolve().parents[1]
 GRADER_PATH = "golden/pipeline/pipetask"
@@ -196,6 +196,7 @@ def main(argv: list[str] | None = None) -> int:
     args = ap.parse_args(argv)
     problems = validate_tree(ROOT / "runs")
     problems += speed.problems(ROOT / "runs")
+    problems += baselines.problems(ROOT / "runs")
     problems += postmortem_problems(ROOT / "runs", postmortem.POSTMORTEMS, scoreboard_path=ROOT / "scoreboard.md")
     if args.base:
         problems += append_only(ROOT, args.base)
