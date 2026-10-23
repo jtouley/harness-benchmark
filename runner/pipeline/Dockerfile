@@ -23,6 +23,8 @@ RUN uv python install "${PYTHON_VERSION}" \
  && UV_CACHE_DIR=/tmp/grader-cache uv pip install -q --python /opt/grader/bin/python duckdb==1.5.6 pyyaml==6.0.3 \
  && rm -rf /tmp/grader-cache
 # Warm the uv cache from the P1, P2 and P4 locks, then drop the environments: only the cache stays.
+# P4 is the hold-out, so its pins must stay a subset of P1's and P2's: a package only P4 pins would sit in
+# the shared cache and tell a P1 or P2 arm that another task exists (tests/test_pipeline_p4_runner.py).
 COPY P1/skeleton /tmp/warm/P1
 COPY P2/skeleton /tmp/warm/P2
 COPY P4/skeleton /tmp/warm/P4
