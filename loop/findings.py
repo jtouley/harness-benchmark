@@ -5,7 +5,9 @@
     python -m loop.findings update [--cadence ../cadence]   # write the computed statuses into findings.jsonl
 
 A row: {"id": "F-n", "title", "run_ids": [...], "root_cause", "component": "cadence", "gone_when": {...},
-"status": "open" | "closed"}. A row with no run id, or with a run id that has no record, is refused.
+"status": "open" | "closed", "owner": {"session", "branch"}}. A row with no run id, or with a run id that has
+no record, is refused. `owner` names the session that fixes the finding and its branch; both are null while
+nobody does, so two sessions never fix one finding unknowingly.
 
 `status` is never set by hand: `check` refuses a status that differs from the computed one. A finding is
 closed when there are later runs that:
@@ -36,7 +38,7 @@ ROOT = Path(__file__).resolve().parents[1]
 FINDINGS = ROOT / "findings.jsonl"
 TASKS = ("P1", "P2")
 FINDING_ID = re.compile(r"F-[1-9][0-9]*")
-KEYS = {"id", "title", "run_ids", "root_cause", "component", "gone_when", "status"}
+KEYS = {"id", "title", "run_ids", "root_cause", "component", "gone_when", "status", "owner"}
 GONE_KEYS = {"stop_block_not", "stop_reason_excludes", "min_passed", "max_time_ratio"}
 
 
@@ -69,6 +71,10 @@ def row_problems(row: dict, runs: Path) -> list[str]:
         problems.append(f"{fid}: component must be cadence (the only fix repository the close rule reads)")
     if row.get("status") not in ("open", "closed"):
         problems.append(f"{fid}: status must be open or closed")
+    owner = row.get("owner")
+    if "owner" in row and not (isinstance(owner, dict) and set(owner) == {"session", "branch"}
+                               and all(v is None or isinstance(v, str) for v in owner.values())):
+        problems.append(f'{fid}: owner must be {{"session": <id or null>, "branch": <name or null>}}')
     return problems
 
 
