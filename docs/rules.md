@@ -139,11 +139,13 @@ the number. No rule here is new.
 15. **Every run is in a committed postmortem, and the committed files are the generators' output.**
     Every counted run and every run a finding cites is in a postmortem under `postmortems/`; each
     committed postmortem equals what the generator writes from its notes; `scoreboard.md` equals what
-    the scoreboard writes; the driver writes both when it records a run. Only in #78 (`loop/check.py`,
-    `postmortem_problems`; `loop/postmortem.py`, `--all`; `tests/test_loop_postmortem_complete.py`). On
-    main today: `test_the_committed_postmortem_is_what_the_generator_writes` and
-    `test_the_committed_scoreboard_is_what_the_generator_writes` in
-    [tests/test_loop_reports.py](../tests/test_loop_reports.py).
+    the scoreboard writes; the driver writes both when it records a run. Coverage is by batch: a notes
+    line that cites a run of another batch does not document that batch. [loop/check.py](../loop/check.py)
+    (`postmortem_problems`), [loop/postmortem.py](../loop/postmortem.py) (`refresh`, `--all`),
+    [loop/driver.py](../loop/driver.py); tests `test_a_counted_run_in_no_committed_postmortem_is_a_problem`,
+    `test_a_notes_line_that_cites_a_run_of_another_batch_does_not_cover_that_run`,
+    `test_the_driver_writes_the_batchs_postmortem_and_the_scoreboard_beside_the_records` in
+    [tests/test_loop_postmortem_complete.py](../tests/test_loop_postmortem_complete.py).
 16. **The after-merge rule.** After every merge the reviewer runs `scripts/ci_local.sh` on `origin/main`,
     and a pull request that touches the findings, the citations, the records or the generators
     regenerates the postmortems and the scoreboard in the same commit.
@@ -190,8 +192,8 @@ the number. No rule here is new.
 | 12 trailers and the trace | `loop/findings.py`, `loop/trace.py` | `tests/test_loop_findings.py`, `tests/test_loop_trace.py` | main |
 | 13 gate bars | `loop/scoreboard.py` | `tests/test_loop_reports.py` | main |
 | 14 no ratio for an early stop | `loop/scoreboard.py` | `tests/test_loop_reports.py` | main |
-| 15 postmortems complete and current | `loop/check.py`, `loop/postmortem.py`, `loop/driver.py` | `tests/test_loop_postmortem_complete.py` | #78 |
-| 16 after-merge rule | `runs/README.md` | rule 15 | main (text), #78 (check) |
+| 15 postmortems complete and current | `loop/check.py`, `loop/postmortem.py`, `loop/driver.py` | `tests/test_loop_postmortem_complete.py` | main |
+| 16 after-merge rule | `runs/README.md` | rule 15 | main |
 | 17 cited hand-written lines | `loop/postmortem.py` | `tests/test_loop_reports.py` | main |
 | 18 run ids never reused | `loop/driver.py` | `tests/test_loop_record.py` | main |
 | 19 a grade needs a clean grader | `loop/driver.py` | `tests/test_loop_record.py` | main |
