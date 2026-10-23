@@ -64,7 +64,9 @@
         "agent_wall_seconds": {"type": ["number", "null"], "minimum": 0},
         "run_wall_seconds": {"type": ["number", "null"], "minimum": 0},
         "agent_active_seconds": {"type": ["number", "null"], "minimum": 0},
-        "blocks": {"type": ["object", "null"]}
+        "blocks": {"type": ["object", "null"]},
+        "hit_cap": {"$comment": "whether the agent was stopped at its guard cap or backstop (timing.json's hit_cap); null when the trial did not say", "type": ["boolean", "null"]},
+        "cap_seconds": {"$comment": "the cap the agent ran under (timing.json's agent_cap_seconds); null when the trial did not say", "type": ["number", "null"], "minimum": 0}
       }
     },
     "isolation": {

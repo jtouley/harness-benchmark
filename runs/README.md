@@ -124,6 +124,13 @@ no source change; Python bytecode does not count. Otherwise the record says `tre
 run does not count.
 
 `timing` has the same fields for a one-shot and a Cadence run: `agent_wall_seconds` (the agent session,
-from `--timing`, the figure the speed ratio uses), `run_wall_seconds` (the whole command),
-`agent_active_seconds` (the transcript's result durations) and `blocks` (seconds per block; not yet
-measured).
+from `--timing`'s `agent_seconds`, the figure the speed ratio uses), `run_wall_seconds` (the whole command),
+`agent_active_seconds` (the transcript's result durations), `blocks` (peer seconds per block from the run's
+`.context`, `--context`), and, when the trial's timing.json says them (`scripts/host_trial.py` writes
+`hit_cap` and `agent_cap_seconds`), `hit_cap` and `cap_seconds`.
+
+`python -m loop.speed [--batch <id>]` prints each Cadence run's agent session against the mean one-shot
+session of the same task and model (counted one-shots on the run's grader tree, else every counted
+one-shot, labelled so), its ratio to the owner's stretch goal of 1.25, whether it hit its cap, and its three
+slowest blocks; the postmortem's Speed section reads the same rows. `loop.check` refuses a counted Cadence
+run with no agent session time or no time per block.
