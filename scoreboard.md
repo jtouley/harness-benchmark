@@ -34,3 +34,12 @@ Counted runs with a score from the harness-benchmark grader; each run's latest s
 | 2026-10-15 | baseline | — | claude-haiku-5-5 | 1 | 0/7 | 0.00 | 63 | — | unknown |
 | 2026-10-15 | baseline | — | claude-opus-5-5 | 1 | 3/7 | 3.00 | 60 | — | unknown |
 | 2026-10-15 | baseline | — | claude-sonnet-5-5 | 1 | 5/7 | 5.00 | 36 | — | unknown |
+
+## Done
+
+The owner's Done line: P1 and P2 means meet the bar on two consecutive batches of Cadence on Haiku, at no more than 1.25x the pinned one-shot time (`python -m loop.scoreboard done`).
+
+- 2026-10-19-pipeline-cadence-core: P1 mean 1.67/7, time 2.44x; P2 0 run(s), needs 3: FAIL (bar missed on P1; time above 1.25x on P1)
+- 2026-10-21-cadence-core-subscription: P1 mean 0.00/7, time —; P2 mean 0.00/7, time —: FAIL (bar missed on P1, P2; time above 1.25x on P1, P2)
+- 2026-10-23-batch-f: P1 1 run(s), needs 3; P2 0 run(s), needs 3: FAIL
+- NOT DONE: no two consecutive batches pass
