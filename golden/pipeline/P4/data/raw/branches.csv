@@ -1,0 +1,13 @@
+branch_code,branch_name,region
+01,Central,north
+02,Riverside,north
+03,Hillcrest,north
+04,Oakwood,east
+05,Lakeside,east
+06,Pinecrest,east
+07,Meadowbrook,south
+08,Harbor,south
+09,Elm Street,south
+10,Westgate,west
+11,Fairview,west
+12,Summit,west

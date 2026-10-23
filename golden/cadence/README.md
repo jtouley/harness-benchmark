@@ -10,7 +10,7 @@ the file in its `task` field.
 |---|---|---|
 | `d1.md` | The CSV export ticket LOCAL-4 with one deferral candidate (the portal upload) | Request 3 of `jtouley/cadence@9008b0e:evidence/live-runs/requests.md` |
 | `d2.md`, `d3.md`, `d4.md` | The same ticket, with two deferrals asked for. The three scenarios differed in the plugin build, not in the spec, so the three files hold one text. The drivers of the d2, d3 and d4 runs name no plugin commit, so their records have `cadence` null, and the difference in build is not traceable from the records | Request 4 of the same file |
-| `P1.md`, `P2.md` | The pipeline tasks P1 and P2 | Equal to `golden/pipeline/P1/prompt.md` and `golden/pipeline/P2/prompt.md`, which `pipetask/prompt.py` builds word for word from the specs |
+| `P1.md`, `P2.md` | The pipeline tasks P1 and P2. P4, the hold-out, is not saved here on purpose: it runs only when the owner calls for the final check (`golden/pipeline/README.md`) | Equal to `golden/pipeline/P1/prompt.md` and `golden/pipeline/P2/prompt.md`, which `pipetask/prompt.py` builds word for word from the specs |
 
 The live runs started each spec with the `/cadence:cadence ` command prefix. The prefix is the
 execution, not the spec, so it is not in the files. Each file ends with one newline.

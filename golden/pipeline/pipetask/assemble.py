@@ -3,7 +3,7 @@
     python -m pipetask.assemble P1 --out /tmp/p1-repo [--with-reference]
 
 The result is what the runner copies into the trial container as /trial/repo (`run_trial.sh --repo`).
-Only `<task>/skeleton/` and `data/raw/` go in. The prompt is passed separately (`--prompt
+Only `<task>/skeleton/` and `data/raw/` go in (`<task>/data/raw/` when the task has its own inputs, as P4 does). The prompt is passed separately (`--prompt
 <task>/prompt.md`). Nothing else under golden/pipeline/ (the capture, the replay server, the answer key,
 the grader, the reference solutions, the trap catalog) is ever copied into a trial.
 
@@ -30,7 +30,8 @@ def assemble(task: str, out: Path, *, with_reference: bool = False, git: bool = 
     if out.exists() and any(out.iterdir()):
         raise SystemExit(f"{out} exists and is not empty")
     shutil.copytree(task_dir / "skeleton", out, dirs_exist_ok=True, ignore=IGNORE)
-    shutil.copytree(RAW, out / "data" / "raw", dirs_exist_ok=True, ignore=IGNORE)
+    raw = task_dir / "data" / "raw" if (task_dir / "data" / "raw").is_dir() else RAW
+    shutil.copytree(raw, out / "data" / "raw", dirs_exist_ok=True, ignore=IGNORE)
     if with_reference:
         shutil.copytree(task_dir / "reference", out, dirs_exist_ok=True, ignore=IGNORE)
     if git:
@@ -44,7 +45,7 @@ def assemble(task: str, out: Path, *, with_reference: bool = False, git: bool = 
 
 def main(argv: list[str] | None = None) -> None:
     ap = argparse.ArgumentParser(description="Assemble a pipeline task's starting repository.")
-    ap.add_argument("task", help="P1, P2 or P3")
+    ap.add_argument("task", help="P1, P2, P3 or P4")
     ap.add_argument("--out", type=Path, required=True)
     ap.add_argument("--with-reference", action="store_true")
     ap.add_argument("--no-git", action="store_true")
