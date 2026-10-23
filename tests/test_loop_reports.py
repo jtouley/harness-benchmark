@@ -54,10 +54,15 @@ def test_the_committed_postmortem_is_what_the_generator_writes():
 # --- scoreboard
 
 def test_the_baselines_are_the_15_october_one_shots():
-    assert scoreboard.baseline(RUNS, "P1", scoreboard.SONNET) == 3
-    assert scoreboard.baseline(RUNS, "P1", scoreboard.OPUS) == 6
-    assert scoreboard.baseline(RUNS, "P2", scoreboard.SONNET) == 3
-    assert scoreboard.baseline(RUNS, "P2", scoreboard.OPUS) == 5
+    oct15 = "2026-10-15-pipeline-trials"  # without a batch, the bar is the newest batch's (batch F's)
+    assert scoreboard.baseline(RUNS, "P1", scoreboard.SONNET, batch=oct15) == 3
+    assert scoreboard.baseline(RUNS, "P1", scoreboard.OPUS, batch=oct15) == 6
+    assert scoreboard.baseline(RUNS, "P2", scoreboard.SONNET, batch=oct15) == 3
+    assert scoreboard.baseline(RUNS, "P2", scoreboard.OPUS, batch=oct15) == 5
+
+
+def test_a_later_batch_brings_its_own_bar():
+    assert scoreboard.baseline(RUNS, "P1", scoreboard.SONNET) == 5  # 20261023-P1-oneshot-sonnet-1-r2, batch F
 
 
 def test_the_gate_fails_cadence_core_29315c4_on_haiku():

@@ -62,20 +62,22 @@ def _spread(values: list[int]) -> dict:
     return {"mean": sum(values) / len(values), "best": max(values), "worst": min(values), "n": len(values)}
 
 
-def bar(runs: Path, task: str, model: str, tree: str | None = None) -> dict | None:
+def bar(runs: Path, task: str, model: str, tree: str | None = None, batch: str | None = None) -> dict | None:
     """{"mean", "best", "worst", "n"} of the checks passed by the counted one-shots of `model` on `task` in the
-    newest batch that has one, only among scores of grader `tree` when given; None without one."""
+    newest batch no later than `batch` (any batch when None) that has one, only among scores of grader `tree`
+    when given (the time basis's rule, loop.speed.oneshot_mean); None without one."""
     found = [(rec, s) for (arm, _, m, t), rows in cells(runs).items() if arm in ONE_SHOT_ARMS and m == model
-             and t == task for rec, s in rows if tree is None or _tree(s) == tree]
+             and t == task for rec, s in rows if (tree is None or _tree(s) == tree)
+             and (batch is None or rec["batch"] <= batch)]
     if not found:
         return None
     newest = max(found, key=lambda row: row[0]["started_at"] or "")[0]["batch"]
     return _spread([_passed(s) for rec, s in found if rec["batch"] == newest])
 
 
-def baseline(runs: Path, task: str, model: str, tree: str | None = None) -> float | None:
+def baseline(runs: Path, task: str, model: str, tree: str | None = None, batch: str | None = None) -> float | None:
     """The bar's mean (see bar), or None."""
-    found = bar(runs, task, model, tree)
+    found = bar(runs, task, model, tree, batch)
     return None if found is None else found["mean"]
 
 
