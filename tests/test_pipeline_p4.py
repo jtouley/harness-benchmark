@@ -173,8 +173,8 @@ def test_single_file_marts_are_graded_and_digested_alike(tmp_path, key):
 def test_the_driver_refuses_p4_without_holdout(tmp_path, capsys):
     store = tmp_path / "store"
     store.mkdir()
-    args = ["--run-id", "20261023-P4-cadence-haiku-1", "--kind", "benchmark", "--batch", "2026-10-23-final",
-            "--task", "P4", "--arm", "baseline", "--transcript", str(tmp_path / "t.jsonl"), "--runs", str(tmp_path / "runs"),
+    args = ["--run-id", "20261023-P4-cadence-haiku-1", "--kind", "stub", "--batch", "2026-10-23-final",
+            "--task", "P4", "--arm", "cadence", "--transcript", str(tmp_path / "t.jsonl"), "--runs", str(tmp_path / "runs"),
             "--store", str(store), "--cwd", str(tmp_path), "--", "true"]
     assert driver.main(args) == 2
     assert "hold-out" in capsys.readouterr().err and not (tmp_path / "runs").exists()

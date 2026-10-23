@@ -8,7 +8,7 @@ from pathlib import Path
 
 import pytest
 
-from loop import postmortem, record, scoreboard
+from loop import baselines, postmortem, record, scoreboard
 
 ROOT = Path(__file__).resolve().parents[1]
 RUNS = ROOT / "runs"
@@ -54,15 +54,41 @@ def test_the_committed_postmortem_is_what_the_generator_writes():
 # --- scoreboard
 
 def test_the_baselines_are_the_15_october_one_shots():
-    oct15 = "2026-10-15-pipeline-trials"  # without a batch, the bar is the newest batch's (batch F's)
-    assert scoreboard.baseline(RUNS, "P1", scoreboard.SONNET, batch=oct15) == 3
-    assert scoreboard.baseline(RUNS, "P1", scoreboard.OPUS, batch=oct15) == 6
-    assert scoreboard.baseline(RUNS, "P2", scoreboard.SONNET, batch=oct15) == 3
-    assert scoreboard.baseline(RUNS, "P2", scoreboard.OPUS, batch=oct15) == 5
+    assert scoreboard.baseline("P1", scoreboard.SONNET) == 3
+    assert scoreboard.baseline("P1", scoreboard.OPUS) == 6
+    assert scoreboard.baseline("P2", scoreboard.SONNET) == 3
+    assert scoreboard.baseline("P2", scoreboard.OPUS) == 5
+    assert {e["run_id"] for task in baselines.load()["cells"].values() for pinned in task.values() for e in pinned} \
+        == {f"20261015-{t}-{m}-1" for t in ("P1", "P2", "P3") for m in ("haiku", "sonnet", "opus")}
 
 
-def test_a_later_batch_brings_its_own_bar():
-    assert scoreboard.baseline(RUNS, "P1", scoreboard.SONNET) == 5  # 20261023-P1-oneshot-sonnet-1-r2, batch F
+def test_the_pinned_baselines_are_their_records_and_the_check_says_when_not(tmp_path):
+    assert baselines.problems(RUNS) == []
+    pinned = baselines.load()
+    pinned["cells"]["P1"][scoreboard.SONNET][0]["passed"] = 5
+    (tmp_path / "baselines.json").write_text(json.dumps(pinned))
+    assert baselines.problems(RUNS, tmp_path / "baselines.json") == [
+        "baselines.json: P1 claude-sonnet-5-5 20261015-P1-sonnet-1: passed 5/7 is not the run's latest score"]
+
+
+def test_a_newer_one_shot_record_does_not_move_the_bar_or_the_time_basis(tmp_path):
+    """Owner, 2026-10-23: the baselines are fixed and only Cadence is re-run. 20261023-P1-oneshot-sonnet-1-r2
+    (5/7) is in runs/ as history; the P1 Sonnet bar stays the 15 October 3/7, and a newer and better one-shot of
+    any batch moves neither the gate's line nor a time ratio."""
+    assert scoreboard.baseline("P1", scoreboard.SONNET) == 3 and (RUNS / "20261023-P1-oneshot-sonnet-1-r2").exists()
+    _copy_baselines(tmp_path)
+    for i in (1, 2, 3):
+        _scored(tmp_path, f"20261023-P1-cadence-haiku-{i}", "P1", 5, seconds=2000.0)
+        _scored(tmp_path, f"20261023-P2-cadence-haiku-{i}", "P2", 5, seconds=2000.0)
+    before = scoreboard.gate(tmp_path, "claude-haiku-5-5", "abcdef1")
+    _one_shot(tmp_path, "20261024-P1-oneshot-sonnet-1", "2026-10-24-later", scoreboard.SONNET, 7, "b" * 40,
+              started="2026-10-24T08:00:00Z")
+    _one_shot(tmp_path, "20261024-P1-oneshot-haiku-1", "2026-10-24-later", "claude-haiku-5-5", 7, "b" * 40,
+              started="2026-10-24T08:00:00Z")
+    assert scoreboard.gate(tmp_path, "claude-haiku-5-5", "abcdef1") == before
+    assert before[0] and "Sonnet one-shot mean 3.00/7 (best 3, worst 3, n=1)" in before[1][0]
+    rec = record.load(tmp_path / "20261023-P1-cadence-haiku-1")
+    assert scoreboard.time_ratio(tmp_path, rec) == round(2000.0 / 1882.6, 4)  # 20261015-P1-haiku-1, not the 100 s one
 
 
 def test_the_gate_fails_cadence_core_29315c4_on_haiku():
@@ -118,11 +144,10 @@ def test_the_committed_scoreboard_is_what_the_generator_writes():
 
 # --- speed: agent time against the one-shot of the same task and model
 
-def test_the_one_shot_time_is_the_mean_agent_session_of_the_counted_baseline_runs():
-    batch = "2026-10-15-pipeline-trials"  # read for that batch, so a later batch's one-shots never move these
-    assert scoreboard.oneshot_seconds(RUNS, "P1", "claude-haiku-5-5", None, batch) == 1882.6
-    assert scoreboard.oneshot_seconds(RUNS, "P2", "claude-opus-5-5", None, batch) == 2465.2
-    assert scoreboard.oneshot_seconds(RUNS, "P1", "claude-fable-5-1", None, batch) is None
+def test_the_one_shot_time_is_the_mean_agent_session_of_the_pinned_runs():
+    assert scoreboard.oneshot_seconds("P1", "claude-haiku-5-5") == 1882.6
+    assert scoreboard.oneshot_seconds("P2", "claude-opus-5-5") == 2465.2
+    assert scoreboard.oneshot_seconds("P1", "claude-fable-5-1") is None
 
 
 def test_the_time_ratio_of_a_cadence_run_that_passed_a_check():
@@ -168,7 +193,7 @@ def test_the_postmortem_has_a_speed_section_with_each_run_and_the_slowest():
     speed = text.split("## Speed", 1)[1].split("\n## ", 1)[0]
     row = next(line for line in speed.splitlines() if line.startswith("| `20261022-P2-cadence-core-haiku-3`"))
     assert "81.3" in row and "3.06 (above 1.25) (stopped early)" in row  # 3.06x the one-shot, and it never finished
-    assert "batch 2026-10-15-pipeline-trials, any grader tree (no counted one-shot on 423b34a)" in row  # the 15 October one-shots recorded no tree
+    assert "| pinned 20261015-P2-haiku-1 |" in row  # the pinned 15 October one-shot (baselines.json)
     assert "Above the stretch goal: " in speed and "`20261022-P2-cadence-core-haiku-3` (3.06; slowest blocks" in speed
     assert "Slowest runs: `20261022-P2-cadence-core-haiku-3`" in speed
     assert "Peer time per block" in speed and "| plan-review | 51.4 | 28 | 6 | 22 |" in speed
@@ -216,7 +241,7 @@ def test_a_reference_diff_is_hand_written_and_cites_runs():
     assert "The map answers its own invariants" in _section(text, "Diagnosis")
 
 
-# --- the bars are the newest counted one-shots of the same task and grader tree (coordinator, 2026-10-23)
+# --- a one-shot record of a later batch is history (owner, 2026-10-23)
 
 def _one_shot(runs: Path, rid: str, batch: str, model: str, passed: int, tree: str, arm: str = "one-shot",
               task: str = "P1", started: str = "2026-10-23T18:00:00Z") -> None:
@@ -232,72 +257,33 @@ def _one_shot(runs: Path, rid: str, batch: str, model: str, passed: int, tree: s
                                "source": "driver", "graded_at": None})
 
 
-def test_the_bar_is_the_newest_batch_of_one_shots_on_the_same_grader_tree(tmp_path):
-    runs = tmp_path / "runs"
-    _one_shot(runs, "20261015-P1-sonnet-1", "2026-10-15-p1", scoreboard.SONNET, 3, "a" * 40, arm="baseline",
-              started="2026-10-15T10:00:00Z")
-    _one_shot(runs, "20261023-P1-oneshot-sonnet-1", "2026-10-23-batch-f", scoreboard.SONNET, 5, "c" * 40)
-    _one_shot(runs, "20261023-P1-oneshot-sonnet-2", "2026-10-23-batch-f", scoreboard.SONNET, 4, "c" * 40)
-    assert scoreboard.baseline(runs, "P1", scoreboard.SONNET) == 4.5         # the newest batch's mean
-    assert scoreboard.bar(runs, "P1", scoreboard.SONNET, tree="c" * 40) == {"mean": 4.5, "best": 5, "worst": 4, "n": 2}
-    assert scoreboard.baseline(runs, "P1", scoreboard.SONNET, tree="a" * 40) == 3  # history, on its own tree
-    assert scoreboard.baseline(runs, "P1", scoreboard.SONNET, tree="d" * 40) is None
-
-
-def test_a_driver_one_shot_counts_as_a_one_shot_for_the_time_ratio(tmp_path):
+def test_a_driver_one_shot_of_a_later_batch_is_history_in_the_table(tmp_path):
     runs = tmp_path / "runs"
     _one_shot(runs, "20261023-P1-oneshot-haiku-1", "2026-10-23-batch-f", "claude-haiku-5-5", 5, "c" * 40)
-    assert scoreboard.oneshot_seconds(runs, "P1", "claude-haiku-5-5", None, "2026-10-23-batch-f") is not None
+    row = next(line for line in scoreboard.table(runs).splitlines() if "| one-shot |" in line)
+    assert "| 5/7 |" in row and row.split("|")[9].strip() == "—"  # listed, with no time ratio of its own
 
 
-def test_the_gate_takes_the_bars_from_one_shots_on_the_runs_grader_tree(tmp_path):
-    _copy_baselines(tmp_path)  # 15 October: Sonnet 3/7 and Opus 6/7 on P1, grader tree not recorded
-    for model, passed in ((scoreboard.SONNET, 2), (scoreboard.OPUS, 4)):
-        for task in ("P1", "P2"):
-            _one_shot(tmp_path, f"20261023-{task}-oneshot-{model[7:-4]}-1", "2026-10-23-batch-f", model, passed,
-                      "b" * 40, task=task)
-    for task in ("P1", "P2"):
-        for i in (1, 2, 3):
-            _scored(tmp_path, f"20261023-{task}-cadence-haiku-{i}", task, 5)
-    ok, lines = scoreboard.gate(tmp_path, "claude-haiku-5-5", "abcdef1")
-    assert ok and "Sonnet one-shot mean 2.00/7 (best 2, worst 2, n=1)" in lines[0]
-    assert "Opus one-shot mean 4.00/7" in lines[0] and lines[0].endswith("PASS")
-
-
-def test_without_one_shots_on_the_runs_tree_the_gate_says_its_bars_are_from_another_tree(tmp_path):
-    _copy_baselines(tmp_path)
+def test_without_a_pinned_bar_the_gate_says_so(tmp_path):
     for i in (1, 2, 3):
         _scored(tmp_path, f"20261023-P1-cadence-haiku-{i}", "P1", 6)
-    _, lines = scoreboard.gate(tmp_path, "claude-haiku-5-5", "abcdef1")
-    assert "Opus one-shot mean 6.00/7" in lines[0] and "bars from another grader tree" in lines[0]
+        _scored(tmp_path, f"20261023-P2-cadence-haiku-{i}", "P2", 6)
+    (tmp_path / "pinned.json").write_text(json.dumps({"batch": "x", "rule": "x", "cells": {}}))
+    ok, lines = scoreboard.gate(tmp_path, "claude-haiku-5-5", "abcdef1", pinned=tmp_path / "pinned.json")
+    assert not ok and lines == ["P1: no pinned Sonnet or Opus one-shot baseline",
+                                "P2: no pinned Sonnet or Opus one-shot baseline"]
 
 
 def test_the_gate_line_shows_best_and_worst_beside_each_mean(tmp_path):
-    _copy_baselines(tmp_path)
-    for model, runs_passed in ((scoreboard.SONNET, (1, 2, 6)), (scoreboard.OPUS, (4, 5, 6))):
-        for i, passed in enumerate(runs_passed, 1):
-            _one_shot(tmp_path, f"20261023-P1-oneshot-{model[7:-4]}-{i}", "2026-10-23-batch-f", model, passed,
-                      "b" * 40)
     for i, passed in enumerate((3, 4, 7), 1):
         _scored(tmp_path, f"20261023-P1-cadence-haiku-{i}", "P1", passed)
-    line = scoreboard.gate(tmp_path, "claude-haiku-5-5", "abcdef1")[1][0]
+    pinned = {"batch": "x", "rule": "x", "cells": {"P1": {
+        scoreboard.SONNET: [{"run_id": f"r{i}", "passed": p, "total": 7, "agent_wall_seconds": 1.0}
+                            for i, p in enumerate((1, 2, 6))],
+        scoreboard.OPUS: [{"run_id": f"o{i}", "passed": p, "total": 7, "agent_wall_seconds": 1.0}
+                          for i, p in enumerate((4, 5, 6))]}}}
+    (tmp_path / "pinned.json").write_text(json.dumps(pinned))
+    line = scoreboard.gate(tmp_path, "claude-haiku-5-5", "abcdef1", pinned=tmp_path / "pinned.json")[1][0]
     assert "claude-haiku-5-5 mean 4.67/7 (best 7, worst 3, n=3)" in line
     assert "Sonnet one-shot mean 3.00/7 (best 6, worst 1, n=3)" in line   # one lucky Sonnet run shows
     assert "beats Sonnet yes, matches Opus (within 1) yes: PASS" in line
-
-
-def test_the_bar_orders_batches_of_one_day_by_when_they_began(tmp_path):
-    """The bars read batches in loop.speed.batch_order (#87), as the time basis does: of two batches of one day
-    the later start is newer, whatever their names."""
-    runs = tmp_path / "runs"
-    _one_shot(runs, "20261023-P1-oneshot-sonnet-1", "2026-10-23-zz", scoreboard.SONNET, 2, "c" * 40,
-              started="2026-10-23T08:00:00Z")
-    _one_shot(runs, "20261023-P1-oneshot-sonnet-2", "2026-10-23-aa", scoreboard.SONNET, 6, "c" * 40,
-              started="2026-10-23T20:00:00Z")
-    assert scoreboard.baseline(runs, "P1", scoreboard.SONNET) == 6
-    from loop import speed
-
-    for upto, passed in (("2026-10-23-aa", 6), ("2026-10-23-zz", 2)):  # by name zz sorts last; by start, aa
-        assert scoreboard.baseline(runs, "P1", scoreboard.SONNET, batch=upto) == passed
-        _, basis = speed.oneshot_mean(runs, "P1", scoreboard.SONNET, None, upto)
-        assert basis.startswith(f"batch {upto},"), basis  # the time basis picks the same batch as the bar

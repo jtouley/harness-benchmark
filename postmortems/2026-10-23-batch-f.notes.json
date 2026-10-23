@@ -1,0 +1,24 @@
+{
+ "decisions": [
+  {
+   "text": "The baselines are pinned (owner, 2026-10-23): the gate's bars and every time ratio read baselines.json, the 15 October one-shots (P1 Sonnet 3/7, P1 Opus 6/7, P2 Sonnet 3/7, P2 Opus 5/7), and only Cadence is re-run. This batch's one-shots stay in runs/ as history and are excluded from the bars and the time basis; the P1 Sonnet bar is 3/7, not this batch's 5/7. The coordination's earlier rule that a batch's own one-shots become its bars was never the owner's and is withdrawn",
+   "run_ids": [
+    "20261023-P1-oneshot-haiku-1",
+    "20261023-P1-oneshot-sonnet-1-r2",
+    "20261015-P1-sonnet-1"
+   ]
+  },
+  {
+   "text": "The P1 Opus one-shot of this batch (20261023-P1-oneshot-opus-1-r2) is stopped by the owner's rule (only Cadence is re-run): it is never recorded or counted, and no other one-shot of this batch is started (the runner skips every one left in its queue)",
+   "run_ids": [
+    "20261023-P1-oneshot-sonnet-1-r2"
+   ]
+  },
+  {
+   "text": "Iteration 0 Cadence runs skipped: pre-A5-fix plugin, known self-stop. Plugin 748a729 stops itself at A5 (0/7 in 152 s on P1, F-11), so the remaining P1 and P2 runs of iteration 0 would only measure a known failure (coordinator, 2026-10-23)",
+   "run_ids": [
+    "20261023-P1-cadence-haiku-1-r2"
+   ]
+  }
+ ]
+}

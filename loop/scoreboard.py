@@ -5,10 +5,9 @@ The release gate reads it.
     python -m loop.scoreboard gate --model claude-haiku-5-5 --sha <cadence sha> [--n 3]
 
 A cell takes the counted runs of one (arm, cadence commit, model, task) that have a score, and each run's
-latest score. A bar is the mean checks passed of the counted one-shot runs (arm `baseline` or `one-shot`) of the
-same task and model in the newest batch that has one, on the grader tree of the Cadence runs it is compared with
-(coordinator, 2026-10-23: from batch F iteration 0 on, the bars are the batch's own one-shots; older batches stay
-as history). The gate passes for a cadence commit and model when, on every task in TASKS, it has at least --n
+latest score. A bar is the mean checks passed of the pinned one-shots of the same task and model
+(baselines.json, loop.baselines; owner, 2026-10-23: the baselines are fixed and only Cadence is re-run), so a
+one-shot record of a later batch is history and moves no bar. The gate passes for a cadence commit and model when, on every task in TASKS, it has at least --n
 scored runs, and its mean beats Sonnet (above the Sonnet one-shot mean) and matches Opus (within
 OPUS_MARGIN checks of the Opus one-shot mean). Each line prints best and worst beside the mean for both arms, so a
 single lucky run shows.
@@ -21,7 +20,7 @@ import sys
 from collections import defaultdict
 from pathlib import Path
 
-from loop import record
+from loop import baselines, record
 
 ROOT = Path(__file__).resolve().parents[1]
 TASKS = ("P1", "P2")
@@ -62,26 +61,15 @@ def _spread(values: list[int]) -> dict:
     return {"mean": sum(values) / len(values), "best": max(values), "worst": min(values), "n": len(values)}
 
 
-def bar(runs: Path, task: str, model: str, tree: str | None = None, batch: str | None = None) -> dict | None:
-    """{"mean", "best", "worst", "n"} of the checks passed by the counted one-shots of `model` on `task` in the
-    newest batch no later than `batch` (any batch when None) that has one, only among scores of grader `tree`
-    when given (the time basis's rule, loop.speed.oneshot_mean); None without one."""
-    from loop import speed  # the time basis's batch order (#87): date in the id, then when the batch began
-
-    order = speed.batch_order(speed._records(runs))
-    upto = None if batch is None else order.get(batch, (batch[:10], "", batch))
-    found = [(rec, s) for (arm, _, m, t), rows in cells(runs).items() if arm in ONE_SHOT_ARMS and m == model
-             and t == task for rec, s in rows if (tree is None or _tree(s) == tree)
-             and (upto is None or order[rec["batch"]] <= upto)]
-    if not found:
-        return None
-    newest = max((rec["batch"] for rec, _ in found), key=order.__getitem__)
-    return _spread([_passed(s) for rec, s in found if rec["batch"] == newest])
+def bar(task: str, model: str, pinned: Path = baselines.PATH) -> dict | None:
+    """{"mean", "best", "worst", "n"} of the checks passed by the pinned one-shots of `model` on `task`
+    (loop.baselines.bar); None without one."""
+    return baselines.bar(task, model, pinned)
 
 
-def baseline(runs: Path, task: str, model: str, tree: str | None = None, batch: str | None = None) -> float | None:
+def baseline(task: str, model: str, pinned: Path = baselines.PATH) -> float | None:
     """The bar's mean (see bar), or None."""
-    found = bar(runs, task, model, tree, batch)
+    found = bar(task, model, pinned)
     return None if found is None else found["mean"]
 
 
@@ -96,14 +84,10 @@ def latest_tree(run: Path) -> str | None:
     return _tree(scores[-1]) if scores else None
 
 
-def oneshot_seconds(runs: Path, task: str, model: str, tree: str | None, batch: str) -> float | None:
-    """The mean agent session (seconds) of the counted one-shot runs of `model` on `task` in the newest batch
-    no later than `batch` (speed.batch_order) that has one on grader `tree`, else on any tree: the bars' rule.
-    This is loop.speed.oneshot_mean, the one basis the gate, the findings and the postmortem read; None
-    without a one-shot. `batch` is required, so no number follows the newest batch wherever it lands."""
-    from loop import speed  # speed reads STRETCH_RATIO, reached_end and latest_tree from this module
-
-    return speed.oneshot_mean(runs, task, model, tree, batch)[0]
+def oneshot_seconds(task: str | None, model: str | None, pinned: Path = baselines.PATH) -> float | None:
+    """The mean agent session (seconds) of the pinned one-shots of `model` on `task`: loop.speed.oneshot_mean,
+    the one basis the gate, the findings and the postmortem read; None without a pinned one-shot."""
+    return baselines.seconds(task, model, pinned)[0]
 
 
 def reached_end(runs: Path, rec: dict) -> bool:
@@ -115,15 +99,15 @@ def reached_end(runs: Path, rec: dict) -> bool:
     return bool(scores) and (scores[-1].get("passed") or 0) >= 1
 
 
-def time_ratio(runs: Path, rec: dict) -> float | None:
-    """A run's agent session over the one-shot's of the same task and model, from the newest batch no later
-    than the run's on the run's grader tree (oneshot_seconds, the basis loop.speed shows). None when either is
+def time_ratio(runs: Path, rec: dict, pinned: Path = baselines.PATH) -> float | None:
+    """A run's agent session over the pinned one-shots' of the same task and model (oneshot_seconds, the basis
+    loop.speed shows). None when either is
     unknown, or for a Cadence run that did not reach the end (reached_end): the gate's early-stop rule, which
     loop.speed does not apply."""
     if rec["arm"] not in ONE_SHOT_ARMS and not reached_end(runs, rec):
         return None  # a stop with nothing passed would make a broken pipeline look fast
     seconds = rec["timing"]["agent_wall_seconds"]
-    base = oneshot_seconds(runs, rec["task"], rec["model_requested"], latest_tree(runs / rec["run_id"]), rec["batch"])
+    base = oneshot_seconds(rec["task"], rec["model_requested"], pinned)
     return round(seconds / base, 4) if seconds is not None and base else None
 
 
@@ -132,24 +116,19 @@ def _ratio_text(values: list[float], stopped_early: int = 0) -> str:
     return text + (f" ({stopped_early} stopped early)" if stopped_early else "")
 
 
-def _ratios(runs: Path, recs: list[dict]) -> tuple[list[float], int]:
+def _ratios(runs: Path, recs: list[dict], pinned: Path = baselines.PATH) -> tuple[list[float], int]:
     """(the time ratios of the runs that reached the end, how many stopped early)."""
     early = sum(1 for r in recs if not reached_end(runs, r))
-    return [x for x in (time_ratio(runs, r) for r in recs) if x is not None], early
+    return [x for x in (time_ratio(runs, r, pinned) for r in recs) if x is not None], early
 
 
-def gate(runs: Path, model: str, sha: str, n: int = 3) -> tuple[bool, list[str]]:
+def gate(runs: Path, model: str, sha: str, n: int = 3, pinned: Path = baselines.PATH) -> tuple[bool, list[str]]:
     lines, ok = [], True
     grouped = cells(runs)
     for task in TASKS:
         rows = [r for (arm, s, m, t), rs in grouped.items() if s and s.startswith(sha) and m == model and t == task
                 for r in rs]
-        trees = {_tree(s) for _, s in rows}
-        tree = trees.pop() if len(trees) == 1 else None  # one grader tree: compare on it
-        sonnet, opus = bar(runs, task, SONNET, tree), bar(runs, task, OPUS, tree)
-        other_tree = tree is not None and (sonnet is None or opus is None)
-        if other_tree:  # no one-shot on the runs' grader tree: the newest on any tree, and the line says so
-            sonnet, opus = bar(runs, task, SONNET), bar(runs, task, OPUS)
+        sonnet, opus = bar(task, SONNET, pinned), bar(task, OPUS, pinned)
         if len(rows) < n:
             ok = False
             lines.append(f"{task}: {len(rows)} scored run(s) at {sha[:7]} on {model}, the gate needs {n}")
@@ -157,7 +136,7 @@ def gate(runs: Path, model: str, sha: str, n: int = 3) -> tuple[bool, list[str]]
         cadence = _spread([_passed(s) for _, s in rows])
         if sonnet is None or opus is None:
             ok = False
-            lines.append(f"{task}: no Sonnet or Opus one-shot baseline")
+            lines.append(f"{task}: no pinned Sonnet or Opus one-shot baseline")
             continue
         beats_sonnet = cadence["mean"] > sonnet["mean"]
         matches_opus = cadence["mean"] >= opus["mean"] - OPUS_MARGIN
@@ -165,9 +144,8 @@ def gate(runs: Path, model: str, sha: str, n: int = 3) -> tuple[bool, list[str]]
         ok = ok and passed
         lines.append(f"{task}: {_show(model, cadence)}; {_show('Sonnet one-shot', sonnet)}; "
                      f"{_show('Opus one-shot', opus)}: beats Sonnet {'yes' if beats_sonnet else 'no'}, matches Opus "
-                     f"(within {OPUS_MARGIN}) {'yes' if matches_opus else 'no'}: {'PASS' if passed else 'FAIL'}"
-                     + (f" (bars from another grader tree: no one-shot on {tree[:7]})" if other_tree else ""))
-        ratios, early = _ratios(runs, [rec for rec, _ in rows])
+                     f"(within {OPUS_MARGIN}) {'yes' if matches_opus else 'no'}: {'PASS' if passed else 'FAIL'}")
+        ratios, early = _ratios(runs, [rec for rec, _ in rows], pinned)
         lines.append(f"{task}: agent time {_ratio_text(ratios, early)} the {model} one-shot (stretch goal <= "
                      f"{STRETCH_RATIO}; reported, not gated)")
     return ok, lines
@@ -195,10 +173,10 @@ def table(runs: Path) -> str:
             repo = (rows[0][0].get("cadence") or {}).get("repo", "").rstrip("/").rsplit("/", 1)[-1]
             commit = f"{repo}@{sha[:7]}" if sha else "—"
             minutes = [r["timing"]["agent_wall_seconds"] / 60 for r, _ in rows if r["timing"]["agent_wall_seconds"]]
-            ratios, early = ([], 0) if arm == "baseline" else _ratios(runs, [r for r, _ in rows])
+            ratios, early = ([], 0) if arm in ONE_SHOT_ARMS else _ratios(runs, [r for r, _ in rows])
             lines.append(f"| {first[:4]}-{first[4:6]}-{first[6:]} | {arm} | {commit} | {model} | {len(rows)} | "
                          f"{', '.join(f'{p}/7' for p in passed)} | {sum(passed) / len(passed):.2f} | "
-                         f"{', '.join(f'{m:.0f}' for m in minutes) or '—'} | {'—' if arm == 'baseline' else _ratio_text(ratios, early)} | {', '.join(trees)} |")
+                         f"{', '.join(f'{m:.0f}' for m in minutes) or '—'} | {'—' if arm in ONE_SHOT_ARMS else _ratio_text(ratios, early)} | {', '.join(trees)} |")
         lines.append("")
     return "\n".join(lines)
 

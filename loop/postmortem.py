@@ -135,9 +135,8 @@ def _speed(rows: list[tuple[dict, dict | None]], runs: Path) -> list[str]:
     speed_rows = speed.rows(runs, run_ids=ids)
     out = ["## Speed", "",
            f"Each Cadence run's agent session, and its ratio to the mean one-shot session of the same task and "
-           f"model (loop.speed; stretch goal: at most {speed.STRETCH_RATIO}). The one-shots are the counted "
-           f"ones of the newest batch no later than the run's, on the run's grader tree, else on any tree "
-           f"(Basis names the batch); a later batch never moves these numbers. A run "
+           f"model (loop.speed; stretch goal: at most {speed.STRETCH_RATIO}). The one-shots are the pinned "
+           f"baselines (baselines.json; Basis names the runs): no later batch moves these numbers. A run "
            f"above the goal is flagged, with its three slowest blocks. Cap: whether the run hit its guard cap "
            f"or backstop. A run that stopped early keeps its ratio and says so.", "", *speed.HEADER]
     out += [speed.line(r) for r in speed_rows]

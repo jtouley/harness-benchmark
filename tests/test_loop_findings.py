@@ -181,8 +181,10 @@ def test_the_committed_findings_resolve_to_records_and_are_open_without_a_fix():
     assert findings.check(findings.FINDINGS, ROOT / "runs", None) == []
 
 
-@pytest.mark.parametrize(("seconds", "status"), [(1200.0, "closed"), (1500.0, "open"), (None, "open")])
+@pytest.mark.parametrize(("seconds", "status"), [(2259.12, "closed"), (2823.9, "open"), (None, "open")])
 def test_a_speed_finding_closes_only_when_the_agent_time_is_within_the_ratio(tmp_path, cadence, seconds, status):
+    """1.2 and 1.5 times the pinned P1 Haiku one-shot (20261015-P1-haiku-1, 1882.6 s; baselines.json). The
+    one-shot record in this folder is not pinned, so it moves nothing."""
     runs = tmp_path / "runs4"
     _run(runs, "20261015-P1-haiku-1", sha=None, arm="baseline", seconds=1000.0, started="2026-10-15T00:00:00Z")
     _run(runs, FOUND, sha=_sha(cadence, 2), seconds=3000.0, started="2026-10-22T00:00:00Z")

@@ -425,6 +425,14 @@ def _spec(tmp_path) -> Path:
     return spec
 
 
+def _entry(tmp_path) -> list[str]:
+    """--spec and an --agent-argv that shows the one prompt: what a clean Cadence benchmark or live run passes."""
+    spec = _spec(tmp_path)
+    argv = tmp_path / "agent-argv.json"
+    argv.write_text(json.dumps(["claude", "-p", f"/cadence {spec.resolve()}"]))
+    return ["--spec", str(spec), "--agent-argv", str(argv)]
+
+
 def test_a_cadence_benchmark_run_without_a_spec_is_refused(tmp_path, plugin):
     rc, run = _drive(tmp_path, plugin, extra=["--kind", "benchmark"], script=f"touch {tmp_path}/ran")
     assert rc == 2 and not run.exists() and not (tmp_path / "ran").exists()
@@ -450,11 +458,14 @@ def test_the_command_gets_exactly_slash_cadence_and_the_spec_path_and_the_record
                            "prompt": f"/cadence {spec.resolve()}"}
 
 
-def test_a_one_shot_gets_the_spec_text_as_its_prompt(tmp_path, plugin):
-    spec = _spec(tmp_path)
-    rc, run = _drive(tmp_path, plugin, extra=["--kind", "benchmark", "--arm", "one-shot", "--spec", str(spec)],
-                     script=f'printf %s "$HB_AGENT_PROMPT" > {tmp_path}/prompt.txt')
-    assert rc == 0 and (tmp_path / "prompt.txt").read_text() == spec.read_text()
+@pytest.mark.parametrize("kind", ["benchmark", "live", "stub"])
+@pytest.mark.parametrize("arm", ["one-shot", "baseline", "harness"])
+def test_the_driver_refuses_any_arm_but_cadence(tmp_path, plugin, capsys, kind, arm):
+    """Owner, 2026-10-23: the one-shot baselines are pinned (baselines.json) and only Cadence is re-run."""
+    rc, run = _drive(tmp_path, plugin, extra=["--kind", kind, "--arm", arm, "--spec", str(_spec(tmp_path))],
+                     script=f"touch {tmp_path}/ran")
+    assert rc == 2 and "only Cadence is run" in capsys.readouterr().err
+    assert not run.exists() and not (tmp_path / "ran").exists()
 
 
 def test_an_agent_that_ran_with_another_prompt_does_not_count(tmp_path, plugin):
@@ -513,7 +524,7 @@ def test_the_isolation_block_lists_what_the_cwd_held_before_the_run(tmp_path, pl
 @pytest.mark.parametrize("kind, counts", [("benchmark", True), ("live", True), ("stub", False)])
 def test_whether_a_clean_run_counts_is_a_function_of_its_kind(tmp_path, plugin, kind, counts):
     """A stub is a probe the session wrote, not a graded run (review of #71); the other kinds may count."""
-    rc, run = _drive(tmp_path, plugin, extra=["--kind", kind, "--arm", "one-shot"])
+    rc, run = _drive(tmp_path, plugin, extra=["--kind", kind, *_entry(tmp_path)])
     rec = json.loads((run / "record.json").read_text())
     assert rc == 0 and rec["counts"]["counts"] is counts
     if not counts:
@@ -680,7 +691,7 @@ def test_a_run_the_api_cut_off_is_an_infrastructure_loss_not_a_result(tmp_path, 
     """Batch F, 19:27 on 2026-10-23: the account's session limit failed every call with 429 in 2 s, and the
     driver recorded those runs as counted 0/7 results."""
     script = f"printf '%s\\n' {shlex.quote(json.dumps(result))} >> {tmp_path}/trial/transcript.jsonl"
-    rc, run = _drive(tmp_path, plugin, extra=["--kind", "benchmark", "--arm", "one-shot"], script=script)
+    rc, run = _drive(tmp_path, plugin, extra=["--kind", "benchmark", *_entry(tmp_path)], script=script)
     rec = json.loads((run / "record.json").read_text())
     assert rc == 0 and rec["counts"]["counts"] is counts
     if not counts:
@@ -701,5 +712,5 @@ def test_the_check_refuses_a_counting_record_whose_run_the_api_cut_off(tmp_path)
 def test_the_driver_records_the_api_error(tmp_path, plugin):
     result = {"type": "result", "is_error": True, "api_error_status": 429, "api_error": "usage_limit_reached"}
     script = f"printf '%s\\n' {shlex.quote(json.dumps(result))} >> {tmp_path}/trial/transcript.jsonl"
-    rc, run = _drive(tmp_path, plugin, extra=["--kind", "benchmark", "--arm", "one-shot"], script=script)
+    rc, run = _drive(tmp_path, plugin, extra=["--kind", "benchmark", *_entry(tmp_path)], script=script)
     assert json.loads((run / "record.json").read_text())["api_error"] == "429 usage_limit_reached"

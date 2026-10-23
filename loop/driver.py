@@ -16,10 +16,12 @@ writes the batch's postmortem again (every committed postmortem that covers the 
 <batch>.md) and scoreboard.md, so the record, the postmortem and the scoreboard go in one commit
 (runs/README.md, "After a merge").
 
+Only Cadence is run (owner, 2026-10-23): the one-shot baselines are pinned (baselines.json), so the
+driver refuses any arm but `cadence`, of every kind.
+
 The entry (owner, 2026-10-22): the only prompt a Cadence run gets is `/cadence <spec path>`. A Cadence
 benchmark or live run needs --spec; the driver gives the command HB_AGENT_PROMPT, exactly `/cadence <the
-spec's absolute path>` (a one-shot gets the spec's text), and refuses a command that passes the agent any
-other `-p` text. With --agent-argv (the argv the command started the agent with) a run whose agent got another
+spec's absolute path>`, and refuses a command that passes the agent any other `-p` text. With --agent-argv (the argv the command started the agent with) a run whose agent got another
 prompt does not count. What the entry does is the result: an exit 1 at activation is recorded, not worked
 around. The record keeps the spec's path, sha256 and the prompt.
 
@@ -223,9 +225,9 @@ def api_error(lines) -> str | None:
     return found
 
 
-def agent_prompt(spec: Path, arm: str) -> str:
-    """`/cadence <the spec's absolute path>` for a Cadence arm, the spec's text for a one-shot."""
-    return f"/cadence {spec.resolve()}" if arm == "cadence" else spec.read_text(encoding="utf-8")
+def agent_prompt(spec: Path) -> str:
+    """`/cadence <the spec's absolute path>`: a Cadence run's only prompt."""
+    return f"/cadence {spec.resolve()}"
 
 
 # The flags a benchmark agent's `claude` call may carry (scripts/host_trial.py): none adds prompt text.
@@ -313,18 +315,18 @@ def _agent_argv_problem(path: Path, prompt: str) -> str | None:
 def _check_entry(args: argparse.Namespace, command: list[str]) -> str | None:
     """The agent prompt (HB_AGENT_PROMPT), or None without --spec; DriverError for a run the rule refuses."""
     if args.spec is None:
-        if args.arm == "cadence" and args.kind in ("benchmark", "live"):
+        if args.kind in ("benchmark", "live"):
             raise DriverError("a Cadence benchmark or live run needs --spec: its only prompt is /cadence <spec path>")
         return None
     if not args.spec.is_file():
         raise DriverError(f"--spec {args.spec} is not a file")
-    prompt = agent_prompt(args.spec, args.arm)
+    prompt = agent_prompt(args.spec)
     for call, piped in claude_calls(command):
         problem = claude_call_problem(call, prompt, piped)
         if problem:
             raise DriverError(f"the command's claude call carries other prompt text ({problem}); the agent's only "
                               f"prompt is {prompt.splitlines()[0][:80]!r}, from HB_AGENT_PROMPT")
-    if args.arm == "cadence" and args.kind in ("benchmark", "live") and args.agent_argv is None:
+    if args.kind in ("benchmark", "live") and args.agent_argv is None:
         raise DriverError("a Cadence benchmark or live run needs --agent-argv: the argv the agent was started with "
                           "shows that its only prompt was the spec")
     return prompt
@@ -342,7 +344,7 @@ def main(argv: list[str] | None = None) -> int:
     ap.add_argument("--request-id")
     ap.add_argument("--arm", required=True)
     ap.add_argument("--model")
-    ap.add_argument("--plugin-dir", type=Path, help="the cadence checkout loaded with --plugin-dir; omit for a one-shot")
+    ap.add_argument("--plugin-dir", type=Path, help="the cadence checkout loaded with --plugin-dir")
     ap.add_argument("--transcript", type=Path, required=True, help="the stream-json transcript the command writes")
     ap.add_argument("--tree", type=Path, help="the delivered git repository, kept as a bundle for regrades")
     ap.add_argument("--grade", type=Path, help="grade.json the harness-benchmark grader wrote")
@@ -357,8 +359,8 @@ def main(argv: list[str] | None = None) -> int:
     ap.add_argument("--postmortems", type=Path, help="the postmortems folder (default: beside --runs)")
     ap.add_argument("--scoreboard", type=Path, help="the scoreboard file (default: scoreboard.md beside --runs)")
     ap.add_argument("--store", type=Path, required=True, help="a checkout of the runs-store branch")
-    ap.add_argument("--spec", type=Path, help="the spec, the run's only input: `/cadence <path>` for a Cadence "
-                    "arm, its text for a one-shot (given to the command as HB_AGENT_PROMPT)")
+    ap.add_argument("--spec", type=Path, help="the spec, the run's only input: `/cadence <path>` (given to the "
+                    "command as HB_AGENT_PROMPT)")
     ap.add_argument("--agent-argv", type=Path, help="JSON list: the argv the command started the agent with")
     ap.add_argument("--isolation-method", default="host", help="host, or container:<image id>")
     ap.add_argument("--auth", choices=["proxy", "oauth-file"], default="proxy",
@@ -373,6 +375,9 @@ def main(argv: list[str] | None = None) -> int:
     try:
         if not record.RUN_ID.fullmatch(args.run_id):
             raise DriverError(f"run id {args.run_id!r} is not YYYYMMDD-words (e.g. 20261022-P1-cadence-haiku-1)")
+        if args.arm != "cadence":
+            raise DriverError(f"arm {args.arm!r}: only Cadence is run; the one-shot baselines are pinned in "
+                              f"baselines.json (docs/rules.md)")
         if (args.runs / args.run_id).exists():
             raise DriverError(f"{args.runs / args.run_id} exists; run ids are never reused")
         if args.task in HOLDOUT_TASKS and not args.holdout:

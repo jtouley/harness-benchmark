@@ -143,13 +143,13 @@ def test_a_refresh_of_a_batch_rewrites_every_postmortem_that_covers_it(tmp_path)
 def test_the_driver_writes_the_batchs_postmortem_and_the_scoreboard_beside_the_records(tmp_path):
     (tmp_path / "store").mkdir()
     (tmp_path / "work").mkdir()
-    argv = ["--run-id", "20261023-P1-baseline-haiku-1", "--kind", "stub", "--batch", "2026-10-23-stub",
-            "--task", "P1", "--arm", "baseline", "--model", "claude-haiku-5-5", "--runs", str(tmp_path / "runs"),
+    argv = ["--run-id", "20261023-P1-cadence-haiku-1", "--kind", "stub", "--batch", "2026-10-23-stub",
+            "--task", "P1", "--arm", "cadence", "--model", "claude-haiku-5-5", "--runs", str(tmp_path / "runs"),
             "--store", str(tmp_path / "store"), "--transcript", str(tmp_path / "t.jsonl"), "--cwd", str(tmp_path / "work"),
             "--", "true"]
     assert driver.main(argv) == 0
     text = (tmp_path / "postmortems" / "2026-10-23-stub.md").read_text(encoding="utf-8")
-    assert text.startswith("# Postmortem: 2026-10-23-stub") and "`20261023-P1-baseline-haiku-1`" in text
+    assert text.startswith("# Postmortem: 2026-10-23-stub") and "`20261023-P1-cadence-haiku-1`" in text
     assert (tmp_path / "scoreboard.md").read_text(encoding="utf-8") == scoreboard.table(tmp_path / "runs")
     assert check.postmortem_problems(tmp_path / "runs", tmp_path / "postmortems", _no_findings(tmp_path),
                                      tmp_path / "scoreboard.md") == []
