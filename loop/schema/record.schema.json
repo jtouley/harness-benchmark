@@ -74,7 +74,18 @@
         "cwd": {"type": "string"},
         "home": {"type": "string"},
         "fresh_home": {"type": "boolean"},
-        "other_cadence_checkouts": {"type": "array", "items": {"type": "string"}}
+        "other_cadence_checkouts": {"type": "array", "items": {"type": "string"}},
+        "method": {"$comment": "host, or container:<image id>", "type": "string"},
+        "contact": {"$comment": "tool calls of the transcript that named the benchmark or another Cadence checkout (loop.driver.contact)", "type": "array", "items": {"type": "string"}}
+      }
+    },
+    "spec": {
+      "$comment": "The run's only input (loop.driver --spec): its path and sha256, and the exact prompt the agent got (/cadence <path> for a Cadence arm, the spec's text for a one-shot). Absent in records before 2026-10-23.",
+      "type": ["object", "null"], "additionalProperties": false, "required": ["path", "sha256", "prompt"],
+      "properties": {
+        "path": {"type": "string"},
+        "sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+        "prompt": {"type": "string"}
       }
     },
     "counts": {

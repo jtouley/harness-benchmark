@@ -1,0 +1,187 @@
+"""One pipeline trial on the host, the command loop.driver runs for batch F (owner, 2026-10-23: "use the
+subscription"; the container runner cannot authenticate the agent yet, see runner/README.md).
+
+    python -m loop.driver ... --spec RUN/spec/spec.md --cwd RUN --fresh-home RUN/home \\
+        --agent-argv RUN/agent-argv.json --transcript RUN/transcript.jsonl --grade RUN/grade.json \\
+        --stop-point-file RUN/stop.json --timing RUN/timing.json --context RUN/context --tree RUN/repo-as-left \\
+        -- python scripts/host_trial.py P1 --out RUN --model claude-haiku-5-5 [--plugin-dir PLUGIN --peer-model haiku]
+
+The agent's prompt is HB_AGENT_PROMPT, as the driver sets it (`/cadence <spec path>`, or the spec's text for a
+one-shot): this script adds no prompt text. In order:
+
+1. The starting repository (pipetask.assemble) in RUN/repo on `main`, with a local bare origin and a committed
+   `.cadence.json` that selects the `none` tracker adapter; no feature branch and no ticket (the spec is the
+   whole input; F-9 is what Cadence does with that).
+2. The dev replay (seed 0) on localhost:8099 while the agent runs.
+3. The agent: `claude -p "$HB_AGENT_PROMPT"` in RUN/repo, in its own session (the operator's Claude Code
+   variables dropped), HOME as the driver gives it, with the plugin and, for a Cadence arm, peer models from
+   `--peer-model` in $HOME/.config/cadence/config.json. No time cap but the harness backstop (criteria v2 5.3).
+   Every process it leaves is stopped before grading.
+4. The records the grader's reset would lose: RUN/context (a copy of .context), RUN/repo-as-left, the stop
+   point (Cadence's own headless.py `next` on a copy of the repository, and the session's hard stop).
+5. The grader (pipetask.trial, grading seed 1) on RUN/repo: RUN/grade.json. RUN/timing.json has agent_seconds.
+"""
+
+from __future__ import annotations
+
+import argparse
+import json
+import os
+import shutil
+import signal
+import socket
+import subprocess
+import sys
+import tempfile
+import time
+from pathlib import Path
+
+ROOT = Path(__file__).resolve().parents[1]
+GP = ROOT / "golden" / "pipeline"
+BACKSTOP = 86400  # runner/pipeline/caps.json harness_backstop default
+PORT = 8099
+GATED = ["src/", "lib/", "app/", "packages/", "pipeline/", "engine/", "pipelines/", "transform/", "Makefile"]
+DROPPED_PREFIXES = ("CLAUDE", "CCR_", "AI_AGENT", "DOCUMENTS_")
+
+
+def _port_open() -> bool:
+    with socket.socket() as s:
+        s.settimeout(0.5)
+        return s.connect_ex(("127.0.0.1", PORT)) == 0
+
+
+def _git(repo: Path, *args: str) -> None:
+    env = {k: v for k, v in os.environ.items() if not k.startswith("GIT_")}
+    subprocess.run(["git", "-c", "user.name=cbench", "-c", "user.email=cbench@localhost", *args], cwd=repo,
+                   env=env, check=True, capture_output=True)
+
+
+def setup_repo(task: str, out: Path) -> Path:
+    repo = out / "repo"
+    subprocess.run([sys.executable, "-m", "pipetask.assemble", task, "--out", str(repo)], cwd=GP, check=True,
+                   capture_output=True)
+    (repo / ".cadence.json").write_text(json.dumps({"adapter": "none", "gated_prefixes": GATED}, indent=1) + "\n")
+    _git(out, "init", "-q", "--bare", str(out / "origin.git"))
+    _git(repo, "add", ".cadence.json")
+    _git(repo, "commit", "-q", "-m", "cadence config for the trial")
+    _git(repo, "remote", "add", "origin", str(out / "origin.git"))
+    _git(repo, "push", "-q", "-u", "origin", "HEAD")
+    return repo
+
+
+def agent_env(home: Path, plugin: Path | None) -> dict[str, str]:
+    env = {k: v for k, v in os.environ.items() if not k.startswith(DROPPED_PREFIXES + ("UV_",))
+           and k not in ("HB_AGENT_PROMPT", "VIRTUAL_ENV", "PYTHONPATH")}
+    # This script runs in harness-benchmark's environment (uv run): its python must not be the agent's.
+    venv = os.environ.get("VIRTUAL_ENV")
+    env["PATH"] = os.pathsep.join(d for d in env.get("PATH", "").split(os.pathsep)
+                                  if d and not (venv and d.startswith(venv)) and str(ROOT) not in d)
+    env.update(HOME=str(home), DISABLE_AUTOUPDATER="1", CLAUDE_AUTO_BACKGROUND_TASKS="false",
+               CLAUDE_CODE_PRINT_BG_WAIT_CEILING_MS="0", PYTHONDONTWRITEBYTECODE="1")
+    if plugin is not None:
+        env["CADENCE_HOME"] = str(plugin)
+    return env
+
+
+def stop_point(repo: Path, plugin: Path, env: dict[str, str]) -> dict:
+    """The block Cadence's own headless runner reports open in a copy of the repository, and why."""
+    with tempfile.TemporaryDirectory() as tmp:
+        copy = Path(tmp) / "repo"
+        shutil.copytree(repo, copy, symlinks=True)
+        proc = subprocess.run([sys.executable, str(plugin / "scripts" / "headless.py"), "next", "--json"], cwd=copy,
+                              env=env, capture_output=True, text=True, timeout=900)
+        hard = None
+        for session in sorted((copy / ".context" / "sessions" / "by-worktree").glob("*.json")):
+            data = json.loads(session.read_text(encoding="utf-8"))
+            hard = data.get("hard_stop") or hard
+    try:
+        report = json.loads(proc.stdout)
+    except ValueError:
+        return {"block": "?", "reason": f"headless.py next exited {proc.returncode}: {proc.stderr.strip()[-200:]}"}
+    nxt = report.get("next")
+    if not nxt:
+        return {"block": None, "reason": None}
+    failing = [r for r in report.get("results", []) if not r.get("ok")]
+    why = next((line.strip() for line in str((failing[-1] if failing else {}).get("output") or "").splitlines()
+                if line.strip()), "")
+    if hard:
+        why = f"hard stop {hard.get('class') if isinstance(hard, dict) else hard}: " + \
+              (hard.get("reason", "") if isinstance(hard, dict) else "") + (f" ({why})" if why else "")
+    return {"block": nxt.get("block"), "reason": why[:300] or None}
+
+
+def main(argv: list[str] | None = None) -> int:
+    ap = argparse.ArgumentParser(description=__doc__.split("\n\n")[0])
+    ap.add_argument("task", choices=["P1", "P2", "P3"])
+    ap.add_argument("--out", type=Path, required=True)
+    ap.add_argument("--model", required=True)
+    ap.add_argument("--plugin-dir", type=Path)
+    ap.add_argument("--peer-model", help="Cadence arm: peer_models.default in the run's Cadence config")
+    args = ap.parse_args(argv)
+    prompt = os.environ.get("HB_AGENT_PROMPT")
+    if not prompt:
+        print("host_trial: HB_AGENT_PROMPT is not set; run this through loop.driver --spec", file=sys.stderr)
+        return 2
+    out, home = args.out.resolve(), Path(os.environ["HOME"])
+    plugin = args.plugin_dir.resolve() if args.plugin_dir else None
+    repo = setup_repo(args.task, out)
+    if plugin is not None and args.peer_model:
+        (home / ".config" / "cadence").mkdir(parents=True, exist_ok=True)
+        (home / ".config" / "cadence" / "config.json").write_text(
+            json.dumps({"peer_models": {"default": args.peer_model}}) + "\n")
+    spec_dir = Path(prompt.split(" ", 1)[1]).parent if plugin is not None else None
+
+    if _port_open():
+        print(f"host_trial: port {PORT} is taken before the dev replay starts", file=sys.stderr)
+        return 4
+    replay = subprocess.Popen([sys.executable, "-m", "pipetask.replay", "--capture",
+                               "data/capture/recentchange.jsonl.gz", "--seed", "0", "--port", str(PORT)],
+                              cwd=GP, stdout=open(out / "replay-dev.log", "w"), stderr=subprocess.STDOUT)
+    for _ in range(60):
+        if _port_open():
+            break
+        time.sleep(1)
+
+    argv_agent = ["claude", "-p", prompt, "--model", args.model, "--permission-mode", "auto",
+                  "--output-format", "stream-json", "--verbose"]
+    if plugin is not None:
+        argv_agent += ["--plugin-dir", str(plugin)]
+    if spec_dir is not None:
+        argv_agent += ["--add-dir", str(spec_dir)]
+    (out / "agent-argv.json").write_text(json.dumps(argv_agent) + "\n")
+    env = agent_env(home, plugin)
+    t0 = time.monotonic()
+    with open(out / "transcript.jsonl", "w") as stdout, open(out / "agent.stderr", "w") as stderr:
+        agent = subprocess.Popen(["timeout", str(BACKSTOP), *argv_agent], cwd=repo, env=env, stdout=stdout,
+                                 stderr=stderr, start_new_session=True)
+        rc = agent.wait()
+    agent_seconds = round(time.monotonic() - t0, 1)
+    for sig in (signal.SIGTERM, signal.SIGKILL):
+        try:
+            os.killpg(agent.pid, sig)
+        except ProcessLookupError:
+            pass
+        time.sleep(2)
+    replay.terminate()
+    replay.wait(30)
+
+    if (repo / ".context").is_dir():
+        shutil.copytree(repo / ".context", out / "context", symlinks=True)
+    shutil.copytree(repo, out / "repo-as-left", symlinks=True)
+    stop = stop_point(out / "repo-as-left", plugin, env) if plugin is not None else {"block": None, "reason": None}
+    (out / "stop.json").write_text(json.dumps(stop) + "\n")
+
+    t1 = time.monotonic()
+    with open(out / "grade.json", "w") as grade, open(out / "grade.stderr", "w") as gerr:
+        grc = subprocess.run([sys.executable, "-m", "pipetask.trial", "--repo", str(repo), "--key",
+                              "key/answer_key.json", "--capture", "data/capture/recentchange.jsonl.gz",
+                              "--deadline", "600", "--snapshot-worktree", "--logs", str(out / "grade-logs")],
+                             cwd=GP, stdout=grade, stderr=gerr).returncode
+    (out / "timing.json").write_text(json.dumps({
+        "agent_seconds": agent_seconds, "grader_seconds": round(time.monotonic() - t1, 1), "agent_exit": rc,
+        "grader_exit": grc, "backstop_seconds": BACKSTOP, "hit_backstop": rc == 124}, indent=1) + "\n")
+    return rc
+
+
+if __name__ == "__main__":
+    sys.exit(main())

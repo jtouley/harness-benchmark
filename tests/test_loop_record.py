@@ -396,3 +396,87 @@ def test_the_record_has_wall_agent_and_active_time(tmp_path, plugin):
     assert t["run_wall_seconds"] >= 0
     assert t["agent_active_seconds"] == 2.5  # the transcript's result lines: 1500 + 1000 ms
     assert t["blocks"] is None
+
+
+# --- the entry: the only prompt a Cadence run gets is `/cadence <spec path>` (owner, 2026-10-22)
+
+def _spec(tmp_path) -> Path:
+    spec = tmp_path / "spec" / "spec.md"
+    spec.parent.mkdir(exist_ok=True)
+    spec.write_text("Build the thing.\n\n1. It works.\n")
+    return spec
+
+
+def test_a_cadence_benchmark_run_without_a_spec_is_refused(tmp_path, plugin):
+    rc, run = _drive(tmp_path, plugin, extra=["--kind", "benchmark"], script=f"touch {tmp_path}/ran")
+    assert rc == 2 and not run.exists() and not (tmp_path / "ran").exists()
+
+
+def test_a_command_that_gives_the_agent_other_prompt_text_is_refused(tmp_path, plugin):
+    spec = _spec(tmp_path)
+    rc, run = _drive(tmp_path, plugin, extra=["--kind", "benchmark", "--spec", str(spec)],
+                     script=f"claude -p 'Use the cadence skill. /cadence {spec}' ; touch {tmp_path}/ran")
+    assert rc == 2 and not run.exists() and not (tmp_path / "ran").exists()
+
+
+def test_the_command_gets_exactly_slash_cadence_and_the_spec_path_and_the_record_has_the_spec(tmp_path, plugin):
+    spec = _spec(tmp_path)
+    rc, run = _drive(tmp_path, plugin, extra=["--kind", "benchmark", "--spec", str(spec)],
+                     script=f'printf %s "$HB_AGENT_PROMPT" > {tmp_path}/prompt.txt')
+    assert rc == 0
+    assert (tmp_path / "prompt.txt").read_text() == f"/cadence {spec.resolve()}"
+    rec = json.loads((run / "record.json").read_text())
+    assert record.validate(rec, record.RECORD_SCHEMA) == []
+    assert rec["spec"] == {"path": str(spec.resolve()), "sha256": hashlib.sha256(spec.read_bytes()).hexdigest(),
+                           "prompt": f"/cadence {spec.resolve()}"}
+
+
+def test_a_one_shot_gets_the_spec_text_as_its_prompt(tmp_path, plugin):
+    spec = _spec(tmp_path)
+    rc, run = _drive(tmp_path, plugin, extra=["--kind", "benchmark", "--arm", "one-shot", "--spec", str(spec)],
+                     script=f'printf %s "$HB_AGENT_PROMPT" > {tmp_path}/prompt.txt')
+    assert rc == 0 and (tmp_path / "prompt.txt").read_text() == spec.read_text()
+
+
+def test_an_agent_that_ran_with_another_prompt_does_not_count(tmp_path, plugin):
+    spec = _spec(tmp_path)
+    argv_file = tmp_path / "trial" / "agent-argv.json"
+    script = f"""echo '["claude", "-p", "/cadence {spec.resolve()} and be quick"]' > {argv_file}"""
+    rc, run = _drive(tmp_path, plugin, extra=["--kind", "benchmark", "--spec", str(spec),
+                                              "--agent-argv", str(argv_file)], script=script)
+    assert rc == 0
+    counts = json.loads((run / "record.json").read_text())["counts"]
+    assert counts["counts"] is False and "/cadence" in counts["why"]
+
+
+def test_an_exit_1_at_entry_is_the_recorded_result(tmp_path, plugin):
+    """Until /cadence <spec path> works (F-9), the run records what the entry did: the driver adds nothing."""
+    spec = _spec(tmp_path)
+    stop = tmp_path / "trial" / "stop.json"
+    script = f"""echo '{{"block": "A1", "reason": "Cannot determine task ID"}}' > {stop}; exit 1"""
+    rc, run = _drive(tmp_path, plugin, extra=["--kind", "benchmark", "--spec", str(spec),
+                                              "--stop-point-file", str(stop)], script=script)
+    rec = json.loads((run / "record.json").read_text())
+    assert rc == 0 and rec["exit_code"] == 1
+    assert rec["stop_point"] == {"block": "A1", "reason": "Cannot determine task ID"}
+
+
+@pytest.mark.parametrize("tool_input, hit", [
+    ({"file_path": "/x/harness-benchmark/golden/pipeline/key/answer_key.json"}, "harness-benchmark"),
+    ({"command": "cat ../golden/pipeline/P1/reference/oracle_map.yml"}, "golden/"),
+    ({"pattern": "answer", "path": "/srv/pipetask"}, "pipetask"),
+    ({"command": "ls /home/user/cadence-main/scripts"}, "/cadence-main"),
+])
+def test_a_transcript_that_touched_the_benchmark_or_another_checkout_does_not_count(tmp_path, plugin, tool_input, hit):
+    event = {"type": "assistant", "message": {"model": "claude-haiku-5-5", "content": [
+        {"type": "tool_use", "name": "Bash", "input": tool_input}]}}
+    script = f"printf '%s\\n' '{json.dumps(event)}' >> {tmp_path}/trial/transcript.jsonl"
+    rc, run = _drive(tmp_path, plugin, script=script)
+    rec = json.loads((run / "record.json").read_text())
+    assert rc == 0 and rec["counts"]["counts"] is False
+    assert any(hit in h for h in rec["isolation"]["contact"]), rec["isolation"]["contact"]
+    assert rec["isolation"]["method"] == "host"
+
+
+def test_a_clean_transcript_records_no_contact():
+    assert driver.contact([json.dumps(e) for e in TRANSCRIPT], plugin=Path("/srv/plugin-c458a46")) == []
