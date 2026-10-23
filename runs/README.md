@@ -8,6 +8,11 @@ live or stub). A run that has no folder here is not evidence.
 | `record.json` | `python -m loop.driver` (new runs), `loop.backfill` and `loop.backfill_live` (old runs) | written once, never changed ([schema](../loop/schema/record.schema.json)) |
 | `scores.jsonl` | the driver with `--grade`, a regrade | one line per grading, appended, never edited ([schema](../loop/schema/score.schema.json)) |
 
+`citations.json` (root) is the trace of these runs into Cadence: per cited run, the cadence commits
+whose `Evidence: <run id>` trailer names it, with each commit's finding, pull request and status. `python
+-m loop.trace snapshot --cadence <checkout>` refreshes it; `python -m loop.trace` prints the table for
+every counted run and every cited run, and `python -m loop.postmortem --run <run id>` prints one run's row.
+
 `python -m loop.check --base origin/main` validates every record and score and refuses a change that
 edits or deletes a record or rewrites a score. Run it before pushing a change to `runs/`.
 
