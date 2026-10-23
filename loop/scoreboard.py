@@ -5,9 +5,13 @@ The release gate reads it.
     python -m loop.scoreboard gate --model claude-haiku-5-5 --sha <cadence sha> [--n 3]
 
 A cell takes the counted runs of one (arm, cadence commit, model, task) that have a score, and each run's
-latest score. Baselines are the counted one-shot runs (arm `baseline`) of the same task. The gate passes
-for a cadence commit and model when, on every task in TASKS, it has at least --n scored runs, its mean
-checks passed is above the best Sonnet one-shot and at least the best Opus one-shot.
+latest score. A bar is the mean checks passed of the counted one-shot runs (arm `baseline` or `one-shot`) of the
+same task and model in the newest batch that has one, on the grader tree of the Cadence runs it is compared with
+(coordinator, 2026-10-23: from batch F iteration 0 on, the bars are the batch's own one-shots; older batches stay
+as history). The gate passes for a cadence commit and model when, on every task in TASKS, it has at least --n
+scored runs, and its mean beats Sonnet (above the Sonnet one-shot mean) and matches Opus (within
+OPUS_MARGIN checks of the Opus one-shot mean). Each line prints best and worst beside the mean for both arms, so a
+single lucky run shows.
 """
 
 from __future__ import annotations
@@ -22,6 +26,8 @@ from loop import record
 ROOT = Path(__file__).resolve().parents[1]
 TASKS = ("P1", "P2")
 SONNET, OPUS = "claude-sonnet-5-5", "claude-opus-5-5"
+ONE_SHOT_ARMS = frozenset({"baseline", "one-shot"})  # the backfill says baseline, the driver one-shot
+OPUS_MARGIN = 1  # "matches Opus": within 1 of 7 checks of the Opus one-shot mean (coordinator, 2026-10-23)
 STRETCH_RATIO = 1.25  # owner's stretch goal: a Cadence run takes at most 120-125% of the one-shot's time
 
 
@@ -48,11 +54,34 @@ def _passed(score: dict) -> int:
     return score.get("passed") or 0
 
 
-def baseline(runs: Path, task: str, model: str) -> int | None:
-    """The best checks passed of a counted one-shot of `model` on `task`, or None."""
-    found = [_passed(s) for (arm, _, m, t), rows in cells(runs).items() if arm == "baseline" and m == model
-             and t == task for _, s in rows]
-    return max(found) if found else None
+def _tree(score: dict) -> str | None:
+    return (score.get("grader") or {}).get("tree")
+
+
+def _spread(values: list[int]) -> dict:
+    return {"mean": sum(values) / len(values), "best": max(values), "worst": min(values), "n": len(values)}
+
+
+def bar(runs: Path, task: str, model: str, tree: str | None = None) -> dict | None:
+    """{"mean", "best", "worst", "n"} of the checks passed by the counted one-shots of `model` on `task` in the
+    newest batch that has one, only among scores of grader `tree` when given; None without one."""
+    found = [(rec, s) for (arm, _, m, t), rows in cells(runs).items() if arm in ONE_SHOT_ARMS and m == model
+             and t == task for rec, s in rows if tree is None or _tree(s) == tree]
+    if not found:
+        return None
+    newest = max(found, key=lambda row: row[0]["started_at"] or "")[0]["batch"]
+    return _spread([_passed(s) for rec, s in found if rec["batch"] == newest])
+
+
+def baseline(runs: Path, task: str, model: str, tree: str | None = None) -> float | None:
+    """The bar's mean (see bar), or None."""
+    found = bar(runs, task, model, tree)
+    return None if found is None else found["mean"]
+
+
+def _show(name: str, spread: dict) -> str:
+    return (f"{name} mean {spread['mean']:.2f}/7 (best {spread['best']}, worst {spread['worst']}, "
+            f"n={spread['n']})")
 
 
 def oneshot_seconds(runs: Path, task: str, model: str) -> float | None:
@@ -61,7 +90,7 @@ def oneshot_seconds(runs: Path, task: str, model: str) -> float | None:
     for run in sorted(p for p in runs.iterdir() if (p / "record.json").exists()):
         rec = record.load(run)
         seconds = rec["timing"]["agent_wall_seconds"]
-        if (rec["arm"] == "baseline" and rec["counts"]["counts"] and rec["task"] == task
+        if (rec["arm"] in ONE_SHOT_ARMS and rec["counts"]["counts"] and rec["task"] == task
                 and rec["model_requested"] == model and seconds is not None):
             found.append(seconds)
     return round(sum(found) / len(found), 3) if found else None
@@ -79,7 +108,7 @@ def reached_end(runs: Path, rec: dict) -> bool:
 def time_ratio(runs: Path, rec: dict) -> float | None:
     """A run's agent session over the one-shot's, same task and model. None when either is unknown, or for a
     Cadence run that did not reach the end (reached_end)."""
-    if rec["arm"] != "baseline" and not reached_end(runs, rec):
+    if rec["arm"] not in ONE_SHOT_ARMS and not reached_end(runs, rec):
         return None
     seconds = rec["timing"]["agent_wall_seconds"]
     base = oneshot_seconds(runs, rec["task"], rec["model_requested"])
@@ -103,20 +132,29 @@ def gate(runs: Path, model: str, sha: str, n: int = 3) -> tuple[bool, list[str]]
     for task in TASKS:
         rows = [r for (arm, s, m, t), rs in grouped.items() if s and s.startswith(sha) and m == model and t == task
                 for r in rs]
-        sonnet, opus = baseline(runs, task, SONNET), baseline(runs, task, OPUS)
+        trees = {_tree(s) for _, s in rows}
+        tree = trees.pop() if len(trees) == 1 else None  # one grader tree: compare on it
+        sonnet, opus = bar(runs, task, SONNET, tree), bar(runs, task, OPUS, tree)
+        other_tree = tree is not None and (sonnet is None or opus is None)
+        if other_tree:  # no one-shot on the runs' grader tree: the newest on any tree, and the line says so
+            sonnet, opus = bar(runs, task, SONNET), bar(runs, task, OPUS)
         if len(rows) < n:
             ok = False
             lines.append(f"{task}: {len(rows)} scored run(s) at {sha[:7]} on {model}, the gate needs {n}")
             continue
-        mean = sum(_passed(s) for _, s in rows) / len(rows)
+        cadence = _spread([_passed(s) for _, s in rows])
         if sonnet is None or opus is None:
             ok = False
             lines.append(f"{task}: no Sonnet or Opus one-shot baseline")
             continue
-        passed = mean > sonnet and mean >= opus
+        beats_sonnet = cadence["mean"] > sonnet["mean"]
+        matches_opus = cadence["mean"] >= opus["mean"] - OPUS_MARGIN
+        passed = beats_sonnet and matches_opus
         ok = ok and passed
-        lines.append(f"{task}: mean {mean:.2f}/7 over {len(rows)} runs; Sonnet one-shot {sonnet}/7, Opus one-shot "
-                     f"{opus}/7: {'PASS' if passed else 'FAIL'}")
+        lines.append(f"{task}: {_show(model, cadence)}; {_show('Sonnet one-shot', sonnet)}; "
+                     f"{_show('Opus one-shot', opus)}: beats Sonnet {'yes' if beats_sonnet else 'no'}, matches Opus "
+                     f"(within {OPUS_MARGIN}) {'yes' if matches_opus else 'no'}: {'PASS' if passed else 'FAIL'}"
+                     + (f" (bars from another grader tree: no one-shot on {tree[:7]})" if other_tree else ""))
         ratios, early = _ratios(runs, [rec for rec, _ in rows])
         lines.append(f"{task}: agent time {_ratio_text(ratios, early)} the {model} one-shot (stretch goal <= "
                      f"{STRETCH_RATIO}; reported, not gated)")
