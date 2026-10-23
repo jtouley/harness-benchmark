@@ -97,6 +97,8 @@ def test_p4_pins_are_a_subset_of_the_shared_images_locks():
     """The py image warms one uv cache for P1, P2 and P4. A package only P4 pins would sit in that cache and
     tell a P1 or P2 arm that another task exists, so P4's lock must add nothing to theirs."""
     def pins(task):
+        """(name, version) of every package in the lock except the skeleton project itself (a virtual source)."""
         lock = (ROOT / "golden" / "pipeline" / task / "skeleton" / "uv.lock").read_text(encoding="utf-8")
-        return set(re.findall(r'^name = "([^"]+)"\nversion = "([^"]+)"', lock, re.M))
+        return {(n, v) for n, v, src in re.findall(r'^name = "([^"]+)"\nversion = "([^"]+)"\nsource = (.*)$', lock, re.M)
+                if "virtual" not in src}
     assert pins("P4") <= pins("P1") | pins("P2"), pins("P4") - (pins("P1") | pins("P2"))
