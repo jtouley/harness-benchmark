@@ -55,18 +55,30 @@ def validate_tree(runs: Path) -> list[str]:
 
 def postmortem_problems(runs: Path, postmortems: Path, findings_path: Path = findings.FINDINGS,
                         scoreboard_path: Path | None = None, citations: dict | None = None) -> list[str]:
-    """Runs that no committed postmortem documents, postmortems that are not the generator's output, and a
-    scoreboard that is not the scoreboard's output."""
+    """Runs whose batch no committed postmortem covers, a notes file that names a batch with no run,
+    postmortems that are not the generator's output, and a scoreboard that is not the scoreboard's output.
+
+    Coverage is by batch, never by a run id in the text: a notes line that cites a run of another batch
+    (a decision with run_ids) does not document that run's batch."""
     problems = []
-    texts = {name: (postmortems / f"{name}.md").read_text(encoding="utf-8") for name in postmortem.covering(postmortems)}
+    covering = postmortem.covering(postmortems)
+    texts = {name: (postmortems / f"{name}.md").read_text(encoding="utf-8") for name in covering}
+    covered = {b for bs in covering.values() for b in bs}
     cited = {rid for row in findings.load(findings_path) for rid in row["run_ids"]}
+    known_batches = set()
     for run in sorted(p for p in runs.iterdir() if (p / "record.json").exists()):
         rec = record.load(run)
+        known_batches.add(rec["batch"])
         why = "counted" if rec["counts"]["counts"] else "cited by a finding" if run.name in cited else None
-        if why and not any(f"`{run.name}`" in text for text in texts.values()):
-            problems.append(f"{run.name}: {why}, and in no committed postmortem under {postmortems.name}/ "
-                            f"(python -m loop.postmortem {rec['batch']})")
-    for name, batches in postmortem.covering(postmortems).items():
+        if why and rec["batch"] not in covered:
+            problems.append(f"{run.name}: {why}, and its batch {rec['batch']} is in no committed postmortem under "
+                            f"{postmortems.name}/ (python -m loop.postmortem {rec['batch']})")
+    for name, batches in covering.items():
+        for batch in batches:
+            if batch not in known_batches:
+                problems.append(f"{postmortems.name}/{name}.notes.json: names batch {batch!r}, which no run in "
+                                f"{runs.name}/ has")
+    for name, batches in covering.items():
         try:
             expected = postmortem.render(name, batches, runs, postmortems, findings_path, citations)
         except postmortem.PostmortemError as exc:

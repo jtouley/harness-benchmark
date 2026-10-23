@@ -41,7 +41,7 @@ def test_a_counted_run_in_no_committed_postmortem_is_a_problem(tmp_path):
     problems = check.postmortem_problems(runs, pms, _no_findings(tmp_path))
     counted = [i for i in ids if record.load(runs / i)["counts"]["counts"]]
     assert counted and len(problems) == len(counted)
-    assert all("counted, and in no committed postmortem" in p for p in problems)
+    assert all(f"counted, and its batch {BASELINES} is in no committed postmortem" in p for p in problems)
     assert f"python -m loop.postmortem {BASELINES}" in problems[0]
     postmortem.refresh(BASELINES, runs, pms, _no_findings(tmp_path))
     assert (pms / f"{BASELINES}.md").exists()
@@ -80,6 +80,34 @@ def test_a_stale_scoreboard_is_a_problem(tmp_path):
         "scoreboard.md: not what the scoreboard writes (python -m loop.scoreboard --out scoreboard.md)"]
     board.write_text(scoreboard.table(runs), encoding="utf-8")
     assert check.postmortem_problems(runs, pms, _no_findings(tmp_path), board) == []
+
+
+def test_a_notes_line_that_cites_a_run_of_another_batch_does_not_cover_that_run(tmp_path):
+    """Coverage is by batch: a decision in one postmortem's notes that names a run of a batch with no
+    postmortem of its own leaves that run undocumented, and the rule still says so."""
+    runs, pms = tmp_path / "runs", tmp_path / "postmortems"
+    other = "2026-10-21-cadence-core-subscription"
+    ids = _copy_batch(runs, BASELINES) + _copy_batch(runs, other)
+    counted_baselines = [i for i in ids if i.startswith("20261015") and record.load(runs / i)["counts"]["counts"]]
+    pms.mkdir()
+    (pms / f"{other}.notes.json").write_text(json.dumps(
+        {"decisions": [{"text": "the baselines are these one-shots", "run_ids": counted_baselines}]}), encoding="utf-8")
+    postmortem.refresh(other, runs, pms, _no_findings(tmp_path))
+    text = (pms / f"{other}.md").read_text(encoding="utf-8")
+    assert all(f"`{i}`" in text for i in counted_baselines)  # every baseline id is in the text, cited
+    problems = check.postmortem_problems(runs, pms, _no_findings(tmp_path))
+    assert len(problems) == len(counted_baselines)
+    assert all(f"its batch {BASELINES} is in no committed postmortem" in p for p in problems)
+
+
+def test_a_notes_file_that_names_a_batch_with_no_run_is_a_problem(tmp_path):
+    runs, pms = tmp_path / "runs", tmp_path / "postmortems"
+    _copy_batch(runs, BASELINES)
+    pms.mkdir()
+    (pms / "2026-10-30-nowhere.notes.json").write_text(json.dumps({"batches": [BASELINES, "2026-10-30-nowhere"]}), encoding="utf-8")
+    (pms / "2026-10-30-nowhere.md").write_text("stale\n", encoding="utf-8")
+    problems = check.postmortem_problems(runs, pms, _no_findings(tmp_path))
+    assert any(p.startswith("postmortems/2026-10-30-nowhere.notes.json: names batch '2026-10-30-nowhere'") for p in problems)
 
 
 # --- names, batches, --all
