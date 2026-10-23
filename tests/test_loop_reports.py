@@ -54,10 +54,15 @@ def test_the_committed_postmortem_is_what_the_generator_writes():
 # --- scoreboard
 
 def test_the_baselines_are_the_15_october_one_shots():
-    assert scoreboard.baseline(RUNS, "P1", scoreboard.SONNET) == 3
-    assert scoreboard.baseline(RUNS, "P1", scoreboard.OPUS) == 6
-    assert scoreboard.baseline(RUNS, "P2", scoreboard.SONNET) == 3
-    assert scoreboard.baseline(RUNS, "P2", scoreboard.OPUS) == 5
+    oct15 = "2026-10-15-pipeline-trials"  # without a batch, the bar is the newest batch's (batch F's)
+    assert scoreboard.baseline(RUNS, "P1", scoreboard.SONNET, batch=oct15) == 3
+    assert scoreboard.baseline(RUNS, "P1", scoreboard.OPUS, batch=oct15) == 6
+    assert scoreboard.baseline(RUNS, "P2", scoreboard.SONNET, batch=oct15) == 3
+    assert scoreboard.baseline(RUNS, "P2", scoreboard.OPUS, batch=oct15) == 5
+
+
+def test_a_later_batch_brings_its_own_bar():
+    assert scoreboard.baseline(RUNS, "P1", scoreboard.SONNET) == 5  # 20261023-P1-oneshot-sonnet-1-r2, batch F
 
 
 def test_the_gate_fails_cadence_core_29315c4_on_haiku():
@@ -279,3 +284,20 @@ def test_the_gate_line_shows_best_and_worst_beside_each_mean(tmp_path):
     assert "claude-haiku-5-5 mean 4.67/7 (best 7, worst 3, n=3)" in line
     assert "Sonnet one-shot mean 3.00/7 (best 6, worst 1, n=3)" in line   # one lucky Sonnet run shows
     assert "beats Sonnet yes, matches Opus (within 1) yes: PASS" in line
+
+
+def test_the_bar_orders_batches_of_one_day_by_when_they_began(tmp_path):
+    """The bars read batches in loop.speed.batch_order (#87), as the time basis does: of two batches of one day
+    the later start is newer, whatever their names."""
+    runs = tmp_path / "runs"
+    _one_shot(runs, "20261023-P1-oneshot-sonnet-1", "2026-10-23-zz", scoreboard.SONNET, 2, "c" * 40,
+              started="2026-10-23T08:00:00Z")
+    _one_shot(runs, "20261023-P1-oneshot-sonnet-2", "2026-10-23-aa", scoreboard.SONNET, 6, "c" * 40,
+              started="2026-10-23T20:00:00Z")
+    assert scoreboard.baseline(runs, "P1", scoreboard.SONNET) == 6
+    from loop import speed
+
+    for upto, passed in (("2026-10-23-aa", 6), ("2026-10-23-zz", 2)):  # by name zz sorts last; by start, aa
+        assert scoreboard.baseline(runs, "P1", scoreboard.SONNET, batch=upto) == passed
+        _, basis = speed.oneshot_mean(runs, "P1", scoreboard.SONNET, None, upto)
+        assert basis.startswith(f"batch {upto},"), basis  # the time basis picks the same batch as the bar

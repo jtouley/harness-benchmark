@@ -35,6 +35,7 @@ from __future__ import annotations
 import argparse
 import json
 import os
+import re
 import shutil
 import signal
 import socket
@@ -131,6 +132,16 @@ def prepare_home(home: Path, auth: str, oauth_file: Path | None) -> None:
     target.chmod(0o600)
 
 
+_BLOCK_CLASS = re.compile(r"^([a-z])(\d+)-")
+
+
+def stop_block(open_block: str | None, hard: dict | str | None) -> str | None:
+    """The block a run stopped at: the one a hard stop's class names (`a5-gap` is A5), else the open block. A
+    hard stop sends the run back to activation, so headless `next` reports A1 (review of #81)."""
+    match = _BLOCK_CLASS.match(str(hard.get("class") or "")) if isinstance(hard, dict) else None
+    return f"{match.group(1).upper()}{match.group(2)}" if match else open_block
+
+
 def stop_point(repo: Path, plugin: Path, env: dict[str, str]) -> dict:
     """The block Cadence's own headless runner reports open in a copy of the repository, and why."""
     with tempfile.TemporaryDirectory() as tmp:
@@ -155,7 +166,7 @@ def stop_point(repo: Path, plugin: Path, env: dict[str, str]) -> dict:
     if hard:
         why = f"hard stop {hard.get('class') if isinstance(hard, dict) else hard}: " + \
               (hard.get("reason", "") if isinstance(hard, dict) else "") + (f" ({why})" if why else "")
-    return {"block": nxt.get("block"), "reason": why[:300] or None}
+    return {"block": stop_block(nxt.get("block"), hard), "reason": why[:300] or None}
 
 
 def main(argv: list[str] | None = None) -> int:
