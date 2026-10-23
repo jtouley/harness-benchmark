@@ -32,6 +32,8 @@ def validate_tree(runs: Path) -> list[str]:
             problems.append(f"{run.name}/record.json: {exc}")
             continue
         problems += [f"{run.name}/record.json: {e}" for e in record.validate(rec, record.RECORD_SCHEMA)]
+        if rec.get("kind") in record.NON_COUNTING_KINDS and (rec.get("counts") or {}).get("counts") is True:
+            problems.append(f"{run.name}/record.json: a {rec['kind']} run never counts (counts.counts is true)")
         if rec.get("run_id") != run.name:
             problems.append(f"{run.name}/record.json: run_id {rec.get('run_id')!r} is not the folder name")
         for i, score in enumerate(record.scores(run), 1):

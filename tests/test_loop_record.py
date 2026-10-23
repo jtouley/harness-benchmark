@@ -398,8 +398,22 @@ def test_the_record_has_wall_agent_and_active_time(tmp_path, plugin):
     assert t["blocks"] is None
 
 
-def test_a_stub_run_never_counts(tmp_path, plugin):
-    """A stub is a probe the session wrote, not a graded run (review of #71)."""
-    rc, run = _drive(tmp_path, plugin)
-    counts = json.loads((run / "record.json").read_text())["counts"]
-    assert rc == 0 and counts == {"counts": False, "why": "stub: a session's own probe, not graded"}
+@pytest.mark.parametrize("kind, counts", [("benchmark", True), ("live", True), ("stub", False)])
+def test_whether_a_clean_run_counts_is_a_function_of_its_kind(tmp_path, plugin, kind, counts):
+    """A stub is a probe the session wrote, not a graded run (review of #71); the other kinds may count."""
+    rc, run = _drive(tmp_path, plugin, extra=["--kind", kind, "--arm", "one-shot"])
+    rec = json.loads((run / "record.json").read_text())
+    assert rc == 0 and rec["counts"]["counts"] is counts
+    if not counts:
+        assert rec["counts"]["why"] == "stub: a session's own probe, not graded"
+
+
+def test_the_check_refuses_a_counting_record_of_a_kind_that_never_counts(tmp_path):
+    runs = tmp_path / "runs"
+    for rid, kind, counts in (("20261023-stub-ok", "stub", False), ("20261023-stub-bad", "stub", True),
+                              ("20261023-bench-ok", "benchmark", True)):
+        rec = minimal(rid, kind=kind, counts={"counts": counts, "why": "x"})
+        (runs / rid).mkdir(parents=True)
+        (runs / rid / "record.json").write_text(json.dumps(rec))
+    problems = check.validate_tree(runs)
+    assert problems == ["20261023-stub-bad/record.json: a stub run never counts (counts.counts is true)"]

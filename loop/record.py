@@ -14,6 +14,8 @@ SCHEMAS = Path(__file__).resolve().parent / "schema"
 RECORD_SCHEMA = json.loads((SCHEMAS / "record.schema.json").read_text(encoding="utf-8"))
 SCORE_SCHEMA = json.loads((SCHEMAS / "score.schema.json").read_text(encoding="utf-8"))
 # A run id: the run's start date (YYYYMMDD), then dash-separated words, e.g. 20261021-P1-cadence-core-haiku-1.
+# A stub is a probe the session wrote, not a graded run: it never counts (review of #71).
+NON_COUNTING_KINDS = frozenset({"stub"})
 RUN_ID = re.compile(RECORD_SCHEMA["properties"]["run_id"]["pattern"].strip("^$"))
 
 _TYPES = {"string": str, "boolean": bool, "object": dict, "array": list, "null": type(None)}
