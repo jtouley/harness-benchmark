@@ -55,7 +55,7 @@ def test_a_run_at_1_1_is_not_flagged_and_one_at_1_3_is(tmp_path):
     rows = {r["run_id"]: r for r in speed.rows(tmp_path)}
     assert set(rows) == {"20261023-P1-cadence-haiku-1", "20261023-P1-cadence-haiku-2"}  # one-shots are not rows
     fast, slow = rows["20261023-P1-cadence-haiku-1"], rows["20261023-P1-cadence-haiku-2"]
-    assert fast["oneshot_seconds"] == 1000.0 and fast["basis"] == f"same grader tree {TREE_A[:7]}"
+    assert fast["oneshot_seconds"] == 1000.0 and fast["basis"] == f"batch 2026-10-23-speed, same grader tree {TREE_A[:7]}"
     assert fast["ratio"] == 1.1 and fast["flagged"] is False
     assert slow["ratio"] == 1.3 and slow["flagged"] is True
     assert slow["slowest"] == [("plan-review", 1500.0), ("implement", 900.0), ("plan-create", 600.0)]
@@ -66,7 +66,7 @@ def test_a_one_shot_missing_on_the_runs_tree_falls_back_to_every_one_shot_with_a
     _run(tmp_path, "20261023-P1-cadence-haiku-1", arm="cadence", seconds=1300.0, tree="c" * 40, blocks=BLOCKS)
     r = speed.rows(tmp_path)[0]
     assert r["oneshot_seconds"] == round((900 + 1100 + 5000) / 3, 3)  # the other tree's one-shot joins the mean
-    assert r["basis"] == "any grader tree (no counted one-shot on ccccccc)"
+    assert r["basis"] == "batch 2026-10-23-speed, any grader tree (no counted one-shot on ccccccc)"
     _run(tmp_path, "20261023-P2-cadence-haiku-1", arm="cadence", seconds=1300.0, task="P2", blocks=BLOCKS)
     p2 = next(r for r in speed.rows(tmp_path) if r["task"] == "P2")
     assert p2["ratio"] is None and p2["basis"] == "no counted one-shot of this task and model"
@@ -141,3 +141,58 @@ def test_the_driver_keeps_hit_cap_and_the_cap_from_timing_json(tmp_path):
     assert driver.main(argv) == 0
     timing = record.load(tmp_path / "runs" / "20261023-P1-baseline-haiku-9")["timing"]
     assert timing["agent_wall_seconds"] == 123.4 and timing["hit_cap"] is True and timing["cap_seconds"] == 120
+
+
+# --- one basis: the gate, the findings and the postmortem read the same one-shot mean
+
+def test_the_scoreboards_time_ratio_takes_the_same_basis_as_speed_and_keeps_the_early_stop_rule(tmp_path):
+    """Two bases would disagree as soon as a one-shot lands on the runs' grader tree: the one-shots on
+    TREE_A mean 1000 s, every counted one-shot means 2333 s. scoreboard.time_ratio (the gate's `_ratios`,
+    the scoreboard table and findings' `max_time_ratio` call it) reads speed.oneshot_mean, so the two agree
+    on both runs, and the gate's own rule stays: no ratio for a Cadence run that stopped early."""
+    from loop import scoreboard
+    _oneshots(tmp_path)
+    _run(tmp_path, "20261023-P1-cadence-haiku-1", arm="cadence", seconds=1300.0, blocks=BLOCKS)                  # on TREE_A
+    _run(tmp_path, "20261023-P1-cadence-haiku-2", arm="cadence", seconds=1300.0, tree="c" * 40, blocks=BLOCKS)   # no one-shot on its tree
+    _run(tmp_path, "20261023-P1-cadence-haiku-3", arm="cadence", seconds=1300.0, blocks=BLOCKS, block="E1", passed=0)
+    same, other, early = (record.load(tmp_path / f"20261023-P1-cadence-haiku-{i}") for i in (1, 2, 3))
+    any_tree = round((900 + 1100 + 5000) / 3, 3)
+    assert scoreboard.time_ratio(tmp_path, same) == 1.3                              # 1300 / 1000: its tree's one-shots
+    assert scoreboard.time_ratio(tmp_path, other) == round(1300 / any_tree, 4)       # the fallback, same as speed's
+    by_id = {r["run_id"]: r for r in speed.rows(tmp_path)}
+    assert by_id[same["run_id"]]["ratio"] == scoreboard.time_ratio(tmp_path, same)
+    assert by_id[other["run_id"]]["ratio"] == scoreboard.time_ratio(tmp_path, other)
+    assert scoreboard.time_ratio(tmp_path, early) is None and by_id[early["run_id"]]["ratio"] == 1.3  # the gate's rule; speed shows the slow stop
+    assert scoreboard.oneshot_seconds(tmp_path, "P1", "claude-haiku-5-5") == any_tree          # no tree given: every counted one-shot
+    assert scoreboard.oneshot_seconds(tmp_path, "P1", "claude-haiku-5-5", tree=TREE_A) == 1000.0
+    assert scoreboard.latest_tree(tmp_path / same["run_id"]) == TREE_A
+
+
+# --- the basis is per batch: a later batch never moves an earlier postmortem
+
+def test_the_basis_is_the_newest_batch_no_later_than_the_run_so_a_later_batch_leaves_a_postmortem_byte_identical(tmp_path):
+    """The bars' rule, pinned by batch: a run's one-shots are those of the newest batch no later than its own
+    (ids carry the date) on its grader tree, else on any tree. So when batch 2026-10-24-x lands with slower
+    one-shots, the 2026-10-23-speed postmortem, its scoreboard ratio and its finding ratio do not change,
+    while the new batch's run is measured against its own one-shots."""
+    from loop import scoreboard
+    _oneshots(tmp_path)  # batch 2026-10-23-speed: 900 and 1100 on TREE_A
+    _run(tmp_path, "20261023-P1-cadence-haiku-1", arm="cadence", seconds=1300.0, blocks=BLOCKS)
+    before = postmortem.generate("2026-10-23-speed", tmp_path, {}, tmp_path / "no-findings.jsonl",
+                                 citations={"citations": {}})
+    rec = record.load(tmp_path / "20261023-P1-cadence-haiku-1")
+    assert scoreboard.time_ratio(tmp_path, rec) == 1.3
+    _run(tmp_path, "20261024-P1-haiku-oneshot-1", arm="one-shot", seconds=5000.0, batch="2026-10-24-x")
+    _run(tmp_path, "20261024-P1-haiku-oneshot-2", arm="baseline", seconds=3000.0, tree="d" * 40, batch="2026-10-24-x")
+    _run(tmp_path, "20261024-P1-cadence-haiku-1", arm="cadence", seconds=6000.0, blocks=BLOCKS, batch="2026-10-24-x")
+    after = postmortem.generate("2026-10-23-speed", tmp_path, {}, tmp_path / "no-findings.jsonl",
+                                citations={"citations": {}})
+    assert after == before
+    assert scoreboard.time_ratio(tmp_path, rec) == 1.3
+    later = next(r for r in speed.rows(tmp_path, batch="2026-10-24-x"))
+    assert later["oneshot_seconds"] == 5000.0 and later["ratio"] == 1.2       # its own batch, on its tree
+    assert later["basis"] == f"batch 2026-10-24-x, same grader tree {TREE_A[:7]}"
+    assert scoreboard.oneshot_seconds(tmp_path, "P1", "claude-haiku-5-5") == 4000.0  # no batch given: the newest, any tree
+    assert scoreboard.oneshot_seconds(tmp_path, "P1", "claude-haiku-5-5", tree="d" * 40) == 3000.0
+    assert scoreboard.oneshot_seconds(tmp_path, "P1", "claude-haiku-5-5", batch="2026-10-23-zz") == round((900 + 1100 + 5000) / 3, 3)
+    assert scoreboard.oneshot_seconds(tmp_path, "P1", "claude-haiku-5-5", tree=TREE_A, batch="2026-10-23-zz") == 1000.0
