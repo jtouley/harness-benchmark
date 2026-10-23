@@ -8,10 +8,20 @@ A finding cites a run in `run_ids` of findings.jsonl. A cadence commit cites a r
 root) holds, per cited run, each citing commit: its sha, its findings, and its status. A commit on
 main is `merged`, with the pull request and the merge commit that brought it (the first commit on
 main's first-parent line that contains it; a squash merge is its own merge commit). A commit not on
-main is `unmerged`, with the branches that hold it and its pull request number when the checkout has
-the pull-request refs (`git fetch origin '+refs/pull/*/head:refs/remotes/origin/pr/*'`); whether that
-pull request is open or closed is not in a checkout. The snapshot keeps shas, ids, numbers and branch
+main is `unmerged`, with the remote branches that hold it and its pull request number; whether that pull
+request is open or closed is not in a checkout. The snapshot keeps shas, ids, numbers and branch
 names, and no commit text.
+
+What the snapshot walks is fixed, so two checkouts with the same refs give the same file: the main
+ref and every ref under refs/remotes/origin/ (the branches and the pull-request heads), never a local
+branch or a tag. The snapshot lists those refs (`refs`: name and sha) so the file states what it saw.
+Fetch them with exactly:
+
+    git fetch origin '+refs/heads/*:refs/remotes/origin/*' '+refs/pull/*/head:refs/remotes/origin/pr/*'
+
+(`refs/pull/*/head` alone, without the destination, gives no origin/pr/<n> ref, and an unmerged
+commit then has no pull request number.) A finding id a trailer names that has no row in findings.jsonl
+is kept, and the table marks it `unfiled`.
 
 The table covers every counted run, every run a finding cites, and every run a commit cites. A run
 that none of these names is not in it. `--run` restricts the table to the runs given, and refuses a
@@ -67,10 +77,22 @@ def _git(repo: Path, *args: str) -> str:
     return proc.stdout if proc.returncode == 0 else ""
 
 
-def citing_commits(cadence: Path) -> list[dict]:
-    """Every commit in the checkout (all refs) whose message cites a run: {sha, findings, run_ids}."""
+def walked_refs(cadence: Path, main: str) -> list[dict]:
+    """The refs the snapshot walks: `main`, then every ref under refs/remotes/origin/, each with its sha."""
+    refs = [{"name": main, "sha": _git(cadence, "rev-parse", main).strip()}]
+    for line in _git(cadence, "for-each-ref", "--format=%(refname) %(objectname)", "refs/remotes/origin/").splitlines():
+        full, _, sha = line.rpartition(" ")
+        name = full.removeprefix("refs/remotes/")
+        if name and name != main and full != "refs/remotes/origin/HEAD":
+            refs.append({"name": name, "sha": sha})
+    return refs
+
+
+def citing_commits(cadence: Path, main: str = "origin/main") -> list[dict]:
+    """Every commit reachable from the walked refs whose message cites a run: {sha, findings, run_ids}."""
     out = []
-    for entry in _git(cadence, "log", "--all", "--format=%H%x00%B%x01").split("\x01"):
+    names = [r["name"] for r in walked_refs(cadence, main)]
+    for entry in _git(cadence, "log", "--format=%H%x00%B%x01", *names, "--").split("\x01"):
         sha, _, body = entry.strip().partition("\x00")
         run_ids = evidence_trailers(body) if sha else []
         if run_ids:
@@ -93,8 +115,8 @@ def status_of(cadence: Path, sha: str, main: str, line: list[tuple[str, str]] | 
                               capture_output=True).returncode == 0:
                 return {"status": "merged", "pr": pr_number(subject), "merge_sha": merge_sha}
         return {"status": "merged", "pr": None, "merge_sha": None}
-    branches = sorted(b.strip() for b in _git(cadence, "branch", "-a", "--contains", sha, "--format=%(refname:short)")
-                      .splitlines() if b.strip() and not b.strip().endswith("/HEAD"))
+    branches = sorted(b.strip() for b in _git(cadence, "branch", "-r", "--contains", sha, "--format=%(refname:short)")
+                      .splitlines() if b.strip() and not b.strip().endswith("/HEAD") and b.strip() != "origin")
     prs = [int(b.rsplit("/pr/", 1)[1]) for b in branches if "/pr/" in b and b.rsplit("/pr/", 1)[1].isdigit()]
     return {"status": "unmerged", "pr": min(prs) if prs else None, "branches": branches}
 
@@ -103,14 +125,14 @@ def snapshot(cadence: Path, main: str = "origin/main") -> dict:
     """citations.json: per cited run, its citing commits with their status, from the checkout."""
     line = first_parent(cadence, main)
     citations: dict[str, list[dict]] = {}
-    for commit in citing_commits(cadence):
+    for commit in citing_commits(cadence, main):
         status = status_of(cadence, commit["sha"], main, line)
         for run_id in commit["run_ids"]:
             citations.setdefault(run_id, []).append({"sha": commit["sha"], "findings": commit["findings"], **status})
     for commits in citations.values():
         commits.sort(key=lambda c: (c["status"] != "merged", c["pr"] or 0, c["sha"]))
     return {"schema": 1, "source": SOURCE, "main": _git(cadence, "rev-parse", main).strip(),
-            "citations": dict(sorted(citations.items()))}
+            "refs": walked_refs(cadence, main), "citations": dict(sorted(citations.items()))}
 
 
 def load_citations(path: Path = CITATIONS) -> dict:
@@ -124,7 +146,9 @@ def rows(runs: Path, findings_path: Path, citations: dict, run_ids: list[str] | 
     """One row per run: every counted run, every run a finding cites, every run a commit cites; or the
     runs given. {run_id, counts, findings: [F-n], commits: [snapshot entries]}."""
     by_finding: dict[str, list[str]] = {}
+    known: set[str] = set()
     for row in findings.load(findings_path):
+        known.add(row["id"])
         for rid in row["run_ids"]:
             by_finding.setdefault(rid, []).append(row["id"])
     cited = citations.get("citations", {})
@@ -137,19 +161,22 @@ def rows(runs: Path, findings_path: Path, citations: dict, run_ids: list[str] | 
     for rid in sorted(wanted):
         if not (runs / rid / "record.json").exists():
             raise TraceError(f"no record for run {rid} in {runs}")
+        commits = [{**c, "unfiled": sorted(f for f in c["findings"] if f not in known)} for c in cited.get(rid, [])]
         out.append({"run_id": rid, "counts": record.load(runs / rid)["counts"]["counts"],
-                    "findings": sorted(by_finding.get(rid, []), key=lambda f: int(f[2:])),
-                    "commits": list(cited.get(rid, []))})
+                    "findings": sorted(by_finding.get(rid, []), key=lambda f: int(f[2:])), "commits": commits})
     return out
 
 
 def _commit_text(c: dict) -> str:
-    who = f"`{c['sha'][:7]}` ({', '.join(c['findings']) or 'no finding'})"
+    """One citing commit: sha, findings (an id with no findings.jsonl row says unfiled), pull request, status."""
+    unfiled = set(c.get("unfiled", []))
+    names = [f"{f} (unfiled)" if f in unfiled else f for f in c["findings"]]
+    who = f"`{c['sha'][:7]}` ({', '.join(names) or 'no finding'})"
     pr = f"#{c['pr']}" if c.get("pr") else "no pull request named"
     if c["status"] == "merged":
         at = f" at `{c['merge_sha'][:7]}`" if c.get("merge_sha") else ""
         return f"{who} merged in {pr}{at}"
-    on = ", ".join(b for b in c.get("branches", []) if "/pr/" not in b) or "no branch"
+    on = ", ".join(b for b in c.get("branches", []) if "/pr/" not in b) or ", ".join(c.get("branches", [])) or "no branch"
     return f"{who} unmerged, {pr}{' open or closed' if c.get('pr') else ''}, on {on}"
 
 

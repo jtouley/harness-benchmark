@@ -24,6 +24,18 @@
     "pr": 206,
     "sha": "1eabb0198118d7a435c17087b3cd74d95f5abce2",
     "status": "unmerged"
+   },
+   {
+    "branches": [
+     "origin/fix/entry-command",
+     "origin/pr/207"
+    ],
+    "findings": [
+     "F-9"
+    ],
+    "pr": 207,
+    "sha": "906bba640ee8c6319cd9096a2367db4945d77f5d",
+    "status": "unmerged"
    }
   ],
   "20261021-P2-cadence-core-haiku-2": [
@@ -104,6 +116,564 @@
   ]
  },
  "main": "748a729d53b401d74d7a081ec4ba08b9db444650",
+ "refs": [
+  {
+   "name": "origin/main",
+   "sha": "748a729d53b401d74d7a081ec4ba08b9db444650"
+  },
+  {
+   "name": "origin/benchmark-fingerprints",
+   "sha": "da56c177ffa3a4639cbf723d603d805937201b9d"
+  },
+  {
+   "name": "origin/ccr-083a4a87-oujv9a",
+   "sha": "7a53c96601d13be91a2e05f2906cfb7a0e15fef8"
+  },
+  {
+   "name": "origin/ccr-08495c94-imzjqh",
+   "sha": "9c7b3d2871b913cb4ce87e11752bd7a22d4eeb9c"
+  },
+  {
+   "name": "origin/ccr-14af656f-eh85qr",
+   "sha": "bfd24ae7d3c0f18da106114afa8703a6bf087b22"
+  },
+  {
+   "name": "origin/ccr-17c78ed4-0rp2hw",
+   "sha": "ffe27a0fa6902cb20252a699e283264f81f2bd45"
+  },
+  {
+   "name": "origin/ccr-231289e3-md8x3a",
+   "sha": "bb976fa65728cf40bc46ead02674c507d70bd854"
+  },
+  {
+   "name": "origin/ccr-324314a0-ghfifj",
+   "sha": "45fcd32ba445b9aa7277499e9ce1989d83768a1c"
+  },
+  {
+   "name": "origin/ccr-37440122-1kv0tw",
+   "sha": "d49801838d3b721b6e399324115bb02cfba57467"
+  },
+  {
+   "name": "origin/ccr-3d2e0c73-lr6bdt",
+   "sha": "4af76ac7c26de279a066195f1e39993e7f0d093e"
+  },
+  {
+   "name": "origin/ccr-3d2e0c73-lr6bdt-main-port",
+   "sha": "2c1fd46d3500f55b63e7c4842b34aed75c86480e"
+  },
+  {
+   "name": "origin/ccr-40618417-8v3wqv",
+   "sha": "9fed424e802cc9c4989ca9a487f6a40c6eff57d6"
+  },
+  {
+   "name": "origin/ccr-451883b5-c02kb6",
+   "sha": "11a6d25000ce0b481a242efe8bd7b9b10f0d33e7"
+  },
+  {
+   "name": "origin/ccr-451883b5-c02kb6-docs",
+   "sha": "f13cedc7a933587e33557074feca865e5338749e"
+  },
+  {
+   "name": "origin/ccr-451883b5-c02kb6-handoff",
+   "sha": "694e76c1dc0fdbf40a5c2143d457611b4f648fd7"
+  },
+  {
+   "name": "origin/ccr-49384494-muctvo",
+   "sha": "a7564a5121d55c6a02db15518647d65e41c81daa"
+  },
+  {
+   "name": "origin/ccr-539ff2f4-8qvl8d",
+   "sha": "f589bc5b97e377869f7a3176c36c690bd82862a3"
+  },
+  {
+   "name": "origin/ccr-7058c2b0-xcn317",
+   "sha": "d4598593f2401f8978e858cb997d9aa6402893db"
+  },
+  {
+   "name": "origin/ccr-81f8ddfc-l1ughm",
+   "sha": "691ebbab0f18adb8734928ddf53121d585153477"
+  },
+  {
+   "name": "origin/ccr-9cde2ac5-lbwie6",
+   "sha": "f58a38b5c468848502c4913aa5f7f56cd6c4084a"
+  },
+  {
+   "name": "origin/ccr-ac481048-fffzu5",
+   "sha": "4e2f4d3a1ae6bbbe8c21470661a3a80342550862"
+  },
+  {
+   "name": "origin/ccr-c467ba5e-ucgwkd",
+   "sha": "fef923759e96175b55e3b3d77c149d27042d215f"
+  },
+  {
+   "name": "origin/ccr-caf9dbd2-ewnfs2",
+   "sha": "a69f86c183a715fad8db1e93b1f52eb3e93cc727"
+  },
+  {
+   "name": "origin/ccr-d78abc96-qpce44",
+   "sha": "b29e6f5883e577cecc40838be419ed11e1a2ef22"
+  },
+  {
+   "name": "origin/ci-local-git-env",
+   "sha": "bc27c7a8a1895ae9215335d2e2e6f43613e754d4"
+  },
+  {
+   "name": "origin/claude/context-publish-skill",
+   "sha": "aa6d6e34f7b9272389236d340ab07f2f339f343f"
+  },
+  {
+   "name": "origin/claude/gh-104-headless-p3-rereview",
+   "sha": "9cae265552b50414629d23115703d3c169ae8a69"
+  },
+  {
+   "name": "origin/claude/gh-107-supersede-benchmarks",
+   "sha": "8916dc1dfa398dc0906b0f57a921efcedc5a8153"
+  },
+  {
+   "name": "origin/claude/gh-65-no-tracker-mode",
+   "sha": "af11d624e6bda66d70b17d341ad3c659dc90c771"
+  },
+  {
+   "name": "origin/claude/gh-66-verdict-stage-peer",
+   "sha": "a4c858fa5ae2dbb32cd51b8e2889095471ac95b5"
+  },
+  {
+   "name": "origin/claude/pr2-antagonistic-review-m9ipoh",
+   "sha": "e2c369d38df40e27765581fb9e20c21036fa3921"
+  },
+  {
+   "name": "origin/claude/ticket-filing-rule",
+   "sha": "483093e958623c1b5d6dffa536e1995dbb8602cd"
+  },
+  {
+   "name": "origin/cognitive-complexity-gh100",
+   "sha": "8f006d476974bf948512004d8ec3cc6d2183b4cc"
+  },
+  {
+   "name": "origin/evidence/08495c94",
+   "sha": "9954da6405804dc7eabd9e5433c2bb3ac8779265"
+  },
+  {
+   "name": "origin/evidence/17c78ed4",
+   "sha": "d24f709e93933a2bf3e30f859b96a7798f8eb67c"
+  },
+  {
+   "name": "origin/evidence/7058c2b0",
+   "sha": "9008b0e2389021aa499aa39798a852d9f444af11"
+  },
+  {
+   "name": "origin/evidence/c467ba5e",
+   "sha": "0acefe0081dbb57670bb0caf1a42d390e20f083a"
+  },
+  {
+   "name": "origin/feat/gh-100-go-java-c-ci",
+   "sha": "c7b4bd6e1b358e78d6299d2f3e3b8f49d38ac757"
+  },
+  {
+   "name": "origin/feat/gh-58-peer-models",
+   "sha": "9c9f03938746d49656268a90e97d0bea0f3d25c9"
+  },
+  {
+   "name": "origin/feature/gh-1-initial-cadence-publish",
+   "sha": "5f0c3d64e55f022efd6ea04c2de44b03aba70869"
+  },
+  {
+   "name": "origin/feature/gh-12-stop-guard-progress",
+   "sha": "1b5a338a1639b769c777f14b7fad60f8ffa82d11"
+  },
+  {
+   "name": "origin/feature/gh-16-lean-task-prompt",
+   "sha": "98f21c506b59e2ec033ba1ad9d9c6eded26bcc55"
+  },
+  {
+   "name": "origin/feature/gh-22-config-driven-tracker",
+   "sha": "aabcec1640d1b9279337d478660288198856e883"
+  },
+  {
+   "name": "origin/feature/gh-24-lean-delegation",
+   "sha": "d96b4d5795dd9838f8e597a099b017e7a7a74fee"
+  },
+  {
+   "name": "origin/feature/gh-8-ste-writing",
+   "sha": "f0d4ff8618d2deaa2e370e75597a4b204a8aeaea"
+  },
+  {
+   "name": "origin/feature/gh-98-test-sprawl-ratchet",
+   "sha": "8d30970192ae8565bcca55e3563f84ce8ce53c76"
+  },
+  {
+   "name": "origin/fix/entry-command",
+   "sha": "906bba640ee8c6319cd9096a2367db4945d77f5d"
+  },
+  {
+   "name": "origin/fix/gh-47-review-independence",
+   "sha": "8fed9fa3d57ed9f5c08df53ad33006197cf9bc75"
+  },
+  {
+   "name": "origin/fix/gh-49-run-scoped-closure",
+   "sha": "2581d5f9bbbc35709ea9c964498479b4fc6c9a50"
+  },
+  {
+   "name": "origin/fix/gh-53-peer-shadowing",
+   "sha": "6792e4fa5b5a52a5d91a2d54bf457f233ea677db"
+  },
+  {
+   "name": "origin/fix/gh-56-note-target",
+   "sha": "fd0e739ff46b5b8cf76fd9d35e6e462eb429d123"
+  },
+  {
+   "name": "origin/fix/gh-63-p6-cycle-limit",
+   "sha": "6bc036e6f62e12d7a4a04247264e801afd431a80"
+  },
+  {
+   "name": "origin/fix/gh-64-claude-lean-record",
+   "sha": "4203cbd01a83b6f26d100277cef57f54a9eb7d68"
+  },
+  {
+   "name": "origin/fix/gh-66-peer-returns",
+   "sha": "9c723ef0ac601dbe1ae5e682cf19ac9052d11ae1"
+  },
+  {
+   "name": "origin/fix/gh-76-run-scoped-records",
+   "sha": "c1489774899320df52a852eb1595406ff6a2e89e"
+  },
+  {
+   "name": "origin/fix/gh-82-host-workspace",
+   "sha": "f09753d45ada0c279274550b9ddb0d167e51ad67"
+  },
+  {
+   "name": "origin/fix/gh-84-pi-gates",
+   "sha": "444e2ae0b70d449f252950eb120da130963a9611"
+  },
+  {
+   "name": "origin/fix/gh-92-set-check",
+   "sha": "8d76a790bf489fa968a39c30af0d20935e3ab362"
+  },
+  {
+   "name": "origin/fix/gh-93-a5-run-scope",
+   "sha": "ff4b8d83358bc2e1661bddbe5e5a32a8b32ad54c"
+  },
+  {
+   "name": "origin/fix/p9-fails-closed",
+   "sha": "1eabb0198118d7a435c17087b3cd74d95f5abce2"
+  },
+  {
+   "name": "origin/fix/peer-return-artifact",
+   "sha": "ad97a5b0ab8ac5029d909c310bc59f87ff0ce4fd"
+  },
+  {
+   "name": "origin/fix/planning-phase-stop-hold",
+   "sha": "c9204043b087f6a415b0c601a4196500f5e01aaa"
+  },
+  {
+   "name": "origin/harness-benchmark-seed",
+   "sha": "c0683900dab578d79b5bd8f2010fa66bf90d6657"
+  },
+  {
+   "name": "origin/local-pr-adapter-none",
+   "sha": "11874a771d5b9b54c37ca3e922f21b34a2e5cc98"
+  },
+  {
+   "name": "origin/pr/10",
+   "sha": "11a6d25000ce0b481a242efe8bd7b9b10f0d33e7"
+  },
+  {
+   "name": "origin/pr/101",
+   "sha": "8f006d476974bf948512004d8ec3cc6d2183b4cc"
+  },
+  {
+   "name": "origin/pr/11",
+   "sha": "f13cedc7a933587e33557074feca865e5338749e"
+  },
+  {
+   "name": "origin/pr/112",
+   "sha": "bfd24ae7d3c0f18da106114afa8703a6bf087b22"
+  },
+  {
+   "name": "origin/pr/114",
+   "sha": "2581d5f9bbbc35709ea9c964498479b4fc6c9a50"
+  },
+  {
+   "name": "origin/pr/116",
+   "sha": "f58a38b5c468848502c4913aa5f7f56cd6c4084a"
+  },
+  {
+   "name": "origin/pr/118",
+   "sha": "c7b4bd6e1b358e78d6299d2f3e3b8f49d38ac757"
+  },
+  {
+   "name": "origin/pr/126",
+   "sha": "8d76a790bf489fa968a39c30af0d20935e3ab362"
+  },
+  {
+   "name": "origin/pr/128",
+   "sha": "8a789a461324544d046278e869f8199f1058f3c5"
+  },
+  {
+   "name": "origin/pr/129",
+   "sha": "5c2d1fa8423bc3ec298fde8a31fab3a024c722d5"
+  },
+  {
+   "name": "origin/pr/130",
+   "sha": "4b763e190a0d134487999c5c6030042b9a295e9b"
+  },
+  {
+   "name": "origin/pr/131",
+   "sha": "a22a964233367d23db9aa53380e857f02e4d8749"
+  },
+  {
+   "name": "origin/pr/132",
+   "sha": "eec1d74ac6e4ef2c64fb3d247118b7a324ba4250"
+  },
+  {
+   "name": "origin/pr/133",
+   "sha": "ef5a7a28320f5c462cbf957a75db52c7c2cb7223"
+  },
+  {
+   "name": "origin/pr/134",
+   "sha": "8d3f72aba29f181537a19bb1eb90bb546b88cd6c"
+  },
+  {
+   "name": "origin/pr/14",
+   "sha": "1b5a338a1639b769c777f14b7fad60f8ffa82d11"
+  },
+  {
+   "name": "origin/pr/140",
+   "sha": "8916dc1dfa398dc0906b0f57a921efcedc5a8153"
+  },
+  {
+   "name": "origin/pr/143",
+   "sha": "9cae265552b50414629d23115703d3c169ae8a69"
+  },
+  {
+   "name": "origin/pr/145",
+   "sha": "9c723ef0ac601dbe1ae5e682cf19ac9052d11ae1"
+  },
+  {
+   "name": "origin/pr/146",
+   "sha": "a4c858fa5ae2dbb32cd51b8e2889095471ac95b5"
+  },
+  {
+   "name": "origin/pr/148",
+   "sha": "af11d624e6bda66d70b17d341ad3c659dc90c771"
+  },
+  {
+   "name": "origin/pr/15",
+   "sha": "694e76c1dc0fdbf40a5c2143d457611b4f648fd7"
+  },
+  {
+   "name": "origin/pr/151",
+   "sha": "483093e958623c1b5d6dffa536e1995dbb8602cd"
+  },
+  {
+   "name": "origin/pr/152",
+   "sha": "aa6d6e34f7b9272389236d340ab07f2f339f343f"
+  },
+  {
+   "name": "origin/pr/163",
+   "sha": "845b2376f61df4add1e0c25a46774feded40a08c"
+  },
+  {
+   "name": "origin/pr/164",
+   "sha": "a7564a5121d55c6a02db15518647d65e41c81daa"
+  },
+  {
+   "name": "origin/pr/166",
+   "sha": "bb976fa65728cf40bc46ead02674c507d70bd854"
+  },
+  {
+   "name": "origin/pr/167",
+   "sha": "45fcd32ba445b9aa7277499e9ce1989d83768a1c"
+  },
+  {
+   "name": "origin/pr/168",
+   "sha": "021ce9cc0feaebb9ec063071e62853dad0cb24ed"
+  },
+  {
+   "name": "origin/pr/171",
+   "sha": "dc8b5f676aea21f5cd879c78f17be91dab983bf2"
+  },
+  {
+   "name": "origin/pr/18",
+   "sha": "4e2f4d3a1ae6bbbe8c21470661a3a80342550862"
+  },
+  {
+   "name": "origin/pr/186",
+   "sha": "5c0564aa0d586b8d048c32e75227701c6cb9bdbf"
+  },
+  {
+   "name": "origin/pr/188",
+   "sha": "3c9797f409ce500bdebdbe9d5f9f2705d47a07d3"
+  },
+  {
+   "name": "origin/pr/19",
+   "sha": "9fed424e802cc9c4989ca9a487f6a40c6eff57d6"
+  },
+  {
+   "name": "origin/pr/191",
+   "sha": "0be06add7908db59b2f06cf1ea665318af137cec"
+  },
+  {
+   "name": "origin/pr/196",
+   "sha": "efd949de6c73dde3ea4527fa339f300a1b37f98c"
+  },
+  {
+   "name": "origin/pr/197",
+   "sha": "fef923759e96175b55e3b3d77c149d27042d215f"
+  },
+  {
+   "name": "origin/pr/198",
+   "sha": "afddac2d85199151a80ac5d795fc6389b367e6b7"
+  },
+  {
+   "name": "origin/pr/199",
+   "sha": "11874a771d5b9b54c37ca3e922f21b34a2e5cc98"
+  },
+  {
+   "name": "origin/pr/2",
+   "sha": "5f0c3d64e55f022efd6ea04c2de44b03aba70869"
+  },
+  {
+   "name": "origin/pr/20",
+   "sha": "7a53c96601d13be91a2e05f2906cfb7a0e15fef8"
+  },
+  {
+   "name": "origin/pr/200",
+   "sha": "d28aeb744aeeec088ee92c9d79800f2a28b000e5"
+  },
+  {
+   "name": "origin/pr/201",
+   "sha": "ec673151a933498d99ea437f7d5ff0e485b3c0f4"
+  },
+  {
+   "name": "origin/pr/202",
+   "sha": "bc27c7a8a1895ae9215335d2e2e6f43613e754d4"
+  },
+  {
+   "name": "origin/pr/203",
+   "sha": "a69f86c183a715fad8db1e93b1f52eb3e93cc727"
+  },
+  {
+   "name": "origin/pr/204",
+   "sha": "da56c177ffa3a4639cbf723d603d805937201b9d"
+  },
+  {
+   "name": "origin/pr/205",
+   "sha": "ad97a5b0ab8ac5029d909c310bc59f87ff0ce4fd"
+  },
+  {
+   "name": "origin/pr/206",
+   "sha": "1eabb0198118d7a435c17087b3cd74d95f5abce2"
+  },
+  {
+   "name": "origin/pr/207",
+   "sha": "906bba640ee8c6319cd9096a2367db4945d77f5d"
+  },
+  {
+   "name": "origin/pr/21",
+   "sha": "98f21c506b59e2ec033ba1ad9d9c6eded26bcc55"
+  },
+  {
+   "name": "origin/pr/23",
+   "sha": "aabcec1640d1b9279337d478660288198856e883"
+  },
+  {
+   "name": "origin/pr/26",
+   "sha": "c9204043b087f6a415b0c601a4196500f5e01aaa"
+  },
+  {
+   "name": "origin/pr/27",
+   "sha": "d96b4d5795dd9838f8e597a099b017e7a7a74fee"
+  },
+  {
+   "name": "origin/pr/29",
+   "sha": "640f66b06f9c8f5a5e77bb9bf686596e751ce475"
+  },
+  {
+   "name": "origin/pr/30",
+   "sha": "2fb2fa65d143c83c37ef6c1fd86995f1a29bbad6"
+  },
+  {
+   "name": "origin/pr/31",
+   "sha": "3e1dd7aee8a52124dbd78f6c99a0bb382ee6f574"
+  },
+  {
+   "name": "origin/pr/34",
+   "sha": "450c8ae1458cfc828c68d464909f547386f3eb7c"
+  },
+  {
+   "name": "origin/pr/36",
+   "sha": "bd349480434fac6b914e773f951be0b975906a6e"
+  },
+  {
+   "name": "origin/pr/38",
+   "sha": "55801dc7e04cbead49ad8c32567cecd0fcd7e7c2"
+  },
+  {
+   "name": "origin/pr/45",
+   "sha": "e4f5890e6d1b65cba23eab11c2ffafa411d3e9c8"
+  },
+  {
+   "name": "origin/pr/5",
+   "sha": "b29e6f5883e577cecc40838be419ed11e1a2ef22"
+  },
+  {
+   "name": "origin/pr/52",
+   "sha": "8fed9fa3d57ed9f5c08df53ad33006197cf9bc75"
+  },
+  {
+   "name": "origin/pr/57",
+   "sha": "fd0e739ff46b5b8cf76fd9d35e6e462eb429d123"
+  },
+  {
+   "name": "origin/pr/62",
+   "sha": "9c9f03938746d49656268a90e97d0bea0f3d25c9"
+  },
+  {
+   "name": "origin/pr/74",
+   "sha": "6792e4fa5b5a52a5d91a2d54bf457f233ea677db"
+  },
+  {
+   "name": "origin/pr/75",
+   "sha": "4203cbd01a83b6f26d100277cef57f54a9eb7d68"
+  },
+  {
+   "name": "origin/pr/81",
+   "sha": "c1489774899320df52a852eb1595406ff6a2e89e"
+  },
+  {
+   "name": "origin/pr/87",
+   "sha": "f09753d45ada0c279274550b9ddb0d167e51ad67"
+  },
+  {
+   "name": "origin/pr/88",
+   "sha": "6bc036e6f62e12d7a4a04247264e801afd431a80"
+  },
+  {
+   "name": "origin/pr/9",
+   "sha": "f0d4ff8618d2deaa2e370e75597a4b204a8aeaea"
+  },
+  {
+   "name": "origin/pr/91",
+   "sha": "444e2ae0b70d449f252950eb120da130963a9611"
+  },
+  {
+   "name": "origin/pr/95",
+   "sha": "ff4b8d83358bc2e1661bddbe5e5a32a8b32ad54c"
+  },
+  {
+   "name": "origin/pr/97",
+   "sha": "0e4279d7a98a0621ab1ab7c24f0cfdaaf3e03ab0"
+  },
+  {
+   "name": "origin/project-adapter-key",
+   "sha": "d28aeb744aeeec088ee92c9d79800f2a28b000e5"
+  },
+  {
+   "name": "origin/run-citations-main",
+   "sha": "ec673151a933498d99ea437f7d5ff0e485b3c0f4"
+  }
+ ],
  "schema": 1,
  "source": "jtouley/cadence"
 }

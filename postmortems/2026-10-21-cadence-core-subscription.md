@@ -86,7 +86,7 @@ Per run: the findings (findings.jsonl) that cite it, and the cadence commits tha
 | Run | Counts | Findings | Cadence commits (finding, pull request, status) |
 |---|---|---|---|
 | `20261021-P1-cadence-core-haiku-0-killed` | no | — | — |
-| `20261021-P1-cadence-core-haiku-1` | yes | F-3 | `ad97a5b` (F-3) unmerged, #205 open or closed, on origin/fix/peer-return-artifact; `1eabb01` (F-3) unmerged, #206 open or closed, on origin/fix/p9-fails-closed |
+| `20261021-P1-cadence-core-haiku-1` | yes | F-3 | `ad97a5b` (F-3) unmerged, #205 open or closed, on origin/fix/peer-return-artifact; `1eabb01` (F-3) unmerged, #206 open or closed, on origin/fix/p9-fails-closed; `906bba6` (F-9 (unfiled)) unmerged, #207 open or closed, on origin/fix/entry-command |
 | `20261021-P1-cadence-core-haiku-2` | yes | F-2 | — |
 | `20261021-P2-cadence-core-haiku-1` | yes | F-4, F-7 | — |
 | `20261021-P2-cadence-core-haiku-2` | yes | F-1, F-5, F-6, F-7 | `11874a7` (F-1) merged in #199 at `80a6afd`; `289e6a9` (F-1) merged in #199 at `80a6afd`; `67028ac` (F-6) merged in #200 at `1a52ad2`; `aa192b0` (F-6) merged in #200 at `1a52ad2` |
