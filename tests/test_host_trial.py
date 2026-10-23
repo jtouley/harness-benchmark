@@ -67,3 +67,16 @@ def test_the_agent_environment_carries_no_api_key_or_token(monkeypatch, tmp_path
     monkeypatch.setenv("ANTHROPIC_AUTH_TOKEN", "fake")
     env = host_trial.agent_env(tmp_path, None)
     assert "ANTHROPIC_API_KEY" not in env and "ANTHROPIC_AUTH_TOKEN" not in env
+
+
+def test_the_grader_runs_from_the_task_repository_as_in_the_container(tmp_path):
+    """oracle.py allows DuckDB the repository's out/marts/ by absolute path; an oracle_map that names
+    `out/marts/...` resolves against the grader's working directory. The container runner grades from
+    /trial/repo; host_trial graded from golden/pipeline, so every relative path was refused (run
+    20261023-P1-oneshot-haiku-1: 0/7 here, 5/7 from the repository)."""
+    argv, cwd, env = host_trial.grade_command(tmp_path / "repo", tmp_path / "out")
+    assert cwd == tmp_path / "repo"
+    assert env["PYTHONPATH"].split(os.pathsep)[0] == str(host_trial.GP)
+    for flag in ("--key", "--capture"):
+        assert Path(argv[argv.index(flag) + 1]).is_absolute()
+    assert argv[argv.index("--repo") + 1] == str(tmp_path / "repo")

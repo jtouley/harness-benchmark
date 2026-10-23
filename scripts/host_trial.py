@@ -27,7 +27,7 @@ one-shot): this script adds no prompt text. In order:
    Every process it leaves is stopped before grading.
 4. The records the grader's reset would lose: RUN/context (a copy of .context), RUN/repo-as-left, the stop
    point (Cadence's own headless.py `next` on a copy of the repository, and the session's hard stop).
-5. The grader (pipetask.trial, grading seed 1) on RUN/repo: RUN/grade.json. RUN/timing.json has agent_seconds.
+5. The grader (pipetask.trial, grading seed 1) on RUN/repo, run from RUN/repo as the container runs it: RUN/grade.json. RUN/timing.json has agent_seconds.
 """
 
 from __future__ import annotations
@@ -96,6 +96,24 @@ def agent_env(home: Path, plugin: Path | None) -> dict[str, str]:
     if plugin is not None:
         env["CADENCE_HOME"] = str(plugin)
     return env
+
+
+def grade_command(repo: Path, out: Path) -> tuple[list[str], Path, dict[str, str]]:
+    """The grader's argv, working directory and environment. It runs from the task repository, as the
+    container runner runs it from /trial/repo: oracle.py allows DuckDB only the repository's out/marts/, and an
+    oracle_map path such as `out/marts/x.parquet` resolves against the working directory."""
+    env = {**os.environ, "PYTHONPATH": os.pathsep.join(filter(None, [str(GP), os.environ.get("PYTHONPATH")]))}
+    argv = [sys.executable, "-m", "pipetask.trial", "--repo", str(repo), "--key", str(GP / "key" / "answer_key.json"),
+            "--capture", str(GP / "data" / "capture" / "recentchange.jsonl.gz"), "--deadline", "600",
+            "--snapshot-worktree", "--logs", str(out / "grade-logs")]
+    return argv, repo, env
+
+
+def grade(repo: Path, out: Path) -> int:
+    """Grade `repo` (seed 1): out/grade.json and out/grade.stderr; the grader's exit code."""
+    argv, cwd, env = grade_command(repo, out)
+    with open(out / "grade.json", "w") as stdout, open(out / "grade.stderr", "w") as stderr:
+        return subprocess.run(argv, cwd=cwd, env=env, stdout=stdout, stderr=stderr).returncode
 
 
 def prepare_home(home: Path, auth: str, oauth_file: Path | None) -> None:
@@ -203,11 +221,7 @@ def main(argv: list[str] | None = None) -> int:
     (out / "stop.json").write_text(json.dumps(stop) + "\n")
 
     t1 = time.monotonic()
-    with open(out / "grade.json", "w") as grade, open(out / "grade.stderr", "w") as gerr:
-        grc = subprocess.run([sys.executable, "-m", "pipetask.trial", "--repo", str(repo), "--key",
-                              "key/answer_key.json", "--capture", "data/capture/recentchange.jsonl.gz",
-                              "--deadline", "600", "--snapshot-worktree", "--logs", str(out / "grade-logs")],
-                             cwd=GP, stdout=grade, stderr=gerr).returncode
+    grc = grade(repo, out)
     (out / "timing.json").write_text(json.dumps({
         "agent_seconds": agent_seconds, "grader_seconds": round(time.monotonic() - t1, 1), "agent_exit": rc,
         "grader_exit": grc, "agent_cap_seconds": cap, "hit_cap": rc == 124}, indent=1) + "\n")
