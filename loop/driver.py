@@ -311,6 +311,8 @@ def main(argv: list[str] | None = None) -> int:
             raise DriverError(f"the run could read another Cadence checkout: {', '.join(others)}; move it, or run "
                               "with --fresh-home and a --cwd that holds only the task")
         prompt = _check_entry(args, command)
+        cwd_contents = sorted(c.name + ("/" if c.is_dir() else "") for c in args.cwd.iterdir()) \
+            if args.cwd.is_dir() else []
     except DriverError as exc:
         print(f"refused: {exc}", file=sys.stderr)
         return 2
@@ -357,7 +359,8 @@ def main(argv: list[str] | None = None) -> int:
         "timing": {"agent_wall_seconds": agent_wall, "run_wall_seconds": run_wall, "agent_active_seconds": active,
                    "blocks": blocks.peer_time(args.context) if args.context else None},
         "isolation": {"cwd": str(args.cwd.resolve()), "home": str(home), "fresh_home": bool(args.fresh_home),
-                      "other_cadence_checkouts": others, "method": args.isolation_method, "contact": hits},
+                      "other_cadence_checkouts": others, "method": args.isolation_method, "contact": hits,
+                      "cwd_contents": cwd_contents},
     }
     record.write_record(args.runs, rec)
     if grader:

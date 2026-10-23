@@ -76,6 +76,7 @@
         "fresh_home": {"type": "boolean"},
         "other_cadence_checkouts": {"type": "array", "items": {"type": "string"}},
         "method": {"$comment": "host, or container:<image id>", "type": "string"},
+        "cwd_contents": {"$comment": "the top-level entries of cwd before the run (a folder ends with /)", "type": "array", "items": {"type": "string"}},
         "contact": {"$comment": "tool calls of the transcript that named the benchmark or another Cadence checkout (loop.driver.contact)", "type": "array", "items": {"type": "string"}}
       }
     },

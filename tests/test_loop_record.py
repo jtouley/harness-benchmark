@@ -480,3 +480,12 @@ def test_a_transcript_that_touched_the_benchmark_or_another_checkout_does_not_co
 
 def test_a_clean_transcript_records_no_contact():
     assert driver.contact([json.dumps(e) for e in TRANSCRIPT], plugin=Path("/srv/plugin-c458a46")) == []
+
+
+def test_the_isolation_block_lists_what_the_cwd_held_before_the_run(tmp_path, plugin):
+    work = tmp_path / "work"
+    (work / "repo").mkdir(parents=True)
+    (work / "spec").mkdir()
+    rc, run = _drive(tmp_path, plugin, extra=["--cwd", str(work)], script=f"touch {work}/made-by-the-run")
+    iso = json.loads((run / "record.json").read_text())["isolation"]
+    assert rc == 0 and iso["cwd_contents"] == ["repo/", "spec/"]
