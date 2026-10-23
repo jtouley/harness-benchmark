@@ -52,9 +52,12 @@ GATED = ["src/", "lib/", "app/", "packages/", "pipeline/", "engine/", "pipelines
 DROPPED_PREFIXES = ("CLAUDE", "CCR_", "AI_AGENT", "DOCUMENTS_")
 
 
-def agent_cap(plugin: Path | None) -> int:
+def agent_cap(plugin: Path | None, override: int | None = None) -> int:
     """Seconds after which the agent is stopped (criteria v2 section 5.3, runner/pipeline/caps.json): a one-shot
-    at its guard cap, a harness arm (a plugin) only at the harness backstop."""
+    at its guard cap, a harness arm (a plugin) only at the harness backstop; `override` is a batch's own cap
+    (batch F: 21,600 s for the Cadence arm, 3 x the one-shot cap)."""
+    if override:
+        return override
     caps = json.loads(CAPS.read_text(encoding="utf-8"))
     return caps["harness_backstop"]["default"]["seconds"] if plugin is not None else caps["agent_timeout"]
 
@@ -162,6 +165,7 @@ def main(argv: list[str] | None = None) -> int:
     ap.add_argument("--model", required=True)
     ap.add_argument("--plugin-dir", type=Path)
     ap.add_argument("--peer-model", help="Cadence arm: peer_models.default in the run's Cadence config")
+    ap.add_argument("--agent-cap", type=int, help="seconds: the batch's cap for this arm (see agent_cap)")
     ap.add_argument("--auth", choices=["proxy", "oauth-file"], default="proxy")
     ap.add_argument("--oauth-file", type=Path, help="--auth oauth-file: the operator's ~/.claude/.credentials.json")
     args = ap.parse_args(argv)
@@ -198,7 +202,7 @@ def main(argv: list[str] | None = None) -> int:
         argv_agent += ["--add-dir", str(spec_dir)]
     (out / "agent-argv.json").write_text(json.dumps(argv_agent) + "\n")
     env = agent_env(home, plugin)
-    cap = agent_cap(plugin)
+    cap = agent_cap(plugin, args.agent_cap)
     t0 = time.monotonic()
     with open(out / "transcript.jsonl", "w") as stdout, open(out / "agent.stderr", "w") as stderr:
         agent = subprocess.Popen(["timeout", str(cap), *argv_agent], cwd=repo, env=env, stdout=stdout,

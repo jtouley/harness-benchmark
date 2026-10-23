@@ -80,3 +80,9 @@ def test_the_grader_runs_from_the_task_repository_as_in_the_container(tmp_path):
     for flag in ("--key", "--capture"):
         assert Path(argv[argv.index(flag) + 1]).is_absolute()
     assert argv[argv.index("--repo") + 1] == str(tmp_path / "repo")
+
+
+def test_a_batch_can_set_the_agent_cap(tmp_path):
+    """Batch F caps the Cadence arm at 3 x the one-shot cap (21,600 s) instead of the 86,400 s backstop."""
+    assert host_trial.agent_cap(Path("/srv/plugin"), 21600) == 21600
+    assert host_trial.agent_cap(None, None) == 7200
