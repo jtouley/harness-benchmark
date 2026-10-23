@@ -87,8 +87,11 @@ stack section is part of the request, since P4 has no sibling stacks.
 ## Traps (hidden from arms; checked against the generated data when the key is built)
 
 Each trap is a known cause of a wrong answer. The key (`pipetask.p4key`) computes the wrong answer each
-single trap produces, and the grader names the trap when a candidate's answer equals it. A trap the
-data does not reproduce is listed in the key as `traps_not_reproduced` and removed, not faked.
+single trap produces for D1 to D4 and D6 to D8, and the grader names the trap when a candidate's answer
+equals it. D5 has no wrong answer: the grader reads `7` as `07`, so it shows only as a lost join. D9
+shows in the idempotence check, not in an answer. A trap the data does not reproduce for a check is
+listed in the key as `traps_not_reproduced` and not faked: D7 on check 6, because every patron with a
+return or a renewal in 2025 also has a checkout.
 
 | Id | Trap | What a shallow solution does | Detected by | Cause class |
 |---|---|---|---|---|
@@ -98,7 +101,7 @@ data does not reproduce is listed in the key as `traps_not_reproduced` and remov
 | D4 | A loan checked out in the first half of the year can return in the second file | Reads each file on its own and counts the item as still out | Check 7 | data-semantics |
 | D5 | Branch codes have leading zeros (`07`) | Reads them as integers; joins to the branch table fail or codes merge | Checks 1, 4, 6 (the grader accepts `7` for `07`, so only a lost join shows) | data-semantics |
 | D6 | Replacement costs are money text with a dollar sign and thousands separators (`$1,234.50`) | Casts fail, or the comma truncates the number | Check 7 | data-semantics |
-| D7 | Some returns and renewals belong to loans checked out the year before | Counts them as loans of 2025, or crashes on a loan with no checkout | Checks 3, 6 | data-semantics |
+| D7 | Some returns and renewals belong to loans checked out the year before (72 loans) | Takes the loan's first event for its checkout, or counts the patron as active | Check 3 (check 6: not reproduced by the data) | data-semantics |
 | D8 | A waiver assessed in January 2026 for a fine of December 2025 | Filters the months to 2025 and loses it | Check 5 | spec-reading |
 | D9 | Re-running the build | Appends a second copy, or publishes beside the old files | Idempotence check | idempotence |
 

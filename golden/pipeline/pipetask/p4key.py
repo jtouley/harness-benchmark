@@ -16,6 +16,12 @@ Interpretations the key fixes (the spec states each as a rule):
 - Branch codes are text with their leading zeros.
 - On loan at the end of the year: an item whose last event of the year is a checkout or a renewal.
   Trap D4 reads each loans file on its own, so a loan returned in the second file counts as open.
+- Trap D6 reads a replacement cost up to its thousands separator ('$1,234.50' as 1). Trap D7 takes a
+  loan's first event in the files for its checkout (check 3) and counts a patron active on any event
+  (check 6; the data does not reproduce it: every patron with an event has a checkout). Trap D8 keeps
+  only the months of 2025 (check 5), and loses the January 2026 waiver.
+D5 (codes as integers) shows only as a lost join, since the grader reads `7` as `07`, and D9 in the
+idempotence check; neither has a wrong answer here.
 """
 
 from __future__ import annotations
@@ -46,6 +52,11 @@ def digest(answer) -> str:
 def money_text(text: str) -> Decimal:
     """'$1,234.50' or '18.00' as a Decimal."""
     return Decimal(text.strip().replace("$", "").replace(",", ""))
+
+
+def money_text_truncated(text: str) -> Decimal:
+    """Trap D6: the text read up to its first comma ('$1,234.50' as 1)."""
+    return Decimal(text.strip().replace("$", "").split(",")[0])
 
 
 def _time(text: str) -> datetime:
@@ -100,17 +111,20 @@ def _loans(events) -> dict[str, list[dict]]:
     return by_loan
 
 
-def late_returns(events, renewals_count: bool = True, per_row: bool = False) -> int:
+def late_returns(events, renewals_count: bool = True, per_row: bool = False, first_event_as_checkout: bool = False) -> int:
     """Late loans. `per_row` counts one late loan per checkout row, as a pipeline with one fact row per
-    checkout row does when the rows hold duplicates (trap D1 in that form)."""
+    checkout row does when the rows hold duplicates (trap D1 in that form). `first_event_as_checkout`
+    takes a loan's first event in the files for its checkout when it has none (trap D7)."""
     late = 0
     for rows in _loans(events).values():
         checkouts = [r for r in rows if r["event"] == "checkout"]
         ret = next((r for r in rows if r["event"] == "return"), None)
+        if not checkouts and first_event_as_checkout and rows[0] is not ret:
+            checkouts = rows[:1]
         if not checkouts or ret is None:
             continue
-        renewals = sum(1 for r in rows if r["event"] == "renew" and r["event_time"] < ret["event_time"]) \
-            if renewals_count else 0
+        renewals = sum(1 for r in rows if r["event"] == "renew" and checkouts[0]["event_time"] < r["event_time"]
+                       < ret["event_time"]) if renewals_count else 0
         due = _time(checkouts[0]["event_time"]) + timedelta(days=LOAN_DAYS * (1 + renewals))
         if _time(ret["event_time"]) > due:
             late += len(checkouts) if per_row else 1
@@ -128,20 +142,24 @@ def fines_for_month(fines, month: str = CHECK4_MONTH, waivers: bool = True) -> d
     return {"month": month, "total": cents(total), "branches": {k: cents(v) for k, v in sorted(by_branch.items())}}
 
 
-def fines_per_month(fines, waivers: bool = True) -> dict[str, str]:
+def fines_per_month(fines, waivers: bool = True, year: str | None = None) -> dict[str, str]:
+    """Net fines per month. `year` keeps that year's months only (trap D8)."""
     out: dict[str, Decimal] = {}
     for f in fines:
         amount = Decimal(f["amount"])
         if not waivers and amount < 0:
             continue
         month = f["assessed_time"][:7]
+        if year and not month.startswith(year):
+            continue
         out[month] = out.get(month, Decimal(0)) + amount
     return {k: cents(v) for k, v in sorted(out.items())}
 
 
-def active_patrons_per_home_branch(events, patrons) -> dict[str, int]:
+def active_patrons_per_home_branch(events, patrons, any_event: bool = False) -> dict[str, int]:
+    """Patrons with a checkout, by home branch. `any_event` counts a return or renewal too (trap D7)."""
     home = {p["patron_id"]: p["home_branch"] for p in patrons}
-    active = {e["patron_id"] for e in events if e["event"] == "checkout"}
+    active = {e["patron_id"] for e in events if any_event or e["event"] == "checkout"}
     out: dict[str, int] = {}
     for p in active:
         out[home[p]] = out.get(home[p], 0) + 1
@@ -158,8 +176,8 @@ def open_items(events) -> set[str]:
     return {item for item, e in last.items() if e["event"] in ("checkout", "renew")}
 
 
-def replacement_value(items, item_ids: set[str]) -> str:
-    cost = {i["item_id"]: money_text(i["replacement_cost"]) for i in items}
+def replacement_value(items, item_ids: set[str], parse=money_text) -> str:
+    cost = {i["item_id"]: parse(i["replacement_cost"]) for i in items}
     return cents(sum((cost[i] for i in item_ids), Decimal(0)))
 
 
@@ -171,12 +189,16 @@ def build_key(raw: Path) -> dict:
         "1": (checkouts_per_branch(events), {"D1": checkouts_per_branch(dupes)}),
         "2": (top_items(events), {"D1": top_items(dupes)}),
         "3": (late_returns(events), {"D1": late_returns(dupes), "D1-rows": late_returns(dupes, per_row=True),
-                                     "D3": late_returns(events, renewals_count=False)}),
+                                     "D3": late_returns(events, renewals_count=False),
+                                     "D7": late_returns(events, first_event_as_checkout=True)}),
         "4": (fines_for_month(fines), {"D2": fines_for_month(fines, waivers=False)}),
-        "5": (fines_per_month(fines), {"D2": fines_per_month(fines, waivers=False)}),
-        "6": (active_patrons_per_home_branch(events, d["patrons"]), {}),
+        "5": (fines_per_month(fines), {"D2": fines_per_month(fines, waivers=False),
+                                       "D8": fines_per_month(fines, year="2025")}),
+        "6": (active_patrons_per_home_branch(events, d["patrons"]),
+              {"D7": active_patrons_per_home_branch(events, d["patrons"], any_event=True)}),
         "7": (replacement_value(d["items"], open_items(events)),
-              {"D4": replacement_value(d["items"], per_file_open)}),
+              {"D4": replacement_value(d["items"], per_file_open),
+               "D6": replacement_value(d["items"], open_items(events), parse=money_text_truncated)}),
     }
     checks = {}
     for n, (answer, traps) in answers.items():

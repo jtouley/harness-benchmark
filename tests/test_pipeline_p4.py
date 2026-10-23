@@ -49,7 +49,7 @@ def test_the_data_regenerates_byte_for_byte(tmp_path):
 
 
 def test_the_data_stays_small_and_holds_the_overlap():
-    assert sum(p.stat().st_size for p in RAW.iterdir()) < 2 * 1024 * 1024
+    assert sum(p.stat().st_size for p in RAW.iterdir()) < 1024 * 1024
     h1 = (RAW / "loans_2025_h1.csv").read_text(encoding="utf-8").splitlines()[1:]
     h2 = (RAW / "loans_2025_h2.csv").read_text(encoding="utf-8").splitlines()[1:]
     assert set(h1) & set(h2), "the two loans files overlap by one week (trap D1)"
@@ -67,9 +67,11 @@ def test_the_committed_key_is_what_the_data_gives(key):
 
 def test_each_trap_the_catalog_maps_changes_its_checks_answer(key):
     traps = {n: set(c["traps"]) for n, c in key["checks"].items()}
-    assert traps["1"] == {"D1"} and traps["2"] == {"D1"} and traps["3"] == {"D1", "D1-rows", "D3"}
-    assert traps["4"] == {"D2"} and traps["5"] == {"D2"} and traps["7"] == {"D4"}
-    assert not any(c["traps_not_reproduced"] for c in key["checks"].values())
+    assert traps["1"] == {"D1"} and traps["2"] == {"D1"} and traps["3"] == {"D1", "D1-rows", "D3", "D7"}
+    assert traps["4"] == {"D2"} and traps["5"] == {"D2", "D8"} and traps["6"] == set() and traps["7"] == {"D4", "D6"}
+    # D7 on check 6: every patron with a return or a renewal in 2025 also has a checkout, so the data does
+    # not reproduce it there; the key says so rather than faking it.
+    assert {n: c["traps_not_reproduced"] for n, c in key["checks"].items() if c["traps_not_reproduced"]} == {"6": ["D7"]}
 
 
 # --- the prompt and the skeleton
@@ -182,7 +184,9 @@ def test_the_driver_refuses_p4_without_holdout(tmp_path, capsys):
 
 def test_p4_is_fingerprinted_and_is_no_golden_cadence_input():
     sources = fingerprints.reference_sources(ROOT)
-    assert KEY_PATH in sources and (P4 / "reference" / "pipeline" / "build.py") in sources
+    assert KEY_PATH in sources
+    for name in ("pipeline/build.py", "oracle_map.yml", "DECISIONS.md", "Makefile"):
+        assert P4 / "reference" / name in sources, name
     assert not (ROOT / "golden" / "cadence" / "P4.md").exists()
     assert all("P4" not in p.name for p in fingerprints.input_sources(ROOT))
     readme = (PIPELINE / "README.md").read_text(encoding="utf-8")
