@@ -284,3 +284,15 @@ def test_the_gate_line_shows_best_and_worst_beside_each_mean(tmp_path):
     assert "claude-haiku-5-5 mean 4.67/7 (best 7, worst 3, n=3)" in line
     assert "Sonnet one-shot mean 3.00/7 (best 6, worst 1, n=3)" in line   # one lucky Sonnet run shows
     assert "beats Sonnet yes, matches Opus (within 1) yes: PASS" in line
+
+
+def test_the_bar_orders_batches_of_one_day_by_when_they_began(tmp_path):
+    """The bars read batches in loop.speed.batch_order (#87), as the time basis does: of two batches of one day
+    the later start is newer, whatever their names."""
+    runs = tmp_path / "runs"
+    _one_shot(runs, "20261023-P1-oneshot-sonnet-1", "2026-10-23-zz", scoreboard.SONNET, 2, "c" * 40,
+              started="2026-10-23T08:00:00Z")
+    _one_shot(runs, "20261023-P1-oneshot-sonnet-2", "2026-10-23-aa", scoreboard.SONNET, 6, "c" * 40,
+              started="2026-10-23T20:00:00Z")
+    assert scoreboard.baseline(runs, "P1", scoreboard.SONNET) == 6
+    assert scoreboard.baseline(runs, "P1", scoreboard.SONNET, batch="2026-10-23-zz") == 2
