@@ -8,6 +8,7 @@
 #                       [--agent-timeout SEC | --agent-backstop SEC [--max-budget-usd USD]]
 #                       [--grader-timeout SEC] [--image IMAGE] [--name NAME]
 #                       [--agent-cmd FILE] [--replay FILE [--replay-seed N]] [--grader-arg ARG]...
+#                       [--auth key | --auth proxy --ca FILE [--relay-port PORT]]
 #
 #   --repo         task repository; copied into the container (the host copy is not changed)
 #   --prompt       task prompt; the arm's --suffix is appended after one space
@@ -27,6 +28,15 @@
 #                  as a runaway (criteria v2 section 5.3, the backstop)
 #   --max-budget-usd  harness arms only: Claude Code's own spend limit for the session (its --max-budget-usd)
 #   --agent-cmd    replaces Claude Code with this script (tests only; it runs as the agent would)
+#   --auth         how the agent reaches the API. `key` (default): ANTHROPIC_API_KEY, below. `proxy`: a host
+#                  whose outbound traffic goes through a local HTTPS proxy that adds the credentials
+#                  (HTTPS_PROXY=http://HOST:PORT, no user or password in it). No key is sent. The runner
+#                  starts runner/proxy_relay.py on the Docker bridge's gateway at --relay-port (default
+#                  3129); the agent gets HTTPS_PROXY=http://<gateway>:<port>, ANTHROPIC_BASE_URL (if set
+#                  here) and --ca as NODE_EXTRA_CA_CERTS. Before the trial container is created, a probe
+#                  container must reach the relay and nothing else (no other port of the host, no address
+#                  outside; runner/net_guard.sh sets the host's firewall so), or the runner exits 2.
+#   --ca           the proxy's CA certificate (PEM), copied into the container (--auth proxy only)
 #
 # ANTHROPIC_API_KEY is read from this process's environment and written to the container's standard
 # input (a shell builtin, so it is in no process's arguments). It is not in the container's
@@ -41,6 +51,7 @@ die() { printf 'run_trial: %s\n' "$*" >&2; exit 2; }
 IMAGE="${HB_RUNNER_IMAGE:-harness-benchmark/runner:local}"
 MODEL=claude-opus-5-5 PLUGIN="" SUFFIX="" REPO="" PROMPT="" GRADER="" OUT="" AGENT_CMD=""
 PERMISSION_MODE=auto AGENT_TIMEOUT="" AGENT_BACKSTOP="" MAX_BUDGET_USD="" GRADER_TIMEOUT=900 REPLAY="" REPLAY_SEED=0
+AUTH=key CA="" RELAY_PORT=3129
 GRADER_ARGS=()
 NAME="hb-trial-$(date +%Y%m%d-%H%M%S)-$$"
 
@@ -64,6 +75,9 @@ while [ $# -gt 0 ]; do
     --replay) REPLAY="${2:?}"; shift 2 ;;
     --replay-seed) REPLAY_SEED="${2:?}"; shift 2 ;;
     --grader-arg) GRADER_ARGS+=("${2?}"); shift 2 ;;
+    --auth) AUTH="${2:?}"; shift 2 ;;
+    --ca) CA="${2:?}"; shift 2 ;;
+    --relay-port) RELAY_PORT="${2:?}"; shift 2 ;;
     -h|--help) usage; exit 0 ;;
     *) usage >&2; die "unknown argument: $1" ;;
   esac
@@ -95,6 +109,23 @@ AGENT_TIMEOUT=$((10#$AGENT_TIMEOUT)) AGENT_BACKSTOP=$((10#$AGENT_BACKSTOP))  # 0
 [ -z "$PLUGIN" ] || [ "$AGENT_BACKSTOP" -gt 0 ] || die "--agent-backstop 0: a harness arm always has a backstop"
 [ -n "$PLUGIN" ] || { [ "$AGENT_BACKSTOP" -eq 0 ] && [ -z "$MAX_BUDGET_USD" ]; } ||
   die "--agent-backstop and --max-budget-usd are for a harness arm (--plugin-dir); a one-shot has its guard cap"
+case "$AUTH" in key|proxy) ;; *) die "--auth must be key or proxy" ;; esac
+case "$RELAY_PORT" in ''|*[!0-9]*) die "--relay-port must be a number" ;; esac
+UPSTREAM=""
+if [ "$AUTH" = proxy ]; then
+  [ -f "$CA" ] || die "--auth proxy needs --ca, the proxy's CA certificate"
+  proxy_url="${HTTPS_PROXY:-${https_proxy:-}}"
+  [ -n "$proxy_url" ] || die "--auth proxy needs HTTPS_PROXY (http://HOST:PORT)"
+  # Never printed: a URL with a user or password in it would put a credential in the error output.
+  [[ "$proxy_url" =~ ^http://([A-Za-z0-9.-]+):([0-9]+)/?$ ]] ||
+    die "--auth proxy takes HTTPS_PROXY as http://HOST:PORT only (no user, password or path); not started"
+  UPSTREAM="${BASH_REMATCH[1]}:${BASH_REMATCH[2]}"
+  unset proxy_url
+  # No key goes in with --auth proxy: it would be one more credential in the container.
+  unset ANTHROPIC_API_KEY
+else
+  [ -z "$CA" ] || die "--ca is for --auth proxy"
+fi
 if [ -e "$OUT" ] && [ -n "$(ls -A "$OUT")" ]; then die "--out exists and is not empty: $OUT"; fi
 mkdir -p "$OUT"
 
@@ -132,8 +163,10 @@ PY
 
 STAGE="$(mktemp -d)"
 REDACTED_FILES=""
+RELAY_PID=""
 cleanup() {
   docker rm -f -v "$NAME" >/dev/null 2>&1 || true
+  [ -z "$RELAY_PID" ] || kill "$RELAY_PID" 2>/dev/null || true
   rm -rf "$STAGE"
   # An interrupted trial still leaves runner.log in $OUT.
   [ -n "$REDACTED_FILES" ] || redact_key >/dev/null || true
@@ -145,8 +178,34 @@ trap 'exit 130' INT TERM
 : >"$STAGE/grader-args"
 [ ${#GRADER_ARGS[@]} -eq 0 ] || printf '%s\n' "${GRADER_ARGS[@]}" >"$STAGE/grader-args"
 
+# --auth proxy: the relay, then a probe from the trial network. It must reach the relay and nothing else.
+PROXY_ENV=()
+if [ "$AUTH" = proxy ]; then
+  GATEWAY=$(docker network inspect bridge --format '{{range .IPAM.Config}}{{.Gateway}}{{end}}')
+  [ -n "$GATEWAY" ] || die "--auth proxy: the Docker bridge has no gateway address"
+  python3 "$(dirname "$0")/proxy_relay.py" --listen "$GATEWAY:$RELAY_PORT" --upstream "$UPSTREAM" \
+    >"$STAGE/relay.log" 2>&1 &
+  RELAY_PID=$!
+  for _ in $(seq 1 50); do grep -q listening "$STAGE/relay.log" && break; sleep 0.1; done
+  grep -q listening "$STAGE/relay.log" || die "--auth proxy: the relay did not start: $(cat "$STAGE/relay.log")"
+  host_ports=$(python3 "$(dirname "$0")/proxy_relay.py" --host-ports "$GATEWAY" --except "$RELAY_PORT")
+  # shellcheck disable=SC2086  # one argument per port
+  probe=$(docker run --rm --label hb.runner=probe --entrypoint bash "$IMAGE" -c '
+    gw=$1 relay=$2; shift 2
+    reach() { timeout 3 bash -c "exec 3<>/dev/tcp/$1/$2" 2>/dev/null; }
+    reach "$gw" "$relay" || echo "the relay is unreachable"
+    for p in "$@"; do reach "$gw" "$p" && echo "host port $p is open"; done
+    reach 1.1.1.1 443 && echo "1.1.1.1:443 outside is open"
+    exit 0' probe "$GATEWAY" "$RELAY_PORT" $host_ports 2>&1) ||
+    die "--auth proxy: the network probe did not run: $probe"
+  [ -z "$probe" ] ||
+    die "--auth proxy: the trial network is not closed: $(echo $probe). Run runner/net_guard.sh $RELAY_PORT as root"
+  PROXY_ENV=(-e HB_PROXY="http://$GATEWAY:$RELAY_PORT")
+  [ -z "${ANTHROPIC_BASE_URL:-}" ] || PROXY_ENV+=(-e ANTHROPIC_BASE_URL="$ANTHROPIC_BASE_URL")
+fi
+
 # The container has no bind mount and no published port: inputs go in and outputs come out by copy.
-docker create --name "$NAME" --label hb.runner=trial --privileged --interactive \
+docker create --name "$NAME" --label hb.runner=trial --privileged --interactive "${PROXY_ENV[@]}" \
   -e HB_MODEL="$MODEL" -e HB_PERMISSION_MODE="$PERMISSION_MODE" \
   -e HB_AGENT_TIMEOUT="$AGENT_TIMEOUT" -e HB_AGENT_BACKSTOP="$AGENT_BACKSTOP" -e HB_MAX_BUDGET_USD="$MAX_BUDGET_USD" \
   -e HB_GRADER_TIMEOUT="$GRADER_TIMEOUT" -e HB_REPLAY_SEED="$REPLAY_SEED" \
@@ -158,6 +217,7 @@ docker cp -q "$STAGE/grader-args" "$NAME:/trial/grader-args"
 [ -z "$REPLAY" ] || docker cp -q "$REPLAY" "$NAME:/opt/hb-replay/replay.pyz"
 [ -z "$PLUGIN" ] || docker cp -q "$PLUGIN/." "$NAME:/trial/plugin"
 [ -z "$AGENT_CMD" ] || docker cp -q "$AGENT_CMD" "$NAME:/trial/agent.sh"
+[ -z "$CA" ] || docker cp -q "$CA" "$NAME:/trial/ca.crt"
 
 t0=$(python3 -c 'import time; print(time.time())')
 # In the background, so that INT or TERM runs the cleanup at once.
@@ -184,12 +244,13 @@ if ! REDACTED_FILES=$(redact_key); then
   exit 3
 fi
 [ "$REDACTED_FILES" = 0 ] || echo "run_trial: the API key was in $REDACTED_FILES output file(s); redacted" >&2
-python3 - "$t0" "$t1" "$rc" "$NAME" "$REDACTED_FILES" >"$OUT/host.json" <<'PY'
+image_id=$(docker inspect --format '{{.Image}}' "$NAME" 2>/dev/null || true)
+python3 - "$t0" "$t1" "$rc" "$NAME" "$REDACTED_FILES" "$image_id" "$AUTH" >"$OUT/host.json" <<'PY'
 import json, sys
 t0, t1 = float(sys.argv[1]), float(sys.argv[2])
 print(json.dumps({"container": sys.argv[4], "container_exit": int(sys.argv[3]),
                   "container_seconds": round(t1 - t0, 1),
-                  "api_key_redacted_files": int(sys.argv[5])}))
+                  "api_key_redacted_files": int(sys.argv[5]), "image": sys.argv[6], "auth": sys.argv[7]}))
 PY
 echo "run_trial: $NAME exit $rc; outputs in $OUT" >&2
 exit "$rc"

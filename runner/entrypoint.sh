@@ -17,7 +17,9 @@
 # stdout. While it runs, processes of user `agent` (the candidate's make, when the grader drops to that
 # user) have no network beyond loopback.
 # Environment: HB_MODEL, HB_PERMISSION_MODE, HB_AGENT_TIMEOUT, HB_AGENT_BACKSTOP, HB_GRADER_TIMEOUT (seconds),
-# HB_MAX_BUDGET_USD, HB_REPLAY_SEED.
+# HB_MAX_BUDGET_USD, HB_REPLAY_SEED; with run_trial.sh --auth proxy, HB_PROXY (the relay on the bridge's
+# gateway), ANTHROPIC_BASE_URL (optional) and /trial/ca.crt. Those go to the agent process only, as
+# HTTPS_PROXY and NODE_EXTRA_CA_CERTS: never to the daemon or the grader.
 # Standard input: one line, the Anthropic API key (may be empty). It is held in a shell variable and
 # given to the agent process only: never to the daemon or the grader, never to a file.
 #
@@ -93,6 +95,14 @@ AGENT=/opt/hb/claude-agent.sh
 agent_vars=(PATH=/home/agent/.local/bin:/usr/local/bin:/usr/bin:/bin "${toolchain[@]}" HOME=/home/agent
   USER=agent TERM=dumb LANG=C.UTF-8 DISABLE_AUTOUPDATER=1 HB_OUTPUTS="$OUT/agent"
   HB_MODEL="${HB_MODEL:-}" HB_PERMISSION_MODE="${HB_PERMISSION_MODE:-auto}" HB_MAX_BUDGET_USD="${HB_MAX_BUDGET_USD:-}")
+if [ -n "${HB_PROXY:-}" ]; then
+  [ -f /trial/ca.crt ] || { log "HB_PROXY is set but /trial/ca.crt is missing"; exit 95; }
+  chmod 0444 /trial/ca.crt
+  agent_vars+=(HTTPS_PROXY="$HB_PROXY" https_proxy="$HB_PROXY" NO_PROXY=localhost,127.0.0.1,::1
+    no_proxy=localhost,127.0.0.1,::1 NODE_EXTRA_CA_CERTS=/trial/ca.crt)
+  [ -z "${ANTHROPIC_BASE_URL:-}" ] || agent_vars+=(ANTHROPIC_BASE_URL="$ANTHROPIC_BASE_URL")
+  log "agent API access: through the host's proxy relay"
+fi
 
 log "agent start (model ${HB_MODEL:-unset}, stops after $([ "$agent_cap" -gt 0 ] && echo "${agent_cap}s" || echo never))"
 t0=$(now)

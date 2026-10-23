@@ -11,6 +11,7 @@ import json
 import os
 import re
 import signal
+import socket
 import subprocess
 import time
 import uuid
@@ -84,6 +85,107 @@ def test_only_a_one_shot_has_a_guard_cap_and_only_a_harness_a_backstop(args, mes
            "--out", str(tmp_path / "out"), *args, check=False, env=env)
     assert r.returncode == 2 and message in r.stderr
     assert "docker-called" not in r.stderr
+
+
+FAKE_PROXY_TOKEN = "hb-proxy-token-5f0c2e9a7d1b4c3e"  # fixed: xdist workers must agree on test ids
+
+
+def _proxy_args(tmp_path: Path) -> tuple[list[str], dict]:
+    """A one-shot run_trial.sh call, and an environment whose docker records each call and refuses to run."""
+    (tmp_path / "docker").write_text('#!/bin/sh\necho "docker $1" >>"$HB_DOCKER_LOG"\nexit 99\n')
+    (tmp_path / "docker").chmod(0o755)
+    prompt = tmp_path / "prompt.md"
+    prompt.write_text("task")
+    ca = tmp_path / "ca.pem"
+    ca.write_text("-----BEGIN CERTIFICATE-----\n-----END CERTIFICATE-----\n")
+    args = ["--repo", str(tmp_path), "--prompt", str(prompt), "--grader", str(RUN_TRIAL), "--out", str(tmp_path / "out")]
+    env = {**os.environ, "PATH": f"{tmp_path}:{os.environ['PATH']}", "HB_DOCKER_LOG": str(tmp_path / "docker.log")}
+    return args + ["--ca", str(ca)], env
+
+
+@pytest.mark.parametrize("proxy, message", [
+    (f"http://hb:{FAKE_PROXY_TOKEN}@127.0.0.1:41549", "HTTP://HOST:PORT only"),
+    (f"http://127.0.0.1:41549/{FAKE_PROXY_TOKEN}", "HTTP://HOST:PORT only"),
+    (f"https://{FAKE_PROXY_TOKEN}.example:443", "HTTP://HOST:PORT only"),
+    ("", "needs HTTPS_PROXY"),
+])
+def test_auth_proxy_refuses_a_proxy_url_with_a_credential_and_never_prints_it(proxy, message, tmp_path):
+    """--auth proxy takes HTTPS_PROXY as http://HOST:PORT only. A user, a password or a path in it could be a
+    credential: the runner refuses before Docker is called and prints no part of the URL."""
+    args, env = _proxy_args(tmp_path)
+    env = {k: v for k, v in env.items() if k.lower() != "https_proxy"}
+    env["HTTPS_PROXY"] = proxy
+    r = sh(str(RUN_TRIAL), *args, "--auth", "proxy", check=False, env=env)
+    assert r.returncode == 2 and message.lower() in r.stderr.lower()
+    assert FAKE_PROXY_TOKEN not in r.stdout + r.stderr
+    assert not (tmp_path / "docker.log").exists()
+    assert not (tmp_path / "out").exists()
+
+
+@pytest.mark.parametrize("extra, message", [
+    (["--auth", "proxy", "--ca", "/nonexistent"], "needs --ca"),
+    (["--auth", "token"], "--auth must be key or proxy"),
+    (["--auth", "proxy", "--relay-port", "x"], "--relay-port must be a number"),
+])
+def test_auth_proxy_arguments_are_checked_before_docker_is_called(extra, message, tmp_path):
+    args, env = _proxy_args(tmp_path)
+    env["HTTPS_PROXY"] = "http://127.0.0.1:41549"
+    r = sh(str(RUN_TRIAL), *args, *extra, check=False, env=env)
+    assert r.returncode == 2 and message in r.stderr
+    assert not (tmp_path / "docker.log").exists()
+
+
+PROBE_DOCKER = r"""#!/usr/bin/env bash
+# Fake docker CLI for --auth proxy: logs every call; `run` is the network probe and prints $HB_FAKE_PROBE.
+echo "docker $*" >>"$HB_DOCKER_LOG"
+case "$1" in
+  network) echo 127.0.0.1 ;;
+  run) printf '%s' "$HB_FAKE_PROBE" ;;
+  inspect) echo 0 ;;
+  start) cat >"$HB_DOCKER_LOG.stdin"; echo "[trial] agent phase done; waiting for the grader" ;;
+esac
+exit 0
+"""
+
+
+@pytest.mark.parametrize("probe", ["host port 2024 is open", "the relay is unreachable", "1.1.1.1:443 outside is open"])
+def test_auth_proxy_refuses_a_trial_network_that_reaches_more_than_the_relay(probe, tmp_path):
+    args, env = _proxy_args(tmp_path)
+    (tmp_path / "docker").write_text(PROBE_DOCKER)
+    with socket.socket() as s:
+        s.bind(("127.0.0.1", 0))
+        port = str(s.getsockname()[1])
+    env.update(HTTPS_PROXY="http://127.0.0.1:9", HB_FAKE_PROBE=probe)
+    r = sh(str(RUN_TRIAL), *args, "--auth", "proxy", "--relay-port", port, check=False, env=env)
+    assert r.returncode == 2 and probe in r.stderr and "runner/net_guard.sh" in r.stderr
+    log = (tmp_path / "docker.log").read_text()
+    assert "docker run" in log and "docker create" not in log
+
+
+def test_auth_proxy_gives_the_trial_the_relay_and_the_ca_and_no_key(tmp_path):
+    args, env = _proxy_args(tmp_path)
+    (tmp_path / "docker").write_text(PROBE_DOCKER)
+    with socket.socket() as s:
+        s.bind(("127.0.0.1", 0))
+        port = str(s.getsockname()[1])
+    env.update(HTTPS_PROXY="http://127.0.0.1:9", HB_FAKE_PROBE="", ANTHROPIC_API_KEY=FAKE_KEY,
+               ANTHROPIC_BASE_URL="https://api.example")
+    r = sh(str(RUN_TRIAL), *args, "--auth", "proxy", "--relay-port", port, check=False, env=env)
+    assert r.returncode == 0, r.stderr
+    log = (tmp_path / "docker.log").read_text()
+    create = next(line for line in log.splitlines() if line.startswith("docker create"))
+    assert f"HB_PROXY=http://127.0.0.1:{port}" in create and "ANTHROPIC_BASE_URL=https://api.example" in create
+    assert "127.0.0.1:9" not in create  # the trial gets the relay, never the host's own proxy address
+    assert re.search(r"docker cp -q \S+/ca\.pem \S+:/trial/ca\.crt", log)
+    assert (tmp_path / "docker.log.stdin").read_text() == "\n"  # no key on the container's standard input
+    assert FAKE_KEY not in log
+    assert json.loads((tmp_path / "out" / "host.json").read_text())["auth"] == "proxy"
+
+
+def test_ca_is_only_for_auth_proxy(tmp_path):
+    args, env = _proxy_args(tmp_path)
+    r = sh(str(RUN_TRIAL), *args, check=False, env=env)
+    assert r.returncode == 2 and "--ca is for --auth proxy" in r.stderr
 
 
 def _agent_limit() -> str:

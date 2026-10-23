@@ -9,8 +9,11 @@ FROM debian:bookworm-slim
 ARG CLAUDE_CODE_VERSION=2.1.287
 ARG UV_VERSION=0.13.1
 
-RUN apt-get update \
- && apt-get install -y --no-install-recommends \
+# build-net.sh: a build behind a TLS-terminating proxy passes its CA as the secret `ca` (see the file).
+COPY build-net.sh /opt/hb/build-net.sh
+RUN --mount=type=secret,id=ca,mode=0444 . /opt/hb/build-net.sh \
+ && apt-get $APT_OPTS update \
+ && apt-get $APT_OPTS install -y --no-install-recommends \
       bash ca-certificates curl git python3 python3-venv procps psmisc \
       iptables pigz xz-utils tini jq \
  && rm -rf /var/lib/apt/lists/*
@@ -20,7 +23,8 @@ RUN apt-get update \
 COPY --from=docker /usr/local/bin/ /usr/local/bin/
 COPY --from=docker /usr/local/libexec/docker/cli-plugins/ /usr/local/libexec/docker/cli-plugins/
 
-RUN curl -fsSL "https://github.com/astral-sh/uv/releases/download/${UV_VERSION}/uv-$(uname -m)-unknown-linux-gnu.tar.gz" \
+RUN --mount=type=secret,id=ca,mode=0444 . /opt/hb/build-net.sh \
+ && curl -fsSL "https://github.com/astral-sh/uv/releases/download/${UV_VERSION}/uv-$(uname -m)-unknown-linux-gnu.tar.gz" \
       | tar -xz --strip-components=1 -C /usr/local/bin \
  && uv --version
 
@@ -28,7 +32,8 @@ RUN curl -fsSL "https://github.com/astral-sh/uv/releases/download/${UV_VERSION}/
 # developer can). The grader runs as root after every agent process is killed.
 RUN groupadd -r docker && useradd -m -u 1000 -G docker -s /bin/bash agent
 USER agent
-RUN curl -fsSL https://claude.ai/install.sh | bash -s "${CLAUDE_CODE_VERSION}" \
+RUN --mount=type=secret,id=ca,mode=0444 . /opt/hb/build-net.sh \
+ && curl -fsSL https://claude.ai/install.sh | bash -s "${CLAUDE_CODE_VERSION}" \
  && /home/agent/.local/bin/claude --version
 USER root
 RUN ln -s /home/agent/.local/bin/claude /usr/local/bin/claude
