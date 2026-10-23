@@ -1,0 +1,87 @@
+{
+ "arm": "one-shot",
+ "batch": "2026-10-23-batch-f",
+ "cadence": null,
+ "claude_version": "2.1.309",
+ "command": [
+  "uv",
+  "run",
+  "-q",
+  "--frozen",
+  "--project",
+  "/home/user/hb-driver",
+  "python",
+  "/home/user/hb-driver/scripts/host_trial.py",
+  "P1",
+  "--out",
+  "/home/user/bf/runs/20261023-P1-oneshot-haiku-1",
+  "--model",
+  "claude-haiku-5-5"
+ ],
+ "cost": {
+  "list_usd": "0.217920",
+  "reported_usd": 0.9465058999999995,
+  "tokens": {
+   "cache_read": 10967602,
+   "cache_write": 216654,
+   "input": 158,
+   "output": 162292
+  }
+ },
+ "counts": {
+  "counts": true,
+  "why": "driver run"
+ },
+ "ended_at": "2026-10-23T18:43:46Z",
+ "exit_code": 0,
+ "isolation": {
+  "contact": [],
+  "cwd": "/home/user/bf/runs/20261023-P1-oneshot-haiku-1",
+  "fresh_home": true,
+  "home": "/home/user/bf/runs/20261023-P1-oneshot-haiku-1/home",
+  "method": "host",
+  "other_cadence_checkouts": []
+ },
+ "kind": "benchmark",
+ "model_requested": "claude-haiku-5-5",
+ "models_served": [
+  "claude-haiku-5-5"
+ ],
+ "provenance": {
+  "evidence": [],
+  "source": "driver"
+ },
+ "request_id": "P1-spec",
+ "run_id": "20261023-P1-oneshot-haiku-1",
+ "schema": 1,
+ "session_id": "c0c611ee-2fe8-4ad0-a538-084badd643a2",
+ "spec": {
+  "path": "/home/user/bf/runs/20261023-P1-oneshot-haiku-1/spec/spec.md",
+  "prompt": "Build a pipeline that answers two questions for analysts, from raw public data to columnar tables a\nBI tool can query directly.\n\n**Question A (batch): where did federal contract and grant money go in fiscal year 2024?** In total and\nper person, by state, county, awarding agency and month.\n\n**Question B (stream): how is Wikipedia being edited right now?** Edits per wiki, per namespace and per\n5-minute window, split by human and bot, with the net bytes added.\n\n### Inputs\n\n- `data/raw/usaspending/`: USAspending.gov prime award transactions, FY2024, for the agencies listed in\n  `data/raw/usaspending/README.md`.\n- `data/raw/census/`: the Census Bureau county population estimates.\n- `data/raw/sitematrix.json`: the Wikimedia site matrix (wiki id, language, project).\n- The edit stream: a Server-Sent Events endpoint with the Wikimedia EventStreams `recentchange` format.\n  During development and grading it is `http://localhost:8099/v2/stream/recentchange`, a replay of a\n  recorded capture. The replay server behaves like the real service, including disconnects. In a live\n  demo the same code points at `https://stream.wikimedia.org/v2/stream/recentchange`.\n\n### Architecture\n\n- **Lake.** Ingestion writes every source to a Parquet lake under `lake/` (one folder per source table,\n  partitioned where it helps). The lake keeps the source's data and adds only load metadata.\n- **Models.** A dbt project in `transform/` builds everything after the lake: staging models, the star\n  schema and the marts. Each mart has a dbt model contract (column names and types enforced).\n- **Publish.** The marts are materialized as Parquet under `out/marts/` (one folder per mart). Anything\n  downstream reads only `out/marts/`.\n\n### Outputs\n\n1. A star schema for Question A: one fact table at the grain of one award transaction, and dimensions\n   for agency, place (state and county) and date. A monthly mart by state, county and agency, with\n   net obligations, population and obligations per person.\n2. For Question B: a fact table of edits at the grain of one change event, and a mart of 5-minute\n   windows by wiki, namespace and actor type (human or bot), with the edit count and the net bytes\n   added. The stream consumer lands micro-batches in the lake; incremental dbt models build the edit\n   fact and the window mart from them.\n3. The lake under `lake/`, the dbt project under `transform/`, and the published marts under\n   `out/marts/`, plus whatever the stack section asks for.\n4. `oracle_map.yml`: for each question in the \"Checks\" list below, the table and column (or SQL view)\n   that answers it.\n5. `DECISIONS.md`: each place where this spec left a choice to you, what you chose and why.\n\n### Rules\n\n- `make build` runs the batch part from the raw files. Running it twice must not change any output.\n- `make stream DURATION=<seconds>` consumes the stream for that long and updates the stream tables.\n  If the connection drops, the consumer resumes where it stopped. Stopping and starting the consumer\n  must not count any event twice or lose one.\n- Event time, not arrival time, places an edit in a window. Windows are 5 minutes long and start on\n  the multiples of 5 minutes (UTC).\n- Lateness is measured in stream time, not by a clock: an event is **late** when, at its first\n  arrival, the highest event time among the events that arrived before it is more than 10 minutes\n  after the end of its window. A late event is not added to its window; put it in a `late_events`\n  table instead. The replay can run faster than real time, so a wall-clock reading of \"late\" is wrong.\n- Money is in US dollars, summed exactly (no floating-point sums).\n- Document the grain of each model. Test the keys of each model with dbt tests.\n\n### Checks the analysts will run\n\n1. FY2024 net obligations per awarding agency.\n2. The ten counties with the highest FY2024 obligations per person.\n3. The number of awards with a net negative obligation in FY2024.\n4. For one month: county totals add up to state totals, and state totals add up to the source total.\n5. For the stream: edits and net bytes per wiki for the replayed hour, split human and bot. Late\n   events are included: this check counts every edit consumed, on time or late.\n6. For the stream: the 5-minute windows with the most edits on `en.wikipedia.org` (on-time edits only).\n7. For the stream: the count of late events.\n\n### Amendment A (from the analysts, after the first review)\n\n\"Per person\" means per resident in the population estimate for **July 1, 2024**, not the 2020 census\ncount. Where a county has no 2024 estimate, use the latest earlier estimate and say so in\n`DECISIONS.md`.\n\nUse Python 3.12 and dlt to land the raw files and the stream in the Parquet lake (dlt's filesystem\ndestination with Parquet files). Model with dbt-duckdb reading the lake; materialize the marts as\nParquet with dbt-duckdb's `external` materialization. The skeleton pins the versions in\n`pyproject.toml`; do not change them.\n",
+  "sha256": "b37e957aa5ab754aaa3c4527985e0b44a237ae2357ee2d37a5d8da28041969e9"
+ },
+ "started_at": "2026-10-23T18:00:33Z",
+ "stop_point": {
+  "block": null,
+  "reason": null
+ },
+ "task": "P1",
+ "timing": {
+  "agent_active_seconds": 1761.915,
+  "agent_wall_seconds": 2360.9,
+  "blocks": null,
+  "run_wall_seconds": 2592.55
+ },
+ "transcript": {
+  "bytes": 1300644,
+  "path": "blobs/48807d44cef11e140bd485c58fce722776602bb84550e5558714dd639e81958a.gz",
+  "sha256": "48807d44cef11e140bd485c58fce722776602bb84550e5558714dd639e81958a",
+  "store": "git:jtouley/harness-benchmark@runs-store"
+ },
+ "tree": {
+  "bytes": 4154864,
+  "path": "blobs/6ce5e47684a2a93aaa525087dc9298e2ba5a1e3191e36abff3334bb7e4ebffba.gz",
+  "sha256": "6ce5e47684a2a93aaa525087dc9298e2ba5a1e3191e36abff3334bb7e4ebffba",
+  "store": "git:jtouley/harness-benchmark@runs-store"
+ }
+}
