@@ -1,0 +1,76 @@
+{
+ "arm": "cadence-core",
+ "batch": "2026-10-21-cadence-e2e-budgetcli",
+ "cadence": null,
+ "claude_version": "2.1.305",
+ "command": [
+  "claude",
+  "-p",
+  "/cadence:cadence <requests.md Request 1>",
+  "--plugin-dir",
+  "core-plugin-k6",
+  "--dangerously-skip-permissions",
+  "--output-format",
+  "stream-json",
+  "--verbose"
+ ],
+ "cost": {
+  "list_usd": "3.441046",
+  "reported_usd": 2.8803224999999997,
+  "tokens": {
+   "cache_read": 6303950,
+   "cache_write": 491631,
+   "input": 304,
+   "output": 95057
+  }
+ },
+ "counts": {
+  "counts": false,
+  "why": "self-graded, no outside grader, pre-driver"
+ },
+ "ended_at": "2026-10-21T06:53:09Z",
+ "exit_code": 0,
+ "isolation": null,
+ "kind": "live",
+ "model_requested": "claude-sonnet-5-5",
+ "models_served": [
+  "claude-sonnet-5-5"
+ ],
+ "provenance": {
+  "evidence": [
+   "jtouley/cadence@9008b0e:evidence/live-runs/drivers/k6-run1.sh",
+   "jtouley/cadence@9008b0e:evidence/live-runs/transcripts/k6-run1.jsonl.gz",
+   "jtouley/cadence@9008b0e:evidence/live-runs/live-run-records.md",
+   "jtouley/cadence@9008b0e:evidence/live-runs/requests.md#request-1",
+   "jtouley/cadence@9008b0e:evidence/README.md"
+  ],
+  "note": "claimed by the session that ran it: reached R7; no probe (its own probe script, evidence/live-runs/probe-results-20261022T1558.txt). Plugin copy core-plugin-k6: the driver names no commit (evidence/live-runs/plugin-diffs/core-plugin-k6.diff). The driver passed no --model; the model is the transcript's",
+  "source": "backfill"
+ },
+ "request_id": "LOCAL-3",
+ "run_id": "20261021-k6-run1-cadence-core-sonnet",
+ "schema": 1,
+ "session_id": "412420db-14a2-5603-8fea-cbe5692ee926",
+ "started_at": "2026-10-21T06:35:07Z",
+ "stop_point": {
+  "block": "R7",
+  "reason": "the session's own record says the run wrote its session summary"
+ },
+ "task": "LOCAL-3",
+ "timing": {
+  "agent_active_seconds": 1085.449,
+  "agent_wall_seconds": 1082.0,
+  "blocks": null,
+  "run_wall_seconds": null
+ },
+ "transcript": {
+  "bytes": 1371243,
+  "path": "evidence/live-runs/transcripts/k6-run1.jsonl.gz",
+  "sha256": "a9245656f7438238d56adb281d6f8d98fc243c425ba07cc8ca73ba255e20205f",
+  "store": "git:jtouley/cadence@9008b0e2389021aa499aa39798a852d9f444af11"
+ },
+ "tree": {
+  "missing": "the repository was kept only as left after run 2 (jtouley/cadence@9008b0e:evidence/live-runs/runs/k6/repo.bundle)",
+  "sha256": null
+ }
+}

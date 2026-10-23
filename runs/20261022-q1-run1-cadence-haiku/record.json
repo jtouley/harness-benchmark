@@ -1,0 +1,76 @@
+{
+ "arm": "cadence",
+ "batch": "2026-10-21-cadence-e2e-budgetcli",
+ "cadence": {
+  "repo": "https://github.com/jtouley/cadence",
+  "sha": "fb0270d010cbfb284df5af992e1db36ed45cbeda",
+  "tree_clean": false
+ },
+ "claude_version": "2.1.306",
+ "command": [
+  "claude",
+  "-p",
+  "/cadence:cadence <golden/cadence/d1.md>",
+  "--model",
+  "haiku",
+  "--plugin-dir",
+  "cadence-plugin-q",
+  "--dangerously-skip-permissions",
+  "--output-format",
+  "stream-json",
+  "--verbose"
+ ],
+ "cost": {
+  "list_usd": null,
+  "reported_usd": null
+ },
+ "counts": {
+  "counts": false,
+  "why": "self-graded, no outside grader, pre-driver"
+ },
+ "ended_at": "2026-10-22T03:42:12Z",
+ "exit_code": null,
+ "isolation": null,
+ "kind": "live",
+ "model_requested": "claude-haiku-5-5",
+ "models_served": [
+  "claude-haiku-5-5"
+ ],
+ "provenance": {
+  "evidence": [
+   "jtouley/cadence@9008b0e:evidence/live-runs/drivers/q1-run1.sh",
+   "jtouley/cadence@9008b0e:evidence/live-runs/transcripts/q1-run1.jsonl.gz",
+   "jtouley/cadence@9008b0e:evidence/live-runs/live-run-records.md",
+   "jtouley/cadence@9008b0e:evidence/live-runs/requests.md#request-3",
+   "jtouley/cadence@9008b0e:evidence/README.md"
+  ],
+  "note": "claimed by the session that ran it: did not reach R7; probe request 10/10, edge 11/11, scope 1/1, deferral 2/2 (its own probe script, evidence/live-runs/probe-results-20261022T1558.txt). Plugin copy cadence-plugin-q: commit fb0270d plus the e2e config, and for some copies code copied in by hand (evidence/live-runs/plugin-diffs/cadence-plugin-q.diff), so not a clean commit",
+  "source": "backfill"
+ },
+ "request_id": "LOCAL-4",
+ "run_id": "20261022-q1-run1-cadence-haiku",
+ "schema": 1,
+ "session_id": "412420db-14a2-5603-8fea-cbe5692ee926",
+ "started_at": "2026-10-22T03:16:50Z",
+ "stop_point": {
+  "block": null,
+  "reason": "the driver's stderr has no exit line: the run was cut off before claude exited; the stop block is not in the evidence"
+ },
+ "task": "d1",
+ "timing": {
+  "agent_active_seconds": null,
+  "agent_wall_seconds": 1522.0,
+  "blocks": null,
+  "run_wall_seconds": null
+ },
+ "transcript": {
+  "bytes": 3633359,
+  "path": "evidence/live-runs/transcripts/q1-run1.jsonl.gz",
+  "sha256": "f767c83564083ea830090b105fdcf1ceb08a65f36c6d5fc251979f2b6213b2e6",
+  "store": "git:jtouley/cadence@9008b0e2389021aa499aa39798a852d9f444af11"
+ },
+ "tree": {
+  "missing": "the repository was kept only as left after run 2 (jtouley/cadence@9008b0e:evidence/live-runs/runs/q1/repo.bundle)",
+  "sha256": null
+ }
+}

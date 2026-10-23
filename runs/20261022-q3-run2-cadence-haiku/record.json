@@ -1,0 +1,85 @@
+{
+ "arm": "cadence",
+ "batch": "2026-10-21-cadence-e2e-budgetcli",
+ "cadence": {
+  "repo": "https://github.com/jtouley/cadence",
+  "sha": "fb0270d010cbfb284df5af992e1db36ed45cbeda",
+  "tree_clean": false
+ },
+ "claude_version": "2.1.307",
+ "command": [
+  "claude",
+  "-p",
+  "/cadence:cadence <requests.md Request 8: a resume of Request 4>",
+  "--model",
+  "haiku",
+  "--plugin-dir",
+  "cadence-plugin-q",
+  "--dangerously-skip-permissions",
+  "--output-format",
+  "stream-json",
+  "--verbose"
+ ],
+ "cost": {
+  "list_usd": "0.064969",
+  "reported_usd": 0.06863775999999999,
+  "tokens": {
+   "cache_read": 2470941,
+   "cache_write": 165335,
+   "input": 94,
+   "output": 39166
+  }
+ },
+ "counts": {
+  "counts": false,
+  "why": "self-graded, no outside grader, pre-driver"
+ },
+ "ended_at": "2026-10-22T03:50:17Z",
+ "exit_code": 0,
+ "isolation": null,
+ "kind": "live",
+ "model_requested": "claude-haiku-5-5",
+ "models_served": [
+  "claude-haiku-5-5"
+ ],
+ "provenance": {
+  "evidence": [
+   "jtouley/cadence@9008b0e:evidence/live-runs/drivers/q3-run2.sh",
+   "jtouley/cadence@9008b0e:evidence/live-runs/transcripts/q3-run2.jsonl.gz",
+   "jtouley/cadence@9008b0e:evidence/live-runs/live-run-records.md",
+   "jtouley/cadence@9008b0e:evidence/live-runs/requests.md#request-8",
+   "jtouley/cadence@9008b0e:evidence/README.md",
+   "jtouley/cadence@9008b0e:evidence/live-runs/runs/q3"
+  ],
+  "note": "claimed by the session that ran it: reached R7; probe request 10/10, edge 10/11, scope 1/1, deferral 2/2 (its own probe script, evidence/live-runs/probe-results-20261022T1558.txt). Plugin copy cadence-plugin-q: commit fb0270d plus the e2e config, and for some copies code copied in by hand (evidence/live-runs/plugin-diffs/cadence-plugin-q.diff), so not a clean commit. The request text equals golden/cadence/d2.md (d2, d3 and d4 hold one text). Request 8 resumes the run of request 4 on the same repository",
+  "source": "backfill"
+ },
+ "request_id": "LOCAL-4",
+ "run_id": "20261022-q3-run2-cadence-haiku",
+ "schema": 1,
+ "session_id": "412420db-14a2-5603-8fea-cbe5692ee926",
+ "started_at": "2026-10-22T03:43:35Z",
+ "stop_point": {
+  "block": "R7",
+  "reason": "the session's own record says the run wrote its session summary"
+ },
+ "task": "d2",
+ "timing": {
+  "agent_active_seconds": 150.777,
+  "agent_wall_seconds": 402.0,
+  "blocks": null,
+  "run_wall_seconds": null
+ },
+ "transcript": {
+  "bytes": 651720,
+  "path": "evidence/live-runs/transcripts/q3-run2.jsonl.gz",
+  "sha256": "53b67b15f0212364d851e9a6c53762648c5113231256bbc67f1627a3edaccf82",
+  "store": "git:jtouley/cadence@9008b0e2389021aa499aa39798a852d9f444af11"
+ },
+ "tree": {
+  "bytes": 20419,
+  "path": "evidence/live-runs/runs/q3/repo.bundle",
+  "sha256": "1891aaa3ab29c5ad33bcb17b446fe116f261483d17d392ecedd5de810635b1fb",
+  "store": "git:jtouley/cadence@9008b0e2389021aa499aa39798a852d9f444af11"
+ }
+}

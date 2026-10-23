@@ -56,10 +56,25 @@ def test_lockfiles_are_not_reference_material():
     assert any(p.name == "reference.patch" for p in fingerprints.sources(ROOT))
 
 
+def test_the_golden_inputs_are_sources_too_and_the_readme_is_not():
+    inputs = fingerprints.input_sources(ROOT)
+    assert inputs and all(p.parent == ROOT / "golden" / "cadence" and p.name != "README.md" for p in inputs)
+    assert fingerprints.sources(ROOT) == fingerprints.reference_sources(ROOT) + inputs
+    assert not (set(inputs) & set(fingerprints.reference_sources(ROOT)))
+
+
+def test_a_whole_text_fingerprint_ignores_case_and_spacing_and_keeps_the_text_out():
+    assert fingerprints.whole_text("Add a CSV export.\n") == fingerprints.whole_text("  add  a csv EXPORT. ")
+    assert fingerprints.whole_text("one spec") != fingerprints.whole_text("another spec")
+    assert len(fingerprints.whole_text(VECTOR)) == 64
+
+
 def test_the_cli_writes_the_hashes_and_never_the_text(tmp_path):
     out = tmp_path / "fp.json"
     subprocess.run([sys.executable, "-m", "loop.fingerprints", "--out", str(out)], cwd=ROOT, check=True)
     data = json.loads(out.read_text())
     assert data["algorithm"] == fingerprints.ALGORITHM and data["count"] == len(data["sha256"]) > 1000
     assert all(len(h) == 64 for h in data["sha256"]) and data["source_commit"]
+    assert "golden/cadence/*.md" in data["sources"] and "golden/cadence/d1.md" in data["inputs"]
     assert "select" not in out.read_text().lower()  # no reference text, only hashes
+    assert "csv export" not in out.read_text().lower()  # no golden input text either
