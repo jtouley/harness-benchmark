@@ -140,13 +140,20 @@ the number. No rule here is new.
     `test_the_gate_line_shows_best_and_worst_beside_each_mean`,
     `test_the_gate_compares_the_mean_with_sonnet_and_opus`, `test_the_gate_needs_n_runs_per_task` in
     [tests/test_loop_reports.py](../tests/test_loop_reports.py). Today the counted one-shots are the
-    15 October runs; they ran in the runner's container, and the Cadence runs compared with them ran on
-    the host (coordinator, 2026-10-23), so a bar or a time ratio against them crosses the two. From
-    batch F iteration 0 on, the bars are each batch's own one-shots.
-14. **A run that stopped early has no time ratio.** The speed ratio counts only runs that reached the
-    end of the pipeline or passed a check. [loop/scoreboard.py](../loop/scoreboard.py) (`reached_end`);
-    test `test_a_run_that_stopped_early_with_no_check_passed_has_no_ratio` in
-    [tests/test_loop_reports.py](../tests/test_loop_reports.py).
+    15 October runs; they ran in the runner's container, and the batch F runs run on the host
+    (coordinator, 2026-10-23), so a bar or a time ratio against them crosses the two. From batch F
+    iteration 0 on, the bars are each batch's own one-shots.
+14. **A run that stopped early has no time ratio in the gate; `loop.speed` keeps it and says so.**
+    `scoreboard.time_ratio`, which the gate, the scoreboard table and a finding's `max_time_ratio` read,
+    counts only runs that reached the end of the pipeline or passed a check: a stop with nothing passed
+    would make a broken pipeline look fast. `loop.speed` and the postmortem's Speed section keep the
+    ratio of such a run and mark it "(stopped early)": a slow stop is still slow.
+    [loop/scoreboard.py](../loop/scoreboard.py) (`reached_end`, `time_ratio`),
+    [loop/speed.py](../loop/speed.py) (`ratio_text`); tests
+    `test_a_run_that_stopped_early_with_no_check_passed_has_no_ratio` in
+    [tests/test_loop_reports.py](../tests/test_loop_reports.py),
+    `test_a_run_that_hit_its_cap_shows_it_and_an_early_stop_keeps_its_ratio` in
+    [tests/test_loop_speed.py](../tests/test_loop_speed.py).
 
 ## Postmortems and merges
 
@@ -189,6 +196,21 @@ the number. No rule here is new.
     `test_grader_p4_pyz_grades_the_reference_from_a_clean_directory_and_never_puts_the_key_on_disk` in
     [tests/test_pipeline_p4_runner.py](../tests/test_pipeline_p4_runner.py).
 
+## Speed on every run
+
+21. **Every counted Cadence run can be timed, and a slow one is flagged.** `loop.check` refuses a
+    counted Cadence run with no agent session time (`timing.agent_wall_seconds`, from the trial's
+    `agent_seconds`) or no time per block (`timing.blocks`, or a backfilled `blocks.json`, from
+    `loop.blocks`). `python -m loop.speed` prints each Cadence run's agent session against the one-shot
+    mean of the same task and model, with its cap and its three slowest blocks, and a ratio above 1.25
+    (`STRETCH_RATIO`) is flagged; the postmortem's Speed section reads the same rows.
+    [loop/speed.py](../loop/speed.py) (`problems`, `rows`, `STRETCH_RATIO`),
+    [loop/check.py](../loop/check.py); tests
+    `test_a_counted_cadence_run_without_timing_or_blocks_is_a_problem`,
+    `test_a_run_at_1_1_is_not_flagged_and_one_at_1_3_is`,
+    `test_the_postmortem_speed_section_is_the_speed_rows` in
+    [tests/test_loop_speed.py](../tests/test_loop_speed.py).
+
 ## Where the rules live
 
 | Rule | Code | Tests | State |
@@ -206,10 +228,11 @@ the number. No rule here is new.
 | 11 findings with owner, closed by script | `loop/findings.py` | `tests/test_loop_findings.py` | main |
 | 12 trailers and the trace | `loop/findings.py`, `loop/trace.py` | `tests/test_loop_findings.py`, `tests/test_loop_trace.py` | main |
 | 13 gate bars | `loop/scoreboard.py` | `tests/test_loop_reports.py` | main |
-| 14 no ratio for an early stop | `loop/scoreboard.py` | `tests/test_loop_reports.py` | main |
+| 14 early stop: no gate ratio, kept in `loop.speed` | `loop/scoreboard.py` | `tests/test_loop_reports.py` | main |
 | 15 postmortems complete and current | `loop/check.py`, `loop/postmortem.py`, `loop/driver.py` | `tests/test_loop_postmortem_complete.py` | main |
 | 16 after-merge rule | `runs/README.md` | rule 15 | main |
 | 17 cited hand-written lines | `loop/postmortem.py` | `tests/test_loop_reports.py` | main |
 | 18 run ids never reused | `loop/driver.py` | `tests/test_loop_record.py` | main |
 | 19 a grade needs a clean grader | `loop/driver.py` | `tests/test_loop_record.py` | main |
 | 20 the P4 key only in `grader-p4.pyz` | `golden/pipeline/pipetask/bundle.py` | `tests/test_pipeline_p4.py`, `tests/test_pipeline_p4_runner.py` | main |
+| 21 speed on every run | `loop/speed.py`, `loop/check.py` | `tests/test_loop_speed.py` | main |
