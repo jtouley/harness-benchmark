@@ -1,0 +1,6 @@
+{
+ "batch": "2026-10-23-batch-f",
+ "grader_commit": "563a74c551e6735581474fcff06e0429c965e00b",
+ "grader_tree": "8a0977e42fa02981802090d1f9517efe537994c4",
+ "note": "batch F iteration 0: every run is graded with this grader (the pinned worktree of #73 at 563a74c); cadence 748a729, host method, auth proxy"
+}
