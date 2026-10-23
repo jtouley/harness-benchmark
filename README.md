@@ -116,6 +116,7 @@ lists the rules: the gate contract, the findings ledger and the hook points, for
 Reading:
 
 - [Claims register](docs/claims.md): every claim and how far to trust it
+- [Rules of the learning loop](docs/rules.md): every rule the loop enforces, with the code or test behind it
 - [Whitepaper](docs/whitepaper.md): the argument, with methods, results and limits
 - [Evidence](docs/evidence/README.md): each experiment round with its sample size, status and data
 - [How results are graded](docs/method/grading.md): what decides each number, and where a model's judgment does
