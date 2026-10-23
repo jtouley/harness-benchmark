@@ -29,6 +29,35 @@ The capture, the replay server code, the key, the grader, the references and thi
 | `P3/image/` | The P3 toolchain image (`Dockerfile`: JDK 17, Python 3.12, sbt, both base images pinned by digest) and `trial.sh`, which runs a P3 trial inside it | No (the image is the trial's environment) |
 | `pipetask/bundle.py` | Builds `replay.pyz` and `grader.pyz`, the two files a trial container needs | — |
 
+## P4: the hold-out
+
+P4 ([spec page](../../docs/plans/tasks/P4-holdout-library-loans.md)) is the family's hold-out, the
+contamination guard of the improvement loop. It runs only when the owner calls for the final check of a
+Cadence commit. Its spec is not a saved golden input (`golden/cadence/` holds P1 and P2 only), and
+`python -m loop.driver` refuses `--task P4` unless `--holdout` says the run is that check. P4 is batch
+only, on a dataset that `P4/snapshot/generate.py` generates (no download), with plain SQL on DuckDB.
+
+| Path | What | In a trial |
+|---|---|---|
+| `P4/data/raw/` | The generated inputs: branches, items, patrons, two halves of the loan events of 2025, fines | Copied into the repo as `data/raw/` (P4 does not get the shared `data/raw/`) |
+| `P4/snapshot/generate.py` | How the data was made: one seed, standard library only; regenerates byte for byte | No |
+| `P4/prompt.md` | The request, word for word from the spec page (`pipetask.prompt P4`) | Passed as the prompt |
+| `P4/skeleton/` | `Makefile` (`build` fails), `pyproject.toml` and `uv.lock` (pinned DuckDB) | Copied into the repo |
+| `P4/reference/` | The P4 reference solution (DuckDB SQL from Python), an overlay on the skeleton | **Never** |
+| `pipetask/p4key.py`, `P4/key/answer_key.json` | The P4 answer key and the wrong answer of each single trap, computed independently of the reference | No |
+| `pipetask/p4grade.py`, `pipetask/p4trial.py` | The P4 grader (seven checks through `oracle_map.yml`, the shared map reader) and trial (reset, `make build` twice, the digest of every mart the checks read, grade) | No |
+
+```sh
+cd golden/pipeline
+python3 P4/snapshot/generate.py                       # regenerate P4/data/raw (byte for byte)
+uv run --project ../.. python -m pipetask.p4key          # regenerate the P4 key
+python3 -m pipetask.assemble P4 --out /tmp/p4-ref --with-reference
+uv run --project ../.. python -m pipetask.p4trial --repo /tmp/p4-ref --key P4/key/answer_key.json
+```
+
+`tests/test_pipeline_p4.py` is the proof: the reference grades 7 of 7 and rebuilds identically, and a
+variant with one check removed grades 6 of 7.
+
 ## Commands
 
 All of them run in a project virtual environment (`uv run`); nothing is installed on the host.

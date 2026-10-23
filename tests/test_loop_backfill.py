@@ -6,7 +6,7 @@ from pathlib import Path
 
 import pytest
 
-from loop import backfill, check
+from loop import backfill, check, record
 
 ROOT = Path(__file__).resolve().parents[1]
 
@@ -17,9 +17,11 @@ pytestmark = pytest.mark.skipif(not backfill.available(), reason="the evidence c
 def test_the_committed_backfill_is_reproduced_from_the_evidence(tmp_path):
     assert backfill.main(["--runs", str(tmp_path)]) == 0
     built = sorted(p.relative_to(tmp_path).as_posix() for p in tmp_path.rglob("*") if p.is_file())
+    # The live runs of 21 and 22 October are loop.backfill_live's (tests/test_loop_backfill_live.py), not this backfill's.
     committed = sorted(p.relative_to(ROOT / "runs").as_posix() for p in (ROOT / "runs").rglob("*")
                        if p.is_file() and p.parent != ROOT / "runs" and p.name in ("record.json", "scores.jsonl", "blocks.json")
-                       and p.parent.name[:8] in ("20261015", "20261019", "20261021", "20261022"))
+                       and p.parent.name[:8] in ("20261015", "20261019", "20261021", "20261022")
+                       and record.load(p.parent)["kind"] != "live")
     assert built == committed
     for rel in built:
         assert (tmp_path / rel).read_text() == (ROOT / "runs" / rel).read_text(), rel

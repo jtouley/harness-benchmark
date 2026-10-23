@@ -259,8 +259,8 @@ def test_the_driver_runs_the_command_and_writes_a_valid_record(tmp_path, plugin)
     assert rec["command"][:2] == ["bash", "-c"] and rec["exit_code"] == 0
     assert rec["started_at"] <= rec["ended_at"]
     assert store.verify(rec["transcript"], tmp_path / "store")
-    # Eligibility only; a run is scored by the scores.jsonl lines the grader adds.
-    assert rec["counts"]["counts"] is True
+    # A stub never counts; a run is scored by the scores.jsonl lines the grader adds.
+    assert rec["cadence"]["tree_clean"] is True and rec["counts"]["counts"] is False
     assert not (run / "scores.jsonl").exists()
 
 
@@ -309,7 +309,7 @@ def test_bytecode_written_into_the_plugin_during_the_run_does_not_make_it_unclea
                        f"{plugin}/stray.pyc")
     rc, run = _drive(tmp_path, plugin, script=leaves_bytecode)
     rec = json.loads((run / "record.json").read_text())
-    assert rc == 0 and rec["cadence"]["tree_clean"] is True and rec["counts"]["counts"] is True
+    assert rc == 0 and rec["cadence"]["tree_clean"] is True
 
 
 def test_the_command_runs_without_writing_bytecode(tmp_path, plugin):
@@ -317,7 +317,7 @@ def test_the_command_runs_without_writing_bytecode(tmp_path, plugin):
     imports_the_hook = f"cd {plugin}/hooks && {sys.executable} -c 'import guard'"
     rc, run = _drive(tmp_path, plugin, script=imports_the_hook)
     assert rc == 0 and not (plugin / "hooks" / "__pycache__").exists()
-    assert json.loads((run / "record.json").read_text())["counts"]["counts"] is True
+    assert json.loads((run / "record.json").read_text())["cadence"]["tree_clean"] is True
 
 
 @pytest.mark.parametrize("change", ["echo patched >> {p}/plugin.json", "touch {p}/hotfix.py"])
@@ -489,3 +489,42 @@ def test_the_isolation_block_lists_what_the_cwd_held_before_the_run(tmp_path, pl
     rc, run = _drive(tmp_path, plugin, extra=["--cwd", str(work)], script=f"touch {work}/made-by-the-run")
     iso = json.loads((run / "record.json").read_text())["isolation"]
     assert rc == 0 and iso["cwd_contents"] == ["repo/", "spec/"]
+
+
+@pytest.mark.parametrize("kind, counts", [("benchmark", True), ("live", True), ("stub", False)])
+def test_whether_a_clean_run_counts_is_a_function_of_its_kind(tmp_path, plugin, kind, counts):
+    """A stub is a probe the session wrote, not a graded run (review of #71); the other kinds may count."""
+    rc, run = _drive(tmp_path, plugin, extra=["--kind", kind, "--arm", "one-shot"])
+    rec = json.loads((run / "record.json").read_text())
+    assert rc == 0 and rec["counts"]["counts"] is counts
+    if not counts:
+        assert rec["counts"]["why"] == "stub: a session's own probe, not graded"
+
+
+def test_the_check_refuses_a_counting_record_of_a_kind_that_never_counts(tmp_path):
+    runs = tmp_path / "runs"
+    for rid, kind, counts in (("20261023-stub-ok", "stub", False), ("20261023-stub-bad", "stub", True),
+                              ("20261023-bench-ok", "benchmark", True)):
+        rec = minimal(rid, kind=kind, counts={"counts": counts, "why": "x"})
+        (runs / rid).mkdir(parents=True)
+        (runs / rid / "record.json").write_text(json.dumps(rec))
+    problems = check.validate_tree(runs)
+    assert problems == ["20261023-stub-bad/record.json: a stub run never counts (counts.counts is true)"]
+
+
+def test_the_check_refuses_a_counting_backfilled_record_without_a_grader_score(tmp_path):
+    """A backfilled record counts only with a score from the harness-benchmark grader (owner, 2026-10-23); its
+    commit may be unrecorded (the 15 October baselines say why in grader.basis)."""
+    runs = tmp_path / "runs"
+    backfill = {"source": "backfill", "evidence": ["ec54dbc"]}
+    for rid, score in (("20261015-graded", True), ("20261015-ungraded", False)):
+        (runs / rid).mkdir(parents=True)
+        (runs / rid / "record.json").write_text(json.dumps(
+            minimal(rid, provenance=backfill, counts={"counts": True, "why": "x"})))
+        if score:
+            record.append_score(runs, {"run_id": rid, "grader": {"repo": "jtouley/harness-benchmark", "commit": None,
+                                                              "tree": None, "basis": "not recorded"},
+                                       "reward": 0.0, "passed": 0, "total": 7, "idempotent": True, "stream_ok": True,
+                                       "error": None, "source": "backfill", "graded_at": None})
+    assert check.validate_tree(runs) == [
+        "20261015-ungraded/record.json: a backfilled record counts only with a score from the harness-benchmark grader"]

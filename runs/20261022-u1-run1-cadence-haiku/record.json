@@ -1,0 +1,82 @@
+{
+ "arm": "cadence",
+ "batch": "2026-10-21-cadence-e2e-budgetcli",
+ "cadence": {
+  "repo": "https://github.com/jtouley/cadence",
+  "sha": "a3eb0aaf812e1f0be3e12aba48894ffc36983f5b",
+  "tree_clean": false
+ },
+ "claude_version": "2.1.307",
+ "command": [
+  "claude",
+  "-p",
+  "/cadence:cadence <golden/cadence/d1.md>",
+  "--model",
+  "haiku",
+  "--plugin-dir",
+  "cadence-plugin-u",
+  "--dangerously-skip-permissions",
+  "--output-format",
+  "stream-json",
+  "--verbose"
+ ],
+ "cost": {
+  "list_usd": "0.268296",
+  "reported_usd": 0.2723611500000002,
+  "tokens": {
+   "cache_read": 8207885,
+   "cache_write": 647910,
+   "input": 316,
+   "output": 210393
+  }
+ },
+ "counts": {
+  "counts": false,
+  "why": "self-graded, no outside grader, pre-driver"
+ },
+ "ended_at": "2026-10-22T06:20:23Z",
+ "exit_code": 0,
+ "isolation": null,
+ "kind": "live",
+ "model_requested": "claude-haiku-5-5",
+ "models_served": [
+  "claude-haiku-5-5"
+ ],
+ "provenance": {
+  "evidence": [
+   "jtouley/cadence@9008b0e:evidence/live-runs/drivers/u1-run1.sh",
+   "jtouley/cadence@9008b0e:evidence/live-runs/transcripts/u1-run1.jsonl.gz",
+   "jtouley/cadence@9008b0e:evidence/live-runs/live-run-records.md",
+   "jtouley/cadence@9008b0e:evidence/live-runs/requests.md#request-3",
+   "jtouley/cadence@9008b0e:evidence/README.md"
+  ],
+  "note": "claimed by the session that ran it: reached R7; probe request 10/10, edge 11/11, scope 1/1, deferral 2/2 (its own probe script, evidence/live-runs/probe-results-20261022T1558.txt). Plugin copy cadence-plugin-u: commit a3eb0aa plus the e2e config, and for some copies code copied in by hand (evidence/live-runs/plugin-diffs/cadence-plugin-u.diff), so not a clean commit",
+  "source": "backfill"
+ },
+ "request_id": "LOCAL-4",
+ "run_id": "20261022-u1-run1-cadence-haiku",
+ "schema": 1,
+ "session_id": "412420db-14a2-5603-8fea-cbe5692ee926",
+ "started_at": "2026-10-22T06:05:07Z",
+ "stop_point": {
+  "block": "R7",
+  "reason": "the session's own record says the run wrote its session summary"
+ },
+ "task": "d1",
+ "timing": {
+  "agent_active_seconds": 921.795,
+  "agent_wall_seconds": 916.0,
+  "blocks": null,
+  "run_wall_seconds": null
+ },
+ "transcript": {
+  "bytes": 1675258,
+  "path": "evidence/live-runs/transcripts/u1-run1.jsonl.gz",
+  "sha256": "8c4e0a158d17560a7e888f5f3a0512bbec7910baed57ab0f9d60fc4b9eac3b7a",
+  "store": "git:jtouley/cadence@9008b0e2389021aa499aa39798a852d9f444af11"
+ },
+ "tree": {
+  "missing": "the repository was kept only as left after run 2 (jtouley/cadence@9008b0e:evidence/live-runs/runs/u1/repo.bundle)",
+  "sha256": null
+ }
+}

@@ -1,0 +1,83 @@
+{
+ "arm": "cadence",
+ "batch": "2026-10-21-cadence-arms-budgetcli",
+ "cadence": {
+  "repo": "https://github.com/jtouley/cadence",
+  "sha": "db1bedea9cca31d219953b1c728b009983aeb9a5",
+  "tree_clean": false
+ },
+ "claude_version": "2.1.306",
+ "command": [
+  "claude",
+  "-p",
+  "<evidence/runs/prompt.txt>",
+  "--model",
+  "haiku",
+  "--plugin-dir",
+  "<cadence copy>",
+  "--dangerously-skip-permissions",
+  "--output-format",
+  "stream-json",
+  "--verbose"
+ ],
+ "cost": {
+  "list_usd": "0.174461",
+  "reported_usd": 0.17842426500000005,
+  "tokens": {
+   "cache_read": 6167524,
+   "cache_write": 376246,
+   "input": 260,
+   "output": 131459
+  }
+ },
+ "counts": {
+  "counts": false,
+  "why": "self-graded, no outside grader, pre-driver"
+ },
+ "ended_at": "2026-10-21T18:26:21Z",
+ "exit_code": 0,
+ "isolation": null,
+ "kind": "live",
+ "model_requested": "claude-haiku-5-5",
+ "models_served": [
+  "claude-haiku-5-5"
+ ],
+ "provenance": {
+  "evidence": [
+   "jtouley/cadence@9954da6:evidence/runs/arm-a",
+   "jtouley/cadence@9954da6:evidence/runs/prompt.txt",
+   "jtouley/cadence@9954da6:evidence/runs/run.sh",
+   "jtouley/cadence@9954da6:evidence/README.md"
+  ],
+  "note": "claimed by the session that ran it: stopped at P3 with no code (the session's own reading of the gate records and the final message). Cadence db1bede plus evidence/runs/cadence-a-vs-db1bede.patch, so not a clean commit. The request (evidence/runs/request.txt) is the d1 scenario with one phrase changed ('one row per expense'); it is not byte for byte golden/cadence/d1.md",
+  "source": "backfill"
+ },
+ "request_id": "LOCAL-4",
+ "run_id": "20261021-arm-a-cadence-haiku",
+ "schema": 1,
+ "session_id": "c6d1ea46-c870-51fa-ab2e-339fb5a9722d",
+ "started_at": "2026-10-21T18:12:35Z",
+ "stop_point": {
+  "block": "P3",
+  "reason": "retries hard stop at P3: round 2 said REQUEST CHANGES and the gate did not read it; no code"
+ },
+ "task": "d1",
+ "timing": {
+  "agent_active_seconds": 132.166,
+  "agent_wall_seconds": 826.0,
+  "blocks": null,
+  "run_wall_seconds": null
+ },
+ "transcript": {
+  "bytes": 1606150,
+  "path": "evidence/runs/arm-a/stream.jsonl.gz",
+  "sha256": "6a46e229c34459427f782b16e916f5daca53ad7171a2be6251ca4931ee22448c",
+  "store": "git:jtouley/cadence@9954da6405804dc7eabd9e5433c2bb3ac8779265"
+ },
+ "tree": {
+  "bytes": 3570,
+  "path": "evidence/runs/arm-a/repo.bundle",
+  "sha256": "32a7ccd6140de9dac5143eb00e2fc84596c775f644c0c755bf67bc1820c88ea9",
+  "store": "git:jtouley/cadence@9954da6405804dc7eabd9e5433c2bb3ac8779265"
+ }
+}

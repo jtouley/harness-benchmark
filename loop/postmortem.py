@@ -1,13 +1,15 @@
 """A postmortem of one batch of runs, generated from the records: postmortems/<batch>.md.
 
     python -m loop.postmortem 2026-10-21-cadence-core-subscription [--notes postmortems/<batch>.notes.json]
+    python -m loop.postmortem --run <run id>        # the Trace row of one run, printed
 
-The sections are fixed: Summary, Timeline, Evidence ledger (VERIFIED / CLAIMED / CONTRADICTED), Root
-causes, Decisions, Actions. The generator writes Summary and Timeline, the VERIFIED ledger rows (one per
-scored run) and the root causes (the findings in findings.jsonl that cite the batch's runs). Hand-written
-lines come from the notes file: {"ledger": [{"status", "claim", "run_ids"}], "root_causes": [...],
-"decisions": [...], "actions": [...]}, each item {"text", "run_ids"}. A hand-written line with no run id,
-or with a run id that has no record, is refused.
+The sections are fixed: Summary, Timeline, Speed, Diagnosis, Trace, Evidence ledger (VERIFIED / CLAIMED /
+CONTRADICTED), Root causes, Decisions, Actions. The generator writes Summary and Timeline, the VERIFIED
+ledger rows (one per scored run) and the root causes (the findings in findings.jsonl that cite the batch's
+runs). Trace lists, per run, the findings that cite it and the cadence commits and pull requests that cite
+it, from citations.json (loop.trace). Hand-written lines come from the notes file: {"ledger": [{"status",
+"claim", "run_ids"}], "root_causes": [...], "decisions": [...], "actions": [...]}, each item {"text",
+"run_ids"}. A hand-written line with no run id, or with a run id that has no record, is refused.
 """
 
 from __future__ import annotations
@@ -17,11 +19,12 @@ import json
 import sys
 from pathlib import Path
 
-from loop import findings, record, scoreboard
+from loop import findings, record, scoreboard, trace
 
 ROOT = Path(__file__).resolve().parents[1]
 STATUSES = ("VERIFIED", "CLAIMED", "CONTRADICTED")
-SECTIONS = ("Summary", "Timeline", "Speed", "Diagnosis", "Evidence ledger", "Root causes", "Decisions", "Actions")
+SECTIONS = ("Summary", "Timeline", "Speed", "Diagnosis", "Trace", "Evidence ledger", "Root causes", "Decisions",
+            "Actions")
 
 
 class PostmortemError(Exception):
@@ -52,8 +55,9 @@ def notes_problems(notes: dict, runs: Path) -> list[str]:
 
 
 def generate(batch: str | list[str], runs: Path, notes: dict, findings_path: Path = findings.FINDINGS,
-             title: str | None = None) -> str:
-    """The postmortem of one batch, or of several (`batch` a list) under `title`."""
+             title: str | None = None, citations: dict | None = None) -> str:
+    """The postmortem of one batch, or of several (`batch` a list) under `title`. `citations` is the
+    loop.trace snapshot; the committed citations.json when None."""
     batches = [batch] if isinstance(batch, str) else list(batch)
     title = title or ", ".join(batches)
     problems = notes_problems(notes, runs)
@@ -91,6 +95,7 @@ def generate(batch: str | list[str], runs: Path, notes: dict, findings_path: Pat
 
     out += _speed(rows, runs)
     out += _diagnosis(rows, notes, findings_path)
+    out += _trace(rows, runs, findings_path, citations)
 
     out += ["## Evidence ledger", "", "| Status | Claim | Runs |", "|---|---|---|"]
     for rec, score in counted:
@@ -163,6 +168,18 @@ def _speed(rows: list[tuple[dict, dict | None]], runs: Path) -> list[str]:
     return out
 
 
+def _trace(rows: list[tuple[dict, dict | None]], runs: Path, findings_path: Path, citations: dict | None) -> list[str]:
+    """Each run: the findings that cite it, and the cadence commits and pull requests that cite it as evidence."""
+    snap = trace.load_citations() if citations is None else citations
+    at = f" at cadence main `{snap['main'][:7]}`" if snap.get("main") else ""
+    out = ["## Trace", "",
+           f"Per run: the findings (findings.jsonl) that cite it, and the cadence commits that cite it with an "
+           f"`Evidence:` trailer, with each commit's finding, pull request and status (citations.json{at}; "
+           f"`python -m loop.trace snapshot` refreshes it).", "",
+           trace.table(trace.rows(runs, findings_path, snap, [rec["run_id"] for rec, _ in rows])), ""]
+    return out
+
+
 def _diagnosis(rows: list[tuple[dict, dict | None]], notes: dict, findings_path: Path) -> list[str]:
     """Each run: the block it stopped at, why, its agent minutes, its checks, and the findings that cite it;
     then the findings ranked by the counted runs they cite, then by those runs' minutes. A run that two
@@ -199,12 +216,22 @@ def _diagnosis(rows: list[tuple[dict, dict | None]], notes: dict, findings_path:
 
 def main(argv: list[str] | None = None) -> int:
     ap = argparse.ArgumentParser(prog="python -m loop.postmortem", description=__doc__.split("\n\n")[0])
-    ap.add_argument("batch", nargs="+", help="one batch, or several for one postmortem (with --name)")
+    ap.add_argument("batch", nargs="*", help="one batch, or several for one postmortem (with --name)")
+    ap.add_argument("--run", help="print the Trace row of this run instead of writing a batch postmortem")
     ap.add_argument("--name", help="the postmortem's name when it covers several batches")
     ap.add_argument("--runs", type=Path, default=ROOT / "runs")
     ap.add_argument("--notes", type=Path)
     ap.add_argument("--out", type=Path)
     args = ap.parse_args(argv)
+    if args.run:
+        try:
+            print(trace.table(trace.rows(args.runs, findings.FINDINGS, trace.load_citations(), [args.run])))
+        except trace.TraceError as exc:
+            print(f"refused: {exc}", file=sys.stderr)
+            return 2
+        return 0
+    if not args.batch:
+        ap.error("a batch, or --run <run id>")
     name = args.name or args.batch[0]
     if len(args.batch) > 1 and not args.name:
         ap.error("several batches need --name")

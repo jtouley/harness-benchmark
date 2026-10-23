@@ -20,6 +20,7 @@ on work that does not fit one session.
 | [P1](P1-duckdb-dlt-dbt.md) | Ingestion: dlt (Python). Models: dbt-duckdb | The reference stack. Successor to L3 |
 | [P2](P2-config-arrow-polars-datafusion.md) | Ingestion: a config-driven engine on Apache Arrow, Polars and DataFusion. Models: dbt-duckdb | The ingestion pipeline is data (YAML), not code; the engine must be general |
 | [P3](P3-scala-spark.md) | Ingestion: Scala 2.13, Apache Spark 3.5 batch and Structured Streaming. Models: dbt-spark on the same local Spark | The JVM stack; a heavier build and run |
+| [P4](P4-holdout-library-loans.md) | Plain SQL on DuckDB from Python, batch only, on a generated library-loans dataset | The hold-out: the improvement loop's contamination guard. Its spec is no saved golden input, and it runs only when the owner calls for the final check (`loop.driver --holdout`) |
 
 All three share one architecture (owner direction, 2026-10-14): ingestion lands a **Parquet lake**, a
 **dbt project** builds every model after it, and the marts are **published as Parquet**. So the modeling

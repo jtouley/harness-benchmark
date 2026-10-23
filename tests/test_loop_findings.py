@@ -56,7 +56,8 @@ def _run(runs: Path, run_id: str, *, sha: str, source="driver", block="R7", reas
 
 
 ROW = {"id": "F-1", "title": "E4 needs a GitHub PR URL", "run_ids": [FOUND], "root_cause": "no local PR mode",
-       "component": "cadence", "gone_when": {"stop_block_not": ["E4"]}, "status": "open"}
+       "component": "cadence", "gone_when": {"stop_block_not": ["E4"]}, "status": "open",
+       "owner": {"session": "session_01AbC", "branch": "fix/local-pr"}}
 
 
 @pytest.fixture
@@ -82,10 +83,21 @@ def _write(tmp_path: Path, *rows: dict) -> Path:
     ({"id": "F1"}, "F-<n>"),
     ({"status": "fixed"}, "open or closed"),
     ({"gone_when": {"looks_fine": True}}, "gone_when"),
+    ({"owner": "the fix session"}, "owner must be"),
+    ({"owner": {"session": "session_01AbC"}}, "owner must be"),
+    ({"owner": {"session": 7, "branch": None}}, "owner must be"),
 ])
 def test_a_bad_row_is_refused(tmp_path, runs, cadence, change, message):
     problems = findings.check(_write(tmp_path, {**ROW, **change}), runs, cadence)
     assert any(message in p for p in problems), problems
+
+
+def test_a_row_without_an_owner_is_refused_and_an_unowned_one_says_so(tmp_path, runs, cadence):
+    """Every row names who fixes it (the session and its branch), or says that nobody does yet (nulls)."""
+    row = dict(ROW)
+    del row["owner"]
+    assert any("missing owner" in p for p in findings.row_problems(row, runs))
+    assert findings.row_problems({**ROW, "owner": {"session": None, "branch": None}}, runs) == []
 
 
 def test_a_row_without_run_ids_is_refused():

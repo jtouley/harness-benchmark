@@ -45,6 +45,9 @@ from loop import blocks, record, store
 
 ROOT = Path(__file__).resolve().parents[1]
 GRADER_PATH = "golden/pipeline/pipetask"
+# The hold-out task (golden/pipeline/README.md): it runs only when the owner calls for the final check, so the
+# driver refuses it unless --holdout says this is that check.
+HOLDOUT_TASKS = ("P4",)
 
 
 class DriverError(Exception):
@@ -269,6 +272,8 @@ def main(argv: list[str] | None = None) -> int:
     ap.add_argument("--kind", required=True, choices=["benchmark", "live", "stub"])
     ap.add_argument("--batch", required=True)
     ap.add_argument("--task")
+    ap.add_argument("--holdout", action="store_true",
+                    help="this run is the owner's final check on the hold-out task (P4); without it P4 is refused")
     ap.add_argument("--request-id")
     ap.add_argument("--arm", required=True)
     ap.add_argument("--model")
@@ -299,6 +304,9 @@ def main(argv: list[str] | None = None) -> int:
             raise DriverError(f"run id {args.run_id!r} is not YYYYMMDD-words (e.g. 20261022-P1-cadence-haiku-1)")
         if (args.runs / args.run_id).exists():
             raise DriverError(f"{args.runs / args.run_id} exists; run ids are never reused")
+        if args.task in HOLDOUT_TASKS and not args.holdout:
+            raise DriverError(f"{args.task} is the hold-out task: it runs only when the owner calls for the final "
+                              f"check (pass --holdout for that run; golden/pipeline/README.md)")
         cadence = plugin_commit(args.plugin_dir) if args.plugin_dir else None
         grader = grader_identity(args.grader_repo) if args.grade else None
         home = args.fresh_home or Path(os.environ.get("HOME", "/"))
@@ -339,6 +347,8 @@ def main(argv: list[str] | None = None) -> int:
     if args.timing and args.timing.exists():
         agent_wall = json.loads(args.timing.read_text(encoding="utf-8")).get("agent_seconds")
     counts = {"counts": True, "why": "driver run" + (" on a clean published plugin tree" if cadence else "")}
+    if args.kind in record.NON_COUNTING_KINDS:
+        counts = {"counts": False, "why": "stub: a session's own probe, not graded"}
     if cadence and not cadence["tree_clean"]:
         counts = {"counts": False, "why": "the plugin tree changed during the run"}
     elif hits:

@@ -5,8 +5,13 @@ live or stub). A run that has no folder here is not evidence.
 
 | File | Written by | Rule |
 |---|---|---|
-| `record.json` | `python -m loop.driver` (new runs), the backfill (old runs) | written once, never changed ([schema](../loop/schema/record.schema.json)) |
+| `record.json` | `python -m loop.driver` (new runs), `loop.backfill` and `loop.backfill_live` (old runs) | written once, never changed ([schema](../loop/schema/record.schema.json)) |
 | `scores.jsonl` | the driver with `--grade`, a regrade | one line per grading, appended, never edited ([schema](../loop/schema/score.schema.json)) |
+
+`citations.json` (root) is the trace of these runs into Cadence: per cited run, the cadence commits
+whose `Evidence: <run id>` trailer names it, with each commit's finding, pull request and status. `python
+-m loop.trace snapshot --cadence <checkout>` refreshes it; `python -m loop.trace` prints the table for
+every counted run and every cited run, and `python -m loop.postmortem --run <run id>` prints one run's row.
 
 `python -m loop.check --base origin/main` validates every record and score and refuses a change that
 edits or deletes a record or rewrites a score. Run it before pushing a change to `runs/`.
@@ -24,7 +29,9 @@ scored. A run counts only if both hold:
 
 - `counts.counts` is true. It is false for a run graded by anything but the harness-benchmark grader
   (a session's own probe), a run whose plugin tree was not a clean published commit, and an
-  infrastructure loss.
+  infrastructure loss. The live runs of 21 and 22 October (`kind` `live`, `loop.backfill_live`) were
+  graded by the sessions that made them, so each says `self-graded, no outside grader, pre-driver` in
+  `counts.why` and has no `scores.jsonl`.
 - It has a score from the harness-benchmark grader. Each score names the grader commit and the git tree
   of `golden/pipeline/pipetask`. When the grader tree changes, every run is regraded and a new line is
   appended; the latest grader tree's line is the run's score.
@@ -56,6 +63,7 @@ python -m loop.driver --run-id 20261022-P1-cadence-haiku-1 --kind benchmark --ba
 The driver refuses (exit 2, before anything runs):
 
 - a run id that exists;
+- `--task P4`, the hold-out, unless `--holdout` says the run is the owner's final check;
 - a `--plugin-dir` that is not a clean checkout of a commit on a remote branch (no modified, untracked or
   ignored file);
 - a run that could read another Cadence checkout: it searches `--cwd` and HOME (five levels) and refuses
