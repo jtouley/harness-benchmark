@@ -6,9 +6,10 @@ The owner's stretch goal: a Cadence run takes at most 120 to 125 percent of a on
 (STRETCH_RATIO, from loop.scoreboard). The one-shot time takes the rule of the gate's bars: the mean
 agent session of the counted one-shots (arm `baseline` or `one-shot`) of the task and model in the
 newest batch that has one, on the Cadence run's grader tree; when no batch has one on that tree, the
-newest batch on any tree, and the row says so. "Newest" stops at the run's own batch (batch ids carry
-their date, so a later id is a later batch): a later batch's one-shots never move an earlier run's
-ratio, so a committed postmortem keeps its numbers when the next batch lands. The Basis column names
+newest batch on any tree, and the row says so. "Newest" stops at the run's own batch (batch_order:
+batches sort by the date in their id, then by the earliest started_at of their records, then by id):
+a later batch's one-shots never move an earlier run's ratio, so a committed postmortem keeps its numbers
+when the next batch lands. Every caller names the batch it reads for. The Basis column names
 the batch and the tree. For each Cadence run: its agent session, the
 ratio, whether it hit its cap (`timing.hit_cap`, from the trial's timing.json), whether it reached the
 end of the pipeline, and its time per block (loop.blocks) with the three slowest blocks named. A run
@@ -39,32 +40,47 @@ def _records(runs: Path) -> list[tuple[Path, dict]]:
     return [(p, record.load(p)) for p in sorted(runs.iterdir()) if (p / "record.json").exists()]
 
 
-def _newest_batch_mean(found: list[tuple[str, float]]) -> tuple[float, str]:
-    """(the mean of the (batch, seconds) pairs in the newest batch, that batch). Batch ids sort by date."""
-    newest = max(batch for batch, _ in found)
+def batch_order(records: list[tuple[Path, dict]]) -> dict[str, tuple[str, str, str]]:
+    """Each batch's sort key: the date in its id, the earliest started_at of its records ("" when none has
+    one), then the id. Two batches of one day order by when they began, not by their names."""
+    starts: dict[str, str] = {}
+    for _, rec in records:
+        batch, started = rec["batch"], rec["started_at"] or ""
+        starts.setdefault(batch, "")
+        if started:  # a record with no started_at does not reset the batch's start, in any read order
+            starts[batch] = min(starts[batch] or started, started)
+    return {batch: (batch[:10], started, batch) for batch, started in starts.items()}
+
+
+def _newest_batch_mean(found: list[tuple[str, float]], order: dict) -> tuple[float, str]:
+    """(the mean of the (batch, seconds) pairs in the newest batch by `order`, that batch)."""
+    newest = max((batch for batch, _ in found), key=order.__getitem__)
     values = [seconds for batch, seconds in found if batch == newest]
     return round(sum(values) / len(values), 3), newest
 
 
 def oneshot_mean(runs: Path, task: str | None, model: str | None, tree: str | None,
-                 batch: str | None = None) -> tuple[float | None, str]:
+                 batch: str) -> tuple[float | None, str]:
     """(the mean agent session of the counted one-shots of `task` and `model`, the basis). The one-shots are
-    those of the newest batch no later than `batch` (every batch when None) on grader tree `tree`, else of
-    the newest such batch on any tree, labelled so; None with no counted one-shot."""
+    those of the newest batch no later than `batch` (batch_order) on grader tree `tree`, else of the newest
+    such batch on any tree, labelled so; None with no counted one-shot. `batch` is required: a read with no
+    batch would follow the newest batch wherever it lands, and so would any number built on it."""
+    records = _records(runs)
+    order = batch_order(records)
+    upto = order.get(batch, (batch[:10], "", batch))
     same, any_tree = [], []
-    for run, rec in _records(runs):
+    for run, rec in records:
         seconds = rec["timing"]["agent_wall_seconds"]
         if (rec["arm"] in ONESHOT_ARMS and rec["counts"]["counts"] and rec["task"] == task
-                and rec["model_requested"] == model and seconds is not None
-                and (batch is None or rec["batch"] <= batch)):
+                and rec["model_requested"] == model and seconds is not None and order[rec["batch"]] <= upto):
             any_tree.append((rec["batch"], seconds))
             if tree is not None and scoreboard.latest_tree(run) == tree:
                 same.append((rec["batch"], seconds))
     if same:
-        mean, newest = _newest_batch_mean(same)
+        mean, newest = _newest_batch_mean(same, order)
         return mean, f"batch {newest}, same grader tree {tree[:7]}"
     if any_tree:
-        mean, newest = _newest_batch_mean(any_tree)
+        mean, newest = _newest_batch_mean(any_tree, order)
         label = f"any grader tree (no counted one-shot on {tree[:7]})" if tree else "any grader tree"
         return mean, f"batch {newest}, {label}"
     return None, "no counted one-shot of this task and model"

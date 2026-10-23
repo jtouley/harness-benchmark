@@ -149,16 +149,19 @@ the number. No rule here is new.
     with nothing passed would make a broken pipeline look fast. `loop.speed` and the postmortem's Speed
     section keep the ratio of such a run and mark it "(stopped early)": a slow stop is still slow. Both
     read one one-shot mean, `oneshot_mean` in `loop/speed.py`, with the bars' rule pinned by batch: the
-    counted one-shots of the newest batch no later than the run's own (batch ids carry their date) on the
-    run's grader tree, else of the newest such batch on any tree, labelled so. A later batch's one-shots
-    never move an earlier run's ratio, so a committed postmortem keeps its numbers when the next batch
-    lands. [loop/scoreboard.py](../loop/scoreboard.py) (`reached_end`, `time_ratio`, `oneshot_seconds`),
+    counted one-shots of the newest batch no later than the run's own on the run's grader tree, else of
+    the newest such batch on any tree, labelled so; batches order by the date in their id, then by the
+    earliest `started_at` of their records (`batch_order`), and every read of the basis names its batch
+    (`batch` is a required argument). A later batch's one-shots never move an earlier run's ratio, so a
+    committed postmortem keeps its numbers when the next batch lands. [loop/scoreboard.py](../loop/scoreboard.py) (`reached_end`, `time_ratio`, `oneshot_seconds`),
     [loop/speed.py](../loop/speed.py) (`oneshot_mean`, `ratio_text`); tests
     `test_a_run_that_stopped_early_with_no_check_passed_has_no_ratio` in
     [tests/test_loop_reports.py](../tests/test_loop_reports.py),
     `test_a_run_that_hit_its_cap_shows_it_and_an_early_stop_keeps_its_ratio`,
     `test_the_scoreboards_time_ratio_takes_the_same_basis_as_speed_and_keeps_the_early_stop_rule`,
-    `test_the_basis_is_the_newest_batch_no_later_than_the_run_so_a_later_batch_leaves_a_postmortem_byte_identical` in
+    `test_the_basis_is_the_newest_batch_no_later_than_the_run_so_a_later_batch_leaves_a_postmortem_byte_identical`,
+    `test_a_basis_is_always_read_for_a_batch`,
+    `test_two_batches_of_one_day_order_by_when_they_began_not_by_their_names` in
     [tests/test_loop_speed.py](../tests/test_loop_speed.py).
 
 ## Postmortems and merges
