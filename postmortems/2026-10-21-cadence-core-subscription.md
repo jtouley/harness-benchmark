@@ -54,6 +54,31 @@ Peer time per block, all runs (loop.blocks; orchestrator time between peers is i
 
 Time in loops (repeat rounds, at each block's mean peer time): about 127.3 min over 70 repeat calls.
 
+## Diagnosis
+
+| Run | Task | Stop | Cause | Agent min | Checks | Counts | Findings |
+|---|---|---|---|---|---|---|---|
+| `20261021-P1-cadence-core-haiku-0-killed` | P1 | E1 | infrastructure loss: the cloud container was reclaimed while idle | — | — | not counted | — |
+| `20261021-P1-cadence-core-haiku-1` | P1 | P4 | stopped to ask: the P4 handoff refused four times | 9.6 | 0/7 | yes | F-3 |
+| `20261021-P2-cadence-core-haiku-1` | P2 | P7 | retries hard stop: P7 failed three times | 42.7 | 0/7 | yes | F-4, F-7 |
+| `20261021-P1-cadence-core-haiku-2` | P1 | P4 | retries hard stop: P4 drops the plan's RUN_BY_COMMAND marker | 20.6 | 0/7 | yes | F-2 |
+| `20261021-P2-cadence-core-haiku-2a-killed` | P2 | E1 | infrastructure loss: the worker restarted | — | — | not counted | — |
+| `20261021-P2-cadence-core-haiku-2` | P2 | E4 | credentials hard stop: no GitHub PR URL under adapter none | 64.4 | 0/7 | yes | F-1, F-5, F-6, F-7 |
+| `20261022-P1-cadence-core-haiku-3` | P1 | E4 | credentials hard stop: no GitHub PR URL under adapter none | 51.6 | 0/7 | yes | F-1, F-5, F-6 |
+| `20261022-P2-cadence-core-haiku-3` | P2 | P7 | retries hard stop: P7 failed three times after a replan from E1 | 81.3 | 0/7 | yes | F-4, F-7 |
+
+Findings by cost (counted runs of these batches that cite each finding, then their agent minutes):
+
+| Finding | Runs | Minutes |
+|---|---|---|
+| **F-7** | 3 | 188.5 |
+| **F-4** | 2 | 124.1 |
+| **F-1** | 2 | 116.0 |
+| **F-5** | 2 | 116.0 |
+| **F-6** | 2 | 116.0 |
+| **F-2** | 1 | 20.6 |
+| **F-3** | 1 | 9.6 |
+
 ## Evidence ledger
 
 | Status | Claim | Runs |
