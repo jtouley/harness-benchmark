@@ -288,6 +288,22 @@ def test_a_grade_from_the_benchmark_grader_becomes_a_score_with_the_grader_ident
     assert score["grader"]["tree"] == _git(ROOT, "rev-parse", "HEAD:golden/pipeline/pipetask")
 
 
+def test_the_driver_refuses_a_grader_with_local_changes(tmp_path, plugin, capsys):
+    """--grade needs a clean grader checkout: a modified file under golden/pipeline/pipetask means no commit
+    names the grader that scored the run, so the driver refuses before anything runs."""
+    grader = tmp_path / "grader"
+    (grader / "golden" / "pipeline" / "pipetask").mkdir(parents=True)
+    (grader / "golden" / "pipeline" / "pipetask" / "grade.py").write_text("ok = True\n")
+    _git(grader, "init", "-q", "-b", "main")
+    _git(grader, "add", "-A")
+    _git(grader, "commit", "-qm", "grader")
+    (grader / "golden" / "pipeline" / "pipetask" / "grade.py").write_text("ok = False\n")  # a local change
+    rc, run = _drive(tmp_path, plugin, extra=["--grade", str(tmp_path / "trial" / "grade.json"),
+                                              "--grader-repo", str(grader)], grade={"reward": 1.0})
+    assert rc == 2 and "local changes" in capsys.readouterr().err
+    assert not run.exists() and not (tmp_path / "trial").exists()  # refused before the command ran
+
+
 def test_the_driver_is_a_module_with_help():
     proc = subprocess.run([sys.executable, "-m", "loop.driver", "--help"], cwd=ROOT, capture_output=True, text=True)
     assert proc.returncode == 0 and "--plugin-dir" in proc.stdout
