@@ -1,0 +1,115 @@
+{
+ "arm": "cadence",
+ "batch": "2026-10-23-batch-f",
+ "cadence": {
+  "published_in": [
+   "origin/main"
+  ],
+  "repo": "https://github.com/jtouley/cadence",
+  "sha": "748a729d53b401d74d7a081ec4ba08b9db444650",
+  "tree": "cb02eafe7b19c49a27bcc8438c79116590006120",
+  "tree_clean": true
+ },
+ "claude_version": "2.1.309",
+ "command": [
+  "uv",
+  "run",
+  "-q",
+  "--frozen",
+  "--project",
+  "/home/user/hb-driver",
+  "python",
+  "/home/user/hb-driver/scripts/host_trial.py",
+  "P1",
+  "--out",
+  "/home/user/bf/runs/20261023-P1-cadence-haiku-1-r2",
+  "--model",
+  "claude-haiku-5-5",
+  "--auth",
+  "proxy",
+  "--plugin-dir",
+  "/home/user/bf/plugin-748a729",
+  "--peer-model",
+  "haiku",
+  "--agent-cap",
+  "21600"
+ ],
+ "cost": {
+  "list_usd": "0.032357",
+  "reported_usd": 0.03576207,
+  "tokens": {
+   "cache_read": 879837,
+   "cache_write": 82491,
+   "input": 56,
+   "output": 26483
+  }
+ },
+ "counts": {
+  "counts": true,
+  "why": "driver run on a clean published plugin tree"
+ },
+ "ended_at": "2026-10-23T21:44:11Z",
+ "exit_code": 0,
+ "isolation": {
+  "auth": "proxy",
+  "contact": [],
+  "cwd": "/home/user/bf/runs/20261023-P1-cadence-haiku-1-r2",
+  "cwd_contents": [
+   "driver.out",
+   "home/",
+   "spec/"
+  ],
+  "fresh_home": true,
+  "home": "/home/user/bf/runs/20261023-P1-cadence-haiku-1-r2/home",
+  "method": "host",
+  "other_cadence_checkouts": []
+ },
+ "kind": "benchmark",
+ "model_requested": "claude-haiku-5-5",
+ "models_served": [
+  "claude-haiku-5-5"
+ ],
+ "provenance": {
+  "evidence": [],
+  "source": "driver"
+ },
+ "request_id": "P1-spec",
+ "run_id": "20261023-P1-cadence-haiku-1-r2",
+ "schema": 1,
+ "session_id": "40f761d5-45a5-4fc8-bdd7-34cbe09959fd",
+ "spec": {
+  "path": "/home/user/bf/runs/20261023-P1-cadence-haiku-1-r2/spec/spec.md",
+  "prompt": "/cadence /home/user/bf/runs/20261023-P1-cadence-haiku-1-r2/spec/spec.md",
+  "sha256": "b37e957aa5ab754aaa3c4527985e0b44a237ae2357ee2d37a5d8da28041969e9"
+ },
+ "started_at": "2026-10-23T21:41:28Z",
+ "stop_point": {
+  "block": "A1",
+  "reason": "hard stop a5-gap: A5 vibe-test NOT READY: 7 blocking gaps (B1 late watermark, B2 dedup/resume key, B3 late_events vs check 5 conflict, B4 batch idempotency, B5 CT census geography, B6 unplaced obligations, B7 award key). Report: .context/vibetest/open-data-pipeline-p1_2026-10-23.md (FAIL  no active "
+ },
+ "task": "P1",
+ "timing": {
+  "agent_active_seconds": 151.088,
+  "agent_wall_seconds": 152.4,
+  "blocks": {
+   "vibe-test": {
+    "calls": 1,
+    "seconds": 75.463,
+    "unfinished": 0
+   }
+  },
+  "run_wall_seconds": 162.492
+ },
+ "transcript": {
+  "bytes": 261820,
+  "path": "blobs/b0608de92252a790bb82977dce5cc32fd6b044a466d249c82d1ff6af49403f3a.gz",
+  "sha256": "b0608de92252a790bb82977dce5cc32fd6b044a466d249c82d1ff6af49403f3a",
+  "store": "git:jtouley/harness-benchmark@runs-store"
+ },
+ "tree": {
+  "bytes": 4154942,
+  "path": "blobs/13f36a18d094b380362d41f3e0ae2f1d1e022ad57d31b32f119399d4dedf2abc.gz",
+  "sha256": "13f36a18d094b380362d41f3e0ae2f1d1e022ad57d31b32f119399d4dedf2abc",
+  "store": "git:jtouley/harness-benchmark@runs-store"
+ }
+}

@@ -27,13 +27,13 @@ Agent session per run, and its ratio to the mean one-shot session of the same ta
 
 | Run | Task | Model | Agent min | One-shot min | Ratio | Stop |
 |---|---|---|---|---|---|---|
-| `20261021-P1-cadence-core-haiku-0-killed` | P1 | claude-haiku-5-5 | not recorded | 31.4 | — | E1 |
-| `20261021-P1-cadence-core-haiku-1` | P1 | claude-haiku-5-5 | 9.6 | 31.4 | — (stopped early) | P4 |
+| `20261021-P1-cadence-core-haiku-0-killed` | P1 | claude-haiku-5-5 | not recorded | 35.4 | — | E1 |
+| `20261021-P1-cadence-core-haiku-1` | P1 | claude-haiku-5-5 | 9.6 | 35.4 | — (stopped early) | P4 |
 | `20261021-P2-cadence-core-haiku-1` | P2 | claude-haiku-5-5 | 42.7 | 26.6 | — (stopped early) | P7 |
-| `20261021-P1-cadence-core-haiku-2` | P1 | claude-haiku-5-5 | 20.6 | 31.4 | — (stopped early) | P4 |
+| `20261021-P1-cadence-core-haiku-2` | P1 | claude-haiku-5-5 | 20.6 | 35.4 | — (stopped early) | P4 |
 | `20261021-P2-cadence-core-haiku-2a-killed` | P2 | claude-haiku-5-5 | not recorded | 26.6 | — | E1 |
 | `20261021-P2-cadence-core-haiku-2` | P2 | claude-haiku-5-5 | 64.4 | 26.6 | — (stopped early) | E4 |
-| `20261022-P1-cadence-core-haiku-3` | P1 | claude-haiku-5-5 | 51.6 | 31.4 | — (stopped early) | E4 |
+| `20261022-P1-cadence-core-haiku-3` | P1 | claude-haiku-5-5 | 51.6 | 35.4 | — (stopped early) | E4 |
 | `20261022-P2-cadence-core-haiku-3` | P2 | claude-haiku-5-5 | 81.3 | 26.6 | — (stopped early) | P7 |
 
 Slowest runs: `20261022-P2-cadence-core-haiku-3` (81.3 min), `20261021-P2-cadence-core-haiku-2` (64.4 min), `20261022-P1-cadence-core-haiku-3` (51.6 min).

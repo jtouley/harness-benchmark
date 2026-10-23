@@ -30,8 +30,8 @@ Agent session per run, and its ratio to the mean one-shot session of the same ta
 
 | Run | Task | Model | Agent min | One-shot min | Ratio | Stop |
 |---|---|---|---|---|---|---|
-| `20261015-P1-haiku-1` | P1 | claude-haiku-5-5 | 31.4 | 31.4 | 1.00 | — |
-| `20261015-P1-haiku-void` | P1 | claude-haiku-5-5 | 43.9 | 31.4 | 1.40 | — |
+| `20261015-P1-haiku-1` | P1 | claude-haiku-5-5 | 31.4 | 35.4 | 0.89 | — |
+| `20261015-P1-haiku-void` | P1 | claude-haiku-5-5 | 43.9 | 35.4 | 1.24 | — |
 | `20261015-P1-opus-1` | P1 | claude-opus-5-5 | 28.2 | 28.2 | 1.00 | — |
 | `20261015-P1-sonnet-1` | P1 | claude-sonnet-5-5 | 22.5 | 22.5 | 1.00 | — |
 | `20261015-P1-sonnet-aborted` | P1 | claude-sonnet-5-5 | not recorded | 22.5 | — | — |
