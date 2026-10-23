@@ -288,6 +288,22 @@ def test_a_grade_from_the_benchmark_grader_becomes_a_score_with_the_grader_ident
     assert score["grader"]["tree"] == _git(ROOT, "rev-parse", "HEAD:golden/pipeline/pipetask")
 
 
+def test_the_driver_refuses_a_grader_with_local_changes(tmp_path, plugin, capsys):
+    """--grade needs a clean grader checkout: a modified file under golden/pipeline/pipetask means no commit
+    names the grader that scored the run, so the driver refuses before anything runs."""
+    grader = tmp_path / "grader"
+    (grader / "golden" / "pipeline" / "pipetask").mkdir(parents=True)
+    (grader / "golden" / "pipeline" / "pipetask" / "grade.py").write_text("ok = True\n")
+    _git(grader, "init", "-q", "-b", "main")
+    _git(grader, "add", "-A")
+    _git(grader, "commit", "-qm", "grader")
+    (grader / "golden" / "pipeline" / "pipetask" / "grade.py").write_text("ok = False\n")  # a local change
+    rc, run = _drive(tmp_path, plugin, extra=["--grade", str(tmp_path / "trial" / "grade.json"),
+                                              "--grader-repo", str(grader)], grade={"reward": 1.0})
+    assert rc == 2 and "local changes" in capsys.readouterr().err
+    assert not run.exists() and not (tmp_path / "trial").exists()  # refused before the command ran
+
+
 def test_the_driver_is_a_module_with_help():
     proc = subprocess.run([sys.executable, "-m", "loop.driver", "--help"], cwd=ROOT, capture_output=True, text=True)
     assert proc.returncode == 0 and "--plugin-dir" in proc.stdout
@@ -652,3 +668,20 @@ def test_a_counted_score_must_be_on_the_batch_pin_or_a_later_grader(tmp_path):
     assert any("not the batch's pinned grader" in p for p in check.validate_tree(early, repo))
     shutil.rmtree(early)
     assert check.validate_tree(_run_with(repo, _score(second, tree2, "driver", 5)), repo) == []
+
+
+@pytest.mark.parametrize("result, counts", [
+    ({"type": "result", "is_error": True, "api_error_status": 429, "api_error": "usage_limit_reached",
+      "result": "You've hit your session limit"}, False),
+    ({"type": "result", "is_error": True, "api_error_status": 529, "api_error": "overloaded_error"}, False),
+    ({"type": "result", "is_error": False, "api_error_status": None, "result": "done"}, True),
+])
+def test_a_run_the_api_cut_off_is_an_infrastructure_loss_not_a_result(tmp_path, plugin, result, counts):
+    """Batch F, 19:27 on 2026-10-23: the account's session limit failed every call with 429 in 2 s, and the
+    driver recorded those runs as counted 0/7 results."""
+    script = f"printf '%s\\n' {shlex.quote(json.dumps(result))} >> {tmp_path}/trial/transcript.jsonl"
+    rc, run = _drive(tmp_path, plugin, extra=["--kind", "benchmark", "--arm", "one-shot"], script=script)
+    rec = json.loads((run / "record.json").read_text())
+    assert rc == 0 and rec["counts"]["counts"] is counts
+    if not counts:
+        assert rec["counts"]["why"].startswith("infrastructure loss: the API answered")
