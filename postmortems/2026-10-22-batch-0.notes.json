@@ -1,4 +1,8 @@
 {
+ "batches": [
+  "2026-10-19-pipeline-cadence-core",
+  "2026-10-21-cadence-core-subscription"
+ ],
  "reference_diffs": [
   {
    "text": "P1, against golden/pipeline/P1/reference/oracle_map.yml: the reference answers each of the ticket's seven checks (1 to 7) with SQL over the published marts. This run's map is a list of seven invariants it invented (raw_row_conservation, window_conservation, resume_equivalence, ...) with prose in place of SQL; none is a check from the ticket's 'Checks the analysts will run' list, so all seven fail to parse. The plan never traced the ticket's check list to a deliverable (F-5)",

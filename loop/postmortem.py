@@ -1,7 +1,13 @@
 """A postmortem of one batch of runs, generated from the records: postmortems/<batch>.md.
 
     python -m loop.postmortem 2026-10-21-cadence-core-subscription [--notes postmortems/<batch>.notes.json]
+    python -m loop.postmortem --all                 # every committed postmortem again, from its notes
     python -m loop.postmortem --run <run id>        # the Trace row of one run, printed
+
+A postmortem named <name> covers the batches its notes file lists under "batches", else the one batch
+<name>. loop.driver refreshes every postmortem that covers a run's batch when it records the run, and
+writes <batch>.md when none does; loop.check refuses a committed postmortem that is not what the
+generator writes, and a counted or cited run that is in none (runs/README.md, "After a merge").
 
 The sections are fixed: Summary, Timeline, Speed, Diagnosis, Trace, Evidence ledger (VERIFIED / CLAIMED /
 CONTRADICTED), Root causes, Decisions, Actions. The generator writes Summary and Timeline, the VERIFIED
@@ -22,6 +28,7 @@ from pathlib import Path
 from loop import findings, record, scoreboard, trace
 
 ROOT = Path(__file__).resolve().parents[1]
+POSTMORTEMS = ROOT / "postmortems"
 STATUSES = ("VERIFIED", "CLAIMED", "CONTRADICTED")
 SECTIONS = ("Summary", "Timeline", "Speed", "Diagnosis", "Trace", "Evidence ledger", "Root causes", "Decisions",
             "Actions")
@@ -214,10 +221,58 @@ def _diagnosis(rows: list[tuple[dict, dict | None]], notes: dict, findings_path:
     return out
 
 
+def load_notes(postmortems: Path, name: str) -> dict:
+    path = postmortems / f"{name}.notes.json"
+    return json.loads(path.read_text(encoding="utf-8")) if path.exists() else {}
+
+
+def covering(postmortems: Path) -> dict[str, list[str]]:
+    """name -> the batches each committed postmortem covers (its notes' "batches", else the name)."""
+    out = {}
+    if not postmortems.is_dir():
+        return out
+    for path in sorted(postmortems.glob("*.md")):
+        notes = load_notes(postmortems, path.stem)
+        batches = notes.get("batches") or [path.stem]
+        out[path.stem] = list(batches)
+    return out
+
+
+def render(name: str, batches: list[str], runs: Path, postmortems: Path, findings_path: Path = findings.FINDINGS,
+           citations: dict | None = None) -> str:
+    """The text of postmortem `name` from its notes: one batch under its own name, or several under `name`."""
+    notes = load_notes(postmortems, name)
+    return generate(batches if len(batches) > 1 else batches[0], runs, notes, findings_path,
+                    title=name if len(batches) > 1 else None, citations=citations)
+
+
+def write(name: str, batches: list[str], runs: Path, postmortems: Path, findings_path: Path = findings.FINDINGS,
+          citations: dict | None = None) -> Path:
+    postmortems.mkdir(parents=True, exist_ok=True)
+    path = postmortems / f"{name}.md"
+    path.write_text(render(name, batches, runs, postmortems, findings_path, citations), encoding="utf-8")
+    return path
+
+
+def refresh(batch: str, runs: Path, postmortems: Path, findings_path: Path = findings.FINDINGS,
+            citations: dict | None = None) -> list[Path]:
+    """After a run of `batch` is recorded: every committed postmortem that covers the batch, written again;
+    `<batch>.md` written when none covers it."""
+    names = [n for n, bs in covering(postmortems).items() if batch in bs] or [batch]
+    return [write(n, covering(postmortems).get(n) or [batch], runs, postmortems, findings_path, citations) for n in names]
+
+
+def regenerate_all(runs: Path, postmortems: Path, findings_path: Path = findings.FINDINGS,
+                   citations: dict | None = None) -> list[Path]:
+    return [write(n, bs, runs, postmortems, findings_path, citations) for n, bs in covering(postmortems).items()]
+
+
 def main(argv: list[str] | None = None) -> int:
     ap = argparse.ArgumentParser(prog="python -m loop.postmortem", description=__doc__.split("\n\n")[0])
     ap.add_argument("batch", nargs="*", help="one batch, or several for one postmortem (with --name)")
     ap.add_argument("--run", help="print the Trace row of this run instead of writing a batch postmortem")
+    ap.add_argument("--all", action="store_true", help="write every committed postmortem again from its notes")
+    ap.add_argument("--postmortems", type=Path, default=POSTMORTEMS, help="the postmortems folder (--all)")
     ap.add_argument("--name", help="the postmortem's name when it covers several batches")
     ap.add_argument("--runs", type=Path, default=ROOT / "runs")
     ap.add_argument("--notes", type=Path)
@@ -230,8 +285,12 @@ def main(argv: list[str] | None = None) -> int:
             print(f"refused: {exc}", file=sys.stderr)
             return 2
         return 0
+    if args.all:
+        for path in regenerate_all(args.runs, args.postmortems):
+            print(path)
+        return 0
     if not args.batch:
-        ap.error("a batch, or --run <run id>")
+        ap.error("a batch, --all, or --run <run id>")
     name = args.name or args.batch[0]
     if len(args.batch) > 1 and not args.name:
         ap.error("several batches need --name")
