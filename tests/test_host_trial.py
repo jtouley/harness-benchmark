@@ -6,6 +6,8 @@ import subprocess
 import sys
 from pathlib import Path
 
+import pytest
+
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "scripts"))
 
@@ -86,3 +88,15 @@ def test_a_batch_can_set_the_agent_cap(tmp_path):
     """Batch F caps the Cadence arm at 3 x the one-shot cap (21,600 s) instead of the 86,400 s backstop."""
     assert host_trial.agent_cap(Path("/srv/plugin"), 21600) == 21600
     assert host_trial.agent_cap(None, None) == 7200
+
+
+@pytest.mark.parametrize("open_block, hard, expected", [
+    ("A1", {"class": "a5-gap", "reason": "A5 vibe-test NOT READY"}, "A5"),   # run 20261023-P1-cadence-haiku-1-r2
+    ("P4", {"class": "retries", "reason": "P4 failed three times"}, "P4"),   # a class that names no block
+    ("E4", None, "E4"),
+    (None, None, None),
+])
+def test_the_stop_is_the_block_where_the_hard_stop_started(open_block, hard, expected):
+    """A hard stop sends the run back to A1, so headless `next` reports A1; the stop's class names the block
+    that stopped it (review of #81)."""
+    assert host_trial.stop_block(open_block, hard) == expected
