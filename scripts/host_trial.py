@@ -4,7 +4,7 @@ subscription"; the container runner cannot authenticate the agent yet, see runne
     python -m loop.driver ... --spec RUN/spec/spec.md --cwd RUN --fresh-home RUN/home \\
         --agent-argv RUN/agent-argv.json --transcript RUN/transcript.jsonl --grade RUN/grade.json \\
         --stop-point-file RUN/stop.json --timing RUN/timing.json --context RUN/context --tree RUN/repo-as-left \\
-        -- python scripts/host_trial.py P1 --out RUN --model claude-haiku-5-5 [--plugin-dir PLUGIN --peer-model haiku] \
+        --graded-repo RUN/repo -- python scripts/host_trial.py P1 --out RUN --model claude-haiku-5-5 [--plugin-dir PLUGIN --peer-model haiku] \
            [--auth proxy | --auth oauth-file --oauth-file ~/.claude/.credentials.json]
 
 Auth (the driver's --auth records the same value in isolation.auth):
@@ -34,6 +34,8 @@ one-shot): this script adds no prompt text. In order:
 5. The grader (pipetask.trial, grading seed 1) on RUN/repo, run from RUN/repo as the container runs it: RUN/grade.json. RUN/timing.json has agent_seconds.
    With --grader-root, pipetask, the key and the capture come from that checkout (scripts/run_one.sh: a worktree at
    the batch's pinned grader_commit), not from this one; the jail hides it too.
+   The grader commits the working tree the agent left (--snapshot-worktree) in RUN/repo and grades that commit;
+   the driver's --graded-repo RUN/repo puts it into the stored bundle as refs/graded/<run-id> (loop.graded).
 """
 
 from __future__ import annotations

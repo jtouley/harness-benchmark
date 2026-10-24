@@ -71,15 +71,19 @@ python -c "import json,sys; from pathlib import Path; from loop import store; \
   print(store.verify(json.load(open(sys.argv[1]))['transcript'], Path('../runs-store')))" runs/<run_id>/record.json
 ```
 
-The delivered tree is a `git bundle` of every ref of the repository the agent left, so the grader can run
-on it again (`git clone <bundle>`). A record whose blob was never kept says why in `missing`.
+The delivered tree is a `git bundle` of every ref of the repository the agent left, plus
+`refs/graded/<run_id>` at the exact commit the grader graded: its snapshot of the working tree, so work the
+agent never committed is kept too (criteria-v2 §2.3). The record's `graded.commit` is that commit's sha. To
+grade it again: `python scripts/regrade_host_run.py <run_id> --bundle ../runs-store/<tree path> --why ...`.
+A record whose blob was never kept says why in `missing`. Records stored before 2026-10-24 have no graded
+ref; `python -m loop.graded --store ../runs-store` lists every record whose bundle lacks the graded work.
 
 ## Starting a run
 
 ```sh
 python -m loop.driver --run-id 20261022-P1-cadence-haiku-1 --kind benchmark --batch 2026-10-22-p1p2 \
   --task P1 --request-id gh-1 --arm cadence --model claude-haiku-5-5 --plugin-dir ../cadence \
-  --transcript OUT/transcript.jsonl --tree OUT/repo-as-left --grade OUT/grade.json \
+  --transcript OUT/transcript.jsonl --tree OUT/repo-as-left --graded-repo OUT/repo --grade OUT/grade.json \
   --store ../runs-store -- <the trial command, e.g. runner/run_trial.sh ...>
 ```
 

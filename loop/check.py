@@ -18,6 +18,10 @@ repository's history, and its grader tree differs from the line before it, or it
 this repository that changed golden/pipeline/pipetask/ or scripts/host_trial.py. A batch with a pin,
 batches/<batch>.json {"grader_commit": sha}, has every counted run's latest score on that commit's grader
 tree or on the tree of a later commit in this repository's history.
+
+The graded commit (loop.graded): a record's `graded` ref is refs/graded/<run_id>, it names a commit, and the
+record has a tree bundle to hold it. Whether each stored bundle really holds the graded work needs the
+runs-store checkout: `python -m loop.graded --store ../runs-store`.
 """
 
 from __future__ import annotations
@@ -29,7 +33,7 @@ import subprocess
 import sys
 from pathlib import Path
 
-from loop import baselines, findings, postmortem, record, scoreboard, speed
+from loop import baselines, findings, graded, postmortem, record, scoreboard, speed
 
 ROOT = Path(__file__).resolve().parents[1]
 GRADER_PATH = "golden/pipeline/pipetask"
@@ -123,6 +127,20 @@ def cadence_problem(rec: dict, pin: dict | None) -> str | None:
     return None if sha == pinned else f"cadence {sha[:7]} is not {where}'s pin {pinned[:7]}"
 
 
+def graded_problem(rec: dict, run_id: str) -> str | None:
+    """Why a record's `graded` cannot name the graded commit in its bundle, or None (loop.graded)."""
+    info = rec.get("graded")
+    if not isinstance(info, dict) or info.get("ref") is None:
+        return None
+    if info["ref"] != graded.ref(run_id):
+        return f"graded.ref is {info['ref']!r}, not {graded.ref(run_id)!r}"
+    if not info.get("commit"):
+        return "graded.ref is set but graded.commit is not"
+    if not (rec.get("tree") or {}).get("sha256"):
+        return "graded.ref is set but the record keeps no tree bundle"
+    return None
+
+
 def validate_tree(runs: Path, repo: Path = ROOT) -> list[str]:
     problems: list[str] = []
     pins: dict = {}
@@ -151,6 +169,8 @@ def validate_tree(runs: Path, repo: Path = ROOT) -> list[str]:
         if named and rec.get("shape") != named.group(1):
             problems.append(f"{run.name}/record.json: the run id names shape {named.group(1)}, the record's shape is "
                             f"{rec.get('shape')!r}")
+        if (why := graded_problem(rec, run.name)) is not None:
+            problems.append(f"{run.name}/record.json: {why}")
         if rec.get("run_id") != run.name:
             problems.append(f"{run.name}/record.json: run_id {rec.get('run_id')!r} is not the folder name")
         scores = record.scores(run)

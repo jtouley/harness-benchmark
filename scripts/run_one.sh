@@ -210,7 +210,7 @@ DRIVER=(uv run -q --frozen python -m loop.driver --run-id "$RID" --kind benchmar
   --task "$TASK" --request-id "$TASK-spec" --arm cadence --model claude-haiku-5-5
   --plugin-dir "$PLUGIN" --context "$RUN/context" --spec "$RUN/spec/spec.md" --cwd "$RUN"
   --fresh-home "$RUN/home" --agent-argv "$RUN/agent-argv.json" --transcript "$RUN/transcript.jsonl"
-  --tree "$RUN/repo-as-left" --grade "$RUN/grade.json" --grader-repo "$GRADER" --stop-point-file "$STOP_FILE"
+  --tree "$RUN/repo-as-left" --graded-repo "$RUN/repo" --grade "$RUN/grade.json" --grader-repo "$GRADER" --stop-point-file "$STOP_FILE"
   --timing "$RUN/timing.json" --store "$STORE" --isolation-method host --auth proxy --shape "$SHAPE"
   --runs "$RUNS_DIR" "${FINISH_ARGS[@]}" -- uv run -q --frozen --project "$WORK/hb" python "$WORK/hb/scripts/host_trial.py" "$TASK" --out "$RUN"
   --model claude-haiku-5-5 --auth proxy --plugin-dir "$PLUGIN" --peer-model haiku --agent-cap "$CADENCE_CAP"
@@ -265,6 +265,7 @@ cp -r "$REC" "$REC_WT/runs/$RID"
   uv run -q --frozen python -m loop.postmortem --all >/dev/null
   uv run -q --frozen python -m loop.scoreboard --out scoreboard.md
   uv run -q --frozen python -m loop.check --base origin/main
+  uv run -q --frozen python -m loop.graded --store "$STORE" --run "$RID"
   bash scripts/ci_local.sh 2>&1 | tail -3
 ) || { log "a check before publishing failed: nothing pushed (fix, then push $REC_BRANCH by hand)"; exit 3; }
 git -C "$REC_WT" add -A runs postmortems scoreboard.md

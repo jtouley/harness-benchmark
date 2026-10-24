@@ -65,6 +65,8 @@ def test_the_grader_is_the_batch_pins_grader_commit_not_the_harness_head(tmp_pat
     assert '--grader-repo "$GRADER"' in text and '--grader-root "$GRADER"' in text
     assert 'worktree add -q --detach "$GRADER" "$GRADER_SHA"' in text
     assert '--grader-repo "$WORK/hb"' not in text
+    # The graded snapshot is the pinned grader's, made in $RUN/repo: the driver bundles it as refs/graded/<id>.
+    assert '--graded-repo "$RUN/repo"' in text and 'python -m loop.graded --store "$STORE" --run "$RID"' in text
 
 
 def test_finish_needs_the_runs_saved_directory(tmp_path):

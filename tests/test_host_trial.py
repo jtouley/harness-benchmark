@@ -93,6 +93,8 @@ def test_with_a_grader_root_the_grade_runs_that_checkouts_pipetask_and_the_jail_
     assert cwd == tmp_path / "repo" and env["PYTHONPATH"].split(os.pathsep)[0] == str(gp)
     assert argv[argv.index("--key") + 1] == str(gp / "key" / "answer_key.json")
     assert argv[argv.index("--capture") + 1].startswith(str(gp))
+    # The pinned grader commits the working tree in RUN/repo; the driver bundles that commit (--graded-repo).
+    assert "--snapshot-worktree" in argv and argv[argv.index("--repo") + 1] == str(tmp_path / "repo")
     monkeypatch.setattr(host_trial, "JAIL_HIDE", ())  # only this checkout and the grader's are covered
     monkeypatch.setattr(host_trial, "ROOT", tmp_path / "hb")
     for d in (tmp_path / "hb", grader):
