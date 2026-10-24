@@ -93,10 +93,14 @@ def test_a_batch_can_set_the_agent_cap(tmp_path):
 @pytest.mark.parametrize("open_block, hard, expected", [
     ("A1", {"class": "a5-gap", "reason": "A5 vibe-test NOT READY"}, "A5"),   # run 20261023-P1-cadence-haiku-1-r2
     ("P4", {"class": "retries", "reason": "P4 failed three times"}, "P4"),   # a class that names no block
+    ("A1", {"class": "retries", "reason": "A5 validate-gate fails after three vibe-test peer rounds: gap bodies "
+                                          "cite another gap's A-n id"}, "A5"),  # 20261024-P1-cadence-haiku-it1-1-r2
+    ("A1", {"class": "retries", "reason": "the gate failed three times"}, "A1"),  # no block anywhere: the open one
+    ("A1", {"class": "retries", "reason": "AB5 is not a block"}, "A1"),
     ("E4", None, "E4"),
     (None, None, None),
 ])
 def test_the_stop_is_the_block_where_the_hard_stop_started(open_block, hard, expected):
     """A hard stop sends the run back to A1, so headless `next` reports A1; the stop's class names the block
-    that stopped it (review of #81)."""
+    that stopped it (review of #81), else a block id that opens its reason (`retries` names none)."""
     assert host_trial.stop_block(open_block, hard) == expected
