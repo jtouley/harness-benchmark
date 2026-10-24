@@ -25,7 +25,7 @@ CADENCE_REPO=https://github.com/jtouley/cadence
 # The driver and the grader: by default the commit of this script's own checkout, so the run uses the code
 # that runs it. Override with HB_SHA=<commit>.
 HB_SHA=${HB_SHA:-$(git -C "$(dirname "$0")" rev-parse HEAD)}
-CADENCE_SHA=${CADENCE_SHA:-6ea0c837438d924dac6a2799e27c5e3f5961c3db}
+CADENCE_SHA=${CADENCE_SHA:-085bfdcd00254594ed5f22387e4316f667e59ec7}
 BATCH=${BATCH:-2026-10-24-shapes}
 CADENCE_CAP=21600   # batches/2026-10-23-batch-f.json agent_caps.cadence: 3 x the one-shot cap
 PORT=8099
