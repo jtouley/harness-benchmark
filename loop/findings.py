@@ -42,6 +42,13 @@ KEYS = {"id", "title", "run_ids", "root_cause", "component", "gone_when", "statu
 GONE_KEYS = {"stop_block_not", "stop_reason_excludes", "min_passed", "max_time_ratio"}
 
 
+
+def scoreboard_passed(score: dict) -> int:
+    """The checks a score earns: loop.scoreboard._passed (reward x total), the scoreboard's and the gate's rule."""
+    from loop import scoreboard
+
+    return scoreboard._passed(score)
+
 def load(path: Path = FINDINGS) -> list[dict]:
     if not path.exists():
         return []
@@ -109,7 +116,7 @@ def _gone(rec: dict, score: dict, gone: dict, runs: Path) -> bool:
         return False
     if "stop_reason_excludes" in gone and gone["stop_reason_excludes"] in reason:
         return False
-    if "min_passed" in gone and (score.get("passed") or 0) < gone["min_passed"]:
+    if "min_passed" in gone and scoreboard_passed(score) < gone["min_passed"]:
         return False
     if "max_time_ratio" in gone:
         from loop.scoreboard import time_ratio

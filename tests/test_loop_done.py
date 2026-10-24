@@ -129,3 +129,21 @@ def test_the_scoreboard_puts_the_shapes_side_by_side(tmp_path):
     text = scoreboard.table(tmp_path)
     assert "## Run shapes" in text and "| P2 | full | 3 | 3.00 | MISS | 1.40x | $2.00 |" in text
     assert "### Done, core" in text and "### Done, full" in text
+
+
+# --- a check the grader voids earns nothing (the owner's bar is on the benchmark's own grader)
+
+def test_a_check_the_grader_voided_scores_nothing(tmp_path):
+    """Run 20261024-P2-cadence-haiku-core-1: passed 1 of 7, but make build exited 2, so the grader's reward is 0
+    (golden/pipeline/pipetask/trial.py reward(): not idempotent or not stream_ok). The loop scores reward x total."""
+    assert scoreboard._passed({"passed": 1, "total": 7, "reward": 0.0}) == 0
+    assert scoreboard._passed({"passed": 5, "total": 7, "reward": 0.7143}) == 5
+    assert scoreboard._passed({"passed": 3, "total": 7}) == 3      # a score with no reward: its checks passed
+    assert scoreboard._passed({"passed": None, "total": None, "reward": 0.0}) == 0
+    for i in (1, 2, 3):
+        _run(tmp_path, f"20261024-P1-cadence-haiku-v-{i}", "2026-10-24-v", "P1", 6, 1.0, "2026-10-24T10:00:00Z")
+    voided = tmp_path / "20261024-P1-cadence-haiku-v-1" / "scores.jsonl"
+    line = __import__("json").loads(voided.read_text())
+    voided.write_text(__import__("json").dumps({**line, "reward": 0.0, "idempotent": False}) + "\n")
+    lines = scoreboard.gate(tmp_path, HAIKU, "abcdef1")[1]
+    assert "claude-haiku-5-5 mean 4.00/7 (best 6, worst 0, n=3)" in lines[0]

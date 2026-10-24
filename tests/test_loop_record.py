@@ -564,6 +564,25 @@ def test_the_check_holds_each_records_cadence_to_its_shapes_pin(tmp_path):
         f"{full[:7]} for shape full"]
 
 
+def test_the_check_refuses_a_score_that_disagrees_with_its_grade(tmp_path):
+    """A score's reward is its share of checks passed, and 0 when the grade failed its build or stream gate
+    (idempotent or stream_ok false): the loop scores reward x total, so the two must agree."""
+    runs = tmp_path / "runs"
+    good = {"passed": 5, "total": 7, "reward": 0.7143, "idempotent": True, "stream_ok": True}
+    for rid, score in (("20261024-P1-ok", good),
+                       ("20261024-P1-voided", {**good, "passed": 1, "reward": 0.0, "idempotent": False}),
+                       ("20261024-P1-bad", {**good, "reward": 0.0}),
+                       ("20261024-P1-bad-void", {**good, "stream_ok": False})):
+        (runs / rid).mkdir(parents=True)
+        (runs / rid / "record.json").write_text(json.dumps(minimal(rid)))
+        record.append_score(runs, {"run_id": rid, "grader": {"repo": "jtouley/harness-benchmark", "commit": "abc1234",
+                                                             "tree": "a" * 40}, "error": None, "source": "driver",
+                                   "graded_at": None, **score})
+    assert [p for p in check.validate_tree(runs) if "agree" in p] == [
+        "20261024-P1-bad/scores.jsonl:1: reward 0.0 does not agree with its grade (expected 0.7143)",
+        "20261024-P1-bad-void/scores.jsonl:1: reward 0.7143 does not agree with its grade (expected 0.0)"]
+
+
 def test_the_check_refuses_a_shape_that_is_not_the_run_ids(tmp_path):
     runs = tmp_path / "runs"
     for rid, shape in (("20261024-P1-cadence-haiku-core-1", "core"), ("20261024-P1-cadence-haiku-full-1", "core"),
