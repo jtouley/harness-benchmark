@@ -138,14 +138,8 @@ BLOCKS=$(python3 -I "$(dirname "$0")/blocks_report.py" "$RUN" 2>&1 || true)
 
 # --- publish: blobs, then the record on rec/<run-id>
 log "pushing blobs to runs-store"
-git -C "$STORE" add -A
-git -C "$STORE" commit -q -m "blobs: $RID" || true
-for i in 1 2 3 4 5; do
-  git -C "$STORE" push -q origin HEAD:runs-store && break
-  [ "$i" = 5 ] && { log "runs-store push failed 5 times"; exit 1; }
-  git -C "$STORE" pull -q --rebase --depth 50 origin runs-store || true
-  sleep $((i * 2))
-done
+# Parallel runs push to the same branch: push_blobs.sh retries on the new tip and checks every blob landed.
+bash "$(dirname "$0")/push_blobs.sh" "$STORE" "$RID" || { log "the blobs are not all on runs-store; nothing else is pushed"; exit 1; }
 
 log "record branch rec/$RID from origin/main"
 git -C "$WORK/hb" fetch -q origin main
