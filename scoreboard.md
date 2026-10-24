@@ -17,6 +17,7 @@ Counted runs with a score from the harness-benchmark grader; each run's latest s
 | 2026-10-23 | cadence | cadence@748a729 | claude-haiku-5-5 | 1 | 0/7 | 0.00 | 3 | — (1 stopped early) | 8a0977e |
 | 2026-10-23 | one-shot | — | claude-haiku-5-5 | 1 | 5/7 | 5.00 | 39 | — | 8a0977e |
 | 2026-10-23 | one-shot | — | claude-sonnet-5-5 | 1 | 5/7 | 5.00 | 30 | — | 8a0977e |
+| 2026-10-24 | cadence | cadence@154e573 | claude-haiku-5-5 | 1 | 0/7 | 0.00 | 6 | — (1 stopped early) | 8a0977e |
 
 ## P2
 
@@ -42,4 +43,5 @@ The owner's Done line: P1 and P2 means meet the bar on two consecutive batches o
 - 2026-10-19-pipeline-cadence-core: P1 mean 1.67/7 MISS, time 2.44x; P2 0 run(s), needs 3: FAIL (below 4/7 on P1; time above 1.25x on P1)
 - 2026-10-21-cadence-core-subscription: P1 mean 0.00/7 MISS, time —; P2 mean 0.00/7 MISS, time —: FAIL (below 4/7 on P1, P2; no time on P1, P2)
 - 2026-10-23-batch-f: P1 1 run(s), needs 3; P2 0 run(s), needs 3: FAIL
+- 2026-10-24-batch-f-it1: P1 1 run(s), needs 3; P2 0 run(s), needs 3: FAIL
 - NOT DONE: no two consecutive batches pass
