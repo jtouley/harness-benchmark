@@ -36,6 +36,10 @@ GRADER_PATH = "golden/pipeline/pipetask"
 CAUSE_PATHS = (GRADER_PATH + "/", "scripts/host_trial.py")
 _SHA = re.compile(r"\b[0-9a-f]{7,40}\b")
 
+# A run id that names a run shape (owner, 2026-10-24): <date>-<task>-cadence-<model>-core|full-<n>. Not the older
+# ...-cadence-core-<model>-... ids, where "core" names cadence-core.
+SHAPE_IN_ID = re.compile(r"-cadence-[a-z]+-(core|full)-")
+
 
 def _git(repo: Path, *args: str) -> subprocess.CompletedProcess:
     return subprocess.run(["git", *args], cwd=repo, capture_output=True, text=True)
@@ -109,6 +113,10 @@ def validate_tree(runs: Path, repo: Path = ROOT) -> list[str]:
                 is True and not graded:
             problems.append(f"{run.name}/record.json: a backfilled record counts only with a score from the "
                             "harness-benchmark grader")
+        named = SHAPE_IN_ID.search(run.name)
+        if named and rec.get("shape") != named.group(1):
+            problems.append(f"{run.name}/record.json: the run id names shape {named.group(1)}, the record's shape is "
+                            f"{rec.get('shape')!r}")
         if rec.get("run_id") != run.name:
             problems.append(f"{run.name}/record.json: run_id {rec.get('run_id')!r} is not the folder name")
         scores = record.scores(run)

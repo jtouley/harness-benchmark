@@ -285,6 +285,16 @@ def claude_call_problem(args: list[str], prompt: str, piped: bool = False) -> st
     return None if seen == 1 else f"the prompt is given {seen} times"
 
 
+def repo_profile(cwd: Path) -> str | None:
+    """The run shape the run repo used: `profile` of <cwd>/repo/.cadence.json after the run (host_trial writes
+    it from its own --shape), or None without one. The driver's --shape is a separate argument (review of #95),
+    so a record states a shape only when the repo used it."""
+    try:
+        return json.loads((cwd / "repo" / ".cadence.json").read_text(encoding="utf-8")).get("profile")
+    except (OSError, ValueError, AttributeError):
+        return None
+
+
 def _now() -> str:
     return datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
 
@@ -363,6 +373,7 @@ def main(argv: list[str] | None = None) -> int:
                     "command as HB_AGENT_PROMPT)")
     ap.add_argument("--agent-argv", type=Path, help="JSON list: the argv the command started the agent with")
     ap.add_argument("--isolation-method", default="host", help="host, or container:<image id>")
+    ap.add_argument("--shape", choices=["core", "full"], help="the Cadence run shape (owner, 2026-10-24), on the record")
     ap.add_argument("--auth", choices=["proxy", "oauth-file"], default="proxy",
                     help="how the agent authenticates: proxy (the host's HTTPS proxy adds the credentials; HOME gets "
                     "none) or oauth-file (the operator's ~/.claude/.credentials.json, copied into the fresh HOME)")
@@ -435,11 +446,13 @@ def main(argv: list[str] | None = None) -> int:
         counts = {"counts": False, "why": f"infrastructure loss: the API answered {lost}"}
     elif prompt is not None and args.agent_argv and (argv_problem := _agent_argv_problem(args.agent_argv, prompt)):
         counts = {"counts": False, "why": f"the agent's argv: {argv_problem}"}
+    elif args.shape is not None and (used := repo_profile(args.cwd)) != args.shape:
+        counts = {"counts": False, "why": f"the run repo's .cadence.json profile is {used!r}, not --shape {args.shape}"}
     rec = {
         "schema": 1, "run_id": args.run_id, "kind": args.kind, "batch": args.batch,
         "provenance": {"source": "driver", "evidence": []}, "task": args.task, "request_id": args.request_id,
         "arm": args.arm, "cadence": cadence, "model_requested": args.model, **facts, "command": command,
-        "api_error": lost,
+        "api_error": lost, "shape": args.shape,
         "spec": None if args.spec is None else {"path": str(args.spec.resolve()), "prompt": prompt,
                                                 "sha256": hashlib.sha256(args.spec.read_bytes()).hexdigest()},
         "started_at": started, "ended_at": ended, "exit_code": exit_code, "stop_point": stop,

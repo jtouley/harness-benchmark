@@ -84,6 +84,7 @@
         "contact": {"$comment": "tool calls of the transcript that named the benchmark or another Cadence checkout (loop.driver.contact)", "type": "array", "items": {"type": "string"}}
       }
     },
+    "shape": {"$comment": "the Cadence run shape (owner, 2026-10-24): core, or full (core plus A2, A3, P6, P7, P8); null for a run before shapes or with none; absent before 2026-10-24", "enum": ["core", "full", null]},
     "api_error": {"$comment": "the API error the transcript's result reports (a 429 usage limit, a 529 overload): the run was cut off from outside and never counts; absent before 2026-10-23 21:45", "type": ["string", "null"]},
     "spec": {
       "$comment": "The run's only input (loop.driver --spec): its path and sha256, and the exact prompt the agent got (/cadence <path> for a Cadence arm, the spec's text for a one-shot). Absent in records before 2026-10-23.",

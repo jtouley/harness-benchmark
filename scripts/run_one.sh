@@ -3,7 +3,11 @@
 # subscription through the session's HTTPS proxy). One run per container: the dev replay owns localhost:8099,
 # which the spec itself names (golden/pipeline/P1/prompt.md:17), so two runs never share a host.
 #
-#   scripts/run_one.sh <run-id> [--dry-run]       e.g. 20261024-P2-cadence-haiku-it1-1-r2
+#   scripts/run_one.sh <run-id> [--dry-run]       e.g. 20261024-P2-cadence-haiku-core-1
+#
+# The run id names the Cadence run shape (owner, 2026-10-24: core and full, head to head): -cadence-haiku-core-
+# or -cadence-haiku-full-. The shape goes on the record (loop.driver --shape) and into the run repo's
+# .cadence.json `profile` (host_trial --shape).
 #
 # It clones harness-benchmark at HB_SHA (the driver and the grader) and cadence at CADENCE_SHA (a clean plugin
 # clone), installs the driver's environment, runs loop.driver --spec for the run (Haiku, peers on Haiku,
@@ -18,7 +22,9 @@ set -euo pipefail
 
 HB_REPO=https://github.com/jtouley/harness-benchmark
 CADENCE_REPO=https://github.com/jtouley/cadence
-HB_SHA=${HB_SHA:-91fc3595ca9f81d57e0e3679315f775f40004448}
+# The driver and the grader: by default the commit of this script's own checkout, so the run uses the code
+# that runs it. Override with HB_SHA=<commit>.
+HB_SHA=${HB_SHA:-$(git -C "$(dirname "$0")" rev-parse HEAD)}
 CADENCE_SHA=${CADENCE_SHA:-154e573f8455c4857982fe4e05a208e1e0bc4ecc}
 BATCH=${BATCH:-2026-10-24-batch-f-it1}
 CADENCE_CAP=21600   # batches/2026-10-23-batch-f.json agent_caps.cadence: 3 x the one-shot cap
@@ -30,8 +36,10 @@ log() { printf '%s run_one %s: %s\n' "$(date -u +%FT%TZ)" "$RID" "$*" | tee -a "
 [ $# -ge 1 ] || die "usage: scripts/run_one.sh <run-id> [--dry-run]"
 RID=$1
 DRY=${2:-}
-[[ "$RID" =~ ^[0-9]{8}-(P[12])-cadence-haiku-[a-z0-9-]+$ ]] || die "run id $RID is not <date>-P1|P2-cadence-haiku-<n>"
+[[ "$RID" =~ ^[0-9]{8}-(P[12])-cadence-haiku-(core|full)-[a-z0-9-]+$ ]] \
+  || die "run id $RID is not <date>-P1|P2-cadence-haiku-core|full-<n>"
 TASK=${BASH_REMATCH[1]}
+SHAPE=${BASH_REMATCH[2]}
 WORK=${RUN_ONE_WORK:-$HOME/run-one}/$RID
 [ ! -e "$WORK" ] || die "$WORK exists: a run id is never reused (remove it only if nothing was published)"
 
@@ -52,6 +60,8 @@ git clone -q "$HB_REPO" "$WORK/hb" || die "cannot clone $HB_REPO"
 git -C "$WORK/hb" checkout -q --detach "$HB_SHA" || die "harness-benchmark has no commit $HB_SHA"
 (cd "$WORK/hb" && uv sync -q --frozen) || die "uv sync --frozen failed in $WORK/hb"
 [ -f "$WORK/hb/golden/pipeline/$TASK/prompt.md" ] || die "no golden/pipeline/$TASK/prompt.md at $HB_SHA"
+grep -q -- '"--shape"' "$WORK/hb/loop/driver.py" && grep -q -- '"--shape"' "$WORK/hb/scripts/host_trial.py" \
+  || die "harness-benchmark $HB_SHA has no --shape (driver or host_trial): use a commit with run shapes"
 
 log "cloning cadence at $CADENCE_SHA"
 PLUGIN=$WORK/plugin
@@ -72,9 +82,10 @@ DRIVER=(uv run -q --frozen python -m loop.driver --run-id "$RID" --kind benchmar
   --plugin-dir "$PLUGIN" --context "$RUN/context" --spec "$RUN/spec/spec.md" --cwd "$RUN"
   --fresh-home "$RUN/home" --agent-argv "$RUN/agent-argv.json" --transcript "$RUN/transcript.jsonl"
   --tree "$RUN/repo-as-left" --grade "$RUN/grade.json" --grader-repo "$WORK/hb" --stop-point-file "$RUN/stop.json"
-  --timing "$RUN/timing.json" --store "$STORE" --isolation-method host --auth proxy
+  --timing "$RUN/timing.json" --store "$STORE" --isolation-method host --auth proxy --shape "$SHAPE"
   -- uv run -q --frozen --project "$WORK/hb" python "$WORK/hb/scripts/host_trial.py" "$TASK" --out "$RUN"
-  --model claude-haiku-5-5 --auth proxy --plugin-dir "$PLUGIN" --peer-model haiku --agent-cap "$CADENCE_CAP")
+  --model claude-haiku-5-5 --auth proxy --plugin-dir "$PLUGIN" --peer-model haiku --agent-cap "$CADENCE_CAP"
+  --shape "$SHAPE")
 
 if [ "$DRY" = --dry-run ]; then
   log "dry run: every setup check passed; the agent would start now with:"
@@ -83,7 +94,7 @@ if [ "$DRY" = --dry-run ]; then
 fi
 
 # --- the run
-log "start (batch $BATCH, cadence $CADENCE_SHA, harness $HB_SHA)"
+log "start (shape $SHAPE, batch $BATCH, cadence $CADENCE_SHA, harness $HB_SHA)"
 set +e
 (cd "$WORK/hb" && "${DRIVER[@]}") >>"$RUN/driver.out" 2>&1
 rc=$?

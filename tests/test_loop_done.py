@@ -15,13 +15,13 @@ GOOD = {"P1": 6, "P2": 4}  # IDEAL on P1, GOOD on P2: both pass
 
 
 def _run(runs: Path, run_id: str, batch: str, task: str, passed: int, ratio: float | None, started: str,
-         model: str = HAIKU, arm: str = "cadence") -> None:
+         model: str = HAIKU, arm: str = "cadence", shape: str | None = None, usd: float | None = None) -> None:
     record.write_record(runs, {
         "schema": 1, "run_id": run_id, "kind": "benchmark", "batch": batch,
         "provenance": {"source": "driver", "evidence": []}, "task": task, "request_id": "gh-1", "arm": arm,
         "cadence": {"repo": "https://github.com/jtouley/cadence", "sha": "abcdef1", "tree_clean": True},
         "model_requested": model, "models_served": [model], "command": None, "started_at": started,
-        "ended_at": None, "exit_code": 0, "cost": {"list_usd": None, "reported_usd": None},
+        "ended_at": None, "exit_code": 0, "cost": {"list_usd": None, "reported_usd": usd}, "shape": shape,
         "stop_point": {"block": "R7", "reason": None}, "transcript": {"sha256": None, "missing": "t"},
         "tree": {"sha256": None, "missing": "t"}, "counts": {"counts": True, "why": "t"},
         "timing": {"agent_wall_seconds": None if ratio is None else round(BASIS[task] * ratio, 3), "run_wall_seconds": None,
@@ -33,12 +33,13 @@ def _run(runs: Path, run_id: str, batch: str, task: str, passed: int, ratio: flo
                                "graded_at": None})
 
 
-def _batch(runs: Path, day: str, name: str, passed=GOOD, ratio: float = 1.0, n: int = 3) -> str:
+def _batch(runs: Path, day: str, name: str, passed=GOOD, ratio: float | None = 1.0, n: int = 3,
+           shape: str | None = None, usd: float | None = None) -> str:
     batch = f"2026-10-{day}-{name}"
     for task in ("P1", "P2"):
         for i in range(1, n + 1):
-            _run(runs, f"202610{day}-{task}-cadence-haiku-{name}-{i}", batch, task, passed[task], ratio,
-                 f"2026-10-{day}T10:00:00Z")
+            _run(runs, f"202610{day}-{task}-cadence-haiku-{shape + '-' if shape else ''}{name}-{i}", batch, task,
+                 passed[task], ratio, f"2026-10-{day}T10:00:00Z", shape=shape, usd=usd)
     return batch
 
 
@@ -101,3 +102,30 @@ def test_the_committed_runs_are_not_done_and_the_scoreboard_shows_it():
     assert not ok
     text = (scoreboard.ROOT / "scoreboard.md").read_text(encoding="utf-8")
     assert "## Done" in text and lines[-1] in text
+
+
+# --- two run shapes, head to head (owner, 2026-10-24): core and full, same bar and time basis
+
+def test_done_and_the_gate_read_each_shape_on_its_own(tmp_path):
+    for day in ("24", "25"):
+        _batch(tmp_path, day, f"it{day}", shape="core", usd=0.5)
+        _batch(tmp_path, day, f"it{day}", passed={"P1": 3, "P2": 4}, ratio=1.4, shape="full", usd=2.0)
+    assert scoreboard.done(tmp_path, shape="core")[0] is True
+    ok, lines = scoreboard.done(tmp_path, shape="full")
+    assert not ok and "FAIL (below 4/7 on P1; time above 1.25x on P1, P2)" in lines[0]
+    assert scoreboard.gate(tmp_path, HAIKU, "abcdef1", shape="core")[0] is True
+    assert scoreboard.gate(tmp_path, HAIKU, "abcdef1", shape="full")[0] is False
+
+
+def test_the_scoreboard_puts_the_shapes_side_by_side(tmp_path):
+    _batch(tmp_path, "24", "it1", shape="core", usd=0.5)
+    _batch(tmp_path, "24", "it1", passed={"P1": 5, "P2": 3}, ratio=1.4, shape="full", usd=2.0)
+    rows = scoreboard.shape_rows(tmp_path)
+    assert rows == [
+        {"task": "P1", "shape": "core", "n": 3, "mean": 6.0, "tier": "IDEAL", "ratio": 1.0, "usd": 0.5},
+        {"task": "P1", "shape": "full", "n": 3, "mean": 5.0, "tier": "IDEAL", "ratio": 1.4, "usd": 2.0},
+        {"task": "P2", "shape": "core", "n": 3, "mean": 4.0, "tier": "GOOD", "ratio": 1.0, "usd": 0.5},
+        {"task": "P2", "shape": "full", "n": 3, "mean": 3.0, "tier": "MISS", "ratio": 1.4, "usd": 2.0}]
+    text = scoreboard.table(tmp_path)
+    assert "## Run shapes" in text and "| P2 | full | 3 | 3.00 | MISS | 1.40x | $2.00 |" in text
+    assert "### Done, core" in text and "### Done, full" in text

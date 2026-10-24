@@ -75,11 +75,23 @@ def _git(repo: Path, *args: str) -> None:
                    env=env, check=True, capture_output=True)
 
 
-def setup_repo(task: str, out: Path) -> Path:
+SHAPES = ("core", "full")
+
+
+def cadence_config(shape: str | None) -> dict:
+    """The run repo's .cadence.json: the `none` tracker adapter, the gated prefixes, and with a run shape
+    (owner, 2026-10-24: core and full, head to head) its `profile`, the key cadence PR 2 defines."""
+    config = {"adapter": "none", "gated_prefixes": GATED}
+    if shape is not None:
+        config["profile"] = shape
+    return config
+
+
+def setup_repo(task: str, out: Path, shape: str | None = None) -> Path:
     repo = out / "repo"
     subprocess.run([sys.executable, "-m", "pipetask.assemble", task, "--out", str(repo)], cwd=GP, check=True,
                    capture_output=True)
-    (repo / ".cadence.json").write_text(json.dumps({"adapter": "none", "gated_prefixes": GATED}, indent=1) + "\n")
+    (repo / ".cadence.json").write_text(json.dumps(cadence_config(shape), indent=1) + "\n")
     _git(out, "init", "-q", "--bare", str(out / "origin.git"))
     _git(repo, "add", ".cadence.json")
     _git(repo, "commit", "-q", "-m", "cadence config for the trial")
@@ -181,6 +193,7 @@ def main(argv: list[str] | None = None) -> int:
     ap.add_argument("--plugin-dir", type=Path)
     ap.add_argument("--peer-model", help="Cadence arm: peer_models.default in the run's Cadence config")
     ap.add_argument("--agent-cap", type=int, help="seconds: the batch's cap for this arm (see agent_cap)")
+    ap.add_argument("--shape", choices=SHAPES, help="Cadence arm: the run shape, as the run repo's .cadence.json profile")
     ap.add_argument("--auth", choices=["proxy", "oauth-file"], default="proxy")
     ap.add_argument("--oauth-file", type=Path, help="--auth oauth-file: the operator's ~/.claude/.credentials.json")
     args = ap.parse_args(argv)
@@ -191,7 +204,7 @@ def main(argv: list[str] | None = None) -> int:
     out, home = args.out.resolve(), Path(os.environ["HOME"])
     plugin = args.plugin_dir.resolve() if args.plugin_dir else None
     prepare_home(home, args.auth, args.oauth_file)
-    repo = setup_repo(args.task, out)
+    repo = setup_repo(args.task, out, args.shape)
     if plugin is not None and args.peer_model:
         (home / ".config" / "cadence").mkdir(parents=True, exist_ok=True)
         (home / ".config" / "cadence" / "config.json").write_text(
