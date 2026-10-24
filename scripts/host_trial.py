@@ -158,8 +158,41 @@ def stop_block(open_block: str | None, hard: dict | str | None) -> str | None:
     return f"{match.group(1).upper()}{match.group(2)}" if match else open_block
 
 
-def stop_point(repo: Path, plugin: Path, env: dict[str, str]) -> dict:
-    """The block Cadence's own headless runner reports open in a copy of the repository, and why."""
+_OPEN_BLOCK = re.compile(r"Continue paceline: next ([AEPR]\d+) \(([\w-]+)\)")
+_REFUSED = re.compile(r"stop refused (\d+) times")
+
+
+def open_block(lines) -> dict | None:
+    """The last block Cadence's Stop hook named open in the transcript ("Continue paceline: next R5 (closure)"),
+    with how many times it refused the stop, or None. Run 20261024-P2-cadence-haiku-core-1 ended stuck at R5,
+    and the headless probe, run later in a copy with no live session, said A1."""
+    found = None
+    for line in lines:
+        for block, slug in _OPEN_BLOCK.findall(line):
+            found = {"block": block, "slug": slug, "refused": None}
+        refused = _REFUSED.findall(line)
+        if refused and found is not None:
+            found["refused"] = int(refused[-1])
+    return found
+
+
+def choose_stop(headless_block: str | None, hard: dict | str | None, opened: dict | None, why: str) -> dict:
+    """The stop of a run that did not finish (headless reports a block): the block a hard stop names, else the
+    last block the Stop hook named open, else the headless probe's block."""
+    if headless_block is None:
+        return {"block": None, "reason": None}
+    if hard:
+        return {"block": stop_block(headless_block, hard), "reason": why[:300] or None}
+    if opened is not None:
+        refused = f": the Stop hook refused the stop {opened['refused']} times" if opened["refused"] else ""
+        return {"block": opened["block"],
+                "reason": f"open at {opened['block']} ({opened['slug']}){refused} ({why})"[:300]}
+    return {"block": headless_block, "reason": why[:300] or None}
+
+
+def stop_point(repo: Path, plugin: Path, env: dict[str, str], transcript: list[str] = ()) -> dict:
+    """The block the run stopped at, and why: from Cadence's headless runner in a copy of the repository, the
+    session's hard stop and the transcript's last open block (choose_stop)."""
     with tempfile.TemporaryDirectory() as tmp:
         copy = Path(tmp) / "repo"
         shutil.copytree(repo, copy, symlinks=True)
@@ -182,7 +215,7 @@ def stop_point(repo: Path, plugin: Path, env: dict[str, str]) -> dict:
     if hard:
         why = f"hard stop {hard.get('class') if isinstance(hard, dict) else hard}: " + \
               (hard.get("reason", "") if isinstance(hard, dict) else "") + (f" ({why})" if why else "")
-    return {"block": stop_block(nxt.get("block"), hard), "reason": why[:300] or None}
+    return choose_stop(nxt.get("block"), hard, open_block(transcript), why)
 
 
 def main(argv: list[str] | None = None) -> int:
@@ -194,9 +227,23 @@ def main(argv: list[str] | None = None) -> int:
     ap.add_argument("--peer-model", help="Cadence arm: peer_models.default in the run's Cadence config")
     ap.add_argument("--agent-cap", type=int, help="seconds: the batch's cap for this arm (see agent_cap)")
     ap.add_argument("--shape", choices=SHAPES, help="Cadence arm: the run shape, as the run repo's .cadence.json profile")
+    ap.add_argument("--stop-only", action="store_true",
+                    help="the run already ran in --out: derive its stop point again (stop.json) and do nothing else")
     ap.add_argument("--auth", choices=["proxy", "oauth-file"], default="proxy")
     ap.add_argument("--oauth-file", type=Path, help="--auth oauth-file: the operator's ~/.claude/.credentials.json")
     args = ap.parse_args(argv)
+    if args.stop_only:  # run_one --finish: the stop of a run that already ran, with this checkout's rules
+        out = args.out.resolve()
+        plugin = args.plugin_dir.resolve() if args.plugin_dir else None
+        if plugin is None or not (out / "repo-as-left").is_dir():
+            print(f"host_trial: --stop-only needs --plugin-dir and {out}/repo-as-left", file=sys.stderr)
+            return 2
+        lines = (out / "transcript.jsonl").read_text(encoding="utf-8", errors="replace").splitlines() \
+            if (out / "transcript.jsonl").exists() else []
+        stop = stop_point(out / "repo-as-left", plugin, agent_env(out / "home", plugin), lines)
+        (out / "stop.json").write_text(json.dumps(stop) + "\n")
+        print(json.dumps(stop))
+        return 0
     prompt = os.environ.get("HB_AGENT_PROMPT")
     if not prompt:
         print("host_trial: HB_AGENT_PROMPT is not set; run this through loop.driver --spec", file=sys.stderr)
@@ -249,7 +296,9 @@ def main(argv: list[str] | None = None) -> int:
     if (repo / ".context").is_dir():
         shutil.copytree(repo / ".context", out / "context", symlinks=True)
     shutil.copytree(repo, out / "repo-as-left", symlinks=True)
-    stop = stop_point(out / "repo-as-left", plugin, env) if plugin is not None else {"block": None, "reason": None}
+    lines = (out / "transcript.jsonl").read_text(encoding="utf-8", errors="replace").splitlines() \
+        if (out / "transcript.jsonl").exists() else []
+    stop = stop_point(out / "repo-as-left", plugin, env, lines) if plugin is not None else {"block": None, "reason": None}
     (out / "stop.json").write_text(json.dumps(stop) + "\n")
 
     t1 = time.monotonic()
