@@ -1,0 +1,148 @@
+{
+ "api_error": null,
+ "arm": "cadence",
+ "batch": "2026-10-24-shapes-r2",
+ "cadence": {
+  "published_in": [
+   "origin/main"
+  ],
+  "repo": "https://github.com/jtouley/cadence",
+  "sha": "2100c6e6aa99d99309cfa8e7f8c5cee1018584b4",
+  "tree": "be0094b148b3ac6bff894ac40930255d52a94d27",
+  "tree_clean": true
+ },
+ "claude_version": "2.1.310",
+ "command": [
+  "uv",
+  "run",
+  "-q",
+  "--frozen",
+  "--project",
+  "/var/tmp/run-one/20261024-P1-cadence-haiku-core-5/hb",
+  "python",
+  "/var/tmp/run-one/20261024-P1-cadence-haiku-core-5/hb/scripts/host_trial.py",
+  "P1",
+  "--out",
+  "/var/tmp/run-one/20261024-P1-cadence-haiku-core-5/run/20261024-P1-cadence-haiku-core-5",
+  "--model",
+  "claude-haiku-5-5",
+  "--auth",
+  "proxy",
+  "--plugin-dir",
+  "/var/tmp/run-one/20261024-P1-cadence-haiku-core-5/plugin",
+  "--peer-model",
+  "haiku",
+  "--agent-cap",
+  "21600",
+  "--shape",
+  "core"
+ ],
+ "cost": {
+  "list_usd": "0.752263",
+  "reported_usd": 3.25791745,
+  "tokens": {
+   "cache_read": 48102177,
+   "cache_write": 654176,
+   "input": 506,
+   "output": 378838
+  }
+ },
+ "counts": {
+  "counts": false,
+  "why": "the transcript touched the benchmark or another checkout: Bash: /tmp/cadence_scratch"
+ },
+ "ended_at": "2026-10-24T20:04:48Z",
+ "exit_code": 0,
+ "isolation": {
+  "auth": "proxy",
+  "contact": [
+   "Bash: /tmp/cadence_scratch",
+   "Bash: /tmp/cadence_scratch",
+   "Bash: /tmp/cadence_scratch",
+   "Bash: /tmp/cadence_scratch",
+   "Bash: /tmp/cadence_scratch",
+   "Bash: /tmp/cadence_scratch"
+  ],
+  "cwd": "/var/tmp/run-one/20261024-P1-cadence-haiku-core-5/run/20261024-P1-cadence-haiku-core-5",
+  "cwd_contents": [
+   "driver.out",
+   "home/",
+   "spec/"
+  ],
+  "fresh_home": true,
+  "home": "/var/tmp/run-one/20261024-P1-cadence-haiku-core-5/run/20261024-P1-cadence-haiku-core-5/home",
+  "method": "host",
+  "other_cadence_checkouts": []
+ },
+ "kind": "benchmark",
+ "model_requested": "claude-haiku-5-5",
+ "models_served": [
+  "claude-haiku-5-5"
+ ],
+ "provenance": {
+  "evidence": [],
+  "source": "driver"
+ },
+ "request_id": "P1-spec",
+ "run_id": "20261024-P1-cadence-haiku-core-5",
+ "schema": 1,
+ "session_id": "ec49e7a8-5e0f-468f-bcb7-4f01fc160b0c",
+ "shape": "core",
+ "spec": {
+  "path": "/var/tmp/run-one/20261024-P1-cadence-haiku-core-5/run/20261024-P1-cadence-haiku-core-5/spec/spec.md",
+  "prompt": "/cadence /var/tmp/run-one/20261024-P1-cadence-haiku-core-5/run/20261024-P1-cadence-haiku-core-5/spec/spec.md",
+  "sha256": "b37e957aa5ab754aaa3c4527985e0b44a237ae2357ee2d37a5d8da28041969e9"
+ },
+ "started_at": "2026-10-24T18:00:51Z",
+ "stop_point": {
+  "block": "E4",
+  "reason": "open at E4 (draft-pr): the Stop hook refused the stop 3 times (FAIL  no active cadence session)"
+ },
+ "task": "P1",
+ "timing": {
+  "agent_active_seconds": 7189.419,
+  "agent_wall_seconds": 7191.5,
+  "blocks": {
+   "plan-create": {
+    "calls": 1,
+    "seconds": 147.257,
+    "unfinished": 0
+   },
+   "plan-review": {
+    "calls": 1,
+    "seconds": 82.65,
+    "unfinished": 0
+   },
+   "plan-update": {
+    "calls": 1,
+    "seconds": 49.621,
+    "unfinished": 0
+   },
+   "pr-review-local": {
+    "calls": 1,
+    "seconds": 641.48,
+    "unfinished": 0
+   },
+   "vibe-test": {
+    "calls": 1,
+    "seconds": 70.318,
+    "unfinished": 0
+   }
+  },
+  "cap_seconds": 21600,
+  "hit_cap": false,
+  "run_wall_seconds": 7437.717
+ },
+ "transcript": {
+  "bytes": 3001322,
+  "path": "blobs/1dbfc6a43f5bf8a18fb13726048216ea163fe78e80d4568a89db8191ff636be6.gz",
+  "sha256": "1dbfc6a43f5bf8a18fb13726048216ea163fe78e80d4568a89db8191ff636be6",
+  "store": "git:jtouley/harness-benchmark@runs-store"
+ },
+ "tree": {
+  "bytes": 4194110,
+  "path": "blobs/3033d9dcafa090d2f536f844e35abd6a197e0da64fbe01888304d27acfa84a85.gz",
+  "sha256": "3033d9dcafa090d2f536f844e35abd6a197e0da64fbe01888304d27acfa84a85",
+  "store": "git:jtouley/harness-benchmark@runs-store"
+ }
+}
