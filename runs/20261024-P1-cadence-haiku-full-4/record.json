@@ -1,0 +1,164 @@
+{
+ "api_error": null,
+ "arm": "cadence",
+ "batch": "2026-10-24-shapes-r2",
+ "cadence": {
+  "published_in": [
+   "origin/main"
+  ],
+  "repo": "https://github.com/jtouley/cadence",
+  "sha": "2100c6e6aa99d99309cfa8e7f8c5cee1018584b4",
+  "tree": "be0094b148b3ac6bff894ac40930255d52a94d27",
+  "tree_clean": true
+ },
+ "claude_version": "2.1.310",
+ "command": [
+  "uv",
+  "run",
+  "-q",
+  "--frozen",
+  "--project",
+  "/var/tmp/run-one/20261024-P1-cadence-haiku-full-4/hb",
+  "python",
+  "/var/tmp/run-one/20261024-P1-cadence-haiku-full-4/hb/scripts/host_trial.py",
+  "P1",
+  "--out",
+  "/var/tmp/run-one/20261024-P1-cadence-haiku-full-4/run/20261024-P1-cadence-haiku-full-4",
+  "--model",
+  "claude-haiku-5-5",
+  "--auth",
+  "proxy",
+  "--plugin-dir",
+  "/var/tmp/run-one/20261024-P1-cadence-haiku-full-4/plugin",
+  "--peer-model",
+  "haiku",
+  "--agent-cap",
+  "21600",
+  "--shape",
+  "full"
+ ],
+ "cost": {
+  "list_usd": "1.122819",
+  "reported_usd": 4.493296484999997,
+  "tokens": {
+   "cache_read": 76320331,
+   "cache_write": 978627,
+   "input": 950,
+   "output": 474385
+  }
+ },
+ "counts": {
+  "counts": false,
+  "why": "the transcript touched the benchmark or another checkout: Bash: /tmp/cadence-spike-dlt"
+ },
+ "ended_at": "2026-10-24T20:06:33Z",
+ "exit_code": 0,
+ "isolation": {
+  "auth": "proxy",
+  "contact": [
+   "Bash: /tmp/cadence-spike-dlt",
+   "Bash: /tmp/cadence-spike-dlt",
+   "Bash: /tmp/cadence-spike-dlt",
+   "Bash: /tmp/cadence-recount",
+   "Bash: /tmp/cadence-recount",
+   "Bash: /tmp/cadence-m1",
+   "Bash: /tmp/cadence-m1"
+  ],
+  "cwd": "/var/tmp/run-one/20261024-P1-cadence-haiku-full-4/run/20261024-P1-cadence-haiku-full-4",
+  "cwd_contents": [
+   "driver.out",
+   "home/",
+   "spec/"
+  ],
+  "fresh_home": true,
+  "home": "/var/tmp/run-one/20261024-P1-cadence-haiku-full-4/run/20261024-P1-cadence-haiku-full-4/home",
+  "method": "host",
+  "other_cadence_checkouts": []
+ },
+ "kind": "benchmark",
+ "model_requested": "claude-haiku-5-5",
+ "models_served": [
+  "claude-haiku-5-5"
+ ],
+ "provenance": {
+  "evidence": [],
+  "source": "driver"
+ },
+ "request_id": "P1-spec",
+ "run_id": "20261024-P1-cadence-haiku-full-4",
+ "schema": 1,
+ "session_id": "a1b6065e-aeff-4936-8d73-73001331a97a",
+ "shape": "full",
+ "spec": {
+  "path": "/var/tmp/run-one/20261024-P1-cadence-haiku-full-4/run/20261024-P1-cadence-haiku-full-4/spec/spec.md",
+  "prompt": "/cadence /var/tmp/run-one/20261024-P1-cadence-haiku-full-4/run/20261024-P1-cadence-haiku-full-4/spec/spec.md",
+  "sha256": "b37e957aa5ab754aaa3c4527985e0b44a237ae2357ee2d37a5d8da28041969e9"
+ },
+ "started_at": "2026-10-24T17:41:52Z",
+ "stop_point": {
+  "block": "R7",
+  "reason": "done: the session closed at R7 (session-close) at 2026-10-24T19:58:54.017750+00:00, with no Stop-hook refusal (FAIL  no active cadence session)"
+ },
+ "task": "P1",
+ "timing": {
+  "agent_active_seconds": 8223.039,
+  "agent_wall_seconds": 8461.6,
+  "blocks": {
+   "de-adversarial-reviewer": {
+    "calls": 1,
+    "seconds": 96.767,
+    "unfinished": 0
+   },
+   "plan-create": {
+    "calls": 1,
+    "seconds": 127.954,
+    "unfinished": 0
+   },
+   "plan-review": {
+    "calls": 1,
+    "seconds": 66.655,
+    "unfinished": 0
+   },
+   "plan-update": {
+    "calls": 1,
+    "seconds": 92.698,
+    "unfinished": 0
+   },
+   "pr-review-local": {
+    "calls": 1,
+    "seconds": 530.474,
+    "unfinished": 0
+   },
+   "test-benchmark-plan": {
+    "calls": 1,
+    "seconds": 84.531,
+    "unfinished": 0
+   },
+   "test-benchmark-pr": {
+    "calls": 4,
+    "seconds": 2169.723,
+    "unfinished": 0
+   },
+   "vibe-test": {
+    "calls": 1,
+    "seconds": 120.762,
+    "unfinished": 0
+   }
+  },
+  "cap_seconds": 21600,
+  "hit_cap": false,
+  "run_wall_seconds": 8680.47
+ },
+ "transcript": {
+  "bytes": 4015053,
+  "path": "blobs/a63fcc0cff5935770027b5953f25d2541fb2babc3d794fcb41b48d5496aed947.gz",
+  "sha256": "a63fcc0cff5935770027b5953f25d2541fb2babc3d794fcb41b48d5496aed947",
+  "store": "git:jtouley/harness-benchmark@runs-store"
+ },
+ "tree": {
+  "bytes": 4190058,
+  "path": "blobs/fe3fa9a8f3ab0c00959642ac76f88a2fc47a2c08bd3a865ee6c0101dd8184b47.gz",
+  "sha256": "fe3fa9a8f3ab0c00959642ac76f88a2fc47a2c08bd3a865ee6c0101dd8184b47",
+  "store": "git:jtouley/harness-benchmark@runs-store"
+ }
+}
