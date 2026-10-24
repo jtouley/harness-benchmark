@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# One batch F iteration-1 Cadence run, from a fresh cloud container of this environment (host method, the
+# One benchmark Cadence run ($BATCH: batch F iteration 1, then the 2026-10-24-shapes head to head), from a fresh cloud container of this environment (host method, the
 # subscription through the session's HTTPS proxy). One run per container: the dev replay owns localhost:8099,
 # which the spec itself names (golden/pipeline/P1/prompt.md:17), so two runs never share a host.
 #
@@ -25,8 +25,8 @@ CADENCE_REPO=https://github.com/jtouley/cadence
 # The driver and the grader: by default the commit of this script's own checkout, so the run uses the code
 # that runs it. Override with HB_SHA=<commit>.
 HB_SHA=${HB_SHA:-$(git -C "$(dirname "$0")" rev-parse HEAD)}
-CADENCE_SHA=${CADENCE_SHA:-154e573f8455c4857982fe4e05a208e1e0bc4ecc}
-BATCH=${BATCH:-2026-10-24-batch-f-it1}
+CADENCE_SHA=${CADENCE_SHA:-78bd71b23f5f07e35f02abd38090889fd7368a66}
+BATCH=${BATCH:-2026-10-24-shapes}
 CADENCE_CAP=21600   # batches/2026-10-23-batch-f.json agent_caps.cadence: 3 x the one-shot cap
 PORT=8099
 
@@ -147,7 +147,7 @@ cp -r "$REC" "$WORK/rec/runs/$RID"
   bash scripts/ci_local.sh 2>&1 | tail -3
 ) || { log "a check before publishing failed: nothing pushed (fix, then push rec/$RID by hand)"; exit 3; }
 git -C "$WORK/rec" add -A runs postmortems scoreboard.md
-git -C "$WORK/rec" commit -q -m "batch F iteration 1: $RID
+git -C "$WORK/rec" commit -q -m "$BATCH: $RID
 
 $SUMMARY"
 for i in 1 2 3 4; do
@@ -157,7 +157,7 @@ for i in 1 2 3 4; do
 done
 HEAD_SHA=$(git -C "$WORK/rec" rev-parse --short HEAD)
 cat >"$WORK/pr.md" <<EOF
-Batch F iteration 1 record: \`$RID\`. Merge with a merge commit (the record cites its grader commit $HB_SHA).
+Record of batch $BATCH: \`$RID\`. Merge with a merge commit (the record cites its grader commit $HB_SHA).
 
 **Score:** $SUMMARY
 
@@ -173,5 +173,5 @@ $BLOCKS
 Checks before the push: \`loop.check --base origin/main\` and \`scripts/ci_local.sh\` at $HEAD_SHA (see the
 session's log $WORK/run_one.log).
 EOF
-log "pushed rec/$RID at $HEAD_SHA; PR title 'batch F iteration 1: $RID', body $WORK/pr.md"
+log "pushed rec/$RID at $HEAD_SHA; PR title '$BATCH: $RID', body $WORK/pr.md"
 echo "$SUMMARY"
