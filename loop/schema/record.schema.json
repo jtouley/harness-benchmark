@@ -84,6 +84,15 @@
         "contact": {"$comment": "tool calls of the transcript that named the benchmark or another Cadence checkout (loop.driver.contact)", "type": "array", "items": {"type": "string"}}
       }
     },
+    "graded": {
+      "$comment": "The commit the grader graded (its --snapshot-worktree commit of the working tree the agent left, criteria-v2 §2.3), kept in the tree bundle as `ref`, refs/graded/<run_id> (loop.graded). `missing` says why there is no ref. Null for a run without a tree or a grade; absent before 2026-10-24.",
+      "type": ["object", "null"], "additionalProperties": false, "required": ["commit", "ref"],
+      "properties": {
+        "commit": {"type": ["string", "null"], "pattern": "^[0-9a-f]{40}$"},
+        "ref": {"type": ["string", "null"], "pattern": "^refs/graded/"},
+        "missing": {"type": "string"}
+      }
+    },
     "shape": {"$comment": "the Cadence run shape (owner, 2026-10-24): core, or full (core plus A2, A3, P6, P7, P8); null for a run before shapes or with none; absent before 2026-10-24", "enum": ["core", "full", null]},
     "api_error": {"$comment": "the API error the transcript's result reports (a 429 usage limit, a 529 overload): the run was cut off from outside and never counts; absent before 2026-10-23 21:45", "type": ["string", "null"]},
     "spec": {

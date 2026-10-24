@@ -10,7 +10,8 @@ the top of a git work tree whose HEAD is on a remote branch, with nothing modifi
 ignored: the plugin must be a published cadence commit, never a hand-patched tree. After the command it
 writes runs/<run_id>/record.json (the cadence SHA, the models the transcript says served the session,
 the request id, the command, start and end time, cost), stores the transcript and the delivered tree in
-the blob store, and, with --grade, appends the harness-benchmark grader's score with the grader's commit
+the blob store (a bundle of the tree's refs plus refs/graded/<run_id> at the exact commit the grader graded,
+its snapshot of the working tree from --graded-repo; the record's `graded` names it), and, with --grade, appends the harness-benchmark grader's score with the grader's commit
 and the git tree of golden/pipeline/pipetask. The grader must be a clean checkout for that. Then it
 writes the batch's postmortem again (every committed postmortem that covers the batch, or a new
 <batch>.md) and scoreboard.md, so the record, the postmortem and the scoreboard go in one commit
@@ -46,7 +47,7 @@ from datetime import datetime, timezone
 from decimal import Decimal
 from pathlib import Path
 
-from loop import blocks, postmortem, record, scoreboard, store
+from loop import blocks, graded, postmortem, record, scoreboard, store
 
 ROOT = Path(__file__).resolve().parents[1]
 GRADER_PATH = "golden/pipeline/pipetask"
@@ -324,12 +325,17 @@ def _now() -> str:
     return datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
 
 
-def _tree_blob(tree: Path, root: Path) -> dict:
-    """A git bundle of every ref in the delivered repository, so the grader can run on it again."""
+def _tree_blob(tree: Path, root: Path, run_id: str, commit: str | None,
+               graded_repo: Path | None) -> tuple[dict, dict]:
+    """(blob, graded): a git bundle of every ref and HEAD of the delivered repository plus refs/graded/<run_id>
+    at the commit the grader graded (loop.graded), so the grader can run again on exactly what it graded."""
     with tempfile.TemporaryDirectory() as tmp:
         bundle = Path(tmp) / "tree.bundle"
-        _git(tree, "bundle", "create", str(bundle), "--all")
-        return store.put(bundle, root)
+        try:
+            graded_info = graded.bundle(tree, bundle, run_id, commit, [graded_repo] if graded_repo else [])
+        except graded.GradedError as exc:
+            raise DriverError(str(exc)) from exc
+        return store.put(bundle, root), graded_info
 
 
 def _load_argv(path: Path) -> list[str]:
@@ -383,6 +389,8 @@ def main(argv: list[str] | None = None) -> int:
     ap.add_argument("--transcript", type=Path, required=True, help="the stream-json transcript the command writes")
     ap.add_argument("--tree", type=Path, help="the delivered git repository, kept as a bundle for regrades")
     ap.add_argument("--grade", type=Path, help="grade.json the harness-benchmark grader wrote")
+    ap.add_argument("--graded-repo", type=Path, help="the repository the grader graded (host_trial: RUN/repo): "
+                    "its snapshot commit of the working tree goes into the --tree bundle as refs/graded/<run-id>")
     ap.add_argument("--grader-repo", type=Path, default=ROOT)
     ap.add_argument("--stop-point-file", type=Path, help='JSON {"block": "E4", "reason": "..."} the command wrote')
     ap.add_argument("--cwd", type=Path, default=Path.cwd(), help="where the command runs")
@@ -481,6 +489,18 @@ def main(argv: list[str] | None = None) -> int:
         counts = {"counts": False, "why": f"the agent's argv: {argv_problem}"}
     elif args.shape is not None and (used := repo_profile(args.cwd)) != args.shape:
         counts = {"counts": False, "why": f"the run repo's .cadence.json profile is {used!r}, not --shape {args.shape}"}
+    grade = None
+    if args.grade and args.grade.exists():
+        try:
+            grade = json.loads(args.grade.read_text(encoding="utf-8"))
+        except ValueError:
+            grade = None
+    tree_blob, graded_info = store.missing("--tree not given"), None
+    if args.tree:
+        commit, why = graded.graded_commit(grade, args.graded_repo or args.tree) if args.grade else (None, "not graded")
+        tree_blob, graded_info = _tree_blob(args.tree, args.store, args.run_id, commit, args.graded_repo)
+        if why and commit is None:
+            graded_info["missing"] = why
     rec = {
         "schema": 1, "run_id": args.run_id, "kind": args.kind, "batch": args.batch,
         "provenance": {"source": "driver", "evidence": [], **({"note": "finished with loop.driver --finish from the "
@@ -493,7 +513,7 @@ def main(argv: list[str] | None = None) -> int:
         "started_at": started, "ended_at": ended, "exit_code": exit_code, "stop_point": stop,
         "transcript": store.put(args.transcript, args.store) if args.transcript.exists()
         else store.missing("the command wrote no transcript"),
-        "tree": _tree_blob(args.tree, args.store) if args.tree else store.missing("--tree not given"),
+        "tree": tree_blob, "graded": graded_info,
         "counts": counts,
         "timing": {"agent_wall_seconds": agent_wall, "run_wall_seconds": run_wall, "agent_active_seconds": active,
                    # A Cadence run that died before any peer (no .context, or no attest calls) spent zero time
@@ -507,8 +527,7 @@ def main(argv: list[str] | None = None) -> int:
     }
     record.write_record(args.runs, rec)
     if grader:
-        grade = json.loads(args.grade.read_text(encoding="utf-8")) if args.grade.exists() else \
-            {"reward": 0.0, "error": "the grader wrote no grade.json"}
+        grade = grade if grade is not None else {"reward": 0.0, "error": "the grader wrote no grade.json"}
         record.append_score(args.runs, {
             "run_id": args.run_id, "grader": grader, "reward": grade.get("reward", 0.0),
             "passed": grade.get("passed"), "total": grade.get("total"), "idempotent": grade.get("idempotent"),

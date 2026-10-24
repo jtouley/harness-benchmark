@@ -1,9 +1,12 @@
 """Grade a host-method run again and append the score: for a run that host_trial.py graded wrongly.
 
     python scripts/regrade_host_run.py RUN_ID --tree RUN/repo-as-left --why "..." [--runs runs]
+    python scripts/regrade_host_run.py RUN_ID --bundle ../runs-store/blobs/<sha>.gz --why "..." [--runs runs]
 
-The tree is the delivered repository the driver stored (repo-as-left; its bundle is the record's `tree`). A
-copy is graded with host_trial.grade, from the repository as the container runner grades, and the score is
+The tree is the delivered repository the driver stored (repo-as-left; its bundle is the record's `tree`).
+With --bundle, the record's stored bundle itself (plain or gzipped): the commit it keeps as
+refs/graded/<run_id>, the exact tree the grader graded (loop.graded), is checked out and graded; a bundle
+without that ref is refused, since it does not hold the work that was graded. A copy is graded with host_trial.grade, from the repository as the container runner grades, and the score is
 appended with source "regrade", the grader's commit and tree, and `note` (why). The record is not changed.
 """
 
@@ -22,13 +25,15 @@ sys.path.insert(0, str(ROOT))
 sys.path.insert(0, str(ROOT / "scripts"))
 
 import host_trial  # noqa: E402
-from loop import driver, record  # noqa: E402
+from loop import driver, graded, record  # noqa: E402
 
 
 def main(argv: list[str] | None = None) -> int:
     ap = argparse.ArgumentParser(description=__doc__.split("\n\n")[0])
     ap.add_argument("run_id")
-    ap.add_argument("--tree", type=Path, required=True, help="the run's delivered repository (repo-as-left)")
+    source = ap.add_mutually_exclusive_group(required=True)
+    source.add_argument("--tree", type=Path, help="the run's delivered repository (repo-as-left)")
+    source.add_argument("--bundle", type=Path, help="the run's stored tree bundle: its refs/graded/<run_id> is graded")
     ap.add_argument("--why", required=True)
     ap.add_argument("--runs", type=Path, default=ROOT / "runs")
     args = ap.parse_args(argv)
@@ -38,7 +43,14 @@ def main(argv: list[str] | None = None) -> int:
     grader = driver.grader_identity(ROOT)
     with tempfile.TemporaryDirectory() as tmp:
         repo, out = Path(tmp) / "repo", Path(tmp) / "out"
-        shutil.copytree(args.tree, repo, symlinks=True)
+        if args.bundle:
+            try:
+                graded.checkout(args.bundle, args.run_id, repo)
+            except graded.GradedError as exc:
+                print(f"regrade: {exc}", file=sys.stderr)
+                return 2
+        else:
+            shutil.copytree(args.tree, repo, symlinks=True)
         out.mkdir()
         host_trial.grade(repo, out)
         try:
