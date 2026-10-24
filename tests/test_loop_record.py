@@ -625,6 +625,21 @@ def test_a_transcript_that_touched_the_benchmark_or_another_checkout_does_not_co
     assert rec["isolation"]["method"] == "host"
 
 
+@pytest.mark.parametrize("text, contact", [
+    ("Push: `git push -u origin HEAD` set `origin/cadence/spec` to b7ab5bf.", False),  # run ...-core-1, #105
+    ("git switch -c cadence/spec && git log refs/heads/cadence/spec-e1-backup", False),
+    ("cat ../cadence-core/scripts/x.py", True),
+    ("ls ~/cadence/skills", True),
+    ('{"file_path": "/home/user/cadence-main/SKILL.md"}', True),
+])
+def test_a_cadence_branch_name_is_not_another_checkout(text, contact):
+    """Cadence names its branches cadence/<task>; `origin/cadence/spec` in a tool input is a git ref, not a
+    path to another Cadence checkout. Run 20261024-P2-cadence-haiku-core-1 (#105) was marked as contact for it."""
+    event = {"type": "assistant", "message": {"content": [{"type": "tool_use", "name": "Write",
+                                                           "input": {"content": text}}]}}
+    assert bool(driver.contact([json.dumps(event)], None)) is contact
+
+
 def test_a_clean_transcript_records_no_contact():
     assert driver.contact([json.dumps(e) for e in TRANSCRIPT], plugin=Path("/srv/plugin-c458a46")) == []
 
