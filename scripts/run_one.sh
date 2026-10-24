@@ -197,7 +197,7 @@ if [ "$MODE" = --dry-run ]; then
   grep -q -- '"--jail-check"' "$WORK/hb/scripts/host_trial.py" || die "harness-benchmark $HB_SHA has no host_trial --jail-check"
   (cd "$WORK/hb" && uv run -q --frozen python scripts/host_trial.py "$TASK" --out "$RUN" --model claude-haiku-5-5 \
      --plugin-dir "$PLUGIN" --jail-check) >>"$RUN/driver.out" 2>&1 || die "the agent's jail check failed: $(cat "$RUN/jail-check.json" 2>/dev/null || tail -3 "$RUN/driver.out")"
-  log "jail check: $(cat "$RUN/jail-check.json" | python3 -c 'import json,sys; r=json.load(sys.stdin); print(f"visible {r[\"visible\"]}, agent exit {r[\"agent_exit\"]}, reply {r[\"agent_reply\"]!r}")')"
+  log "jail check: $(python3 -c 'import json, sys; r = json.load(open(sys.argv[1])); print("visible", r["visible"], "agent exit", r["agent_exit"], "reply", repr(r["agent_reply"]))' "$RUN/jail-check.json")"
   log "dry run: every setup check passed; the agent would start now with:"
   printf '%q ' "${DRIVER[@]}"; echo
   exit 0
