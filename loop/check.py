@@ -81,12 +81,34 @@ def pinned_trees(repo: Path, commit: str) -> set[str]:
     return {_git(repo, "rev-parse", f"{c}:{GRADER_PATH}").stdout.strip() for c in commits} - {""}
 
 
+def _batch_file(repo: Path, batch: str) -> dict | None:
+    path = repo / "batches" / f"{batch}.json"
+    return json.loads(path.read_text(encoding="utf-8")) if path.is_file() else None
+
+
 def _batch_pin(repo: Path, batch: str, cache: dict) -> set[str] | None:
     if batch not in cache:
-        path = repo / "batches" / f"{batch}.json"
-        cache[batch] = pinned_trees(repo, json.loads(path.read_text(encoding="utf-8"))["grader_commit"]) \
-            if path.is_file() else None
+        pin = _batch_file(repo, batch)
+        cache[batch] = pinned_trees(repo, pin["grader_commit"]) if pin and pin.get("grader_commit") else None
     return cache[batch]
+
+
+def cadence_problem(rec: dict, pin: dict | None) -> str | None:
+    """Why a record's cadence commit is not its batch's pin, or None. A pin's `cadence_commit` is one sha for
+    every run, or one per run shape (batch 2026-10-24-shapes: the core arm on 085bfdc, the full arm on d3c2ffe)."""
+    pinned = (pin or {}).get("cadence_commit")
+    sha = (rec.get("cadence") or {}).get("sha")
+    if pinned is None or sha is None:
+        return None
+    where = f"batches/{rec.get('batch')}.json"
+    if isinstance(pinned, dict):
+        shape = rec.get("shape")
+        if shape not in pinned:
+            return f"{where} pins no cadence commit for shape {shape}"
+        if sha != pinned[shape]:
+            return f"cadence {sha[:7]} is not {where}'s pin {pinned[shape][:7]} for shape {shape}"
+        return None
+    return None if sha == pinned else f"cadence {sha[:7]} is not {where}'s pin {pinned[:7]}"
 
 
 def validate_tree(runs: Path, repo: Path = ROOT) -> list[str]:
@@ -121,6 +143,8 @@ def validate_tree(runs: Path, repo: Path = ROOT) -> list[str]:
             problems.append(f"{run.name}/record.json: run_id {rec.get('run_id')!r} is not the folder name")
         scores = record.scores(run)
         problems += regrade_problems(run.name, scores, repo)
+        if (why := cadence_problem(rec, _batch_file(repo, str(rec.get("batch"))))) is not None:
+            problems.append(f"{run.name}/record.json: {why}")
         pin = _batch_pin(repo, str(rec.get("batch")), pins)
         if pin is not None and scores and (rec.get("counts") or {}).get("counts") is True \
                 and (scores[-1].get("grader") or {}).get("tree") not in pin:
