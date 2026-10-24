@@ -1,0 +1,141 @@
+{
+ "api_error": null,
+ "arm": "cadence",
+ "batch": "2026-10-24-shapes",
+ "cadence": {
+  "published_in": [
+   "origin/main"
+  ],
+  "repo": "https://github.com/jtouley/cadence",
+  "sha": "085bfdcd00254594ed5f22387e4316f667e59ec7",
+  "tree": "c36b0ea99458ad7d525b215da8ffbee7839da7d9",
+  "tree_clean": true
+ },
+ "claude_version": "2.1.310",
+ "command": [
+  "uv",
+  "run",
+  "-q",
+  "--frozen",
+  "--project",
+  "/var/tmp/run-one/20261024-P2-cadence-haiku-core-2/hb",
+  "python",
+  "/var/tmp/run-one/20261024-P2-cadence-haiku-core-2/hb/scripts/host_trial.py",
+  "P2",
+  "--out",
+  "/var/tmp/run-one/20261024-P2-cadence-haiku-core-2/run/20261024-P2-cadence-haiku-core-2",
+  "--model",
+  "claude-haiku-5-5",
+  "--auth",
+  "proxy",
+  "--plugin-dir",
+  "/var/tmp/run-one/20261024-P2-cadence-haiku-core-2/plugin",
+  "--peer-model",
+  "haiku",
+  "--agent-cap",
+  "21600",
+  "--shape",
+  "core"
+ ],
+ "cost": {
+  "list_usd": "0.474405",
+  "reported_usd": 1.4781637150000002,
+  "tokens": {
+   "cache_read": 22301965,
+   "cache_write": 629594,
+   "input": 442,
+   "output": 345284
+  }
+ },
+ "counts": {
+  "counts": true,
+  "why": "driver run on a clean published plugin tree"
+ },
+ "ended_at": "2026-10-24T04:23:21Z",
+ "exit_code": 0,
+ "isolation": {
+  "auth": "proxy",
+  "contact": [],
+  "cwd": "/var/tmp/run-one/20261024-P2-cadence-haiku-core-2/run/20261024-P2-cadence-haiku-core-2",
+  "cwd_contents": [
+   "driver.out",
+   "home/",
+   "spec/"
+  ],
+  "fresh_home": true,
+  "home": "/var/tmp/run-one/20261024-P2-cadence-haiku-core-2/run/20261024-P2-cadence-haiku-core-2/home",
+  "method": "host",
+  "other_cadence_checkouts": []
+ },
+ "kind": "benchmark",
+ "model_requested": "claude-haiku-5-5",
+ "models_served": [
+  "claude-haiku-5-5"
+ ],
+ "provenance": {
+  "evidence": [],
+  "source": "driver"
+ },
+ "request_id": "P2-spec",
+ "run_id": "20261024-P2-cadence-haiku-core-2",
+ "schema": 1,
+ "session_id": "9ee9fab0-5af7-4a34-a9b6-de7af8b1555d",
+ "shape": "core",
+ "spec": {
+  "path": "/var/tmp/run-one/20261024-P2-cadence-haiku-core-2/run/20261024-P2-cadence-haiku-core-2/spec/spec.md",
+  "prompt": "/cadence /var/tmp/run-one/20261024-P2-cadence-haiku-core-2/run/20261024-P2-cadence-haiku-core-2/spec/spec.md",
+  "sha256": "a204ef29b4d721d59775aa45965702f76bc5d649caacf6b5b19d0bc44d5c9419"
+ },
+ "started_at": "2026-10-24T03:32:03Z",
+ "stop_point": {
+  "block": "E1",
+  "reason": "hard stop retries: E1 implement-gate fails: phases 4-6 share one author time (04:11:20). Two peer runs failed. The second run restored the batched history from cadence/spec-e1-backup. Branch cadence/spec reset to origin/main. Backup at cadence/spec-e1-backup (d329045). Deslop diff at .context/backup"
+ },
+ "task": "P2",
+ "timing": {
+  "agent_active_seconds": 3055.58,
+  "agent_wall_seconds": 3057.7,
+  "blocks": {
+   "plan-create": {
+    "calls": 1,
+    "seconds": 122.387,
+    "unfinished": 0
+   },
+   "plan-review": {
+    "calls": 1,
+    "seconds": 125.433,
+    "unfinished": 0
+   },
+   "plan-update": {
+    "calls": 1,
+    "seconds": 90.883,
+    "unfinished": 0
+   },
+   "spec-driven": {
+    "calls": 2,
+    "seconds": 2430.864,
+    "unfinished": 0
+   },
+   "vibe-test": {
+    "calls": 1,
+    "seconds": 112.515,
+    "unfinished": 0
+   }
+  },
+  "cap_seconds": 21600,
+  "hit_cap": false,
+  "run_wall_seconds": 3078.481
+ },
+ "transcript": {
+  "bytes": 1528746,
+  "path": "blobs/1fc80738f7735feb52f72021ffd524b89e63b36bfcd09ce3a0499ff473576d73.gz",
+  "sha256": "1fc80738f7735feb52f72021ffd524b89e63b36bfcd09ce3a0499ff473576d73",
+  "store": "git:jtouley/harness-benchmark@runs-store"
+ },
+ "tree": {
+  "bytes": 4183880,
+  "path": "blobs/06336765a5d56f5410c8f1e69688e15ed1315c621c7227649f5a516d2450357f.gz",
+  "sha256": "06336765a5d56f5410c8f1e69688e15ed1315c621c7227649f5a516d2450357f",
+  "store": "git:jtouley/harness-benchmark@runs-store"
+ }
+}
