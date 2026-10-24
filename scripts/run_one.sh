@@ -16,6 +16,16 @@
 # rec/<run-id> from origin/main, after loop.check and scripts/ci_local.sh pass. The pull request itself is
 # opened by the session (no gh here): the body is written to $WORK/pr.md.
 # --dry-run stops just before the agent starts, after every setup check, and prints the driver command.
+#
+#   scripts/run_one.sh <run-id> --detach [--dry-run | --finish [--again]]
+#   scripts/run_one.sh <run-id> --wait
+#
+# --detach starts the run (with the options after it) under setsid nohup, in its own session, so a caller's
+# timeout that kills its process group does not kill the run (2026-10-24: the Bash tool's 2 h limit killed
+# P1 core-1 and core-3). It writes $WORK/run.pid and $WORK/run.log and returns at once. --wait blocks while
+# that run is alive, at most RUN_ONE_WAIT_SECONDS (default 6600, 110 min); exit 0 when it has finished (its exit
+# code and last log line are printed), 75 while it still runs (call --wait again), 1 if it died without an exit
+# code, 2 if there is no detached run.
 # Exit 2: a setup failure (the message says which); 4: the run was an infrastructure loss (nothing published);
 # 3: a check before publishing failed (nothing pushed); 1: anything else.
 set -euo pipefail
@@ -32,8 +42,38 @@ PORT=8099
 die() { echo "run_one: $*" >&2; exit 2; }
 log() { printf '%s run_one %s: %s\n' "$(date -u +%FT%TZ)" "$RID" "$*" | tee -a "$WORK/run_one.log" >&2; }
 
-[ $# -ge 1 ] || die "usage: scripts/run_one.sh <run-id> [--dry-run | --finish]"
+[ $# -ge 1 ] || die "usage: scripts/run_one.sh <run-id> [--detach] [--dry-run | --finish [--again]] | <run-id> --wait"
 RID=$1
+case "${2:-}" in --detach|--wait)
+  [[ "$RID" =~ ^[0-9]{8}-P[12]-cadence-haiku-(core|full)-[a-z0-9-]+$ ]] || die "run id $RID is not <date>-P1|P2-cadence-haiku-core|full-<n>"
+  WORK=${RUN_ONE_WORK:-/var/tmp/run-one}/$RID
+  if [ "$2" = --detach ]; then
+    [ ! -e "$WORK" ] || die "$WORK exists: a run id is never reused"
+    mkdir -p "$WORK"
+    # RUN_ONE_DETACH_CMD replaces the run in tests (a fake long command); the run is this script itself.
+    CMD=${RUN_ONE_DETACH_CMD:-$(printf '%q ' bash "$(realpath "$0")" "$RID" "${@:3}")}
+    RUN_ONE_DETACHED=1 W=$WORK setsid nohup bash -c 'echo $$ >"$W/run.pid.tmp" && mv "$W/run.pid.tmp" "$W/run.pid"
+      ( '"$CMD"' )
+      echo $? >"$W/run.exit"' >"$WORK/run.log" 2>&1 </dev/null &
+    for _ in $(seq 100); do [ -s "$WORK/run.pid" ] && break; sleep 0.1; done
+    [ -s "$WORK/run.pid" ] || die "the detached run wrote no $WORK/run.pid"
+    echo "detached: pid $(cat "$WORK/run.pid"), log $WORK/run.log; wait with: $0 $RID --wait"
+    exit 0
+  fi
+  [ -s "$WORK/run.pid" ] || die "no detached run: $WORK/run.pid is missing"
+  PID=$(cat "$WORK/run.pid")
+  END=$(( $(date +%s) + ${RUN_ONE_WAIT_SECONDS:-6600} ))
+  while [ ! -e "$WORK/run.exit" ] && kill -0 "$PID" 2>/dev/null && [ "$(date +%s)" -lt "$END" ]; do
+    sleep "${RUN_ONE_POLL_SECONDS:-30}"
+  done
+  if [ -e "$WORK/run.exit" ]; then
+    echo "$RID finished, exit $(cat "$WORK/run.exit"): $(tail -n 1 "$WORK/run.log")"
+    exit 0
+  fi
+  if kill -0 "$PID" 2>/dev/null; then echo "$RID still running (pid $PID): call --wait again"; exit 75; fi
+  echo "$RID ended without an exit code (pid $PID is gone): see $WORK/run.log"
+  exit 1;;
+esac
 MODE=${2:-}
 AGAIN=${3:-}
 case "$MODE" in ""|--dry-run|--finish) ;; *) die "unknown option $MODE (--dry-run or --finish)";; esac
@@ -103,7 +143,12 @@ if [ "$MODE" = --finish ]; then
      || die "--finish: host_trial --stop-only failed (see $RUN/driver.out)"
   log "stop derived again: $(cat "$STOP_FILE")"
 else
-[ ! -e "$WORK" ] || die "$WORK exists: a run id is never reused (remove it only if nothing was published)"
+# A detached run (--detach) starts in the folder that holds only its run.pid and run.log.
+if [ -n "${RUN_ONE_DETACHED:-}" ]; then
+  [ -z "$(ls -A "$WORK" | grep -v -x -e run.pid -e run.log)" ] || die "$WORK exists: a run id is never reused (remove it only if nothing was published)"
+else
+  [ ! -e "$WORK" ] || die "$WORK exists: a run id is never reused (remove it only if nothing was published)"
+fi
 
 # --- setup checks
 for tool in git uv python3 claude; do command -v "$tool" >/dev/null || die "$tool is not on PATH"; done
