@@ -133,12 +133,16 @@ def prepare_home(home: Path, auth: str, oauth_file: Path | None) -> None:
 
 
 _BLOCK_CLASS = re.compile(r"^([a-z])(\d+)-")
+_BLOCK_REASON = re.compile(r"^([AEPR])(\d)\b")
 
 
 def stop_block(open_block: str | None, hard: dict | str | None) -> str | None:
-    """The block a run stopped at: the one a hard stop's class names (`a5-gap` is A5), else the open block. A
-    hard stop sends the run back to activation, so headless `next` reports A1 (review of #81)."""
-    match = _BLOCK_CLASS.match(str(hard.get("class") or "")) if isinstance(hard, dict) else None
+    """The block a run stopped at: the one a hard stop's class names (`a5-gap` is A5), else a block id that
+    opens its reason (class `retries`: "A5 validate-gate fails ..."), else the open block. A hard stop sends
+    the run back to activation, so headless `next` reports A1 (review of #81)."""
+    if not isinstance(hard, dict):
+        return open_block
+    match = _BLOCK_CLASS.match(str(hard.get("class") or "")) or _BLOCK_REASON.match(str(hard.get("reason") or ""))
     return f"{match.group(1).upper()}{match.group(2)}" if match else open_block
 
 
