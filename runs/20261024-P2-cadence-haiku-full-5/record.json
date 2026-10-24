@@ -1,0 +1,166 @@
+{
+ "api_error": null,
+ "arm": "cadence",
+ "batch": "2026-10-24-shapes-r2",
+ "cadence": {
+  "published_in": [
+   "origin/main"
+  ],
+  "repo": "https://github.com/jtouley/cadence",
+  "sha": "2100c6e6aa99d99309cfa8e7f8c5cee1018584b4",
+  "tree": "be0094b148b3ac6bff894ac40930255d52a94d27",
+  "tree_clean": true
+ },
+ "claude_version": "2.1.310",
+ "command": [
+  "uv",
+  "run",
+  "-q",
+  "--frozen",
+  "--project",
+  "/var/tmp/run-one/20261024-P2-cadence-haiku-full-5/hb",
+  "python",
+  "/var/tmp/run-one/20261024-P2-cadence-haiku-full-5/hb/scripts/host_trial.py",
+  "P2",
+  "--out",
+  "/var/tmp/run-one/20261024-P2-cadence-haiku-full-5/run/20261024-P2-cadence-haiku-full-5",
+  "--model",
+  "claude-haiku-5-5",
+  "--auth",
+  "proxy",
+  "--plugin-dir",
+  "/var/tmp/run-one/20261024-P2-cadence-haiku-full-5/plugin",
+  "--peer-model",
+  "haiku",
+  "--agent-cap",
+  "21600",
+  "--shape",
+  "full"
+ ],
+ "cost": {
+  "list_usd": "0.972470",
+  "reported_usd": 2.9299164599999967,
+  "tokens": {
+   "cache_read": 48532729,
+   "cache_write": 1349854,
+   "input": 926,
+   "output": 636636
+  }
+ },
+ "counts": {
+  "counts": true,
+  "why": "driver run on a clean published plugin tree"
+ },
+ "ended_at": "2026-10-24T20:07:38Z",
+ "exit_code": 0,
+ "isolation": {
+  "auth": "proxy",
+  "contact": [],
+  "cwd": "/var/tmp/run-one/20261024-P2-cadence-haiku-full-5/run/20261024-P2-cadence-haiku-full-5",
+  "cwd_contents": [
+   "driver.out",
+   "home/",
+   "spec/"
+  ],
+  "fresh_home": true,
+  "home": "/var/tmp/run-one/20261024-P2-cadence-haiku-full-5/run/20261024-P2-cadence-haiku-full-5/home",
+  "method": "host",
+  "other_cadence_checkouts": []
+ },
+ "kind": "benchmark",
+ "model_requested": "claude-haiku-5-5",
+ "models_served": [
+  "claude-haiku-5-5"
+ ],
+ "provenance": {
+  "evidence": [],
+  "source": "driver"
+ },
+ "request_id": "P2-spec",
+ "run_id": "20261024-P2-cadence-haiku-full-5",
+ "schema": 1,
+ "session_id": "8f1c1abe-0303-4881-b620-b9f990c75cbf",
+ "shape": "full",
+ "spec": {
+  "path": "/var/tmp/run-one/20261024-P2-cadence-haiku-full-5/run/20261024-P2-cadence-haiku-full-5/spec/spec.md",
+  "prompt": "/cadence /var/tmp/run-one/20261024-P2-cadence-haiku-full-5/run/20261024-P2-cadence-haiku-full-5/spec/spec.md",
+  "sha256": "a204ef29b4d721d59775aa45965702f76bc5d649caacf6b5b19d0bc44d5c9419"
+ },
+ "started_at": "2026-10-24T18:01:09Z",
+ "stop_point": {
+  "block": "R5",
+  "reason": "hard stop retries: R5 closure fails. Items 5 and 6 name tests/test_checks.py, but the tests live in tests/test_stream_checks.py (spec-F12). Findings spec-F01 to spec-F03 check scripts/test_benchmark_gate.py, which is missing from the repo. No retries left. (FAIL  no active cadence session)"
+ },
+ "task": "P2",
+ "timing": {
+  "agent_active_seconds": 6882.985,
+  "agent_wall_seconds": 7412.4,
+  "blocks": {
+   "commit-push-pr": {
+    "calls": 1,
+    "seconds": 59.831,
+    "unfinished": 0
+   },
+   "de-adversarial-reviewer": {
+    "calls": 1,
+    "seconds": 85.724,
+    "unfinished": 0
+   },
+   "plan-create": {
+    "calls": 1,
+    "seconds": 131.061,
+    "unfinished": 0
+   },
+   "plan-review": {
+    "calls": 1,
+    "seconds": 75.423,
+    "unfinished": 0
+   },
+   "plan-update": {
+    "calls": 1,
+    "seconds": 134.345,
+    "unfinished": 0
+   },
+   "pr-review-local": {
+    "calls": 1,
+    "seconds": 430.497,
+    "unfinished": 0
+   },
+   "spec-driven": {
+    "calls": 1,
+    "seconds": 3608.284,
+    "unfinished": 0
+   },
+   "test-benchmark-plan": {
+    "calls": 1,
+    "seconds": 62.546,
+    "unfinished": 0
+   },
+   "test-benchmark-pr": {
+    "calls": 3,
+    "seconds": 733.962,
+    "unfinished": 0
+   },
+   "vibe-test": {
+    "calls": 1,
+    "seconds": 117.45,
+    "unfinished": 0
+   }
+  },
+  "cap_seconds": 21600,
+  "hit_cap": false,
+  "run_wall_seconds": 7588.652
+ },
+ "transcript": {
+  "bytes": 3444224,
+  "path": "blobs/bb173217b99bc62d2e305fe1ddedfcc6c6a7343e68ef0191689c6433c71e8518.gz",
+  "sha256": "bb173217b99bc62d2e305fe1ddedfcc6c6a7343e68ef0191689c6433c71e8518",
+  "store": "git:jtouley/harness-benchmark@runs-store"
+ },
+ "tree": {
+  "bytes": 4207125,
+  "path": "blobs/d81a78c7a6fc0519330ae312372626b072c7528632e2d186b93ff8e676db87bb.gz",
+  "sha256": "d81a78c7a6fc0519330ae312372626b072c7528632e2d186b93ff8e676db87bb",
+  "store": "git:jtouley/harness-benchmark@runs-store"
+ }
+}
