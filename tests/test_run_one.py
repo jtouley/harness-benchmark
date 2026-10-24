@@ -50,3 +50,9 @@ def test_finish_needs_the_runs_saved_directory(tmp_path):
     proc = _run_one(tmp_path, "20261024-P2-cadence-haiku-core-9", "--finish", RUN_ONE_WORK=str(tmp_path / "work"))
     assert proc.returncode == 2 and "--finish: no" in proc.stderr and "transcript.jsonl" in proc.stderr
     assert _run_one(tmp_path, "20261024-P2-cadence-haiku-core-9", "--bogus").returncode == 2
+
+
+def test_again_only_goes_with_finish(tmp_path):
+    proc = _run_one(tmp_path, "20261024-P2-cadence-haiku-core-9", "--dry-run", "--again")
+    assert proc.returncode == 2 and "--again goes with --finish" in proc.stderr
+    assert _run_one(tmp_path, "20261024-P2-cadence-haiku-core-9", "--finish", "--twice").returncode == 2

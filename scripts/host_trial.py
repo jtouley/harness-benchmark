@@ -227,6 +227,7 @@ def main(argv: list[str] | None = None) -> int:
     ap.add_argument("--peer-model", help="Cadence arm: peer_models.default in the run's Cadence config")
     ap.add_argument("--agent-cap", type=int, help="seconds: the batch's cap for this arm (see agent_cap)")
     ap.add_argument("--shape", choices=SHAPES, help="Cadence arm: the run shape, as the run repo's .cadence.json profile")
+    ap.add_argument("--stop-file", type=Path, help="--stop-only: where to write the stop (default: --out/stop.json)")
     ap.add_argument("--stop-only", action="store_true",
                     help="the run already ran in --out: derive its stop point again (stop.json) and do nothing else")
     ap.add_argument("--auth", choices=["proxy", "oauth-file"], default="proxy")
@@ -241,7 +242,7 @@ def main(argv: list[str] | None = None) -> int:
         lines = (out / "transcript.jsonl").read_text(encoding="utf-8", errors="replace").splitlines() \
             if (out / "transcript.jsonl").exists() else []
         stop = stop_point(out / "repo-as-left", plugin, agent_env(out / "home", plugin), lines)
-        (out / "stop.json").write_text(json.dumps(stop) + "\n")
+        (args.stop_file or out / "stop.json").write_text(json.dumps(stop) + "\n")
         print(json.dumps(stop))
         return 0
     prompt = os.environ.get("HB_AGENT_PROMPT")
