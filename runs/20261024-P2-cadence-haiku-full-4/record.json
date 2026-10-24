@@ -1,0 +1,156 @@
+{
+ "api_error": null,
+ "arm": "cadence",
+ "batch": "2026-10-24-shapes-r2",
+ "cadence": {
+  "published_in": [
+   "origin/main"
+  ],
+  "repo": "https://github.com/jtouley/cadence",
+  "sha": "2100c6e6aa99d99309cfa8e7f8c5cee1018584b4",
+  "tree": "be0094b148b3ac6bff894ac40930255d52a94d27",
+  "tree_clean": true
+ },
+ "claude_version": "2.1.310",
+ "command": [
+  "uv",
+  "run",
+  "-q",
+  "--frozen",
+  "--project",
+  "/var/tmp/run-one/20261024-P2-cadence-haiku-full-4/hb",
+  "python",
+  "/var/tmp/run-one/20261024-P2-cadence-haiku-full-4/hb/scripts/host_trial.py",
+  "P2",
+  "--out",
+  "/var/tmp/run-one/20261024-P2-cadence-haiku-full-4/run/20261024-P2-cadence-haiku-full-4",
+  "--model",
+  "claude-haiku-5-5",
+  "--auth",
+  "proxy",
+  "--plugin-dir",
+  "/var/tmp/run-one/20261024-P2-cadence-haiku-full-4/plugin",
+  "--peer-model",
+  "haiku",
+  "--agent-cap",
+  "21600",
+  "--shape",
+  "full"
+ ],
+ "cost": {
+  "list_usd": "1.172997",
+  "reported_usd": 4.390733695000001,
+  "tokens": {
+   "cache_read": 70317588,
+   "cache_write": 1271510,
+   "input": 904,
+   "output": 621584
+  }
+ },
+ "counts": {
+  "counts": true,
+  "why": "driver run on a clean published plugin tree"
+ },
+ "ended_at": "2026-10-24T19:40:32Z",
+ "exit_code": 0,
+ "isolation": {
+  "auth": "proxy",
+  "contact": [],
+  "cwd": "/var/tmp/run-one/20261024-P2-cadence-haiku-full-4/run/20261024-P2-cadence-haiku-full-4",
+  "cwd_contents": [
+   "driver.out",
+   "home/",
+   "spec/"
+  ],
+  "fresh_home": true,
+  "home": "/var/tmp/run-one/20261024-P2-cadence-haiku-full-4/run/20261024-P2-cadence-haiku-full-4/home",
+  "method": "host",
+  "other_cadence_checkouts": []
+ },
+ "kind": "benchmark",
+ "model_requested": "claude-haiku-5-5",
+ "models_served": [
+  "claude-haiku-5-5"
+ ],
+ "provenance": {
+  "evidence": [],
+  "source": "driver"
+ },
+ "request_id": "P2-spec",
+ "run_id": "20261024-P2-cadence-haiku-full-4",
+ "schema": 1,
+ "session_id": "670e4237-02a6-4310-b222-20c02664e085",
+ "shape": "full",
+ "spec": {
+  "path": "/var/tmp/run-one/20261024-P2-cadence-haiku-full-4/run/20261024-P2-cadence-haiku-full-4/spec/spec.md",
+  "prompt": "/cadence /var/tmp/run-one/20261024-P2-cadence-haiku-full-4/run/20261024-P2-cadence-haiku-full-4/spec/spec.md",
+  "sha256": "a204ef29b4d721d59775aa45965702f76bc5d649caacf6b5b19d0bc44d5c9419"
+ },
+ "started_at": "2026-10-24T18:01:11Z",
+ "stop_point": {
+  "block": "R7",
+  "reason": "done: the session closed at R7 (session-close) at 2026-10-24T19:39:31.922825+00:00, with no Stop-hook refusal (FAIL  no active cadence session)"
+ },
+ "task": "P2",
+ "timing": {
+  "agent_active_seconds": 5896.007,
+  "agent_wall_seconds": 5897.9,
+  "blocks": {
+   "de-adversarial-reviewer": {
+    "calls": 1,
+    "seconds": 67.883,
+    "unfinished": 0
+   },
+   "plan-create": {
+    "calls": 1,
+    "seconds": 189.666,
+    "unfinished": 0
+   },
+   "plan-review": {
+    "calls": 1,
+    "seconds": 140.374,
+    "unfinished": 0
+   },
+   "plan-update": {
+    "calls": 2,
+    "seconds": 262.107,
+    "unfinished": 0
+   },
+   "pr-review-local": {
+    "calls": 1,
+    "seconds": 320.913,
+    "unfinished": 0
+   },
+   "test-benchmark-plan": {
+    "calls": 1,
+    "seconds": 72.649,
+    "unfinished": 0
+   },
+   "test-benchmark-pr": {
+    "calls": 4,
+    "seconds": 545.538,
+    "unfinished": 0
+   },
+   "vibe-test": {
+    "calls": 1,
+    "seconds": 162.592,
+    "unfinished": 0
+   }
+  },
+  "cap_seconds": 21600,
+  "hit_cap": false,
+  "run_wall_seconds": 5960.859
+ },
+ "transcript": {
+  "bytes": 4702251,
+  "path": "blobs/365090db4ad269c245a2197e5b15cc56614ed46975a3445cf757dc68b822ce2e.gz",
+  "sha256": "365090db4ad269c245a2197e5b15cc56614ed46975a3445cf757dc68b822ce2e",
+  "store": "git:jtouley/harness-benchmark@runs-store"
+ },
+ "tree": {
+  "bytes": 4254255,
+  "path": "blobs/07f25bf4d7ea5a9b0d7891fd4dca792f6e2bcf819e2de01a40429aa9090c7d12.gz",
+  "sha256": "07f25bf4d7ea5a9b0d7891fd4dca792f6e2bcf819e2de01a40429aa9090c7d12",
+  "store": "git:jtouley/harness-benchmark@runs-store"
+ }
+}
