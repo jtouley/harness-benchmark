@@ -304,6 +304,32 @@ def test_the_driver_refuses_a_grader_with_local_changes(tmp_path, plugin, capsys
     assert not run.exists() and not (tmp_path / "trial").exists()  # refused before the command ran
 
 
+def test_the_driver_refuses_a_grader_that_is_not_the_batchs_pin(tmp_path, plugin, capsys):
+    """batches/2026-10-24-shapes-r2.json pins grader_commit 10172ce, but its runs were graded from the harness
+    HEAD (c344bea) and their scores named it. A batch with a pinned grader_commit is graded by that commit and
+    the score names it: a --grader-repo at any other commit is refused before the command runs."""
+    pin = json.loads((ROOT / "batches" / "2026-10-24-shapes-r2.json").read_text())
+    assert _git(ROOT, "rev-parse", "HEAD") != pin["grader_commit"]
+    out = tmp_path / "trial"
+    rc, run = _drive(tmp_path, plugin, extra=["--grade", str(out / "grade.json"), "--grader-repo", str(ROOT),
+                                              "--batch", "2026-10-24-shapes-r2"], grade={"reward": 1.0})
+    err = capsys.readouterr().err
+    assert rc == 2 and "pinned grader_commit" in err and pin["grader_commit"] in err
+    assert not run.exists() and not out.exists()  # refused before the command ran
+
+
+def test_the_pinned_grader_is_the_one_a_score_may_name(tmp_path):
+    batches = tmp_path / "batches"
+    batches.mkdir()
+    (batches / "b.json").write_text(json.dumps({"grader_commit": "a" * 40, "grader_tree": "t" * 40}))
+    driver.check_pinned_grader({"commit": "a" * 40, "tree": "t" * 40}, "b", batches)
+    driver.check_pinned_grader({"commit": "b" * 40, "tree": "x"}, "unpinned", batches)  # no pin file: any grader
+    with pytest.raises(driver.DriverError, match="not batches/b.json's pinned grader_commit"):
+        driver.check_pinned_grader({"commit": "b" * 40, "tree": "t" * 40}, "b", batches)
+    with pytest.raises(driver.DriverError, match="grader_tree"):
+        driver.check_pinned_grader({"commit": "a" * 40, "tree": "u" * 40}, "b", batches)
+
+
 def test_the_driver_is_a_module_with_help():
     proc = subprocess.run([sys.executable, "-m", "loop.driver", "--help"], cwd=ROOT, capture_output=True, text=True)
     assert proc.returncode == 0 and "--plugin-dir" in proc.stdout

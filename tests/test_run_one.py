@@ -51,6 +51,24 @@ def test_the_cadence_commit_comes_from_the_batch_pin_by_shape(tmp_path):
     assert proc.returncode == 2 and "batches/2026-10-24-no-such-batch.json" in proc.stderr
 
 
+def test_the_grader_is_the_batch_pins_grader_commit_not_the_harness_head(tmp_path):
+    """Every 2026-10-24-shapes-r2 score names grader c344bea, the harness HEAD the run was cloned at, while the
+    batch pins 10172ce: run_one.sh graded with HB_SHA. The grader is a worktree at the pin, the grade runs it
+    (host_trial --grader-root) and the driver records it (--grader-repo); another GRADER_SHA is refused."""
+    work = tmp_path / "work"
+    proc = _run_one(tmp_path, "20261024-P1-cadence-haiku-core-9", "--dry-run", RUN_ONE_WORK=str(work),
+                    GRADER_SHA="c344bea44951cfc5a3a3a99aaa598fdaaedabba8")
+    assert proc.returncode == 2 and "is not the grader_commit" in proc.stderr
+    assert "10172ce8e7564d61b9ff17a3fe2b625269b0e37c" in proc.stderr
+    assert not work.exists()
+    text = (ROOT / "scripts" / "run_one.sh").read_text(encoding="utf-8")
+    assert '--grader-repo "$GRADER"' in text and '--grader-root "$GRADER"' in text
+    assert 'worktree add -q --detach "$GRADER" "$GRADER_SHA"' in text
+    assert '--grader-repo "$WORK/hb"' not in text
+    # The graded snapshot is the pinned grader's, made in $RUN/repo: the driver bundles it as refs/graded/<id>.
+    assert '--graded-repo "$RUN/repo"' in text and 'python -m loop.graded --store "$STORE" --run "$RID"' in text
+
+
 def test_finish_needs_the_runs_saved_directory(tmp_path):
     proc = _run_one(tmp_path, "20261024-P2-cadence-haiku-core-9", "--finish", RUN_ONE_WORK=str(tmp_path / "work"))
     assert proc.returncode == 2 and "--finish: no" in proc.stderr and "transcript.jsonl" in proc.stderr

@@ -85,6 +85,24 @@ def test_the_grader_runs_from_the_task_repository_as_in_the_container(tmp_path):
     assert argv[argv.index("--repo") + 1] == str(tmp_path / "repo")
 
 
+def test_with_a_grader_root_the_grade_runs_that_checkouts_pipetask_and_the_jail_hides_it(monkeypatch, tmp_path):
+    """scripts/run_one.sh grades with a worktree at the batch's pinned grader_commit, not this checkout."""
+    grader = tmp_path / "grader"
+    argv, cwd, env = host_trial.grade_command(tmp_path / "repo", tmp_path / "out", grader)
+    gp = grader / "golden" / "pipeline"
+    assert cwd == tmp_path / "repo" and env["PYTHONPATH"].split(os.pathsep)[0] == str(gp)
+    assert argv[argv.index("--key") + 1] == str(gp / "key" / "answer_key.json")
+    assert argv[argv.index("--capture") + 1].startswith(str(gp))
+    # The pinned grader commits the working tree in RUN/repo; the driver bundles that commit (--graded-repo).
+    assert "--snapshot-worktree" in argv and argv[argv.index("--repo") + 1] == str(tmp_path / "repo")
+    monkeypatch.setattr(host_trial, "JAIL_HIDE", ())  # only this checkout and the grader's are covered
+    monkeypatch.setattr(host_trial, "ROOT", tmp_path / "hb")
+    for d in (tmp_path / "hb", grader):
+        d.mkdir()
+    hide, _ = host_trial.jail_paths(tmp_path / "out", tmp_path / "home", None, None, grader)
+    assert grader in hide and tmp_path / "hb" in hide
+
+
 def test_a_batch_can_set_the_agent_cap(tmp_path):
     """Batch F caps the Cadence arm at 3 x the one-shot cap (21,600 s) instead of the 86,400 s backstop."""
     assert host_trial.agent_cap(Path("/srv/plugin"), 21600) == 21600

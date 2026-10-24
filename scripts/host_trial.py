@@ -32,6 +32,8 @@ one-shot): this script adds no prompt text. In order:
 4. The records the grader's reset would lose: RUN/context (a copy of .context), RUN/repo-as-left, the stop
    point (Cadence's own headless.py `next` on a copy of the repository, and the session's hard stop).
 5. The grader (pipetask.trial, grading seed 1) on RUN/repo, run from RUN/repo as the container runs it: RUN/grade.json. RUN/timing.json has agent_seconds.
+   With --grader-root, pipetask, the key and the capture come from that checkout (scripts/run_one.sh: a worktree at
+   the batch's pinned grader_commit), not from this one; the jail hides it too.
    The grader commits the working tree the agent left (--snapshot-worktree) in RUN/repo and grades that commit;
    the driver's --graded-repo RUN/repo puts it into the stored bundle as refs/graded/<run-id> (loop.graded).
 """
@@ -127,10 +129,12 @@ def _outermost(paths) -> list[Path]:
     return [p for p in paths if not any(q in p.parents for q in paths)]
 
 
-def jail_paths(out: Path, home: Path, plugin: Path | None, spec_dir: Path | None) -> tuple[list[Path], list[Path]]:
-    """(hidden, kept): the folders covered while the agent runs, this checkout always among them, and the ones
-    bound back: the run's repository, its origin, HOME, the spec, the plugin, and the host's CA bundle and uv."""
-    hide = _outermost([*map(Path, JAIL_HIDE), ROOT])
+def jail_paths(out: Path, home: Path, plugin: Path | None, spec_dir: Path | None,
+               grader_root: Path | None = None) -> tuple[list[Path], list[Path]]:
+    """(hidden, kept): the folders covered while the agent runs, this checkout and the grader's always among them,
+    and the ones bound back: the run's repository, its origin, HOME, the spec, the plugin, and the host's CA bundle
+    and uv."""
+    hide = _outermost([*map(Path, JAIL_HIDE), ROOT, *([grader_root] if grader_root else [])])
     keep = [out / "repo", out / "origin.git", home, *(p for p in (plugin, spec_dir) if p), *map(Path, JAIL_KEEP)]
     keep = [k for k in _outermost(keep) if k.exists() and any(h == k or h in k.parents for h in hide)]
     return [h for h in hide if h.is_dir()], keep
@@ -197,20 +201,22 @@ def agent_env(home: Path, plugin: Path | None) -> dict[str, str]:
     return env
 
 
-def grade_command(repo: Path, out: Path) -> tuple[list[str], Path, dict[str, str]]:
+def grade_command(repo: Path, out: Path, grader_root: Path | None = None) -> tuple[list[str], Path, dict[str, str]]:
     """The grader's argv, working directory and environment. It runs from the task repository, as the
     container runner runs it from /trial/repo: oracle.py allows DuckDB only the repository's out/marts/, and an
-    oracle_map path such as `out/marts/x.parquet` resolves against the working directory."""
-    env = {**os.environ, "PYTHONPATH": os.pathsep.join(filter(None, [str(GP), os.environ.get("PYTHONPATH")]))}
-    argv = [sys.executable, "-m", "pipetask.trial", "--repo", str(repo), "--key", str(GP / "key" / "answer_key.json"),
-            "--capture", str(GP / "data" / "capture" / "recentchange.jsonl.gz"), "--deadline", "600",
+    oracle_map path such as `out/marts/x.parquet` resolves against the working directory. The grader's code, key
+    and capture are grader_root's golden/pipeline (the batch's pinned grader), else this checkout's."""
+    gp = grader_root / "golden" / "pipeline" if grader_root else GP
+    env = {**os.environ, "PYTHONPATH": os.pathsep.join(filter(None, [str(gp), os.environ.get("PYTHONPATH")]))}
+    argv = [sys.executable, "-m", "pipetask.trial", "--repo", str(repo), "--key", str(gp / "key" / "answer_key.json"),
+            "--capture", str(gp / "data" / "capture" / "recentchange.jsonl.gz"), "--deadline", "600",
             "--snapshot-worktree", "--logs", str(out / "grade-logs")]
     return argv, repo, env
 
 
-def grade(repo: Path, out: Path) -> int:
+def grade(repo: Path, out: Path, grader_root: Path | None = None) -> int:
     """Grade `repo` (seed 1): out/grade.json and out/grade.stderr; the grader's exit code."""
-    argv, cwd, env = grade_command(repo, out)
+    argv, cwd, env = grade_command(repo, out, grader_root)
     with open(out / "grade.json", "w") as stdout, open(out / "grade.stderr", "w") as stderr:
         return subprocess.run(argv, cwd=cwd, env=env, stdout=stdout, stderr=stderr).returncode
 
@@ -351,6 +357,8 @@ def main(argv: list[str] | None = None) -> int:
     ap.add_argument("--stop-only", action="store_true",
                     help="the run already ran in --out: derive its stop point again (stop.json) and do nothing else")
     ap.add_argument("--auth", choices=["proxy", "oauth-file"], default="proxy")
+    ap.add_argument("--grader-root", type=Path, help="a harness-benchmark checkout at the batch's pinned "
+                    "grader_commit: the grade runs its golden/pipeline/pipetask (default: this checkout)")
     ap.add_argument("--oauth-file", type=Path, help="--auth oauth-file: the operator's ~/.claude/.credentials.json")
     ap.add_argument("--jail-check", action="store_true",
                     help="run_one --dry-run: the agent's jail on this host, without the run: the scan from inside "
@@ -384,7 +392,11 @@ def main(argv: list[str] | None = None) -> int:
             json.dumps({"peer_models": {"default": args.peer_model}}) + "\n")
     spec_dir = Path(prompt.split(" ", 1)[1]).parent if plugin is not None else None
 
-    hide, keep = jail_paths(out, home, plugin, spec_dir)
+    grader_root = args.grader_root.resolve() if args.grader_root else None
+    if grader_root is not None and not (grader_root / "golden" / "pipeline" / "pipetask").is_dir():
+        print(f"host_trial: --grader-root {grader_root} has no golden/pipeline/pipetask", file=sys.stderr)
+        return 2
+    hide, keep = jail_paths(out, home, plugin, spec_dir, grader_root)
     visible = jail_preflight(hide, keep)
     (out / "jail.json").write_text(json.dumps({"hidden": [str(p) for p in hide], "kept": [str(p) for p in keep],
                                                "visible": visible}, indent=1) + "\n")
@@ -435,7 +447,7 @@ def main(argv: list[str] | None = None) -> int:
     (out / "stop.json").write_text(json.dumps(stop) + "\n")
 
     t1 = time.monotonic()
-    grc = grade(repo, out)
+    grc = grade(repo, out, grader_root)
     (out / "timing.json").write_text(json.dumps({
         "agent_seconds": agent_seconds, "grader_seconds": round(time.monotonic() - t1, 1), "agent_exit": rc,
         "grader_exit": grc, "agent_cap_seconds": cap, "hit_cap": rc == 124}, indent=1) + "\n")
