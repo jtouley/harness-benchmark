@@ -25,7 +25,7 @@ import json
 import sys
 from pathlib import Path
 
-from loop import findings, record, scoreboard, speed, trace
+from loop import findings, record, run_summary, scoreboard, speed, trace
 
 ROOT = Path(__file__).resolve().parents[1]
 POSTMORTEMS = ROOT / "postmortems"
@@ -36,6 +36,12 @@ SECTIONS = ("Summary", "Timeline", "Speed", "Diagnosis", "Trace", "Evidence ledg
 
 class PostmortemError(Exception):
     pass
+
+
+def score_of(score: dict) -> str:
+    """`S/T`, the benchmark score: round(reward x total)/total, the scoreboard's and loop.run_summary's
+    (scoreboard._passed). A run whose checks the grader voids (reward 0) reads 0/T, not its passed count."""
+    return f"{scoreboard._passed(score)}/{score['total']}"
 
 
 def _cite(ids: list[str]) -> str:
@@ -89,13 +95,19 @@ def generate(batch: str | list[str], runs: Path, notes: dict, findings_path: Pat
     out += ["## Summary", "",
             f"- Runs: {len(rows)}; counted with a score: {len(counted)}; not counted: {len(rows) - len(counted)}.",
             f"- Cadence: {', '.join(shas) or 'none'}. Models served: {', '.join(models)}.",
+            f"- Scores (counted): {', '.join(score_of(s) for _, s in counted) or 'none'}.",
             f"- Checks passed (counted): {', '.join(f'{s['passed']}/{s['total']}' for _, s in counted) or 'none'}.",
             ""]
 
-    out += ["## Timeline", "", "| Start (UTC) | Run | Task | Stop | Reason | Score | Counts |", "|---|---|---|---|---|---|---|"]
+    out += ["## Timeline", "",
+            "Score is round(reward x total)/total, the scoreboard's; Passed is the grader's passed count, which a "
+            "reward of 0 (stream_ok or idempotent false) voids.", "",
+            "| Start (UTC) | Run | Task | Stop | Reason | Score | Passed | Reward | stream_ok | Counts |",
+            "|---|---|---|---|---|---|---|---|---|---|"]
     for rec, score in rows:
         sp = rec["stop_point"]
-        got = f"{score['passed']}/{score['total']}" if score else "not scored"
+        got = (f"{score_of(score)} | {score['passed']}/{score['total']} | {score.get('reward')} | "
+               f"{run_summary._flag(score.get('stream_ok'))}") if score else "not scored | — | — | —"
         out.append(f"| {rec['started_at'] or 'not recorded'} | `{rec['run_id']}` | {rec['task']} | {sp['block'] or '—'} | "
                    f"{sp['reason'] or '—'} | {got} | {'yes' if rec['counts']['counts'] else 'no: ' + rec['counts']['why']} |")
     out.append("")
@@ -107,7 +119,8 @@ def generate(batch: str | list[str], runs: Path, notes: dict, findings_path: Pat
     out += ["## Evidence ledger", "", "| Status | Claim | Runs |", "|---|---|---|"]
     for rec, score in counted:
         tree = (score["grader"].get("tree") or "unknown")[:7]
-        out.append(f"| VERIFIED | {rec['task']} scored {score['passed']}/{score['total']} (reward {score['reward']}) "
+        out.append(f"| VERIFIED | {rec['task']} scored {score_of(score)} (passed {score['passed']}/{score['total']}, "
+                   f"reward {score['reward']}) "
                    f"with the harness-benchmark grader, tree {tree} | `{rec['run_id']}` |")
     for item in sorted(notes.get("ledger", []), key=lambda i: STATUSES.index(i["status"])):
         out.append(f"| {item['status']} | {item['claim']} | {_cite(item['run_ids'])} |")
