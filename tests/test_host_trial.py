@@ -1,6 +1,7 @@
 """scripts/host_trial.py: the host-method trial loop.driver runs (batch F). Unit parts only; a trial needs Claude Code."""
 from __future__ import annotations
 
+import json
 import os
 import subprocess
 import sys
@@ -162,6 +163,56 @@ def test_stop_only_needs_the_saved_run(tmp_path):
     proc = subprocess.run([sys.executable, str(ROOT / "scripts" / "host_trial.py"), "P1", "--out", str(tmp_path),
                            "--model", "m", "--plugin-dir", str(tmp_path), "--stop-only"], capture_output=True, text=True)
     assert proc.returncode == 2 and "repo-as-left" in proc.stderr
+
+
+# --- a finished run (2026-10-24, run 20261024-P2-cadence-haiku-core-3): Cadence closed the session at R7
+# (session-close: activate_session.py --deactivate, status "completed") and the Stop hook never refused a stop, so
+# the probe's A1 ("no active cadence session") is the closed session, not a stop at A1.
+
+def _session(repo: Path, **fields) -> None:
+    d = repo / ".context" / "sessions" / "by-worktree"
+    d.mkdir(parents=True, exist_ok=True)
+    (d / "wt.json").write_text(json.dumps({"active_skill": None, **fields}))
+
+
+def test_a_session_cadence_closed_without_a_hard_stop_is_closed(tmp_path):
+    assert host_trial.closed_session(tmp_path / "repo") is None
+    _session(tmp_path / "repo", status="active", active_skill="cadence")
+    assert host_trial.closed_session(tmp_path / "repo") is None
+    _session(tmp_path / "repo", status="completed", completed_at="2026-10-24T04:10:00+00:00",
+             hard_stop={"class": "a5-gap", "reason": "A5"})
+    assert host_trial.closed_session(tmp_path / "repo") is None   # a hard stop closes a run without finishing it
+    _session(tmp_path / "repo", status="completed", completed_at="2026-10-24T04:10:00+00:00")
+    assert host_trial.closed_session(tmp_path / "repo") == "2026-10-24T04:10:00+00:00"
+
+
+@pytest.mark.parametrize("transcript, expected", [
+    ([], "R7"),                       # closed, no refusal: done
+    (CORE_1_TAIL[:1], "R2"),          # the Stop hook refused a stop at R2: not done, whatever the session says
+])
+def test_a_closed_session_with_no_refusal_is_done(transcript, expected):
+    stop = host_trial.choose_stop("A1", None, host_trial.open_block(transcript), "FAIL  no active cadence session",
+                                  closed="2026-10-24T04:10:00+00:00")
+    assert stop["block"] == expected
+    if expected == "R7":
+        assert stop["reason"].startswith("done: the session closed at R7 (session-close)")
+
+
+def test_the_stop_of_a_saved_finished_run_is_done(tmp_path):
+    """--stop-only on the run's own directory: the probe says A1, the run's .context says closed."""
+    plugin = tmp_path / "plugin"
+    (plugin / "scripts").mkdir(parents=True)
+    (plugin / "scripts" / "headless.py").write_text(
+        "import json\nprint(json.dumps({'next': {'block': 'A1'}, 'results': "
+        "[{'ok': False, 'output': 'FAIL  no active cadence session'}]}))\n")
+    out = tmp_path / "run"
+    _session(out / "repo-as-left", status="completed", completed_at="2026-10-24T04:10:00+00:00")
+    (out / "transcript.jsonl").write_text('{"type": "result"}\n')
+    proc = subprocess.run([sys.executable, str(ROOT / "scripts" / "host_trial.py"), "P2", "--out", str(out),
+                           "--model", "m", "--plugin-dir", str(plugin), "--stop-only"], capture_output=True, text=True)
+    assert proc.returncode == 0, proc.stderr
+    stop = json.loads((out / "stop.json").read_text())
+    assert stop["block"] == "R7" and stop["reason"].startswith("done:")
 
 
 # --- the agent's jail (2026-10-24, run 20261024-P2-cadence-haiku-core-3: the agent's `ps` showed the dev replay's

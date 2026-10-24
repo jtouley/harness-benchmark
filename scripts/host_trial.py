@@ -257,13 +257,33 @@ def open_block(lines) -> dict | None:
     return found
 
 
-def choose_stop(headless_block: str | None, hard: dict | str | None, opened: dict | None, why: str) -> dict:
-    """The stop of a run that did not finish (headless reports a block): the block a hard stop names, else the
-    last block the Stop hook named open, else the headless probe's block."""
+def closed_session(repo: Path) -> str | None:
+    """When Cadence closed the run's session at R7 (session-close: `activate_session.py --deactivate` sets status
+    "completed", which it allows only once E1 through R6 pass or with a hard stop) and no hard stop is recorded:
+    its completed_at, from the run's own .context. Else None."""
+    for path in sorted((repo / ".context" / "sessions" / "by-worktree").glob("*.json")):
+        try:
+            data = json.loads(path.read_text(encoding="utf-8"))
+        except (OSError, ValueError):
+            continue
+        if isinstance(data, dict) and data.get("status") == "completed" and not data.get("hard_stop"):
+            return str(data.get("completed_at") or "unknown")
+    return None
+
+
+def choose_stop(headless_block: str | None, hard: dict | str | None, opened: dict | None, why: str,
+                closed: str | None = None) -> dict:
+    """The stop of a run that did not finish (headless reports a block): the block a hard stop names; done (R7)
+    when Cadence closed the session and the Stop hook never refused a stop (run 20261024-P2-cadence-haiku-core-3:
+    the probe's A1 was "no active cadence session", the closed session); else the last block the Stop hook named
+    open; else the headless probe's block."""
     if headless_block is None:
         return {"block": None, "reason": None}
     if hard:
         return {"block": stop_block(headless_block, hard), "reason": why[:300] or None}
+    if closed is not None and opened is None:
+        return {"block": "R7", "reason": f"done: the session closed at R7 (session-close) at {closed}, with no "
+                                          f"Stop-hook refusal ({why})"[:300]}
     if opened is not None:
         refused = f": the Stop hook refused the stop {opened['refused']} times" if opened["refused"] else ""
         return {"block": opened["block"],
@@ -296,7 +316,7 @@ def stop_point(repo: Path, plugin: Path, env: dict[str, str], transcript: list[s
     if hard:
         why = f"hard stop {hard.get('class') if isinstance(hard, dict) else hard}: " + \
               (hard.get("reason", "") if isinstance(hard, dict) else "") + (f" ({why})" if why else "")
-    return choose_stop(nxt.get("block"), hard, open_block(transcript), why)
+    return choose_stop(nxt.get("block"), hard, open_block(transcript), why, closed_session(repo))
 
 
 def main(argv: list[str] | None = None) -> int:
