@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# One benchmark Cadence run ($BATCH: batch F iteration 1, then the 2026-10-24-shapes head to head), from a fresh cloud container of this environment (host method, the
+# One benchmark Cadence run ($BATCH: batch F iteration 1, then the 2026-10-24-shapes head to head and its round 2, 2026-10-24-shapes-r2), from a fresh cloud container of this environment (host method, the
 # subscription through the session's HTTPS proxy). One run per container: the dev replay owns localhost:8099,
 # which the spec itself names (golden/pipeline/P1/prompt.md:17), so two runs never share a host.
 #
@@ -35,7 +35,7 @@ CADENCE_REPO=https://github.com/jtouley/cadence
 # The driver and the grader: by default the commit of this script's own checkout, so the run uses the code
 # that runs it. Override with HB_SHA=<commit>.
 HB_SHA=${HB_SHA:-$(git -C "$(dirname "$0")" rev-parse HEAD)}
-BATCH=${BATCH:-2026-10-24-shapes}
+BATCH=${BATCH:-2026-10-24-shapes-r2}
 CADENCE_CAP=21600   # batches/2026-10-23-batch-f.json agent_caps.cadence: 3 x the one-shot cap
 PORT=8099
 
@@ -193,6 +193,11 @@ DRIVER=(uv run -q --frozen python -m loop.driver --run-id "$RID" --kind benchmar
   --shape "$SHAPE")
 
 if [ "$MODE" = --dry-run ]; then
+  # The agent's jail (#112) on this host: the scan from inside finds nothing, and claude logs in there.
+  grep -q -- '"--jail-check"' "$WORK/hb/scripts/host_trial.py" || die "harness-benchmark $HB_SHA has no host_trial --jail-check"
+  (cd "$WORK/hb" && uv run -q --frozen python scripts/host_trial.py "$TASK" --out "$RUN" --model claude-haiku-5-5 \
+     --plugin-dir "$PLUGIN" --jail-check) >>"$RUN/driver.out" 2>&1 || die "the agent's jail check failed: $(cat "$RUN/jail-check.json" 2>/dev/null || tail -3 "$RUN/driver.out")"
+  log "jail check: $(cat "$RUN/jail-check.json" | python3 -c 'import json,sys; r=json.load(sys.stdin); print(f"visible {r[\"visible\"]}, agent exit {r[\"agent_exit\"]}, reply {r[\"agent_reply\"]!r}")')"
   log "dry run: every setup check passed; the agent would start now with:"
   printf '%q ' "${DRIVER[@]}"; echo
   exit 0

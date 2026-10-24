@@ -1,0 +1,14 @@
+{
+ "batch": "2026-10-24-shapes-r2",
+ "grader_commit": "10172ce8e7564d61b9ff17a3fe2b625269b0e37c",
+ "grader_tree": "8a0977e42fa02981802090d1f9517efe537994c4",
+ "note": "round 2 of the two Cadence run shapes head to head (owner, 2026-10-24): core and full, Cadence on Haiku with peers on Haiku, P1 and P2 at n=3 each (run ids 20261024-P1|P2-cadence-haiku-core|full-4, -5, -6), one run per host (scripts/run_one.sh), host method, auth proxy, adapter none, the agent in its jail (#112). Both shapes on one cadence commit, 2100c6e (cadence main after the fixes and the front-matter audit, #227). The grader is unchanged: batch F's tree, as 2026-10-24-shapes.",
+ "cadence_commit": {
+  "core": "2100c6e6aa99d99309cfa8e7f8c5cee1018584b4",
+  "full": "2100c6e6aa99d99309cfa8e7f8c5cee1018584b4"
+ },
+ "agent_caps": {
+  "cadence": 21600,
+  "why": "as batch F: 3 x the one-shot cap (batches/2026-10-23-batch-f.json)"
+ }
+}

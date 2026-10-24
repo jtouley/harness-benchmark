@@ -319,6 +319,23 @@ def stop_point(repo: Path, plugin: Path, env: dict[str, str], transcript: list[s
     return choose_stop(nxt.get("block"), hard, open_block(transcript), why, closed_session(repo))
 
 
+def jail_check(out: Path, plugin: Path | None, model: str) -> int:
+    """The agent's jail on this host as a run would build it, with no run: nothing of the harness can be listed
+    from inside, and the agent can log in there (the session's token is bound back). Exit 0, or 5."""
+    home = out / "home"
+    home.mkdir(parents=True, exist_ok=True)
+    hide, keep = jail_paths(out, home, plugin, out / "spec" if (out / "spec").is_dir() else None)
+    visible = jail_preflight(hide, keep)
+    proc = subprocess.run(jail_argv(hide, keep, ["timeout", "120", "claude", "-p", "Reply with the one word OK.",
+                                                  "--model", model]),
+                          cwd=home, env=agent_env(home, plugin), capture_output=True, text=True)
+    report = {"hidden": [str(p) for p in hide], "kept": [str(p) for p in keep], "visible": visible,
+              "agent_exit": proc.returncode, "agent_reply": proc.stdout.strip()[-200:]}
+    (out / "jail-check.json").write_text(json.dumps(report, indent=1) + "\n")
+    print(json.dumps(report))
+    return 0 if not visible and proc.returncode == 0 else 5
+
+
 def main(argv: list[str] | None = None) -> int:
     ap = argparse.ArgumentParser(description=__doc__.split("\n\n")[0])
     ap.add_argument("task", choices=["P1", "P2", "P3"])
@@ -333,7 +350,12 @@ def main(argv: list[str] | None = None) -> int:
                     help="the run already ran in --out: derive its stop point again (stop.json) and do nothing else")
     ap.add_argument("--auth", choices=["proxy", "oauth-file"], default="proxy")
     ap.add_argument("--oauth-file", type=Path, help="--auth oauth-file: the operator's ~/.claude/.credentials.json")
+    ap.add_argument("--jail-check", action="store_true",
+                    help="run_one --dry-run: the agent's jail on this host, without the run: the scan from inside "
+                         "(jail_preflight) and a one-line claude -p in it (--out/jail-check.json)")
     args = ap.parse_args(argv)
+    if args.jail_check:
+        return jail_check(args.out.resolve(), args.plugin_dir.resolve() if args.plugin_dir else None, args.model)
     if args.stop_only:  # run_one --finish: the stop of a run that already ran, with this checkout's rules
         out = args.out.resolve()
         plugin = args.plugin_dir.resolve() if args.plugin_dir else None
