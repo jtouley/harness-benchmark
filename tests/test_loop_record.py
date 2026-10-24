@@ -465,6 +465,32 @@ def test_the_record_carries_the_run_shape(tmp_path, plugin, shape):
     assert rc == 0 and rec["shape"] == shape and record.validate(rec, record.RECORD_SCHEMA) == []
 
 
+@pytest.mark.parametrize("written, counts", [("full", True), ("core", False), (None, False)])
+def test_a_run_counts_only_when_its_repo_used_the_shape_on_its_record(tmp_path, plugin, written, counts):
+    """--shape on the driver and on host_trial are separate arguments (review of #95): after the run the
+    driver reads the run repo's .cadence.json `profile` back, and a run whose repo used another shape, or none,
+    does not count."""
+    config = {"adapter": "none", **({"profile": written} if written else {})}
+    script = f"mkdir -p {tmp_path}/work/repo && echo '{json.dumps(config)}' > {tmp_path}/work/repo/.cadence.json"
+    rc, run = _drive(tmp_path, plugin, extra=["--kind", "benchmark", "--shape", "full", *_entry(tmp_path)],
+                     script=script)
+    rec = json.loads((run / "record.json").read_text())
+    assert rc == 0 and rec["shape"] == "full" and rec["counts"]["counts"] is counts
+    if not counts:
+        assert rec["counts"]["why"].startswith("the run repo's .cadence.json profile is ")
+
+
+def test_the_check_refuses_a_shape_that_is_not_the_run_ids(tmp_path):
+    runs = tmp_path / "runs"
+    for rid, shape in (("20261024-P1-cadence-haiku-core-1", "core"), ("20261024-P1-cadence-haiku-full-1", "core"),
+                       ("20261024-P1-cadence-haiku-core-2", None), ("20261024-P1-cadence-haiku-1", None)):
+        (runs / rid).mkdir(parents=True)
+        (runs / rid / "record.json").write_text(json.dumps(minimal(rid, shape=shape)))
+    assert check.validate_tree(runs) == [
+        "20261024-P1-cadence-haiku-core-2/record.json: the run id names shape core, the record's shape is None",
+        "20261024-P1-cadence-haiku-full-1/record.json: the run id names shape full, the record's shape is 'core'"]
+
+
 @pytest.mark.parametrize("kind", ["benchmark", "live", "stub"])
 @pytest.mark.parametrize("arm", ["one-shot", "baseline", "harness"])
 def test_the_driver_refuses_any_arm_but_cadence(tmp_path, plugin, capsys, kind, arm):
