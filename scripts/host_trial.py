@@ -24,7 +24,11 @@ one-shot): this script adds no prompt text. In order:
 3. The agent: `claude -p "$HB_AGENT_PROMPT"` in RUN/repo, in its own session (the operator's Claude Code
    variables dropped), HOME as the driver gives it, with the plugin and, for a Cadence arm, peer models from
    `--peer-model` in $HOME/.config/cadence/config.json. It stops at its cap (criteria v2 5.3): a one-shot's guard cap, a Cadence arm's backstop.
-   Every process it leaves is stopped before grading.
+   Every process it leaves is stopped before grading. It runs in a jail (jail_argv): its own mount and PID
+   namespaces, /home, /root, /tmp, /var/tmp and this checkout covered by empty tmpfs, only the run's repo, origin,
+   HOME, spec and plugin bound back, so golden/, the key, the grader and the replay's process are absent.
+   Before it starts, a scan from inside the same jail (jail_preflight) must find no harness material:
+   RUN/jail.json, and exit 5 if it finds any.
 4. The records the grader's reset would lose: RUN/context (a copy of .context), RUN/repo-as-left, the stop
    point (Cadence's own headless.py `next` on a copy of the repository, and the session's hard stop).
 5. The grader (pipetask.trial, grading seed 1) on RUN/repo, run from RUN/repo as the container runs it: RUN/grade.json. RUN/timing.json has agent_seconds.
@@ -33,6 +37,7 @@ one-shot): this script adds no prompt text. In order:
 from __future__ import annotations
 
 import argparse
+import inspect
 import json
 import os
 import re
@@ -85,6 +90,82 @@ def cadence_config(shape: str | None) -> dict:
     if shape is not None:
         config["profile"] = shape
     return config
+
+
+# The agent's jail (2026-10-24, run 20261024-P2-cadence-haiku-core-3: the agent's `ps` listed the dev replay,
+# `$WORK/hb/.venv/bin/python3 -m pipetask.replay`, and $WORK/hb held golden/ and the key). The agent runs as root,
+# so permissions do not hide anything: in its own mount and PID namespaces, empty tmpfs mounts cover these
+# folders and this checkout, and only the run's own folders are bound back. Processes outside (the replay, the
+# driver, this script) are not in its /proc.
+JAIL_HIDE = ("/home", "/root", "/tmp", "/var/tmp")
+# The proxy's CA bundle; uv; and the cloud session's OAuth token, which claude reads at this fixed path whatever
+# HOME is (--auth proxy: without it the agent is "Not logged in"; it was readable to the agent before the jail too).
+JAIL_KEEP = ("/root/.ccr", "/root/.local/bin", "/home/claude/.claude/remote/.oauth_token")
+_JAIL = r"""set -euo pipefail
+hide=(); while [ "$1" != -- ]; do hide+=("$1"); shift; done; shift
+keep=(); while [ "$1" != -- ]; do keep+=("$1"); shift; done; shift
+mount -t tmpfs -o size=1m jail /mnt
+for i in "${!keep[@]}"; do
+  if [ -d "${keep[i]}" ]; then mkdir "/mnt/$i"; else : >"/mnt/$i"; fi
+  mount --bind "${keep[i]}" "/mnt/$i"
+done
+for h in "${hide[@]}"; do mount -t tmpfs -o mode=1777 jail "$h"; done
+for i in "${!keep[@]}"; do
+  if [ -d "/mnt/$i" ]; then mkdir -p "${keep[i]}"; else mkdir -p "$(dirname "${keep[i]}")"; : >"${keep[i]}"; fi
+  mount --bind "/mnt/$i" "${keep[i]}"
+done
+umount -l /mnt
+cd -- "$PWD"
+exec "$@"
+"""
+
+
+def _outermost(paths) -> list[Path]:
+    paths = sorted({Path(p) for p in paths})
+    return [p for p in paths if not any(q in p.parents for q in paths)]
+
+
+def jail_paths(out: Path, home: Path, plugin: Path | None, spec_dir: Path | None) -> tuple[list[Path], list[Path]]:
+    """(hidden, kept): the folders covered while the agent runs, this checkout always among them, and the ones
+    bound back: the run's repository, its origin, HOME, the spec, the plugin, and the host's CA bundle and uv."""
+    hide = _outermost([*map(Path, JAIL_HIDE), ROOT])
+    keep = [out / "repo", out / "origin.git", home, *(p for p in (plugin, spec_dir) if p), *map(Path, JAIL_KEEP)]
+    keep = [k for k in _outermost(keep) if k.exists() and any(h == k or h in k.parents for h in hide)]
+    return [h for h in hide if h.is_dir()], keep
+
+
+def jail_argv(hide, keep, argv: list[str]) -> list[str]:
+    return ["unshare", "--mount", "--pid", "--fork", "--kill-child", "--mount-proc", "--propagation", "private",
+            "bash", "-c", _JAIL, "jail", *map(str, hide), "--", *map(str, keep), "--", *argv]
+
+
+def scan_for_harness(top) -> list[str]:
+    """The paths under `top` that are this harness's material: a golden/ of tasks, the grader, a key, a
+    reference patch, the pipetask package, a harness-benchmark checkout (not Cadence's own tests/fixtures/golden)."""
+    import os
+    names = ("pipetask", "harness-benchmark", "grader.pyz", "reference.patch")
+    hits = []
+    for d, dirs, files in os.walk(top):
+        if d in ("/proc", "/sys", "/dev"):
+            dirs[:] = []
+            continue
+        for n in dirs + files:
+            path = os.path.join(d, n)
+            if n in names or n.startswith("answer_key") or (n == "golden" and n in dirs and any(
+                    os.path.isdir(os.path.join(path, sub)) for sub in ("pipeline", "probes", "tasks"))):
+                hits.append(path)
+        dirs[:] = [n for n in dirs if os.path.join(d, n) not in hits]
+    return hits
+
+
+def jail_preflight(hide, keep) -> list[str]:
+    """scan_for_harness over the whole filesystem, from inside the agent's jail: what the agent could list."""
+    code = inspect.getsource(scan_for_harness) + "\nimport sys\nprint('\\n'.join(scan_for_harness('/')))\n"
+    python = shutil.which("python3", path="/usr/local/bin:/usr/bin:/bin") or "python3"
+    proc = subprocess.run(jail_argv(hide, keep, [python, "-I", "-c", code]), cwd="/", capture_output=True, text=True)
+    if proc.returncode != 0:
+        raise RuntimeError(f"the agent's jail does not start: {proc.stderr.strip()}")
+    return proc.stdout.split()
 
 
 def setup_repo(task: str, out: Path, shape: str | None = None) -> Path:
@@ -259,6 +340,13 @@ def main(argv: list[str] | None = None) -> int:
             json.dumps({"peer_models": {"default": args.peer_model}}) + "\n")
     spec_dir = Path(prompt.split(" ", 1)[1]).parent if plugin is not None else None
 
+    hide, keep = jail_paths(out, home, plugin, spec_dir)
+    visible = jail_preflight(hide, keep)
+    (out / "jail.json").write_text(json.dumps({"hidden": [str(p) for p in hide], "kept": [str(p) for p in keep],
+                                               "visible": visible}, indent=1) + "\n")
+    if visible:
+        print(f"host_trial: the agent could list harness material: {visible[:5]}", file=sys.stderr)
+        return 5
     if _port_open():
         print(f"host_trial: port {PORT} is taken before the dev replay starts", file=sys.stderr)
         return 4
@@ -281,7 +369,7 @@ def main(argv: list[str] | None = None) -> int:
     cap = agent_cap(plugin, args.agent_cap)
     t0 = time.monotonic()
     with open(out / "transcript.jsonl", "w") as stdout, open(out / "agent.stderr", "w") as stderr:
-        agent = subprocess.Popen(["timeout", str(cap), *argv_agent], cwd=repo, env=env, stdout=stdout,
+        agent = subprocess.Popen(jail_argv(hide, keep, ["timeout", str(cap), *argv_agent]), cwd=repo, env=env, stdout=stdout,
                                  stderr=stderr, start_new_session=True)
         rc = agent.wait()
     agent_seconds = round(time.monotonic() - t0, 1)

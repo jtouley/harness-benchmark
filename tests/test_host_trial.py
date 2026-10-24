@@ -162,3 +162,86 @@ def test_stop_only_needs_the_saved_run(tmp_path):
     proc = subprocess.run([sys.executable, str(ROOT / "scripts" / "host_trial.py"), "P1", "--out", str(tmp_path),
                            "--model", "m", "--plugin-dir", str(tmp_path), "--stop-only"], capture_output=True, text=True)
     assert proc.returncode == 2 and "repo-as-left" in proc.stderr
+
+
+# --- the agent's jail (2026-10-24, run 20261024-P2-cadence-haiku-core-3: the agent's `ps` showed the dev replay's
+# command line, `$WORK/hb/.venv/bin/python3 -m pipetask.replay`, and $WORK/hb held golden/ and the key). While
+# the agent runs, nothing it can list holds the harness: the material is absent, not just unreadable (it runs as
+# root).
+
+def _layout(tmp_path: Path) -> tuple[Path, Path, Path, Path]:
+    out = tmp_path / "work" / "run" / "rid"
+    for d in ("repo", "origin.git", "home", "spec"):
+        (out / d).mkdir(parents=True)
+    (out / "spec" / "spec.md").write_text("the spec")
+    (out / "repo" / "README").write_text("the task")
+    (out / "driver.out").write_text("python /work/hb/scripts/host_trial.py")
+    (tmp_path / "work" / "plugin").mkdir()
+    (tmp_path / "work" / "plugin" / "plugin.json").write_text("{}")
+    (tmp_path / "work" / "hb" / "golden" / "pipeline" / "key").mkdir(parents=True)
+    (tmp_path / "work" / "hb" / "golden" / "pipeline" / "key" / "answer_key.json").write_text("{}")
+    return out, out / "home", tmp_path / "work" / "plugin", out / "spec"
+
+
+def _in_jail(hide, keep, *argv: str) -> subprocess.CompletedProcess:
+    return subprocess.run(host_trial.jail_argv(hide, keep, list(argv)), capture_output=True, text=True)
+
+
+def test_the_jail_hides_everything_but_the_run_the_agent_works_in(tmp_path):
+    out, home, plugin, spec = _layout(tmp_path)
+    keep = [out / "repo", out / "origin.git", home, spec, plugin]
+    proc = _in_jail([tmp_path / "work"], keep, "find", str(tmp_path / "work"))
+    assert proc.returncode == 0, proc.stderr
+    seen = {Path(p).relative_to(tmp_path / "work").as_posix() for p in proc.stdout.split()} - {"."}
+    assert seen == {"run", "run/rid", "run/rid/repo", "run/rid/repo/README", "run/rid/origin.git", "run/rid/home",
+                    "run/rid/spec", "run/rid/spec/spec.md", "plugin", "plugin/plugin.json"}
+    assert (tmp_path / "work" / "hb" / "golden" / "pipeline" / "key" / "answer_key.json").exists()  # outside
+
+
+def test_the_jail_keeps_the_agents_writes_and_its_exit_code(tmp_path):
+    out, home, plugin, spec = _layout(tmp_path)
+    proc = _in_jail([tmp_path / "work"], [out / "repo"], "sh", "-c", f"echo made > {out}/repo/new; exit 7")
+    assert proc.returncode == 7 and (out / "repo" / "new").read_text() == "made\n"
+
+
+def test_no_process_outside_the_jail_is_visible_from_it(tmp_path):
+    """The dev replay runs outside the agent's PID namespace: no command line of it, or of this harness, can
+    be listed from inside."""
+    outside = subprocess.Popen([sys.executable, "-c", "import time; time.sleep(60)", "pipetask.replay", str(ROOT)])
+    try:
+        proc = _in_jail([], [], "sh", "-c", "cat /proc/[0-9]*/cmdline | tr '\\0' ' '")
+        assert proc.returncode == 0, proc.stderr
+        assert "pipetask" not in proc.stdout and str(ROOT) not in proc.stdout and "sleep(60)" not in proc.stdout
+    finally:
+        outside.kill()
+
+
+def test_the_scan_finds_the_harness_material_and_not_cadences_own_fixtures(tmp_path):
+    (tmp_path / "hb" / "golden" / "pipeline").mkdir(parents=True)
+    (tmp_path / "x" / "key").mkdir(parents=True)
+    (tmp_path / "x" / "key" / "answer_key.json").write_text("{}")
+    (tmp_path / "y").mkdir()
+    (tmp_path / "y" / "grader.pyz").write_text("")
+    (tmp_path / "plugin" / "tests" / "fixtures" / "golden" / "good").mkdir(parents=True)
+    hits = host_trial.scan_for_harness(tmp_path)
+    assert sorted(Path(h).relative_to(tmp_path).as_posix() for h in hits) == [
+        "hb/golden", "x/key/answer_key.json", "y/grader.pyz"]
+
+
+def test_during_the_agent_phase_no_golden_or_key_path_exists_anywhere_the_agent_can_list(tmp_path):
+    """The run's real jail on this host, scanned from inside over the whole filesystem: this checkout (golden/,
+    the key, the grader) and every other harness checkout on the host are absent."""
+    out, home, plugin, spec = _layout(tmp_path)
+    assert (ROOT / "golden" / "pipeline" / "key").is_dir()
+    hide, keep = host_trial.jail_paths(out, home, plugin, spec)
+    assert any(ROOT == h or h in ROOT.parents for h in hide)
+    visible = host_trial.jail_preflight(hide, keep)
+    assert visible == []
+
+
+def test_the_preflight_finds_harness_material_left_in_a_kept_folder(tmp_path):
+    """The scan runs inside the jail and sees what the agent would: a golden/ copied into the run is found."""
+    out, home, plugin, spec = _layout(tmp_path)
+    (out / "repo" / "golden" / "pipeline").mkdir(parents=True)
+    hide, keep = host_trial.jail_paths(out, home, plugin, spec)
+    assert host_trial.jail_preflight(hide, keep) == [str(out / "repo" / "golden")]
