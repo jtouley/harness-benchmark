@@ -11,7 +11,9 @@ ignored: the plugin must be a published cadence commit, never a hand-patched tre
 writes runs/<run_id>/record.json (the cadence SHA, the models the transcript says served the session,
 the request id, the command, start and end time, cost), stores the transcript and the delivered tree in
 the blob store, and, with --grade, appends the harness-benchmark grader's score with the grader's commit
-and the git tree of golden/pipeline/pipetask. The grader must be a clean checkout for that. Then it
+and the git tree of golden/pipeline/pipetask. The grader must be a clean checkout for that, and when
+batches/<batch>.json pins a grader_commit, --grader-repo must be at that commit (a checkout of the pin, not
+the driver's own HEAD: the 2026-10-24-shapes-r2 scores name c344bea, the harness HEAD, not the pin 10172ce). Then it
 writes the batch's postmortem again (every committed postmortem that covers the batch, or a new
 <batch>.md) and scoreboard.md, so the record, the postmortem and the scoreboard go in one commit
 (runs/README.md, "After a merge").
@@ -148,6 +150,21 @@ def grader_identity(repo: Path) -> dict:
         raise DriverError(f"the grader in {repo} has local changes, so no commit names it:\n{dirty}")
     commit = _git(repo, "rev-parse", "HEAD")
     return {"repo": "jtouley/harness-benchmark", "commit": commit, "tree": _git(repo, "rev-parse", f"HEAD:{GRADER_PATH}")}
+
+
+def check_pinned_grader(grader: dict, batch: str, batches: Path = ROOT / "batches") -> None:
+    """Refuse a grader that is not the batch's pin: batches/<batch>.json {"grader_commit", "grader_tree"} names the
+    grader every run of the batch is graded with (batches/2026-10-23-batch-f.json: "every run is graded with this
+    grader"), so a score must be made by that commit and name it. A batch without a pin file or grader_commit
+    takes any clean grader."""
+    path = batches / f"{batch}.json"
+    pin = json.loads(path.read_text(encoding="utf-8")) if path.is_file() else {}
+    commit, tree = pin.get("grader_commit"), pin.get("grader_tree")
+    if commit and grader["commit"] != commit:
+        raise DriverError(f"the grader in --grader-repo is at {grader['commit']}, not batches/{batch}.json's pinned "
+                          f"grader_commit {commit}: grade with a checkout of the pin (scripts/run_one.sh makes one)")
+    if tree and grader["tree"] != tree:
+        raise DriverError(f"the grader tree {grader['tree']} is not batches/{batch}.json's grader_tree {tree}")
 
 
 def transcript_facts(lines) -> dict:
@@ -424,6 +441,8 @@ def main(argv: list[str] | None = None) -> int:
                               f"check (pass --holdout for that run; golden/pipeline/README.md)")
         cadence = plugin_commit(args.plugin_dir, bytecode_ok=args.finish) if args.plugin_dir else None
         grader = grader_identity(args.grader_repo) if args.grade else None
+        if grader:
+            check_pinned_grader(grader, args.batch)
         home = args.fresh_home or Path(os.environ.get("HOME", "/"))
         if args.finish and not args.transcript.exists():
             raise DriverError(f"--finish: no transcript at {args.transcript}; the command did not run there")
