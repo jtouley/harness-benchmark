@@ -35,7 +35,9 @@ log() { printf '%s run_one %s: %s\n' "$(date -u +%FT%TZ)" "$RID" "$*" | tee -a "
 [ $# -ge 1 ] || die "usage: scripts/run_one.sh <run-id> [--dry-run | --finish]"
 RID=$1
 MODE=${2:-}
+AGAIN=${3:-}
 case "$MODE" in ""|--dry-run|--finish) ;; *) die "unknown option $MODE (--dry-run or --finish)";; esac
+case "$AGAIN" in "") ;; --again) [ "$MODE" = --finish ] || die "--again goes with --finish";; *) die "unknown option $AGAIN";; esac
 [[ "$RID" =~ ^[0-9]{8}-(P[12])-cadence-haiku-(core|full)-[a-z0-9-]+$ ]] \
   || die "run id $RID is not <date>-P1|P2-cadence-haiku-core|full-<n>"
 TASK=${BASH_REMATCH[1]}
@@ -62,6 +64,25 @@ RUN=$WORK/run/$RID
 STORE=$WORK/store
 PLUGIN=$WORK/plugin
 FINISH_ARGS=()
+# Where the record, its stop and its branch go. --finish --again writes them all to new places and deletes
+# nothing: a run whose first finish was wrong (#105) gets a second record on rec/<id>-v2, with no force push.
+RUNS_DIR=$WORK/hb/runs
+STOP_FILE=$RUN/stop.json
+REC_WT=$WORK/rec
+REC_BRANCH=rec/$RID
+PR_MD=$WORK/pr.md
+if [ "$AGAIN" = --again ]; then
+  RUNS_DIR=$WORK/again/runs
+  STOP_FILE=$WORK/again/stop.json
+  REC_WT=$WORK/rec-v2
+  REC_BRANCH=rec/$RID-v2
+  PR_MD=$WORK/pr-v2.md
+  for path in "$WORK/again" "$REC_WT" "$PR_MD"; do [ ! -e "$path" ] || die "--again: $path exists (nothing is deleted)"; done
+  if git -C "$WORK/hb" ls-remote --exit-code --heads origin "$REC_BRANCH" >/dev/null 2>&1; then
+    die "--again: $REC_BRANCH is already on origin"
+  fi
+  mkdir -p "$WORK/again"
+fi
 if [ "$MODE" = --finish ]; then
   # The agent ran in $WORK and was graded, but no record was written (run 20261024-P2-cadence-haiku-core-1: the
   # driver crashed on a transcript event). Finish it from the saved run directory with this checkout's driver
@@ -69,7 +90,7 @@ if [ "$MODE" = --finish ]; then
   [ -f "$RUN/transcript.jsonl" ] || die "--finish: no $RUN/transcript.jsonl; the run never ran in $WORK"
   [ -d "$PLUGIN/.git" ] && [ -d "$STORE/.git" ] && [ -d "$WORK/hb/.git" ] || die "--finish: $WORK lacks hb, plugin or store"
   [ "$(git -C "$PLUGIN" rev-parse HEAD)" = "$CADENCE_SHA" ] || die "--finish: the plugin clone is not at $CADENCE_SHA"
-  [ ! -e "$WORK/hb/runs/$RID/record.json" ] || die "--finish: $RID already has a record in $WORK/hb"
+  [ ! -e "$RUNS_DIR/$RID/record.json" ] || die "--finish: $RID already has a record in $RUNS_DIR (finish it again with --finish --again)"
   log "finishing from $RUN with harness-benchmark $HB_SHA"
   git -C "$WORK/hb" fetch -q origin || die "cannot fetch harness-benchmark"
   git -C "$WORK/hb" checkout -q --detach "$HB_SHA" || die "harness-benchmark has no commit $HB_SHA"
@@ -78,8 +99,9 @@ if [ "$MODE" = --finish ]; then
   FINISH_ARGS=(--finish)
   # The stop with this checkout's rules (the transcript's last open block, run 20261024-P2-cadence-haiku-core-1).
   (cd "$WORK/hb" && uv run -q --frozen python scripts/host_trial.py "$TASK" --out "$RUN" --model claude-haiku-5-5 \
-     --plugin-dir "$PLUGIN" --stop-only) >>"$RUN/driver.out" 2>&1 || die "--finish: host_trial --stop-only failed (see $RUN/driver.out)"
-  log "stop derived again: $(cat "$RUN/stop.json")"
+     --plugin-dir "$PLUGIN" --stop-only --stop-file "$STOP_FILE") >>"$RUN/driver.out" 2>&1 \
+     || die "--finish: host_trial --stop-only failed (see $RUN/driver.out)"
+  log "stop derived again: $(cat "$STOP_FILE")"
 else
 [ ! -e "$WORK" ] || die "$WORK exists: a run id is never reused (remove it only if nothing was published)"
 
@@ -119,9 +141,9 @@ DRIVER=(uv run -q --frozen python -m loop.driver --run-id "$RID" --kind benchmar
   --task "$TASK" --request-id "$TASK-spec" --arm cadence --model claude-haiku-5-5
   --plugin-dir "$PLUGIN" --context "$RUN/context" --spec "$RUN/spec/spec.md" --cwd "$RUN"
   --fresh-home "$RUN/home" --agent-argv "$RUN/agent-argv.json" --transcript "$RUN/transcript.jsonl"
-  --tree "$RUN/repo-as-left" --grade "$RUN/grade.json" --grader-repo "$WORK/hb" --stop-point-file "$RUN/stop.json"
+  --tree "$RUN/repo-as-left" --grade "$RUN/grade.json" --grader-repo "$WORK/hb" --stop-point-file "$STOP_FILE"
   --timing "$RUN/timing.json" --store "$STORE" --isolation-method host --auth proxy --shape "$SHAPE"
-  "${FINISH_ARGS[@]}" -- uv run -q --frozen --project "$WORK/hb" python "$WORK/hb/scripts/host_trial.py" "$TASK" --out "$RUN"
+  --runs "$RUNS_DIR" "${FINISH_ARGS[@]}" -- uv run -q --frozen --project "$WORK/hb" python "$WORK/hb/scripts/host_trial.py" "$TASK" --out "$RUN"
   --model claude-haiku-5-5 --auth proxy --plugin-dir "$PLUGIN" --peer-model haiku --agent-cap "$CADENCE_CAP"
   --shape "$SHAPE")
 
@@ -137,7 +159,7 @@ set +e
 (cd "$WORK/hb" && "${DRIVER[@]}") >>"$RUN/driver.out" 2>&1
 rc=$?
 set -e
-REC=$WORK/hb/runs/$RID
+REC=$RUNS_DIR/$RID
 [ -f "$REC/record.json" ] || { log "driver exit $rc and no record (see $RUN/driver.out)"; exit 1; }
 SUMMARY=$(python3 - "$REC" <<'PY'
 import json, sys
@@ -163,13 +185,13 @@ log "pushing blobs to runs-store"
 # Parallel runs push to the same branch: push_blobs.sh retries on the new tip and checks every blob landed.
 bash "$(dirname "$0")/push_blobs.sh" "$STORE" "$RID" || { log "the blobs are not all on runs-store; nothing else is pushed"; exit 1; }
 
-log "record branch rec/$RID from origin/main"
+log "record branch $REC_BRANCH from origin/main"
 git -C "$WORK/hb" fetch -q origin main
-git -C "$WORK/hb" worktree add -q -b "rec/$RID" "$WORK/rec" origin/main
-cp -r "$REC" "$WORK/rec/runs/$RID"
+git -C "$WORK/hb" worktree add -q -b "$REC_BRANCH" "$REC_WT" origin/main
+cp -r "$REC" "$REC_WT/runs/$RID"
 (
   set -eo pipefail
-  cd "$WORK/rec"
+  cd "$REC_WT"
   [ -f "batches/$BATCH.json" ] || { echo "run_one: batches/$BATCH.json is not on main"; exit 3; }
   uv sync -q --frozen
   [ -f "postmortems/$BATCH.md" ] || uv run -q --frozen python -m loop.postmortem "$BATCH" --out "postmortems/$BATCH.md"
@@ -177,18 +199,18 @@ cp -r "$REC" "$WORK/rec/runs/$RID"
   uv run -q --frozen python -m loop.scoreboard --out scoreboard.md
   uv run -q --frozen python -m loop.check --base origin/main
   bash scripts/ci_local.sh 2>&1 | tail -3
-) || { log "a check before publishing failed: nothing pushed (fix, then push rec/$RID by hand)"; exit 3; }
-git -C "$WORK/rec" add -A runs postmortems scoreboard.md
-git -C "$WORK/rec" commit -q -m "$BATCH: $RID
+) || { log "a check before publishing failed: nothing pushed (fix, then push $REC_BRANCH by hand)"; exit 3; }
+git -C "$REC_WT" add -A runs postmortems scoreboard.md
+git -C "$REC_WT" commit -q -m "$BATCH: $RID
 
 $SUMMARY"
 for i in 1 2 3 4; do
-  git -C "$WORK/rec" push -q -u origin "rec/$RID" && break
-  [ "$i" = 4 ] && { log "push of rec/$RID failed 4 times"; exit 1; }
+  git -C "$REC_WT" push -q -u origin "$REC_BRANCH" && break
+  [ "$i" = 4 ] && { log "push of $REC_BRANCH failed 4 times"; exit 1; }
   sleep $((2 ** i))
 done
-HEAD_SHA=$(git -C "$WORK/rec" rev-parse --short HEAD)
-cat >"$WORK/pr.md" <<EOF
+HEAD_SHA=$(git -C "$REC_WT" rev-parse --short HEAD)
+cat >"$PR_MD" <<EOF
 Record of batch $BATCH: \`$RID\`. Merge with a merge commit (the record cites its grader commit $HB_SHA).
 
 **Score:** $SUMMARY
@@ -205,5 +227,5 @@ $BLOCKS
 Checks before the push: \`loop.check --base origin/main\` and \`scripts/ci_local.sh\` at $HEAD_SHA (see the
 session's log $WORK/run_one.log).
 EOF
-log "pushed rec/$RID at $HEAD_SHA; PR title '$BATCH: $RID', body $WORK/pr.md"
+log "pushed $REC_BRANCH at $HEAD_SHA; PR title '$BATCH: $RID', body $PR_MD"
 echo "$SUMMARY"
