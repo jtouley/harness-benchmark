@@ -14,7 +14,7 @@ from pathlib import Path
 
 import pytest
 
-from loop import check, driver, record, store
+from loop import check, driver, record, speed, store
 
 ROOT = Path(__file__).resolve().parents[1]
 
@@ -403,6 +403,26 @@ def test_the_record_has_time_per_block_from_the_runs_context(tmp_path, plugin):
     rc, run = _drive(tmp_path, plugin, extra=["--context", str(ctx)])
     blocks = json.loads((run / "record.json").read_text())["timing"]["blocks"]
     assert blocks == {"plan-review": {"seconds": 60.0, "calls": 1, "unfinished": 0}}
+
+
+@pytest.mark.parametrize("context", ["missing", "no-attest"])
+def test_a_cadence_run_that_died_before_any_peer_has_zero_time_per_block_and_can_be_timed(tmp_path, plugin, context):
+    """Run 20261024-P1-cadence-haiku-core-1r died at A1 ("no active cadence session") before any peer ran:
+    host_trial copies .context only when it exists, and with no attest calls the record said blocks None, so
+    loop.check refused it as a run it cannot time and run_one could not publish it. No peer ran is zero time
+    per block ({}), and the run publishes as a counted result with its stop."""
+    ctx = tmp_path / "ctx"
+    if context == "no-attest":
+        (ctx / "sessions").mkdir(parents=True)
+    timing = tmp_path / "timing.json"
+    timing.write_text('{"agent_seconds": 12.5}')
+    stop = tmp_path / "trial" / "stop.json"
+    script = f"""echo '{{"block": "A1", "reason": "no active cadence session"}}' > {stop}; exit 1"""
+    rc, run = _drive(tmp_path, plugin, extra=["--kind", "benchmark", *_entry(tmp_path), "--context", str(ctx),
+                                              "--timing", str(timing), "--stop-point-file", str(stop)], script=script)
+    rec = json.loads((run / "record.json").read_text())
+    assert rc == 0 and rec["timing"]["blocks"] == {} and rec["stop_point"]["block"] == "A1"
+    assert rec["counts"]["counts"] is True and speed.problems(tmp_path / "runs") == []
 
 
 def test_the_record_has_wall_agent_and_active_time(tmp_path, plugin):
