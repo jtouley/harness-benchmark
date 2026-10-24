@@ -116,3 +116,12 @@ def test_the_run_shape_goes_into_the_run_repos_cadence_config():
     proc = subprocess.run([sys.executable, str(ROOT / "scripts" / "host_trial.py"), "P1", "--out", "/tmp/x",
                            "--model", "m", "--shape", "medium"], capture_output=True, text=True)
     assert proc.returncode == 2 and "--shape" in proc.stderr
+
+
+def test_nothing_for_a_verdict_judge_reaches_a_benchmark_run(monkeypatch, tmp_path):
+    """Jev (the TypeSafe verdict judge) is not in the benchmark runs; nothing from a run leaves the machine
+    (docs/rules.md, Owner's goals). Cadence main has no Jev path today; the agent's env keeps it that way."""
+    monkeypatch.setenv("TYPESAFE_API_KEY", "fake")
+    monkeypatch.setenv("TYPESAFE_URL", "https://example.invalid")
+    env = host_trial.agent_env(tmp_path, Path("/srv/plugin"))
+    assert not [k for k in env if k.startswith("TYPESAFE_")]

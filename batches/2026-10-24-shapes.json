@@ -1,0 +1,11 @@
+{
+ "batch": "2026-10-24-shapes",
+ "grader_commit": "10172ce8e7564d61b9ff17a3fe2b625269b0e37c",
+ "grader_tree": "8a0977e42fa02981802090d1f9517efe537994c4",
+ "note": "the two Cadence run shapes head to head (owner, 2026-10-24): core and full, Cadence on Haiku with peers on Haiku, P1 and P2 at n=3 each, one run per host (scripts/run_one.sh), host method, auth proxy, adapter none. Cadence main 6ea0c83: #219 (the core shape with one review) and #220 (the A5 gate fix). The grader tree is batch F's.",
+ "cadence_commit": "6ea0c837438d924dac6a2799e27c5e3f5961c3db",
+ "agent_caps": {
+  "cadence": 21600,
+  "why": "as batch F: 3 x the one-shot cap (batches/2026-10-23-batch-f.json)"
+ }
+}
