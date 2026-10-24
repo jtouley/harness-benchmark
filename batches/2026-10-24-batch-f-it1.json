@@ -1,0 +1,11 @@
+{
+ "batch": "2026-10-24-batch-f-it1",
+ "grader_commit": "91fc3595ca9f81d57e0e3679315f775f40004448",
+ "grader_tree": "8a0977e42fa02981802090d1f9517efe537994c4",
+ "note": "batch F iteration 1: cadence main 154e573 (#216, the A5 fix for F-11), host method, auth proxy (the subscription), Haiku with peers on Haiku, adapter none. Every run is driven and graded by harness-benchmark 91fc359 (#89 pinned baselines, #90 the owner's floors, #91 done); the grader tree is iteration 0's.",
+ "agent_caps": {
+  "cadence": 21600,
+  "why": "as batch F iteration 0: 3 x the one-shot cap (batches/2026-10-23-batch-f.json)"
+ },
+ "not_published": "20261024-P1-cadence-haiku-it1-1 was stopped at 01:03 UTC by the owner's abort, about 30 min in during E1, and wrote no record; the restart uses the suffix -r2 so no run id is used twice. Runs after the first run on separate hosts, one run per host (the spec names localhost:8099)."
+}
