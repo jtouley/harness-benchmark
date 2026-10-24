@@ -27,7 +27,7 @@ Counted runs with a score from the harness-benchmark grader; each run's latest s
 | 2026-10-15 | baseline | — | claude-opus-5-5 | 1 | 5/7 | 5.00 | 41 | — | unknown |
 | 2026-10-15 | baseline | — | claude-sonnet-5-5 | 1 | 3/7 | 3.00 | 29 | — | unknown |
 | 2026-10-21 | cadence-core | cadence-core@29315c4 | claude-haiku-5-5 | 3 | 0/7, 0/7, 0/7 | 0.00 | 43, 64, 81 | — (3 stopped early) | 423b34a |
-| 2026-10-24 | cadence | cadence@d3c2ffe | claude-haiku-5-5 | 1 | 0/7 | 0.00 | 4 | — (1 stopped early) | 8a0977e |
+| 2026-10-24 | cadence | cadence@d3c2ffe | claude-haiku-5-5 | 2 | 0/7, 0/7 | 0.00 | 14, 4 | — (2 stopped early) | 8a0977e |
 
 ## P3
 
@@ -45,7 +45,7 @@ The owner's Done line: P1 and P2 means meet the bar on two consecutive batches o
 - 2026-10-21-cadence-core-subscription: P1 mean 0.00/7 MISS, time —; P2 mean 0.00/7 MISS, time —: FAIL (below 4/7 on P1, P2; no time on P1, P2)
 - 2026-10-23-batch-f: P1 1 run(s), needs 3; P2 0 run(s), needs 3: FAIL
 - 2026-10-24-batch-f-it1: P1 1 run(s), needs 3; P2 0 run(s), needs 3: FAIL
-- 2026-10-24-shapes: P1 0 run(s), needs 3; P2 1 run(s), needs 3: FAIL
+- 2026-10-24-shapes: P1 0 run(s), needs 3; P2 2 run(s), needs 3: FAIL
 - NOT DONE: no two consecutive batches pass
 
 ## Run shapes
@@ -54,9 +54,9 @@ Cadence on Haiku per run shape, head to head (owner, 2026-10-24): the same bar (
 
 | Task | Shape | n | Mean | Tier | Time ÷ one-shot | Cost |
 |---|---|---|---|---|---|---|
-| P2 | full | 1 | 0.00 | MISS | — | $0.05 |
+| P2 | full | 2 | 0.00 | MISS | — | $0.16 |
 
 ### Done, full
 
-- 2026-10-24-shapes: P1 0 run(s), needs 3; P2 1 run(s), needs 3: FAIL
+- 2026-10-24-shapes: P1 0 run(s), needs 3; P2 2 run(s), needs 3: FAIL
 - NOT DONE: no two consecutive batches pass
