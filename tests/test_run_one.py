@@ -124,3 +124,67 @@ def test_the_detached_run_itself_may_start_in_the_folder_detach_made(tmp_path):
     (work / "stray").write_text("")
     proc = _run_one(tmp_path, RID, **env)
     assert proc.returncode == 2 and "exists" in proc.stderr
+
+
+# --- the summary line (run 20261024-P1-cadence-haiku-core-4, PR #115: passed 2, reward 0.0, stream_ok false; the
+# scoreboard showed 0.00 MISS while the finished line, the commit message and pr.md printed "2/7")
+
+def _voided_record(tmp_path) -> Path:
+    import json
+    run = tmp_path / "runs" / "20261024-P1-cadence-haiku-core-4"
+    run.mkdir(parents=True)
+    (run / "record.json").write_text(json.dumps({
+        "run_id": run.name, "batch": "2026-10-24-shapes-r2",
+        "stop_point": {"block": "R2", "reason": "hard stop retries: R2 test-benchmark gate FAIL"},
+        "timing": {"agent_wall_seconds": 4278.3}, "counts": {"counts": True, "why": "driver run"},
+        "cadence": {"sha": "2100c6e6aa99", "tree": "be0094b1"}}))
+    (run / "scores.jsonl").write_text(json.dumps({"passed": 2, "total": 7, "reward": 0.0, "stream_ok": False,
+                                                  "idempotent": True, "run_id": run.name}) + "\n")
+    return run
+
+
+def test_the_summary_headline_is_the_scoreboard_score_not_the_passed_count(tmp_path):
+    """A run with passed > 0 and reward 0 reads score 0/7 (round(reward x total), scoreboard._passed), then the
+    grader's own passed, reward, stream_ok and idempotent. run_one.sh prints it the way the publish step runs it:
+    the system python3 with this checkout on PYTHONPATH."""
+    from loop import scoreboard
+    run = _voided_record(tmp_path)
+    proc = subprocess.run(["python3", "-m", "loop.run_summary", str(run)], capture_output=True, text=True,
+                          env={**os.environ, "PYTHONPATH": str(ROOT)}, cwd=tmp_path)
+    assert proc.returncode == 0, proc.stderr
+    line = proc.stdout.strip()
+    assert line.startswith("20261024-P1-cadence-haiku-core-4: score 0/7; passed 2/7, reward 0.0, stream_ok false, "
+                           "idempotent true; stop R2 (hard stop retries")
+    assert ": 2/7" not in line
+    assert scoreboard._passed({"passed": 2, "total": 7, "reward": 0.0}) == 0
+    text = (ROOT / "scripts" / "run_one.sh").read_text(encoding="utf-8")
+    assert 'SUMMARY=$(PYTHONPATH="$(cd "$(dirname "$0")/.." && pwd)" python3 -m loop.run_summary "$REC")' in text
+    assert "s[-1]['passed']" not in text
+    for use in ('-m "$BATCH: $RID\n\n$SUMMARY"', "**Score:** $SUMMARY", 'echo "$SUMMARY"'):
+        assert use in text   # the commit message, pr.md and the last log line (what --wait prints) all use it
+
+
+def test_a_full_score_and_a_missing_reward_keep_passed(tmp_path):
+    from loop import run_summary
+    assert run_summary.score_text({"passed": 5, "total": 7, "reward": 0.7143, "stream_ok": True,
+                                   "idempotent": True}).startswith("score 5/7; passed 5/7, reward 0.7143")
+    assert run_summary.score_text({"passed": 3, "total": 7}).startswith("score 3/7; passed 3/7, reward None")
+    assert run_summary.score_text(None).startswith("score none")
+
+
+def test_correct_record_text_replaces_only_the_score_line(tmp_path):
+    import importlib.util
+    spec = importlib.util.spec_from_file_location("correct_record_text", ROOT / "scripts" / "correct_record_text.py")
+    mod = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(mod)
+    from loop import run_summary
+    summary = run_summary.summary(_voided_record(tmp_path))
+    old = "Record of batch b.\n\n**Score:** 20261024-P1-cadence-haiku-core-4: 2/7, stop R2 (x)\n\nRan on cadence c.\n"
+    new = mod.corrected_body(old, summary)
+    assert new == old.replace("20261024-P1-cadence-haiku-core-4: 2/7, stop R2 (x)", summary)
+    assert mod.corrected_body("no score here", summary).startswith(f"**Score:** {summary}\n\n")
+    message = mod.commit_message("2026-10-24-shapes-r2", "20261024-P1-cadence-haiku-core-4", summary)
+    assert message.startswith("2026-10-24-shapes-r2: 20261024-P1-cadence-haiku-core-4: score text corrected\n\n"
+                              "20261024-P1-cadence-haiku-core-4: score 0/7; passed 2/7")
+    source = (ROOT / "scripts" / "correct_record_text.py").read_text(encoding="utf-8")
+    assert "--force" not in source.replace('"worktree", "remove", "--force"', "") and "+HEAD" not in source

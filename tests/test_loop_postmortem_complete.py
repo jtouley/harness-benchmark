@@ -160,3 +160,45 @@ def test_the_driver_writes_the_batchs_postmortem_and_the_scoreboard_beside_the_r
 def test_every_counted_or_cited_run_is_in_a_committed_postmortem_and_each_is_current():
     assert check.postmortem_problems(RUNS, POSTMORTEMS, findings.FINDINGS, ROOT / "scoreboard.md") == []
     assert check.main([]) == 0
+
+
+# --- the score: round(reward x total)/total, the scoreboard's (loop.run_summary), not the passed count
+
+def _voided(runs: Path) -> str:
+    """Batch 2026-10-24-shapes copied to `runs`, its first run rescored passed 2, reward 0.0, stream_ok false
+    (the shape of 20261024-P1-cadence-haiku-core-4, PR #115); that run's id."""
+    rid = _copy_batch(runs, "2026-10-24-shapes")[0]
+    (runs / rid / "scores.jsonl").write_text(json.dumps({
+        "run_id": rid, "passed": 2, "total": 7, "reward": 0.0, "stream_ok": False, "idempotent": True,
+        "grader": {"tree": "8a0977e"}}) + "\n")
+    return rid
+
+
+def test_the_timeline_score_is_the_scoreboard_score_with_passed_reward_and_stream_ok(tmp_path):
+    runs = tmp_path / "runs"
+    rid = _voided(runs)
+    text = postmortem.generate("2026-10-24-shapes", runs, {}, _no_findings(tmp_path), citations={"citations": {}})
+    assert "| Score | Passed | Reward | stream_ok | Counts |" in text
+    row = next(line for line in text.splitlines() if line.startswith("| 20") and f"`{rid}`" in line)
+    assert "| 0/7 | 2/7 | 0.0 | false | yes |" in row
+    assert scoreboard._passed(record.scores(runs / rid)[-1]) == 0
+    assert "scored 0/7 (passed 2/7, reward 0.0)" in text and "scored 2/7" not in text
+    assert "- Scores (counted): 0/7, 0/7, 0/7." in text
+
+
+def test_correct_record_text_writes_the_batch_postmortem_again(tmp_path):
+    import importlib.util
+    spec = importlib.util.spec_from_file_location("correct_record_text", ROOT / "scripts" / "correct_record_text.py")
+    mod = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(mod)
+    wt = tmp_path / "rec"
+    _voided(wt / "runs")
+    (wt / "findings.jsonl").write_text("")
+    (wt / "postmortems").mkdir()
+    stale = wt / "postmortems" / "2026-10-24-shapes.md"
+    stale.write_text("| Score |\n| 2/7 |\n")
+    assert mod.refresh_postmortems(wt, "2026-10-24-shapes") == ["postmortems/2026-10-24-shapes.md"]
+    assert "| 0/7 | 2/7 | 0.0 | false | yes |" in stale.read_text()
+    assert mod.refresh_postmortems(wt, "2026-10-24-shapes") == []
+    message = mod.commit_message("b", "r", "s", ["postmortems/2026-10-24-shapes.md"])
+    assert "postmortems/2026-10-24-shapes.md written again by loop.postmortem" in message
