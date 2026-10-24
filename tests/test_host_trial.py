@@ -296,3 +296,19 @@ def test_the_preflight_finds_harness_material_left_in_a_kept_folder(tmp_path):
     (out / "repo" / "golden" / "pipeline").mkdir(parents=True)
     hide, keep = host_trial.jail_paths(out, home, plugin, spec)
     assert host_trial.jail_preflight(hide, keep) == [str(out / "repo" / "golden")]
+
+
+def test_the_jail_check_scans_from_inside_and_runs_the_agent_there(tmp_path):
+    """run_one --dry-run's check: a fake claude bound in with HOME answers from inside the jail."""
+    out, home, plugin, spec = _layout(tmp_path)
+    (home / "bin").mkdir()
+    (home / "bin" / "claude").write_text("#!/bin/sh\nls /var/tmp /tmp >/dev/null; echo OK\n")
+    (home / "bin" / "claude").chmod(0o755)
+    env = {**os.environ, "PATH": f"{home / 'bin'}:/usr/bin:/bin"}
+    proc = subprocess.run([sys.executable, str(ROOT / "scripts" / "host_trial.py"), "P1", "--out", str(out),
+                           "--model", "m", "--plugin-dir", str(plugin), "--jail-check"], env=env,
+                          capture_output=True, text=True)
+    assert proc.returncode == 0, proc.stderr
+    report = json.loads((out / "jail-check.json").read_text())
+    assert report["visible"] == [] and report["agent_exit"] == 0 and report["agent_reply"] == "OK"
+    assert str(spec) in report["kept"] and str(plugin) in report["kept"]
