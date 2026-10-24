@@ -211,17 +211,10 @@ rc=$?
 set -e
 REC=$RUNS_DIR/$RID
 [ -f "$REC/record.json" ] || { log "driver exit $rc and no record (see $RUN/driver.out)"; exit 1; }
-SUMMARY=$(python3 - "$REC" <<'PY'
-import json, sys
-from pathlib import Path
-d = Path(sys.argv[1])
-r = json.loads((d / "record.json").read_text())
-s = [json.loads(l) for l in (d / "scores.jsonl").read_text().splitlines()] if (d / "scores.jsonl").exists() else []
-print(f"{r['run_id']}: {s[-1]['passed'] if s else None}/{s[-1]['total'] if s else None}, stop {r['stop_point']['block']}"
-      f" ({(r['stop_point']['reason'] or '')[:80]}), agent {r['timing']['agent_wall_seconds']} s, counts {r['counts']['counts']}"
-      f" ({r['counts']['why']}), cadence {r['cadence']['sha'][:7]} tree {r['cadence']['tree'][:7]}")
-PY
-)
+# The summary line (loop/run_summary.py, from this script's own checkout): the headline is the scoreboard's score,
+# round(reward x total)/total, then passed, reward, stream_ok and idempotent (run 20261024-P1-cadence-haiku-core-4
+# printed its passed 2/7 here while its score was 0/7). It goes in the commit message, pr.md and the last log line.
+SUMMARY=$(PYTHONPATH="$(cd "$(dirname "$0")/.." && pwd)" python3 -m loop.run_summary "$REC")
 log "driver exit $rc: $SUMMARY"
 if [ -n "$(python3 -c 'import json,sys; print(json.load(open(sys.argv[1])).get("api_error") or "")' "$REC/record.json")" ]; then
   log "infrastructure loss (the API cut the run off): nothing is published; rerun with a new id"
