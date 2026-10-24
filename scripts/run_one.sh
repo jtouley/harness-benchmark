@@ -76,6 +76,10 @@ if [ "$MODE" = --finish ]; then
   (cd "$WORK/hb" && uv sync -q --frozen) || die "uv sync --frozen failed in $WORK/hb"
   grep -q -- '"--finish"' "$WORK/hb/loop/driver.py" || die "harness-benchmark $HB_SHA has no loop.driver --finish"
   FINISH_ARGS=(--finish)
+  # The stop with this checkout's rules (the transcript's last open block, run 20261024-P2-cadence-haiku-core-1).
+  (cd "$WORK/hb" && uv run -q --frozen python scripts/host_trial.py "$TASK" --out "$RUN" --model claude-haiku-5-5 \
+     --plugin-dir "$PLUGIN" --stop-only) >>"$RUN/driver.out" 2>&1 || die "--finish: host_trial --stop-only failed (see $RUN/driver.out)"
+  log "stop derived again: $(cat "$RUN/stop.json")"
 else
 [ ! -e "$WORK" ] || die "$WORK exists: a run id is never reused (remove it only if nothing was published)"
 

@@ -125,3 +125,40 @@ def test_nothing_for_a_verdict_judge_reaches_a_benchmark_run(monkeypatch, tmp_pa
     monkeypatch.setenv("TYPESAFE_URL", "https://example.invalid")
     env = host_trial.agent_env(tmp_path, Path("/srv/plugin"))
     assert not [k for k in env if k.startswith("TYPESAFE_")]
+
+
+# Run 20261024-P2-cadence-haiku-core-1: stuck at R5 closure, the Stop hook refused the stop three times (transcript
+# l.2061-2216), then the headless probe, run later in a copy with no live session, reported A1.
+CORE_1_TAIL = [
+    '{"type": "user", "message": {"role": "user", "content": [{"type": "text", "text": "Stop hook feedback:\\nBLOCKED '
+    'early stop in review. Continue paceline: next R2 (test-benchmark-pr) via `/test-benchmark`"}]}}',
+    '{"type": "user", "message": {"role": "user", "content": [{"type": "text", "text": "Stop hook feedback:\\nBLOCKED '
+    'early stop in review. Continue paceline: next R5 (closure) via `python3 /x/plugin/scripts/closure.py`"}]}}',
+    '{"type": "system", "subtype": "informational", "content": "Stop says: Cadence: stop refused 3 times \\u2014 '
+    'escalate to user. Continue paceline: next R5 (closure) via `python3 /x/plugin/scripts/closure.py`"}',
+]
+
+
+def test_the_open_block_is_the_last_one_the_stop_hook_named():
+    assert host_trial.open_block(CORE_1_TAIL) == {"block": "R5", "slug": "closure", "refused": 3}
+    assert host_trial.open_block(CORE_1_TAIL[:1]) == {"block": "R2", "slug": "test-benchmark-pr", "refused": None}
+    assert host_trial.open_block(['{"type": "result"}']) is None
+
+
+@pytest.mark.parametrize("headless, hard, transcript, expected", [
+    ("A1", None, CORE_1_TAIL, "R5"),                                        # the probe saw no session: the transcript wins
+    ("A1", {"class": "a5-gap", "reason": "A5 vibe-test NOT READY"}, CORE_1_TAIL[:1], "A5"),  # a hard stop names its block
+    ("E4", None, [], "E4"),                                                 # no Stop hook line: the probe's block
+    (None, None, CORE_1_TAIL, None),                                        # the run finished: no stop at all
+])
+def test_the_stop_is_the_last_open_block_of_the_session(headless, hard, transcript, expected):
+    stop = host_trial.choose_stop(headless, hard, host_trial.open_block(transcript), "FAIL  no active cadence session")
+    assert stop["block"] == expected
+    if expected == "R5":
+        assert stop["reason"].startswith("open at R5 (closure): the Stop hook refused the stop 3 times")
+
+
+def test_stop_only_needs_the_saved_run(tmp_path):
+    proc = subprocess.run([sys.executable, str(ROOT / "scripts" / "host_trial.py"), "P1", "--out", str(tmp_path),
+                           "--model", "m", "--plugin-dir", str(tmp_path), "--stop-only"], capture_output=True, text=True)
+    assert proc.returncode == 2 and "repo-as-left" in proc.stderr
