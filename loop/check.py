@@ -93,6 +93,18 @@ def _batch_pin(repo: Path, batch: str, cache: dict) -> set[str] | None:
     return cache[batch]
 
 
+def score_problem(score: dict) -> str | None:
+    """Why a score's reward is not its grade's, or None: the share of checks passed, and 0 when the grade failed
+    its build or stream gate (idempotent or stream_ok false; pipetask.trial.reward). The loop scores reward x
+    total (loop.scoreboard._passed), so a reward that disagrees would move a score."""
+    passed, total, reward = score.get("passed"), score.get("total"), score.get("reward")
+    if passed is None or not total or not isinstance(reward, (int, float)):
+        return None
+    voided = score.get("idempotent") is False or score.get("stream_ok") is False
+    expected = 0.0 if voided else round(passed / total, 4)
+    return None if abs(reward - expected) <= 1e-4 else f"reward {reward} does not agree with its grade (expected {expected})"
+
+
 def cadence_problem(rec: dict, pin: dict | None) -> str | None:
     """Why a record's cadence commit is not its batch's pin, or None. A pin's `cadence_commit` is one sha for
     every run, or one per run shape (batch 2026-10-24-shapes: the core arm on 085bfdc, the full arm on d3c2ffe)."""
@@ -152,6 +164,8 @@ def validate_tree(runs: Path, repo: Path = ROOT) -> list[str]:
                             f"grader (batches/{rec.get('batch')}.json) or a later one")
         for i, score in enumerate(scores, 1):
             problems += [f"{run.name}/scores.jsonl:{i}: {e}" for e in record.validate(score, record.SCORE_SCHEMA)]
+            if (why := score_problem(score)) is not None:
+                problems.append(f"{run.name}/scores.jsonl:{i}: {why}")
             if score.get("run_id") != run.name:
                 problems.append(f"{run.name}/scores.jsonl:{i}: run_id is not the folder name")
     return problems

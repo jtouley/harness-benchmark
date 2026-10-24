@@ -60,6 +60,13 @@ def cells(runs: Path) -> dict[tuple, list[tuple[dict, dict]]]:
 
 
 def _passed(score: dict) -> int:
+    """The checks a score earns on the benchmark's own grader (the owner's bar): reward x total, so a check the
+    grader voids (reward 0: the build was not idempotent or no stream run exited 0) earns nothing. On every
+    pinned baseline and every counted record this equals `passed` (checked when this rule came in); a score
+    with no reward keeps its `passed`."""
+    reward, total = score.get("reward"), score.get("total")
+    if isinstance(reward, (int, float)) and isinstance(total, int) and total:
+        return round(reward * total)
     return score.get("passed") or 0
 
 
