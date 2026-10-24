@@ -50,7 +50,7 @@ GP = ROOT / "golden" / "pipeline"
 CAPS = ROOT / "runner" / "pipeline" / "caps.json"
 PORT = 8099
 GATED = ["src/", "lib/", "app/", "packages/", "pipeline/", "engine/", "pipelines/", "transform/", "Makefile"]
-DROPPED_PREFIXES = ("CLAUDE", "CCR_", "AI_AGENT", "DOCUMENTS_")
+DROPPED_PREFIXES = ("CLAUDE", "CCR_", "AI_AGENT", "DOCUMENTS_", "TYPESAFE_")  # TYPESAFE_: no verdict judge in a run
 
 
 def agent_cap(plugin: Path | None, override: int | None = None) -> int:
