@@ -363,6 +363,7 @@ def main(argv: list[str] | None = None) -> int:
                     "command as HB_AGENT_PROMPT)")
     ap.add_argument("--agent-argv", type=Path, help="JSON list: the argv the command started the agent with")
     ap.add_argument("--isolation-method", default="host", help="host, or container:<image id>")
+    ap.add_argument("--shape", choices=["core", "full"], help="the Cadence run shape (owner, 2026-10-24), on the record")
     ap.add_argument("--auth", choices=["proxy", "oauth-file"], default="proxy",
                     help="how the agent authenticates: proxy (the host's HTTPS proxy adds the credentials; HOME gets "
                     "none) or oauth-file (the operator's ~/.claude/.credentials.json, copied into the fresh HOME)")
@@ -439,7 +440,7 @@ def main(argv: list[str] | None = None) -> int:
         "schema": 1, "run_id": args.run_id, "kind": args.kind, "batch": args.batch,
         "provenance": {"source": "driver", "evidence": []}, "task": args.task, "request_id": args.request_id,
         "arm": args.arm, "cadence": cadence, "model_requested": args.model, **facts, "command": command,
-        "api_error": lost,
+        "api_error": lost, "shape": args.shape,
         "spec": None if args.spec is None else {"path": str(args.spec.resolve()), "prompt": prompt,
                                                 "sha256": hashlib.sha256(args.spec.read_bytes()).hexdigest()},
         "started_at": started, "ended_at": ended, "exit_code": exit_code, "stop_point": stop,

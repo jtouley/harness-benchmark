@@ -137,12 +137,18 @@ def tier_of(mean: float) -> str:
     return "IDEAL" if mean >= IDEAL_FLOOR else "GOOD" if mean >= GOOD_FLOOR else "MISS"
 
 
-def gate(runs: Path, model: str, sha: str, n: int = 3, pinned: Path = baselines.PATH) -> tuple[bool, list[str]]:
+def _of_shape(rec: dict, shape: str | None) -> bool:
+    """Every run when `shape` is None, else the runs of that Cadence run shape (record `shape`)."""
+    return shape is None or rec.get("shape") == shape
+
+
+def gate(runs: Path, model: str, sha: str, n: int = 3, pinned: Path = baselines.PATH,
+         shape: str | None = None) -> tuple[bool, list[str]]:
     lines, ok = [], True
     grouped = cells(runs)
     for task in TASKS:
         rows = [r for (arm, s, m, t), rs in grouped.items() if s and s.startswith(sha) and m == model and t == task
-                for r in rs]
+                for r in rs if _of_shape(r[0], shape)]
         sonnet, opus = bar(task, SONNET, pinned), bar(task, OPUS, pinned)
         if len(rows) < n:
             ok = False
@@ -173,13 +179,15 @@ def _batch_key(recs: list[dict]) -> tuple[str, str, str]:
     return batch[:10], min((r["started_at"] or "" for r in recs), default=""), batch
 
 
-def done(runs: Path, n: int = 3, pinned: Path = baselines.PATH) -> tuple[bool, list[str]]:
-    """(Done, one line per batch of counted Cadence-on-Haiku runs then the verdict): see the module doc."""
+def done(runs: Path, n: int = 3, pinned: Path = baselines.PATH, shape: str | None = None) -> tuple[bool, list[str]]:
+    """(Done, one line per batch of counted Cadence-on-Haiku runs then the verdict): see the module doc. With
+    `shape`, only the runs of that run shape: each shape is done, or not, on its own."""
     batches: dict[str, list[tuple[dict, dict]]] = defaultdict(list)
     for (arm, _, model, task), rows in cells(runs).items():
         if arm not in ONE_SHOT_ARMS and model == DONE_MODEL and task in TASKS:
             for rec, score in rows:
-                batches[rec["batch"]].append((rec, score))
+                if _of_shape(rec, shape):
+                    batches[rec["batch"]].append((rec, score))
     order = sorted(batches, key=lambda b: _batch_key([rec for rec, _ in batches[b]]))
     lines, passing = [], []
     for batch in order:
@@ -210,6 +218,29 @@ def done(runs: Path, n: int = 3, pinned: Path = baselines.PATH) -> tuple[bool, l
     if pair is None:
         return False, lines + ["NOT DONE: no two consecutive batches pass"]
     return True, lines + [f"DONE: {order[pair - 1]} and {order[pair]} pass in a row"]
+
+
+SHAPES = ("core", "full")
+
+
+def shape_rows(runs: Path, pinned: Path = baselines.PATH) -> list[dict]:
+    """Per task and run shape, the counted Cadence-on-Haiku runs side by side (owner, 2026-10-24): n, the mean
+    checks passed and its tier, the mean time ratio (time_ratio, against the pinned basis) and the mean
+    reported cost. Runs with no shape are left out."""
+    out = []
+    for task in TASKS:
+        for shape in SHAPES:
+            rows = [(rec, s) for (arm, _, model, t), rs in cells(runs).items() if arm not in ONE_SHOT_ARMS
+                    and model == DONE_MODEL and t == task for rec, s in rs if rec.get("shape") == shape]
+            if not rows:
+                continue
+            mean = sum(_passed(s) for _, s in rows) / len(rows)
+            ratios, _ = _ratios(runs, [rec for rec, _ in rows], pinned)
+            costs = [rec["cost"]["reported_usd"] for rec, _ in rows if rec["cost"].get("reported_usd") is not None]
+            out.append({"task": task, "shape": shape, "n": len(rows), "mean": round(mean, 2), "tier": tier_of(mean),
+                        "ratio": round(sum(ratios) / len(ratios), 2) if ratios else None,
+                        "usd": round(sum(costs) / len(costs), 2) if costs else None})
+    return out
 
 
 def table(runs: Path) -> str:
@@ -244,6 +275,19 @@ def table(runs: Path) -> str:
               f"The owner's Done line: P1 and P2 means meet the bar on two consecutive batches of Cadence on Haiku, "
               f"at no more than {STRETCH_RATIO}x the pinned one-shot time (`python -m loop.scoreboard done`).", ""]
     lines += [f"- {line}" for line in done_lines] + [""]
+    shaped = shape_rows(runs)
+    if shaped:
+        lines += ["## Run shapes", "",
+                  "Cadence on Haiku per run shape, head to head (owner, 2026-10-24): the same bar (4/7 good, 5/7 "
+                  "ideal) and the same pinned time basis. Time is the mean time ratio; cost the mean reported cost.", "",
+                  "| Task | Shape | n | Mean | Tier | Time ÷ one-shot | Cost |", "|---|---|---|---|---|---|---|"]
+        for r in shaped:
+            ratio = "—" if r["ratio"] is None else f"{r['ratio']:.2f}x"
+            usd = "—" if r["usd"] is None else f"${r['usd']:.2f}"
+            lines.append(f"| {r['task']} | {r['shape']} | {r['n']} | {r['mean']:.2f} | {r['tier']} | {ratio} | {usd} |")
+        lines.append("")
+        for shape in sorted({r["shape"] for r in shaped}, key=SHAPES.index):
+            lines += [f"### Done, {shape}", ""] + [f"- {line}" for line in done(runs, shape=shape)[1]] + [""]
     return "\n".join(lines)
 
 
@@ -255,15 +299,16 @@ def main(argv: list[str] | None = None) -> int:
     ap.add_argument("--model")
     ap.add_argument("--sha")
     ap.add_argument("--n", type=int, default=3)
+    ap.add_argument("--shape", choices=SHAPES, help="gate and done: only the runs of this Cadence run shape")
     args = ap.parse_args(argv)
     if args.action == "done":
-        ok, lines = done(args.runs, args.n)
+        ok, lines = done(args.runs, args.n, shape=args.shape)
         print("\n".join(lines))
         return 0 if ok else 1
     if args.action == "gate":
         if not (args.model and args.sha):
             ap.error("gate needs --model and --sha")
-        ok, lines = gate(args.runs, args.model, args.sha, args.n)
+        ok, lines = gate(args.runs, args.model, args.sha, args.n, shape=args.shape)
         print("\n".join(lines))
         print("GATE PASS" if ok else "GATE FAIL")
         return 0 if ok else 1

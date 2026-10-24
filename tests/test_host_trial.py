@@ -104,3 +104,15 @@ def test_the_stop_is_the_block_where_the_hard_stop_started(open_block, hard, exp
     """A hard stop sends the run back to A1, so headless `next` reports A1; the stop's class names the block
     that stopped it (review of #81), else a block id that opens its reason (`retries` names none)."""
     assert host_trial.stop_block(open_block, hard) == expected
+
+
+def test_the_run_shape_goes_into_the_run_repos_cadence_config():
+    """Two Cadence run shapes, compared head to head (owner, 2026-10-24): `--shape core|full` sets the run
+    repo's .cadence.json `profile` (the key cadence PR 2 defines; coordinator to confirm). No shape, no key."""
+    assert host_trial.cadence_config("core")["profile"] == "core"
+    assert host_trial.cadence_config("full")["profile"] == "full"
+    assert "profile" not in host_trial.cadence_config(None)
+    assert host_trial.cadence_config("full")["adapter"] == "none"
+    proc = subprocess.run([sys.executable, str(ROOT / "scripts" / "host_trial.py"), "P1", "--out", "/tmp/x",
+                           "--model", "m", "--shape", "medium"], capture_output=True, text=True)
+    assert proc.returncode == 2 and "--shape" in proc.stderr

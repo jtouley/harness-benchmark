@@ -458,6 +458,13 @@ def test_the_command_gets_exactly_slash_cadence_and_the_spec_path_and_the_record
                            "prompt": f"/cadence {spec.resolve()}"}
 
 
+@pytest.mark.parametrize("shape", ["core", "full", None])
+def test_the_record_carries_the_run_shape(tmp_path, plugin, shape):
+    rc, run = _drive(tmp_path, plugin, extra=["--shape", shape] if shape else [])
+    rec = json.loads((run / "record.json").read_text())
+    assert rc == 0 and rec["shape"] == shape and record.validate(rec, record.RECORD_SCHEMA) == []
+
+
 @pytest.mark.parametrize("kind", ["benchmark", "live", "stub"])
 @pytest.mark.parametrize("arm", ["one-shot", "baseline", "harness"])
 def test_the_driver_refuses_any_arm_but_cadence(tmp_path, plugin, capsys, kind, arm):
