@@ -188,7 +188,9 @@ def transcript_facts(lines) -> dict:
 
 
 CONTACT_MARKERS = ("harness-benchmark", "golden/", "answer_key", "pipetask", "grader.pyz")
-_OTHER_CADENCE = re.compile(r"(?:~|/[\w.-]+)*/cadence[\w.-]*(?=/)")
+# A path to a Cadence checkout: it starts at a path boundary (not inside a word), so a git ref such as
+# origin/cadence/spec, Cadence's own branch name, is not one (run 20261024-P2-cadence-haiku-core-1).
+_OTHER_CADENCE = re.compile(r"(?<![\w-])(?:~|\.\.?|/[\w.-]+)*/cadence[\w.-]*(?=/)")
 
 
 def _message(event: dict) -> dict:
