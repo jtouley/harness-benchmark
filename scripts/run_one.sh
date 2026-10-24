@@ -9,8 +9,8 @@
 # or -cadence-haiku-full-. The shape goes on the record (loop.driver --shape) and into the run repo's
 # .cadence.json `profile` (host_trial --shape).
 #
-# It clones harness-benchmark at HB_SHA (the driver and the grader) and cadence at CADENCE_SHA (a clean plugin
-# clone), installs the driver's environment, runs loop.driver --spec for the run (Haiku, peers on Haiku,
+# It clones harness-benchmark at HB_SHA (the driver), adds a worktree of it at the batch's pinned grader_commit
+# (GRADER_SHA: the grader, batches/<batch>.json), and clones cadence at CADENCE_SHA (a clean plugin clone), installs the driver's environment, runs loop.driver --spec for the run (Haiku, peers on Haiku,
 # adapter none, a fresh HOME, a cwd holding only the run, both isolation scans, the batch's agent cap), then
 # publishes: the blobs to runs-store, and the record with its regenerated postmortem and scoreboard on branch
 # rec/<run-id> from origin/main, after loop.check and scripts/ci_local.sh pass. The pull request itself is
@@ -32,8 +32,8 @@ set -euo pipefail
 
 HB_REPO=https://github.com/jtouley/harness-benchmark
 CADENCE_REPO=https://github.com/jtouley/cadence
-# The driver and the grader: by default the commit of this script's own checkout, so the run uses the code
-# that runs it. Override with HB_SHA=<commit>.
+# The driver: by default the commit of this script's own checkout, so the run uses the code that runs it.
+# Override with HB_SHA=<commit>. The grader is not HB_SHA but the batch's pinned grader_commit (GRADER_SHA below).
 HB_SHA=${HB_SHA:-$(git -C "$(dirname "$0")" rev-parse HEAD)}
 BATCH=${BATCH:-2026-10-24-shapes-r2}
 CADENCE_CAP=21600   # batches/2026-10-23-batch-f.json agent_caps.cadence: 3 x the one-shot cap
@@ -96,6 +96,20 @@ PY
 [ -z "${CADENCE_SHA:-}" ] || [ "$CADENCE_SHA" = "$PINNED" ] \
   || die "CADENCE_SHA=$CADENCE_SHA is not the pin of batches/$BATCH.json for shape $SHAPE ($PINNED)"
 CADENCE_SHA=$PINNED
+# The grader is the batch pin's grader_commit (criteria v2: the grader is pinned before the first run; batch F:
+# "every run is graded with this grader"), checked out as its own worktree $WORK/grader, so the grade runs that
+# commit's golden/pipeline/pipetask and the score names it. Before this, the run graded with HB_SHA and recorded
+# HB_SHA (every 2026-10-24-shapes-r2 score names c344bea, the pin is 10172ce; same grader tree 8a0977e).
+read -r PIN_GRADER PIN_TREE < <(python3 - "$PIN_FILE" <<'PY'
+import json, sys
+pin = json.load(open(sys.argv[1]))
+print(pin.get("grader_commit") or "-", pin.get("grader_tree") or "-")
+PY
+)
+[ "$PIN_GRADER" != - ] || die "batches/$BATCH.json pins no grader_commit"
+[ -z "${GRADER_SHA:-}" ] || [ "$GRADER_SHA" = "$PIN_GRADER" ] \
+  || die "GRADER_SHA=$GRADER_SHA is not the grader_commit of batches/$BATCH.json ($PIN_GRADER)"
+GRADER_SHA=$PIN_GRADER
 # Never under HOME: the plugin clone would sit where the driver's other-checkout scan looks, and the publish
 # step's ci_local runs driver tests that scan HOME (run 20261024-P1-cadence-haiku-core-1r).
 WORK=${RUN_ONE_WORK:-/var/tmp/run-one}/$RID
@@ -103,6 +117,7 @@ case "$(realpath -m "$WORK")/" in "$(realpath -m "$HOME")"/*) die "$WORK is unde
 RUN=$WORK/run/$RID
 STORE=$WORK/store
 PLUGIN=$WORK/plugin
+GRADER=$WORK/grader
 FINISH_ARGS=()
 # Where the record, its stop and its branch go. --finish --again writes them all to new places and deletes
 # nothing: a run whose first finish was wrong (#105) gets a second record on rec/<id>-v2, with no force push.
@@ -129,6 +144,8 @@ if [ "$MODE" = --finish ]; then
   # (HB_SHA), without running the agent again: loop.driver --finish, then the same publish step.
   [ -f "$RUN/transcript.jsonl" ] || die "--finish: no $RUN/transcript.jsonl; the run never ran in $WORK"
   [ -d "$PLUGIN/.git" ] && [ -d "$STORE/.git" ] && [ -d "$WORK/hb/.git" ] || die "--finish: $WORK lacks hb, plugin or store"
+  [ "$(git -C "$GRADER" rev-parse HEAD 2>/dev/null)" = "$GRADER_SHA" ] \
+    || die "--finish: no grader worktree $GRADER at the pinned $GRADER_SHA, so no commit names the grader that graded it"
   [ "$(git -C "$PLUGIN" rev-parse HEAD)" = "$CADENCE_SHA" ] || die "--finish: the plugin clone is not at $CADENCE_SHA"
   [ ! -e "$RUNS_DIR/$RID/record.json" ] || die "--finish: $RID already has a record in $RUNS_DIR (finish it again with --finish --again)"
   log "finishing from $RUN with harness-benchmark $HB_SHA"
@@ -169,6 +186,13 @@ git -C "$WORK/hb" checkout -q --detach "$HB_SHA" || die "harness-benchmark has n
 [ -f "$WORK/hb/golden/pipeline/$TASK/prompt.md" ] || die "no golden/pipeline/$TASK/prompt.md at $HB_SHA"
 grep -q -- '"--shape"' "$WORK/hb/loop/driver.py" && grep -q -- '"--shape"' "$WORK/hb/scripts/host_trial.py" \
   || die "harness-benchmark $HB_SHA has no --shape (driver or host_trial): use a commit with run shapes"
+grep -q -- '"--grader-root"' "$WORK/hb/scripts/host_trial.py" && grep -q -- 'check_pinned_grader' "$WORK/hb/loop/driver.py" \
+  || die "harness-benchmark $HB_SHA cannot grade with the pinned grader (host_trial --grader-root): use a later commit"
+
+log "grader worktree at the pinned grader_commit $GRADER_SHA"
+git -C "$WORK/hb" worktree add -q --detach "$GRADER" "$GRADER_SHA" || die "harness-benchmark has no commit $GRADER_SHA"
+[ "$PIN_TREE" = - ] || [ "$(git -C "$GRADER" rev-parse "HEAD:golden/pipeline/pipetask")" = "$PIN_TREE" ] \
+  || die "the grader tree at $GRADER_SHA is not batches/$BATCH.json's grader_tree $PIN_TREE"
 
 log "cloning cadence at $CADENCE_SHA"
 git clone -q "$CADENCE_REPO" "$PLUGIN" || die "cannot clone $CADENCE_REPO"
@@ -186,11 +210,11 @@ DRIVER=(uv run -q --frozen python -m loop.driver --run-id "$RID" --kind benchmar
   --task "$TASK" --request-id "$TASK-spec" --arm cadence --model claude-haiku-5-5
   --plugin-dir "$PLUGIN" --context "$RUN/context" --spec "$RUN/spec/spec.md" --cwd "$RUN"
   --fresh-home "$RUN/home" --agent-argv "$RUN/agent-argv.json" --transcript "$RUN/transcript.jsonl"
-  --tree "$RUN/repo-as-left" --grade "$RUN/grade.json" --grader-repo "$WORK/hb" --stop-point-file "$STOP_FILE"
+  --tree "$RUN/repo-as-left" --grade "$RUN/grade.json" --grader-repo "$GRADER" --stop-point-file "$STOP_FILE"
   --timing "$RUN/timing.json" --store "$STORE" --isolation-method host --auth proxy --shape "$SHAPE"
   --runs "$RUNS_DIR" "${FINISH_ARGS[@]}" -- uv run -q --frozen --project "$WORK/hb" python "$WORK/hb/scripts/host_trial.py" "$TASK" --out "$RUN"
   --model claude-haiku-5-5 --auth proxy --plugin-dir "$PLUGIN" --peer-model haiku --agent-cap "$CADENCE_CAP"
-  --shape "$SHAPE")
+  --shape "$SHAPE" --grader-root "$GRADER")
 
 if [ "$MODE" = --dry-run ]; then
   # The agent's jail (#112) on this host: the scan from inside finds nothing, and claude logs in there.
@@ -204,7 +228,7 @@ if [ "$MODE" = --dry-run ]; then
 fi
 
 # --- the run
-log "start (shape $SHAPE, batch $BATCH, cadence $CADENCE_SHA, harness $HB_SHA)"
+log "start (shape $SHAPE, batch $BATCH, cadence $CADENCE_SHA, harness $HB_SHA, grader $GRADER_SHA)"
 set +e
 (cd "$WORK/hb" && "${DRIVER[@]}") >>"$RUN/driver.out" 2>&1
 rc=$?
@@ -254,11 +278,12 @@ for i in 1 2 3 4; do
 done
 HEAD_SHA=$(git -C "$REC_WT" rev-parse --short HEAD)
 cat >"$PR_MD" <<EOF
-Record of batch $BATCH: \`$RID\`. Merge with a merge commit (the record cites its grader commit $HB_SHA).
+Record of batch $BATCH: \`$RID\`. Merge with a merge commit (the record cites its grader commit $GRADER_SHA).
 
 **Score:** $SUMMARY
 
-Ran on cadence $CADENCE_SHA and harness-benchmark $HB_SHA (the driver and the grader), on its own host
+Ran on cadence $CADENCE_SHA, the driver at harness-benchmark $HB_SHA and the grader at the batch's pinned
+grader_commit $GRADER_SHA, on its own host
 (one run per container; the spec names localhost:8099). The record is the driver's, unchanged; the batch
 postmortem and \`scoreboard.md\` are regenerated by the generators. The transcript and tree blobs are on runs-store.
 
