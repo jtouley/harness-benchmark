@@ -66,13 +66,15 @@ def _git(repo: Path, *args: str) -> str:
     return proc.stdout.strip()
 
 
-def plugin_commit(plugin: Path) -> dict:
-    """The published commit `plugin` is exactly at, or DriverError."""
+def plugin_commit(plugin: Path, bytecode_ok: bool = False) -> dict:
+    """The published commit `plugin` is exactly at, or DriverError. With `bytecode_ok` (--finish: the run's
+    hooks already imported plugin modules), Python bytecode is not a difference."""
     plugin = plugin.resolve()
     top = Path(_git(plugin, "rev-parse", "--show-toplevel")).resolve()
     if top != plugin:
         raise DriverError(f"{plugin} is not the top of its git work tree ({top})")
-    dirty = _git(plugin, "status", "--porcelain", "--ignored", "--untracked-files=all")
+    dirty = "\n".join(_source_changes(plugin)) if bytecode_ok else \
+        _git(plugin, "status", "--porcelain", "--ignored", "--untracked-files=all")
     if dirty:
         raise DriverError(f"{plugin} differs from its commit (modified, untracked or ignored files):\n{dirty}")
     sha = _git(plugin, "rev-parse", "HEAD")
@@ -164,7 +166,7 @@ def transcript_facts(lines) -> dict:
         session = session or event.get("session_id")
         if event.get("type") == "system" and event.get("subtype") == "init":
             version = event.get("claude_code_version") or version
-        model = (event.get("message") or {}).get("model") if event.get("type") == "assistant" else None
+        model = _message(event).get("model") if event.get("type") == "assistant" else None
         if model and model != "<synthetic>" and model not in served:
             served.append(model)
         if event.get("type") == "result":
@@ -189,6 +191,13 @@ CONTACT_MARKERS = ("harness-benchmark", "golden/", "answer_key", "pipetask", "gr
 _OTHER_CADENCE = re.compile(r"(?:~|/[\w.-]+)*/cadence[\w.-]*(?=/)")
 
 
+def _message(event: dict) -> dict:
+    """A transcript event's `message`, or {}: an event's message can be a string (run
+    20261024-P2-cadence-haiku-core-1: the driver crashed on it after 88 minutes and wrote no record)."""
+    message = event.get("message")
+    return message if isinstance(message, dict) else {}
+
+
 def contact(lines, plugin: Path | None) -> list[str]:
     """Each tool-call input of the transcript that names the benchmark or a Cadence checkout other than the
     plugin (the run's own plugin path is not a hit), as `<tool>: <marker>`."""
@@ -198,7 +207,7 @@ def contact(lines, plugin: Path | None) -> list[str]:
             event = json.loads(line)
         except ValueError:
             continue
-        content = (event.get("message") or {}).get("content") if isinstance(event, dict) else None
+        content = _message(event).get("content") if isinstance(event, dict) else None
         for item in content if isinstance(content, list) else []:
             if not isinstance(item, dict) or item.get("type") != "tool_use":
                 continue
@@ -295,6 +304,20 @@ def repo_profile(cwd: Path) -> str | None:
         return None
 
 
+def _finished_times(args: argparse.Namespace) -> tuple[str | None, str | None, float | None, None]:
+    """--finish: (start, end, wall seconds, exit code None) of a command that already ran: the start is when it
+    wrote the agent argv (else the spec), the end its last output (grade, timing, stop point or transcript)."""
+    def mtime(paths):
+        found = [p.stat().st_mtime for p in paths if p is not None and p.exists()]
+        return found
+    start = mtime([args.agent_argv]) or mtime([args.spec])
+    end = mtime([args.grade, args.timing, args.stop_point_file, args.transcript])
+    iso = lambda s: datetime.fromtimestamp(s, timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
+    if not start or not end:
+        return None, None, None, None
+    return iso(min(start)), iso(max(end)), round(max(end) - min(start), 3), None
+
+
 def _now() -> str:
     return datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
 
@@ -373,6 +396,9 @@ def main(argv: list[str] | None = None) -> int:
                     "command as HB_AGENT_PROMPT)")
     ap.add_argument("--agent-argv", type=Path, help="JSON list: the argv the command started the agent with")
     ap.add_argument("--isolation-method", default="host", help="host, or container:<image id>")
+    ap.add_argument("--finish", action="store_true",
+                    help="the command already ran: write the record from what it left in --cwd (transcript, grade, "
+                    "timing, stop point, context) without running it again, with the same checks")
     ap.add_argument("--shape", choices=["core", "full"], help="the Cadence run shape (owner, 2026-10-24), on the record")
     ap.add_argument("--auth", choices=["proxy", "oauth-file"], default="proxy",
                     help="how the agent authenticates: proxy (the host's HTTPS proxy adds the credentials; HOME gets "
@@ -394,10 +420,12 @@ def main(argv: list[str] | None = None) -> int:
         if args.task in HOLDOUT_TASKS and not args.holdout:
             raise DriverError(f"{args.task} is the hold-out task: it runs only when the owner calls for the final "
                               f"check (pass --holdout for that run; golden/pipeline/README.md)")
-        cadence = plugin_commit(args.plugin_dir) if args.plugin_dir else None
+        cadence = plugin_commit(args.plugin_dir, bytecode_ok=args.finish) if args.plugin_dir else None
         grader = grader_identity(args.grader_repo) if args.grade else None
         home = args.fresh_home or Path(os.environ.get("HOME", "/"))
-        if args.fresh_home:
+        if args.finish and not args.transcript.exists():
+            raise DriverError(f"--finish: no transcript at {args.transcript}; the command did not run there")
+        if args.fresh_home and not args.finish:
             if args.fresh_home.exists() and any(args.fresh_home.iterdir()):
                 raise DriverError(f"--fresh-home {args.fresh_home} is not empty")
             args.fresh_home.mkdir(parents=True, exist_ok=True)
@@ -414,9 +442,12 @@ def main(argv: list[str] | None = None) -> int:
 
     env = {**os.environ, "PYTHONDONTWRITEBYTECODE": "1", **({"HOME": str(home)} if args.fresh_home else {}),
            **({"HB_AGENT_PROMPT": prompt} if prompt is not None else {})}
-    started, t0 = _now(), time.monotonic()
-    exit_code = subprocess.run(command, cwd=args.cwd, env=env).returncode
-    ended, run_wall = _now(), round(time.monotonic() - t0, 3)
+    if args.finish:  # the command ran before; its start and end are its files' times, its exit code is lost
+        started, ended, run_wall, exit_code = _finished_times(args)
+    else:
+        started, t0 = _now(), time.monotonic()
+        exit_code = subprocess.run(command, cwd=args.cwd, env=env).returncode
+        ended, run_wall = _now(), round(time.monotonic() - t0, 3)
     if cadence and not plugin_unchanged(args.plugin_dir, cadence["sha"]):
         cadence["tree_clean"] = False  # the run changed its own plugin tree
 
@@ -450,7 +481,9 @@ def main(argv: list[str] | None = None) -> int:
         counts = {"counts": False, "why": f"the run repo's .cadence.json profile is {used!r}, not --shape {args.shape}"}
     rec = {
         "schema": 1, "run_id": args.run_id, "kind": args.kind, "batch": args.batch,
-        "provenance": {"source": "driver", "evidence": []}, "task": args.task, "request_id": args.request_id,
+        "provenance": {"source": "driver", "evidence": [], **({"note": "finished with loop.driver --finish from the "
+                       "run's saved directory: the command was not run again; exit_code is unknown"} if args.finish else {})},
+        "task": args.task, "request_id": args.request_id,
         "arm": args.arm, "cadence": cadence, "model_requested": args.model, **facts, "command": command,
         "api_error": lost, "shape": args.shape,
         "spec": None if args.spec is None else {"path": str(args.spec.resolve()), "prompt": prompt,
