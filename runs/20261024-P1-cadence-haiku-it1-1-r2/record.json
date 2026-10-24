@@ -85,7 +85,7 @@
  },
  "started_at": "2026-10-24T01:22:08Z",
  "stop_point": {
-  "block": "A1",
+  "block": "A5",
   "reason": "hard stop retries: A5 validate-gate fails after three vibe-test peer rounds: gap bodies cite another gap's A-n id (see .context/issues/public-data-pipeline-a5-gate.md) (FAIL  no active cadence session)"
  },
  "task": "P1",
