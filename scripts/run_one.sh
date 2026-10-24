@@ -32,9 +32,10 @@ PORT=8099
 die() { echo "run_one: $*" >&2; exit 2; }
 log() { printf '%s run_one %s: %s\n' "$(date -u +%FT%TZ)" "$RID" "$*" | tee -a "$WORK/run_one.log" >&2; }
 
-[ $# -ge 1 ] || die "usage: scripts/run_one.sh <run-id> [--dry-run]"
+[ $# -ge 1 ] || die "usage: scripts/run_one.sh <run-id> [--dry-run | --finish]"
 RID=$1
-DRY=${2:-}
+MODE=${2:-}
+case "$MODE" in ""|--dry-run|--finish) ;; *) die "unknown option $MODE (--dry-run or --finish)";; esac
 [[ "$RID" =~ ^[0-9]{8}-(P[12])-cadence-haiku-(core|full)-[a-z0-9-]+$ ]] \
   || die "run id $RID is not <date>-P1|P2-cadence-haiku-core|full-<n>"
 TASK=${BASH_REMATCH[1]}
@@ -57,6 +58,25 @@ CADENCE_SHA=$PINNED
 # step's ci_local runs driver tests that scan HOME (run 20261024-P1-cadence-haiku-core-1r).
 WORK=${RUN_ONE_WORK:-/var/tmp/run-one}/$RID
 case "$(realpath -m "$WORK")/" in "$(realpath -m "$HOME")"/*) die "$WORK is under HOME ($HOME): set RUN_ONE_WORK outside it";; esac
+RUN=$WORK/run/$RID
+STORE=$WORK/store
+PLUGIN=$WORK/plugin
+FINISH_ARGS=()
+if [ "$MODE" = --finish ]; then
+  # The agent ran in $WORK and was graded, but no record was written (run 20261024-P2-cadence-haiku-core-1: the
+  # driver crashed on a transcript event). Finish it from the saved run directory with this checkout's driver
+  # (HB_SHA), without running the agent again: loop.driver --finish, then the same publish step.
+  [ -f "$RUN/transcript.jsonl" ] || die "--finish: no $RUN/transcript.jsonl; the run never ran in $WORK"
+  [ -d "$PLUGIN/.git" ] && [ -d "$STORE/.git" ] && [ -d "$WORK/hb/.git" ] || die "--finish: $WORK lacks hb, plugin or store"
+  [ "$(git -C "$PLUGIN" rev-parse HEAD)" = "$CADENCE_SHA" ] || die "--finish: the plugin clone is not at $CADENCE_SHA"
+  [ ! -e "$WORK/hb/runs/$RID/record.json" ] || die "--finish: $RID already has a record in $WORK/hb"
+  log "finishing from $RUN with harness-benchmark $HB_SHA"
+  git -C "$WORK/hb" fetch -q origin || die "cannot fetch harness-benchmark"
+  git -C "$WORK/hb" checkout -q --detach "$HB_SHA" || die "harness-benchmark has no commit $HB_SHA"
+  (cd "$WORK/hb" && uv sync -q --frozen) || die "uv sync --frozen failed in $WORK/hb"
+  grep -q -- '"--finish"' "$WORK/hb/loop/driver.py" || die "harness-benchmark $HB_SHA has no loop.driver --finish"
+  FINISH_ARGS=(--finish)
+else
 [ ! -e "$WORK" ] || die "$WORK exists: a run id is never reused (remove it only if nothing was published)"
 
 # --- setup checks
@@ -80,30 +100,28 @@ grep -q -- '"--shape"' "$WORK/hb/loop/driver.py" && grep -q -- '"--shape"' "$WOR
   || die "harness-benchmark $HB_SHA has no --shape (driver or host_trial): use a commit with run shapes"
 
 log "cloning cadence at $CADENCE_SHA"
-PLUGIN=$WORK/plugin
 git clone -q "$CADENCE_REPO" "$PLUGIN" || die "cannot clone $CADENCE_REPO"
 git -C "$PLUGIN" checkout -q --detach "$CADENCE_SHA" || die "cadence has no commit $CADENCE_SHA"
 [ -n "$(git -C "$PLUGIN" branch -r --contains HEAD)" ] || die "cadence $CADENCE_SHA is on no remote branch"
 [ -z "$(git -C "$PLUGIN" status --porcelain --ignored)" ] || die "the plugin clone is not clean"
 
 log "cloning the runs-store branch (blobs)"
-STORE=$WORK/store
 git clone -q --single-branch --branch runs-store --depth 1 "$HB_REPO" "$STORE" || die "cannot clone runs-store"
 
-RUN=$WORK/run/$RID
 mkdir -p "$RUN/spec"
 cp "$WORK/hb/golden/pipeline/$TASK/prompt.md" "$RUN/spec/spec.md"
+fi
 DRIVER=(uv run -q --frozen python -m loop.driver --run-id "$RID" --kind benchmark --batch "$BATCH"
   --task "$TASK" --request-id "$TASK-spec" --arm cadence --model claude-haiku-5-5
   --plugin-dir "$PLUGIN" --context "$RUN/context" --spec "$RUN/spec/spec.md" --cwd "$RUN"
   --fresh-home "$RUN/home" --agent-argv "$RUN/agent-argv.json" --transcript "$RUN/transcript.jsonl"
   --tree "$RUN/repo-as-left" --grade "$RUN/grade.json" --grader-repo "$WORK/hb" --stop-point-file "$RUN/stop.json"
   --timing "$RUN/timing.json" --store "$STORE" --isolation-method host --auth proxy --shape "$SHAPE"
-  -- uv run -q --frozen --project "$WORK/hb" python "$WORK/hb/scripts/host_trial.py" "$TASK" --out "$RUN"
+  "${FINISH_ARGS[@]}" -- uv run -q --frozen --project "$WORK/hb" python "$WORK/hb/scripts/host_trial.py" "$TASK" --out "$RUN"
   --model claude-haiku-5-5 --auth proxy --plugin-dir "$PLUGIN" --peer-model haiku --agent-cap "$CADENCE_CAP"
   --shape "$SHAPE")
 
-if [ "$DRY" = --dry-run ]; then
+if [ "$MODE" = --dry-run ]; then
   log "dry run: every setup check passed; the agent would start now with:"
   printf '%q ' "${DRIVER[@]}"; echo
   exit 0

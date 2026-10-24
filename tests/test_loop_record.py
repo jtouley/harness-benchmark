@@ -425,6 +425,47 @@ def test_a_cadence_run_that_died_before_any_peer_has_zero_time_per_block_and_can
     assert rec["counts"]["counts"] is True and speed.problems(tmp_path / "runs") == []
 
 
+def test_an_event_whose_message_is_a_string_does_not_crash_the_driver(tmp_path, plugin):
+    """Run 20261024-P2-cadence-haiku-core-1: after 88 minutes and a grade, contact() raised AttributeError on a
+    transcript event whose message was a string, and no record was written."""
+    events = [{"type": "user", "message": "a plain string"}, {"type": "assistant", "message": "also a string"},
+              {"type": "assistant", "message": None}, "not an object"]
+    lines = [json.dumps(e) for e in events]
+    assert driver.contact(lines, None) == [] and not driver.transcript_facts(lines)["models_served"]
+    script = "printf '%s\\n' " + " ".join(f"'{json.dumps(e)}'" for e in events) + f" >> {tmp_path}/trial/transcript.jsonl"
+    rc, run = _drive(tmp_path, plugin, script=script)
+    assert rc == 0 and (run / "record.json").exists()
+
+
+def test_finish_writes_the_record_from_a_run_directory_without_running_the_command(tmp_path, plugin):
+    """loop.driver --finish: the command ran and graded, then the driver died before the record. --finish writes
+    the record from the saved transcript, grade, timing and stop point, with the same checks, and runs nothing."""
+    spec_args = _entry(tmp_path)
+    out = tmp_path / "trial"
+    out.mkdir()
+    (out / "transcript.jsonl").write_text("\n".join(json.dumps(e) for e in TRANSCRIPT) + "\n")
+    (out / "timing.json").write_text('{"agent_seconds": 5280.0}')
+    (out / "stop.json").write_text('{"block": "R7", "reason": null}')
+    home = tmp_path / "home-used"
+    (home / ".claude").mkdir(parents=True)
+    (home / ".claude" / "settings.json").write_text("{}")  # the run's HOME is not empty any more
+    (plugin / "hooks" / "__pycache__").mkdir(parents=True)  # the run's hooks wrote bytecode
+    (plugin / "hooks" / "__pycache__" / "x.pyc").write_text("")
+    extra = ["--kind", "benchmark", *spec_args, "--timing", str(out / "timing.json"), "--stop-point-file",
+             str(out / "stop.json"), "--fresh-home", str(home), "--finish"]
+    rc, run = _drive(tmp_path, plugin, extra=extra, script=f"touch {tmp_path}/ran-again")
+    rec = json.loads((run / "record.json").read_text())
+    assert rc == 0 and not (tmp_path / "ran-again").exists()
+    assert rec["exit_code"] is None and rec["stop_point"]["block"] == "R7" and rec["counts"]["counts"] is True
+    assert rec["timing"]["agent_wall_seconds"] == 5280.0 and "--finish" in rec["provenance"]["note"]
+    assert record.validate(rec, record.RECORD_SCHEMA) == []
+
+
+def test_finish_refuses_a_run_directory_with_no_transcript(tmp_path, plugin, capsys):
+    rc, _ = _drive(tmp_path, plugin, extra=["--finish", "--transcript", str(tmp_path / "none.jsonl")])
+    assert rc == 2 and "--finish: no transcript" in capsys.readouterr().err
+
+
 def test_the_record_has_wall_agent_and_active_time(tmp_path, plugin):
     timing = tmp_path / "timing.json"
     timing.write_text('{"agent_seconds": 61.5}')

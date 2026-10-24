@@ -44,3 +44,9 @@ def test_the_cadence_commit_comes_from_the_batch_pin_by_shape(tmp_path):
     proc = _run_one(tmp_path, "20261024-P1-cadence-haiku-core-9", "--dry-run", RUN_ONE_WORK=str(work),
                     BATCH="2026-10-24-no-such-batch")
     assert proc.returncode == 2 and "batches/2026-10-24-no-such-batch.json" in proc.stderr
+
+
+def test_finish_needs_the_runs_saved_directory(tmp_path):
+    proc = _run_one(tmp_path, "20261024-P2-cadence-haiku-core-9", "--finish", RUN_ONE_WORK=str(tmp_path / "work"))
+    assert proc.returncode == 2 and "--finish: no" in proc.stderr and "transcript.jsonl" in proc.stderr
+    assert _run_one(tmp_path, "20261024-P2-cadence-haiku-core-9", "--bogus").returncode == 2
