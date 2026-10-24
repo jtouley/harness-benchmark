@@ -25,7 +25,6 @@ CADENCE_REPO=https://github.com/jtouley/cadence
 # The driver and the grader: by default the commit of this script's own checkout, so the run uses the code
 # that runs it. Override with HB_SHA=<commit>.
 HB_SHA=${HB_SHA:-$(git -C "$(dirname "$0")" rev-parse HEAD)}
-CADENCE_SHA=${CADENCE_SHA:-085bfdcd00254594ed5f22387e4316f667e59ec7}
 BATCH=${BATCH:-2026-10-24-shapes}
 CADENCE_CAP=21600   # batches/2026-10-23-batch-f.json agent_caps.cadence: 3 x the one-shot cap
 PORT=8099
@@ -40,6 +39,20 @@ DRY=${2:-}
   || die "run id $RID is not <date>-P1|P2-cadence-haiku-core|full-<n>"
 TASK=${BASH_REMATCH[1]}
 SHAPE=${BASH_REMATCH[2]}
+# The cadence commit is the batch pin's: one sha, or one per run shape (batches/2026-10-24-shapes.json: core and
+# full). A CADENCE_SHA from the environment must be that pin.
+PIN_FILE="$(cd "$(dirname "$0")/.." && pwd)/batches/$BATCH.json"
+[ -f "$PIN_FILE" ] || die "no batches/$BATCH.json in this checkout: the batch has no pin"
+PINNED=$(python3 - "$PIN_FILE" "$SHAPE" <<'PY'
+import json, sys
+pinned = json.load(open(sys.argv[1])).get("cadence_commit")
+print((pinned.get(sys.argv[2]) if isinstance(pinned, dict) else pinned) or "")
+PY
+)
+[ -n "$PINNED" ] || die "batches/$BATCH.json pins no cadence commit for shape $SHAPE"
+[ -z "${CADENCE_SHA:-}" ] || [ "$CADENCE_SHA" = "$PINNED" ] \
+  || die "CADENCE_SHA=$CADENCE_SHA is not the pin of batches/$BATCH.json for shape $SHAPE ($PINNED)"
+CADENCE_SHA=$PINNED
 # Never under HOME: the plugin clone would sit where the driver's other-checkout scan looks, and the publish
 # step's ci_local runs driver tests that scan HOME (run 20261024-P1-cadence-haiku-core-1r).
 WORK=${RUN_ONE_WORK:-/var/tmp/run-one}/$RID

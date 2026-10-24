@@ -2,8 +2,11 @@
  "batch": "2026-10-24-shapes",
  "grader_commit": "10172ce8e7564d61b9ff17a3fe2b625269b0e37c",
  "grader_tree": "8a0977e42fa02981802090d1f9517efe537994c4",
- "note": "the two Cadence run shapes head to head (owner, 2026-10-24): core and full, Cadence on Haiku with peers on Haiku, P1 and P2 at n=3 each, one run per host (scripts/run_one.sh), host method, auth proxy, adapter none. Cadence main 085bfdc: #219 (the core shape with one review), #220 (the A5 gate fix) and #221 (the A1 spec-path hotfix: the spec outside the repo). The grader tree is batch F's.",
- "cadence_commit": "085bfdcd00254594ed5f22387e4316f667e59ec7",
+ "note": "the two Cadence run shapes head to head (owner, 2026-10-24): core and full, Cadence on Haiku with peers on Haiku, P1 and P2 at n=3 each, one run per host (scripts/run_one.sh), host method, auth proxy, adapter none. Cadence per shape: the core arm on 085bfdc (#219 the core shape with one review, #220 the A5 gate fix, #221 the A1 spec-path hotfix), the full arm on d3c2ffe (#222 the full shape; it keeps 085bfdc's core path unchanged, so the comparison holds). The grader tree is batch F's.",
+ "cadence_commit": {
+  "core": "085bfdcd00254594ed5f22387e4316f667e59ec7",
+  "full": "d3c2ffe86a4a294335123290f6ca6ae836bc6afb"
+ },
  "agent_caps": {
   "cadence": 21600,
   "why": "as batch F: 3 x the one-shot cap (batches/2026-10-23-batch-f.json)"

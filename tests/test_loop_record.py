@@ -500,6 +500,29 @@ def test_a_run_counts_only_when_its_repo_used_the_shape_on_its_record(tmp_path, 
         assert rec["counts"]["why"].startswith("the run repo's .cadence.json profile is ")
 
 
+def test_the_check_holds_each_records_cadence_to_its_shapes_pin(tmp_path):
+    """Batch 2026-10-24-shapes pins a cadence commit per shape: the core arm on 085bfdc, the full arm on d3c2ffe
+    (which keeps 085bfdc's core path). A record whose cadence is not its shape's pin, or whose shape has no pin,
+    is refused; a batch that pins one commit holds every record to it."""
+    runs, core, full = tmp_path / "runs", "085bfdc" + "0" * 33, "d3c2ffe" + "0" * 33
+    (tmp_path / "batches").mkdir()
+    (tmp_path / "batches" / "2026-10-24-x-shapes.json").write_text(json.dumps({"cadence_commit": {"core": core, "full": full}}))
+    (tmp_path / "batches" / "2026-10-24-x-one.json").write_text(json.dumps({"cadence_commit": core}))
+    for rid, batch, shape, sha in (("20261024-P1-cadence-haiku-core-1", "2026-10-24-x-shapes", "core", core),
+                                   ("20261024-P1-cadence-haiku-full-1", "2026-10-24-x-shapes", "full", full),
+                                   ("20261024-P1-cadence-haiku-full-2", "2026-10-24-x-shapes", "full", core),
+                                   ("20261024-P1-cadence-haiku-3", "2026-10-24-x-shapes", None, core),
+                                   ("20261024-P1-cadence-haiku-4", "2026-10-24-x-one", None, full)):
+        (runs / rid).mkdir(parents=True)
+        (runs / rid / "record.json").write_text(json.dumps(minimal(rid, batch=batch, shape=shape, cadence={
+            "repo": "https://github.com/jtouley/cadence", "sha": sha, "tree_clean": True})))
+    assert check.validate_tree(runs, repo=tmp_path) == [
+        "20261024-P1-cadence-haiku-3/record.json: batches/2026-10-24-x-shapes.json pins no cadence commit for shape None",
+        f"20261024-P1-cadence-haiku-4/record.json: cadence {full[:7]} is not batches/2026-10-24-x-one.json's pin {core[:7]}",
+        f"20261024-P1-cadence-haiku-full-2/record.json: cadence {core[:7]} is not batches/2026-10-24-x-shapes.json's pin "
+        f"{full[:7]} for shape full"]
+
+
 def test_the_check_refuses_a_shape_that_is_not_the_run_ids(tmp_path):
     runs = tmp_path / "runs"
     for rid, shape in (("20261024-P1-cadence-haiku-core-1", "core"), ("20261024-P1-cadence-haiku-full-1", "core"),
