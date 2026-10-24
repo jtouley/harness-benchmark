@@ -461,7 +461,9 @@ def main(argv: list[str] | None = None) -> int:
         "tree": _tree_blob(args.tree, args.store) if args.tree else store.missing("--tree not given"),
         "counts": counts,
         "timing": {"agent_wall_seconds": agent_wall, "run_wall_seconds": run_wall, "agent_active_seconds": active,
-                   "blocks": blocks.peer_time(args.context) if args.context else None,
+                   # A Cadence run that died before any peer (no .context, or no attest calls) spent zero time
+                   # per block: {} (run 20261024-P1-cadence-haiku-core-1r), so it can be timed and published.
+                   "blocks": (blocks.peer_time(args.context) or {}) if args.context else None,
                    "hit_cap": hit_cap if isinstance(hit_cap, bool) else None,
                    "cap_seconds": cap_seconds if isinstance(cap_seconds, (int, float)) and not isinstance(cap_seconds, bool) else None},
         "isolation": {"cwd": str(args.cwd.resolve()), "home": str(home), "fresh_home": bool(args.fresh_home),

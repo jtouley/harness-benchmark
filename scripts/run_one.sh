@@ -40,7 +40,10 @@ DRY=${2:-}
   || die "run id $RID is not <date>-P1|P2-cadence-haiku-core|full-<n>"
 TASK=${BASH_REMATCH[1]}
 SHAPE=${BASH_REMATCH[2]}
-WORK=${RUN_ONE_WORK:-$HOME/run-one}/$RID
+# Never under HOME: the plugin clone would sit where the driver's other-checkout scan looks, and the publish
+# step's ci_local runs driver tests that scan HOME (run 20261024-P1-cadence-haiku-core-1r).
+WORK=${RUN_ONE_WORK:-/var/tmp/run-one}/$RID
+case "$(realpath -m "$WORK")/" in "$(realpath -m "$HOME")"/*) die "$WORK is under HOME ($HOME): set RUN_ONE_WORK outside it";; esac
 [ ! -e "$WORK" ] || die "$WORK exists: a run id is never reused (remove it only if nothing was published)"
 
 # --- setup checks
