@@ -159,8 +159,8 @@ CORE_1_TAIL = [
 
 
 def test_the_open_block_is_the_last_one_the_stop_hook_named():
-    assert host_trial.open_block(CORE_1_TAIL) == {"block": "R5", "slug": "closure", "refused": 3}
-    assert host_trial.open_block(CORE_1_TAIL[:1]) == {"block": "R2", "slug": "test-benchmark-pr", "refused": None}
+    assert host_trial.open_block(CORE_1_TAIL) == {"block": "R5", "slug": "closure", "refused": 3, "at": None}
+    assert host_trial.open_block(CORE_1_TAIL[:1]) == {"block": "R2", "slug": "test-benchmark-pr", "refused": None, "at": None}
     assert host_trial.open_block(['{"type": "result"}']) is None
 
 
@@ -330,3 +330,25 @@ def test_the_jail_check_scans_from_inside_and_runs_the_agent_there(tmp_path):
     report = json.loads((out / "jail-check.json").read_text())
     assert report["visible"] == [] and report["agent_exit"] == 0 and report["agent_reply"] == "OK"
     assert str(spec) in report["kept"] and str(plugin) in report["kept"]
+
+
+def test_a_close_after_the_last_refusal_is_done():
+    """20261024-P1-cadence-haiku-full-6: refusals at a stale E4 at 20:40, then R7 closed the session at 21:22."""
+    tail = ['{"type": "user", "timestamp": "2026-10-24T20:40:15.000Z", "message": {"content": [{"type": "text", '
+            '"text": "Stop hook feedback: BLOCKED early stop in execution. Continue paceline: next E4 (draft-pr) via x"}]}}']
+    stop = host_trial.choose_stop("A1", None, host_trial.open_block(tail), "", closed="2026-10-24T21:22:48+00:00")
+    assert stop["block"] == "R7"
+    stop = host_trial.choose_stop("A1", None, host_trial.open_block(tail), "", closed="2026-10-24T20:00:00+00:00")
+    assert stop["block"] == "E4"
+
+
+def test_the_copy_gets_its_own_worktree_session(tmp_path):
+    repo = tmp_path / "copy"
+    repo.mkdir()
+    subprocess.run(["git", "init", "-q"], cwd=repo, check=True)
+    _session(repo, active_skill="cadence", status="active", workspace="/elsewhere/repo")
+    host_trial.rebind_sessions(repo)
+    import hashlib
+    key = hashlib.sha256(str(repo.resolve()).encode("utf-8")).hexdigest()[:16]
+    data = json.loads((repo / ".context" / "sessions" / "by-worktree" / f"{key}.json").read_text())
+    assert data["active_skill"] == "cadence" and data["workspace"] == str(repo.resolve())

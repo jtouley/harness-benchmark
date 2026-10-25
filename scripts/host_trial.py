@@ -248,6 +248,7 @@ def stop_block(open_block: str | None, hard: dict | str | None) -> str | None:
 
 
 _OPEN_BLOCK = re.compile(r"Continue paceline: next ([AEPR]\d+) \(([\w-]+)\)")
+_STAMP = re.compile(r'"timestamp": ?"([^"]+)"')
 _REFUSED = re.compile(r"stop refused (\d+) times")
 
 
@@ -258,7 +259,8 @@ def open_block(lines) -> dict | None:
     found = None
     for line in lines:
         for block, slug in _OPEN_BLOCK.findall(line):
-            found = {"block": block, "slug": slug, "refused": None}
+            stamp = _STAMP.search(line)
+            found = {"block": block, "slug": slug, "refused": None, "at": stamp.group(1) if stamp else None}
         refused = _REFUSED.findall(line)
         if refused and found is not None:
             found["refused"] = int(refused[-1])
@@ -289,7 +291,9 @@ def choose_stop(headless_block: str | None, hard: dict | str | None, opened: dic
         return {"block": None, "reason": None}
     if hard:
         return {"block": stop_block(headless_block, hard), "reason": why[:300] or None}
-    if closed is not None and opened is None:
+    if closed is not None and (opened is None or _before(opened.get("at"), closed)):
+        # --deactivate closes a run only after R6 passed (no hard stop here), so a refusal before the close is
+        # history, not the stop: 20261024-P1-cadence-haiku-full-6 closed at 21:22 after refusals at a stale E4.
         return {"block": "R7", "reason": f"done: the session closed at R7 (session-close) at {closed}, with no "
                                           f"Stop-hook refusal ({why})"[:300]}
     if opened is not None:
@@ -299,12 +303,43 @@ def choose_stop(headless_block: str | None, hard: dict | str | None, opened: dic
     return {"block": headless_block, "reason": why[:300] or None}
 
 
+def _before(at: str | None, closed: str) -> bool:
+    """True when the refusal time `at` is known and earlier than the close time."""
+    from datetime import datetime
+    try:
+        return at is not None and datetime.fromisoformat(at.replace("Z", "+00:00")) < \
+            datetime.fromisoformat(closed.replace("Z", "+00:00"))
+    except ValueError:
+        return False
+
+
+def rebind_sessions(copy: Path) -> None:
+    """Give the copy its own worktree session. Cadence keys a session by sha256 of the git toplevel, so in a copy
+    activate_session.py --check found none: A1 failed and every stop reason of shapes-r2 ended in
+    "(FAIL  no active cadence session)", whatever the real open gate was."""
+    import hashlib
+    top = subprocess.run(["git", "rev-parse", "--show-toplevel"], cwd=copy, capture_output=True, text=True)
+    root = Path(top.stdout.strip() if top.returncode == 0 and top.stdout.strip() else copy).resolve()
+    key = hashlib.sha256(str(root).encode("utf-8")).hexdigest()[:16]
+    folder = copy / ".context" / "sessions" / "by-worktree"
+    for path in sorted(folder.glob("*.json")):
+        try:
+            data = json.loads(path.read_text(encoding="utf-8"))
+        except (OSError, ValueError):
+            continue
+        if isinstance(data, dict) and "ref" not in data and data.get("status") != "completed":
+            (folder / f"{key}.json").write_text(json.dumps({**data, "workspace": str(root)}, indent=2) + "\n",
+                                                encoding="utf-8")
+            return
+
+
 def stop_point(repo: Path, plugin: Path, env: dict[str, str], transcript: list[str] = ()) -> dict:
     """The block the run stopped at, and why: from Cadence's headless runner in a copy of the repository, the
     session's hard stop and the transcript's last open block (choose_stop)."""
     with tempfile.TemporaryDirectory() as tmp:
         copy = Path(tmp) / "repo"
         shutil.copytree(repo, copy, symlinks=True)
+        rebind_sessions(copy)
         proc = subprocess.run([sys.executable, str(plugin / "scripts" / "headless.py"), "next", "--json"], cwd=copy,
                               env=env, capture_output=True, text=True, timeout=900)
         hard = None
