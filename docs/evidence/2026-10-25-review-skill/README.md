@@ -82,3 +82,7 @@ tokens, not dollars.
 the same session (the survivability pilot and the postmortem agent), unchanged, with `SHA256SUMS`:
 `final-review-t1.md` and `findings-t1-{A,B,C}.txt` (the pilot on P1 core-6), `postmortem-weaknesses.md` and
 `skill-review-R1.md`.
+
+The copy of `postmortem-weaknesses.md` stays frozen, so its item 8 row still names `survive/check-attribution.md`.
+That file was reverted on 2026-10-25 because its regrade source was deleted and nobody independently evaluated
+it (see `../2026-10-25-survive-postmortem/README.md`).

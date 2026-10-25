@@ -2,8 +2,12 @@
 
 from __future__ import annotations
 
+import argparse
 import json
+import subprocess
 from pathlib import Path
+
+import pytest
 
 from revieweval import compare
 
@@ -84,41 +88,42 @@ def test_compare_reads_a_workspace(tmp_path: Path) -> None:
     assert set(got["verdicts"]["new_skill"]) == {"old_skill"}
 
 
-def _layout(work: Path, cadence: Path, *cases: str) -> list[str]:
-    import argparse
-    args = argparse.Namespace(work=work, iteration="it", cadence=cadence, config=["builtin=code-review"],
-                              baseline=["builtin"], runs=1, cases=list(cases))
-    compare.layout(args)
-    return (work / "it" / "dispatch.jsonl").read_text().splitlines()
+
+def _layout(work: Path, iteration: str, *cases: str) -> list[str]:
+    compare.layout(argparse.Namespace(work=work, iteration=iteration, cadence=work, config=["builtin=code-review"],
+                                      baseline=["builtin"], runs=1, cases=list(cases)))
+    return (work / iteration / "dispatch.jsonl").read_text().splitlines()
 
 
-def test_subset_layout_never_replaces_a_run_list_and_setup_replaces_a_clone_without_base(tmp_path: Path) -> None:
-    import subprocess
-    import pytest
+def test_layout_never_rewrites_an_iteration_and_runs_clone_a_tree_with_base(tmp_path: Path) -> None:
     names = [c["name"] for c in compare.cases()]
-    for n in names[:2]:
-        repo = tmp_path / "trees" / n / "repo"
-        repo.mkdir(parents=True)
-        g = ["git", "-C", str(repo), "-c", "user.name=t", "-c", "user.email=t@t"]
-        subprocess.run(g[:3] + ["init", "-q", "-b", "base"], check=True)
-        subprocess.run(g + ["commit", "-q", "--allow-empty", "-m", "b"], check=True)
-        subprocess.run(g + ["checkout", "-q", "-b", "review"], check=True)
-        subprocess.run(g + ["commit", "-q", "--allow-empty", "-m", "r"], check=True)
+    tree = tmp_path / "trees" / names[0] / "repo"
+    tree.mkdir(parents=True)
+    g = ["git", "-C", str(tree), "-c", "user.name=t", "-c", "user.email=t@t"]
+    subprocess.run(g[:3] + ["init", "-q", "-b", "base"], check=True)
+    subprocess.run(g + ["commit", "-q", "--allow-empty", "-m", "b"], check=True)
+    subprocess.run(g + ["checkout", "-q", "-b", "review"], check=True)
+    subprocess.run(g + ["commit", "-q", "--allow-empty", "-m", "r"], check=True)
     built = tmp_path / "built" / names[0]
     built.mkdir(parents=True)
-    subprocess.run(["git", "clone", "-q", "-b", "review", str(tmp_path / "trees" / names[0] / "repo"),
-                    str(built / "repo")], check=True)
+    subprocess.run(["git", "clone", "-q", "-b", "review", str(tree), str(built / "repo")], check=True)
     (built / "build.log").write_text("log\n")
-    full = _layout(tmp_path, tmp_path)
+    full = _layout(tmp_path, "it")
     assert len(full) == 2 * len(names)
-    with pytest.raises(SystemExit, match="exists"):
-        _layout(tmp_path, tmp_path, names[0])
+    for subset in ((), (names[0],)):
+        with pytest.raises(SystemExit, match="exists"):
+            _layout(tmp_path, "it", *subset)
     with pytest.raises(SystemExit, match="unknown cases: review-1"):
-        _layout(tmp_path, tmp_path, "review-1")
+        _layout(tmp_path, "it2", "review-1")
     assert (tmp_path / "it" / "dispatch.jsonl").read_text().splitlines() == full
     run = tmp_path / "it" / names[0] / "builtin" / "run-1"
-    assert (run / "source").read_text().strip() == str(tmp_path / "trees" / names[0] / "repo")
-    subprocess.run(["git", "clone", "-q", str(built / "repo"), str(run / "repo")], check=True)  # #130's clone
+    assert (run / "source").read_text().strip() == str(tree)
     compare.setup(run)
     out = subprocess.run(["git", "-C", str(run / "repo"), "branch"], capture_output=True, text=True).stdout
     assert "base" in out and "review" in out
+    old = tmp_path / "it" / names[0] / "builtin" / "run-old"  # a run as #130 laid it out: source is built/repo
+    old.mkdir()
+    (old / "source").write_text(f"{built / 'repo'}\n")
+    with pytest.raises(SystemExit, match="no `base` branch"):
+        compare.setup(old)
+    assert not (old / "repo").exists()
