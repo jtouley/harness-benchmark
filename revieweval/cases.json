@@ -1,0 +1,360 @@
+{
+ "cases": [
+  {
+   "name": "review-01",
+   "run_id": "20261024-P1-cadence-haiku-core-6",
+   "task": "P1",
+   "grader": {
+    "stream_ok": true,
+    "passed": 4,
+    "reward": 0.5714,
+    "score": 4,
+    "commit": "c344bea44951cfc5a3a3a99aaa598fdaaedabba8"
+   },
+   "answers": [
+    {
+     "id": "no-stream-trap-failure",
+     "severity": "control",
+     "kind": "absent",
+     "statement": "The stream consumer gets past the invalid frame and reaches the end of the replay. A review that reports, as must-fix, that the consumer loops or crashes on the invalid frame is a false finding.",
+     "verified_by": [
+      "runs/20261024-P1-cadence-haiku-core-6/scores.jsonl on origin/main: grader c344bea, stream_ok true",
+      "Cadence postmortem (claude.ai/artifact/WbaPy7W4Qc2EZL9R68B1oA), log entry: log entry on record #129: 'Its consumer skips a bad frame without dropping the connection (pipeline/stream_consumer.py:163-167)'"
+     ]
+    },
+    {
+     "id": "live-endpoint-no-user-agent-silent-exit",
+     "severity": "must-fix",
+     "kind": "defect",
+     "pilot_id": "H1",
+     "statement": "The consumer sends no User-Agent header (the live endpoint that the spec names requires one), and every connect failure is swallowed: on an unreachable or refusing endpoint the consumer prints nothing and exits 0.",
+     "verified_by": [
+      "survivability pilot, consolidated and reproduced: scratchpad survive/run2/t1/final-review-t1.md (tree 9305aa39 = this case's review tree)"
+     ],
+     "reproduced_locally_only": true,
+     "note": "The pilot showed the 403 with an outside request that the review rules did not permit. Credit a review that shows it from the code or a local stub (no User-Agent sent; rc=0 and no output on a bad URL). An outside request is not required and not credited."
+    },
+    {
+     "id": "stop-mid-flush-drops-events",
+     "severity": "must-fix",
+     "kind": "defect",
+     "pilot_id": "H2",
+     "statement": "A stop or crash between dlt normalize and load leaves a pending package; the next run builds its seen-set and checkpoint without it and drops events it read, against the spec's stop/start rule.",
+     "verified_by": [
+      "survivability pilot, consolidated and reproduced: scratchpad survive/run2/t1/final-review-t1.md (tree 9305aa39 = this case's review tree)"
+     ]
+    },
+    {
+     "id": "make-stream-fails-on-fresh-tree",
+     "severity": "should-fix",
+     "kind": "defect",
+     "pilot_id": "M1",
+     "statement": "`make stream` fails on a fresh tree unless `make build` ran first (fact_edit reads lake/sitematrix_sites).",
+     "verified_by": [
+      "survivability pilot, consolidated and reproduced: scratchpad survive/run2/t1/final-review-t1.md (tree 9305aa39 = this case's review tree)"
+     ]
+    },
+    {
+     "id": "check-7-test-never-runs-placeholder-row",
+     "severity": "should-fix",
+     "kind": "defect",
+     "pilot_id": "M2",
+     "statement": "The check-7 dbt test is never selected (no ref()), and when wired in it shows out/marts/late_events holds one all-NULL placeholder row when there are no late events.",
+     "verified_by": [
+      "survivability pilot, consolidated and reproduced: scratchpad survive/run2/t1/final-review-t1.md (tree 9305aa39 = this case's review tree)"
+     ]
+    },
+    {
+     "id": "dim-date-never-built",
+     "severity": "should-fix",
+     "kind": "defect",
+     "pilot_id": "M3",
+     "statement": "The date dimension is never built by the build selection, although the spec requires a date dimension.",
+     "verified_by": [
+      "survivability pilot, consolidated and reproduced: scratchpad survive/run2/t1/final-review-t1.md (tree 9305aa39 = this case's review tree)"
+     ]
+    },
+    {
+     "id": "lake-drops-source-fields",
+     "severity": "should-fix",
+     "kind": "defect",
+     "pilot_id": "M4",
+     "statement": "The lake does not keep the source data: stream_raw drops most event fields and adds derived columns, and the batch lake retypes timestamps and adds variant columns.",
+     "verified_by": [
+      "survivability pilot, consolidated and reproduced: scratchpad survive/run2/t1/final-review-t1.md (tree 9305aa39 = this case's review tree)"
+     ]
+    },
+    {
+     "id": "check-4-not-answerable-from-marts",
+     "severity": "should-fix",
+     "kind": "defect",
+     "pilot_id": "M5",
+     "statement": "Check 4 cannot be answered from out/marts (no state or source totals), and the batch oracle tests go through the same macros as the models.",
+     "verified_by": [
+      "survivability pilot, consolidated and reproduced: scratchpad survive/run2/t1/final-review-t1.md (tree 9305aa39 = this case's review tree)"
+     ]
+    },
+    {
+     "id": "malformed-event-crashes-on-restart",
+     "severity": "should-fix",
+     "kind": "defect",
+     "pilot_id": "M6",
+     "statement": "A wrong-typed event (for example a list-valued field) crashes the consumer on every restart, and wrong-typed fields land inconsistent rows.",
+     "verified_by": [
+      "survivability pilot, consolidated and reproduced: scratchpad survive/run2/t1/final-review-t1.md (tree 9305aa39 = this case's review tree)"
+     ]
+    },
+    {
+     "id": "territories-published-as-unknown",
+     "severity": "should-fix",
+     "kind": "defect",
+     "pilot_id": "M7",
+     "statement": "Territories are published with state_name 'UNKNOWN', the same label as the no-state sentinel.",
+     "verified_by": [
+      "survivability pilot, consolidated and reproduced: scratchpad survive/run2/t1/final-review-t1.md (tree 9305aa39 = this case's review tree)"
+     ]
+    }
+   ]
+  },
+  {
+   "name": "review-02",
+   "run_id": "20261024-P1-cadence-haiku-core-5",
+   "task": "P1",
+   "grader": {
+    "stream_ok": false,
+    "passed": 1,
+    "reward": 0.0,
+    "score": 0,
+    "commit": "c344bea44951cfc5a3a3a99aaa598fdaaedabba8"
+   },
+   "answers": [
+    {
+     "id": "stream-consumer-does-not-survive-invalid-frame",
+     "severity": "must-fix",
+     "kind": "defect",
+     "statement": "The stream consumer does not consume the whole replayed stream: on a frame whose data is not valid JSON (the replay sends it on every reconnect) it reconnects without end or crashes, so `make stream` never reaches the end of its input and the stream marts are incomplete.",
+     "verified_by": [
+      "runs/20261024-P1-cadence-haiku-core-5/scores.jsonl on origin/main: grader c344bea, stream_ok false"
+     ],
+     "mechanism": "not recorded (loop or crash)"
+    }
+   ]
+  },
+  {
+   "name": "review-03",
+   "run_id": "20261024-P1-cadence-haiku-core-4",
+   "task": "P1",
+   "grader": {
+    "stream_ok": false,
+    "passed": 2,
+    "reward": 0.0,
+    "score": 0,
+    "commit": "c344bea44951cfc5a3a3a99aaa598fdaaedabba8"
+   },
+   "answers": [
+    {
+     "id": "stream-consumer-does-not-survive-invalid-frame",
+     "severity": "must-fix",
+     "kind": "defect",
+     "statement": "The stream consumer does not consume the whole replayed stream: on a frame whose data is not valid JSON (the replay sends it on every reconnect) it reconnects without end, so `make stream` never reaches the end of its input and the stream marts are incomplete.",
+     "verified_by": [
+      "runs/20261024-P1-cadence-haiku-core-4/scores.jsonl on origin/main: grader c344bea, stream_ok false",
+      "Cadence postmortem (claude.ai/artifact/WbaPy7W4Qc2EZL9R68B1oA), log entry: log entry 'Correction to 18:59': the consumer reconnects forever on F5's frame, which is invalid on every send; 21 connections, 6033 of 11774 positions served"
+     ],
+     "mechanism": "loop"
+    }
+   ]
+  },
+  {
+   "name": "review-04",
+   "run_id": "20261024-P2-cadence-haiku-core-6",
+   "task": "P2",
+   "grader": {
+    "stream_ok": true,
+    "passed": 2,
+    "reward": 0.2857,
+    "score": 2,
+    "commit": "c344bea44951cfc5a3a3a99aaa598fdaaedabba8"
+   },
+   "answers": [
+    {
+     "id": "no-stream-trap-failure",
+     "severity": "control",
+     "kind": "absent",
+     "statement": "The stream consumer gets past the invalid frame and reaches the end of the replay. A review that reports, as must-fix, that the consumer loops or crashes on the invalid frame is a false finding.",
+     "verified_by": [
+      "runs/20261024-P2-cadence-haiku-core-6/scores.jsonl on origin/main: grader c344bea, stream_ok true"
+     ]
+    }
+   ]
+  },
+  {
+   "name": "review-05",
+   "run_id": "20261024-P1-cadence-haiku-full-6",
+   "task": "P1",
+   "grader": {
+    "stream_ok": true,
+    "passed": 2,
+    "reward": 0.2857,
+    "score": 2,
+    "commit": "c344bea44951cfc5a3a3a99aaa598fdaaedabba8"
+   },
+   "answers": [
+    {
+     "id": "no-stream-trap-failure",
+     "severity": "control",
+     "kind": "absent",
+     "statement": "The stream consumer gets past the invalid frame and reaches the end of the replay. A review that reports, as must-fix, that the consumer loops or crashes on the invalid frame is a false finding.",
+     "verified_by": [
+      "runs/20261024-P1-cadence-haiku-full-6/scores.jsonl on origin/main: grader c344bea, stream_ok true"
+     ]
+    }
+   ]
+  },
+  {
+   "name": "review-06",
+   "run_id": "20261024-P2-cadence-haiku-full-5",
+   "task": "P2",
+   "grader": {
+    "stream_ok": true,
+    "passed": 0,
+    "reward": 0.0,
+    "score": 0,
+    "commit": "c344bea44951cfc5a3a3a99aaa598fdaaedabba8"
+   },
+   "answers": [
+    {
+     "id": "no-stream-trap-failure",
+     "severity": "control",
+     "kind": "absent",
+     "statement": "The stream consumer gets past the invalid frame and reaches the end of the replay. A review that reports, as must-fix, that the consumer loops or crashes on the invalid frame is a false finding.",
+     "verified_by": [
+      "runs/20261024-P2-cadence-haiku-full-5/scores.jsonl on origin/main: grader c344bea, stream_ok true"
+     ]
+    }
+   ]
+  },
+  {
+   "name": "review-07",
+   "run_id": "20261024-P2-cadence-haiku-core-4",
+   "task": "P2",
+   "grader": {
+    "stream_ok": false,
+    "passed": 2,
+    "reward": 0.0,
+    "score": 0,
+    "commit": "c344bea44951cfc5a3a3a99aaa598fdaaedabba8"
+   },
+   "answers": [
+    {
+     "id": "stream-consumer-does-not-survive-invalid-frame",
+     "severity": "must-fix",
+     "kind": "defect",
+     "statement": "The stream consumer does not consume the whole replayed stream: on a frame whose data is not valid JSON (the replay sends it on every reconnect) it crashes, so `make stream` never reaches the end of its input and the stream marts are incomplete.",
+     "verified_by": [
+      "runs/20261024-P2-cadence-haiku-core-4/scores.jsonl on origin/main: grader c344bea, stream_ok false",
+      "Cadence postmortem (claude.ai/artifact/WbaPy7W4Qc2EZL9R68B1oA), log entry: log entry on P2 full-4: 'The #119 diagnosis [record PR of P2 core-4] found a second failure mode: a crash on a truncated frame (engine/stream.py:63)'"
+     ],
+     "mechanism": "crash"
+    }
+   ]
+  },
+  {
+   "name": "review-08",
+   "run_id": "20261024-P2-cadence-haiku-full-4",
+   "task": "P2",
+   "grader": {
+    "stream_ok": false,
+    "passed": 1,
+    "reward": 0.0,
+    "score": 0,
+    "commit": "c344bea44951cfc5a3a3a99aaa598fdaaedabba8"
+   },
+   "answers": [
+    {
+     "id": "stream-consumer-does-not-survive-invalid-frame",
+     "severity": "must-fix",
+     "kind": "defect",
+     "statement": "The stream consumer does not consume the whole replayed stream: on a frame whose data is not valid JSON (the replay sends it on every reconnect) it reconnects without end or crashes, so `make stream` never reaches the end of its input and the stream marts are incomplete.",
+     "verified_by": [
+      "runs/20261024-P2-cadence-haiku-full-4/scores.jsonl on origin/main: grader c344bea, stream_ok false"
+     ],
+     "mechanism": "not recorded (loop or crash)"
+    }
+   ]
+  },
+  {
+   "name": "review-09",
+   "run_id": "20261024-P1-cadence-haiku-full-4",
+   "task": "P1",
+   "grader": {
+    "stream_ok": false,
+    "passed": 3,
+    "reward": 0.0,
+    "score": 0,
+    "commit": "c344bea44951cfc5a3a3a99aaa598fdaaedabba8"
+   },
+   "answers": [
+    {
+     "id": "stream-consumer-does-not-survive-invalid-frame",
+     "severity": "must-fix",
+     "kind": "defect",
+     "statement": "The stream consumer does not consume the whole replayed stream: on a frame whose data is not valid JSON (the replay sends it on every reconnect) it reconnects without end or crashes, so `make stream` never reaches the end of its input and the stream marts are incomplete.",
+     "verified_by": [
+      "runs/20261024-P1-cadence-haiku-full-4/scores.jsonl on origin/main: grader c344bea, stream_ok false"
+     ],
+     "mechanism": "not recorded (loop or crash)"
+    }
+   ]
+  },
+  {
+   "name": "review-10",
+   "run_id": "20261024-P2-cadence-haiku-full-6",
+   "task": "P2",
+   "grader": {
+    "stream_ok": true,
+    "passed": 2,
+    "reward": 0.2857,
+    "score": 2,
+    "commit": "c344bea44951cfc5a3a3a99aaa598fdaaedabba8"
+   },
+   "answers": [
+    {
+     "id": "no-stream-trap-failure",
+     "severity": "control",
+     "kind": "absent",
+     "statement": "The stream consumer gets past the invalid frame and reaches the end of the replay. A review that reports, as must-fix, that the consumer loops or crashes on the invalid frame is a false finding.",
+     "verified_by": [
+      "runs/20261024-P2-cadence-haiku-full-6/scores.jsonl on origin/main: grader c344bea, stream_ok true"
+     ]
+    }
+   ]
+  },
+  {
+   "name": "review-11",
+   "run_id": "20261024-P2-cadence-haiku-core-5",
+   "task": "P2",
+   "grader": {
+    "stream_ok": false,
+    "passed": 3,
+    "reward": 0.0,
+    "score": 0,
+    "commit": "c344bea44951cfc5a3a3a99aaa598fdaaedabba8"
+   },
+   "answers": [
+    {
+     "id": "stream-consumer-does-not-survive-invalid-frame",
+     "severity": "must-fix",
+     "kind": "defect",
+     "statement": "The stream consumer does not consume the whole replayed stream: on a frame whose data is not valid JSON (the replay sends it on every reconnect) it reconnects without end, so `make stream` never reaches the end of its input and the stream marts are incomplete.",
+     "verified_by": [
+      "runs/20261024-P2-cadence-haiku-core-5/scores.jsonl on origin/main: grader c344bea, stream_ok false",
+      "Cadence postmortem (claude.ai/artifact/WbaPy7W4Qc2EZL9R68B1oA), log entry: log entry on draft cadence#228 (head 8fefa55): 'verified as the same endless reconnect loop as P1 core-4 (5899 of 11774 positions)'"
+     ],
+     "mechanism": "loop"
+    }
+   ]
+  }
+ ],
+ "about": "Known answers for the review eval set. Each answer comes from the harness-benchmark grader (code, scores.jsonl) and, where it names the mechanism, a postmortem log entry. Survivability-pilot findings are added as answers once the pilot has reproduced them (review-01: the pilot's HIGH and MEDIUM items for P1 core-6, 2026-10-25 02:25). Case names are neutral (review-NN, a fixed shuffle) so that a reviewer's paths do not name the run, the arm or the profile. Every configuration reviews the same head per case (the stored final tree), so flagged-and-fixed counts from the original runs are not a metric here. The set has no one-shot trees; one-shot trees rebuilt from transcript replays must be labelled as such when added."
+}

@@ -1,0 +1,10 @@
+{
+ "configs": {
+  "new_skill": "pr-review-local@9314a61",
+  "old_skill": "pr-review-local@2100c6e"
+ },
+ "baselines": [
+  "old_skill"
+ ],
+ "runs": 3
+}
