@@ -27,10 +27,12 @@
      "severity": "must-fix",
      "kind": "defect",
      "pilot_id": "H1",
-     "statement": "The consumer sends no User-Agent, so the live Wikimedia endpoint that the spec names answers 403, and every connect failure is swallowed: the consumer prints nothing and exits 0.",
+     "statement": "The consumer sends no User-Agent header (the live endpoint that the spec names requires one), and every connect failure is swallowed: on an unreachable or refusing endpoint the consumer prints nothing and exits 0.",
      "verified_by": [
       "survivability pilot, consolidated and reproduced: scratchpad survive/run2/t1/final-review-t1.md (tree 9305aa39 = this case's review tree)"
-     ]
+     ],
+     "reproduced_locally_only": true,
+     "note": "The pilot showed the 403 with an outside request that the review rules did not permit. Credit a review that shows it from the code or a local stub (no User-Agent sent; rc=0 and no output on a bad URL). An outside request is not required and not credited."
     },
     {
      "id": "stop-mid-flush-drops-events",
@@ -354,5 +356,5 @@
    ]
   }
  ],
- "about": "Known answers for the review eval set. Each answer comes from the harness-benchmark grader (code, scores.jsonl) and, where it names the mechanism, a postmortem log entry. Survivability-pilot findings are added as answers once the pilot has reproduced them (review-01: the pilot's HIGH and MEDIUM items for P1 core-6, 2026-10-25 02:25). Case names are neutral (review-NN, a fixed shuffle) so that a reviewer's paths do not name the run, the arm or the profile."
+ "about": "Known answers for the review eval set. Each answer comes from the harness-benchmark grader (code, scores.jsonl) and, where it names the mechanism, a postmortem log entry. Survivability-pilot findings are added as answers once the pilot has reproduced them (review-01: the pilot's HIGH and MEDIUM items for P1 core-6, 2026-10-25 02:25). Case names are neutral (review-NN, a fixed shuffle) so that a reviewer's paths do not name the run, the arm or the profile. Every configuration reviews the same head per case (the stored final tree), so flagged-and-fixed counts from the original runs are not a metric here. The set has no one-shot trees; one-shot trees rebuilt from transcript replays must be labelled as such when added."
 }

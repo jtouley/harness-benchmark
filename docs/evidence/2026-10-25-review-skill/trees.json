@@ -1,0 +1,123 @@
+{
+ "review-01": {
+  "base_commit": "426c90b85b04b1bd439781ccc0f3507f0505ef75",
+  "head_commit": "998515aa1ef2256989537d7c548138b687d7592e",
+  "base_blind": "d176e8013b57660cdb42cd8533ea76fd2c1529e9",
+  "review_blind": "c176f99dc309b01a2e353856ebc599a32840f8e4",
+  "run_id": "20261024-P1-cadence-haiku-core-6",
+  "case": "review-01",
+  "blob_sha256": "7d12f417df2ad7aad2ca817b881e086fda9e8e38dd862a86a4dcd4d51e95e5d8",
+  "record_ref": "origin/main",
+  "task": "P1"
+ },
+ "review-02": {
+  "base_commit": "ec7587582e9adcedbbaebe72a952c428caeb75b3",
+  "head_commit": "6074d89548235473471f0976144b7fcdf1b5024b",
+  "base_blind": "d176e8013b57660cdb42cd8533ea76fd2c1529e9",
+  "review_blind": "8450a5e00ee18cd3bb59242b5f031712f7102069",
+  "run_id": "20261024-P1-cadence-haiku-core-5",
+  "case": "review-02",
+  "blob_sha256": "3033d9dcafa090d2f536f844e35abd6a197e0da64fbe01888304d27acfa84a85",
+  "record_ref": "origin/main",
+  "task": "P1"
+ },
+ "review-03": {
+  "base_commit": "0feca24c16a16cfd79a4f2d21adbfbe83b1f85c4",
+  "head_commit": "02b11a068ccda547cebf065296137d01df74f079",
+  "base_blind": "d176e8013b57660cdb42cd8533ea76fd2c1529e9",
+  "review_blind": "511c1c426d20f973888d5960685fbfaaff5e44f1",
+  "run_id": "20261024-P1-cadence-haiku-core-4",
+  "case": "review-03",
+  "blob_sha256": "163539bd78b29dd5a8b1fc22f7d12022c64a1e16003700172a7c95afd0e5d967",
+  "record_ref": "origin/main",
+  "task": "P1"
+ },
+ "review-04": {
+  "base_commit": "39f622bd8a5992e06fb322aa8dd257dfcf9949f8",
+  "head_commit": "85fa612b8dc7fd6c7d37849c17cacdefd0923f0f",
+  "base_blind": "925bdce4bb3678137e25c40c4813a84963e37e46",
+  "review_blind": "9fe4d3d648e1fcbae4e6b4fca50c218df47a64e8",
+  "run_id": "20261024-P2-cadence-haiku-core-6",
+  "case": "review-04",
+  "blob_sha256": "c1894c77cd83afba99e02bab49e6a51a1411f29e911c160bf42978df0e456cf5",
+  "record_ref": "origin/main",
+  "task": "P2"
+ },
+ "review-05": {
+  "base_commit": "544b00785071e9850242ff934f5801caed8cb9fb",
+  "head_commit": "869bb81ce0b38d372cac55511d4c7a49b1c06d05",
+  "base_blind": "d176e8013b57660cdb42cd8533ea76fd2c1529e9",
+  "review_blind": "148cff4e2adeb2329780425d21478f74c53ae54c",
+  "run_id": "20261024-P1-cadence-haiku-full-6",
+  "case": "review-05",
+  "blob_sha256": "9da583edf8b425c1a259e3c4558c36ccb47b1e44edec4372e9a8177d1b7d652d",
+  "record_ref": "origin/main",
+  "task": "P1"
+ },
+ "review-06": {
+  "base_commit": "2987b52365f8fbd77000dedf988330c102ea9c63",
+  "head_commit": "eafecd8cbeb74dd56dd77d2986957e2dbaed1cc0",
+  "base_blind": "925bdce4bb3678137e25c40c4813a84963e37e46",
+  "review_blind": "1cb1c326e6034687698610216d1f846e6b4d9e26",
+  "run_id": "20261024-P2-cadence-haiku-full-5",
+  "case": "review-06",
+  "blob_sha256": "d81a78c7a6fc0519330ae312372626b072c7528632e2d186b93ff8e676db87bb",
+  "record_ref": "origin/main",
+  "task": "P2"
+ },
+ "review-07": {
+  "base_commit": "985be70d4209ee5da476b901ecd984b1aa40234b",
+  "head_commit": "aa9a497ffcc924cb6549d8110a2d65a3b53189ee",
+  "base_blind": "925bdce4bb3678137e25c40c4813a84963e37e46",
+  "review_blind": "fa54ed4f868dabf6658cf157ac7efa703eade293",
+  "run_id": "20261024-P2-cadence-haiku-core-4",
+  "case": "review-07",
+  "blob_sha256": "21a9a43a4651c758faa4747ebe103428c5cfa582cf3704d54b5d76e27ce77c90",
+  "record_ref": "origin/main",
+  "task": "P2"
+ },
+ "review-08": {
+  "base_commit": "92602f09770804a0ebb377ec0da19cc03cbe45d7",
+  "head_commit": "e30c0cef38aff5f473fd3ec8ec6dd75be77a6317",
+  "base_blind": "925bdce4bb3678137e25c40c4813a84963e37e46",
+  "review_blind": "0abf9e1fca9f409923566a71bc3afbf5ea5d394e",
+  "run_id": "20261024-P2-cadence-haiku-full-4",
+  "case": "review-08",
+  "blob_sha256": "07f25bf4d7ea5a9b0d7891fd4dca792f6e2bcf819e2de01a40429aa9090c7d12",
+  "record_ref": "origin/main",
+  "task": "P2"
+ },
+ "review-09": {
+  "base_commit": "388957eaba7692dfde74c27c6551481d98da122b",
+  "head_commit": "c63c13f93c1e0b81e7e780f962ee76df4a48510e",
+  "base_blind": "d176e8013b57660cdb42cd8533ea76fd2c1529e9",
+  "review_blind": "fbb03529c21373ef2f8a53cea3db81238035ef76",
+  "run_id": "20261024-P1-cadence-haiku-full-4",
+  "case": "review-09",
+  "blob_sha256": "fe3fa9a8f3ab0c00959642ac76f88a2fc47a2c08bd3a865ee6c0101dd8184b47",
+  "record_ref": "origin/main",
+  "task": "P1"
+ },
+ "review-10": {
+  "base_commit": "e008a0de2d11207e8f4e06797d69657b8f650ec4",
+  "head_commit": "9ed8cdd0926e6661e8ccf2ab5b1b36208dcc7df5",
+  "base_blind": "925bdce4bb3678137e25c40c4813a84963e37e46",
+  "review_blind": "8ab74af64f92f933db6768607960d86267dd8b59",
+  "run_id": "20261024-P2-cadence-haiku-full-6",
+  "case": "review-10",
+  "blob_sha256": "074b57dcbe2062e4505df288610b9a3c6f0e07e5bd8dd2f3335079a67081c7ea",
+  "record_ref": "origin/main",
+  "task": "P2"
+ },
+ "review-11": {
+  "base_commit": "e008a0de2d11207e8f4e06797d69657b8f650ec4",
+  "head_commit": "1009b9a42790085fb1dac49d3e969dee19493865",
+  "base_blind": "925bdce4bb3678137e25c40c4813a84963e37e46",
+  "review_blind": "6e07aff1ee84edff806e4ae631fa688e9aa5bf17",
+  "run_id": "20261024-P2-cadence-haiku-core-5",
+  "case": "review-11",
+  "blob_sha256": "e5a2c464b38471d3ae38a580f6157b57d801e919dee32cdf87d0faf65b6ed232",
+  "record_ref": "origin/main",
+  "task": "P2"
+ }
+}

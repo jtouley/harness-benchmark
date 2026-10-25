@@ -47,8 +47,11 @@ def cases() -> list[dict]:
 def assertions(case: dict) -> list[str]:
     out = []
     for a in case["answers"]:
-        if a["kind"] == "defect" and a["severity"] == "must-fix":
+        if a["kind"] == "defect" and a["severity"] == "must-fix" and not a.get("reproduced_locally_only"):
             out.append(f"[recall:{a['id']}] The final review reports as must-fix: {a['statement']}")
+        elif a["kind"] == "defect" and a.get("reproduced_locally_only"):
+            out.append(f"[recall:{a['id']}] The final review reports as must-fix, shown from the code or a local stub "
+                       f"(an outside request is not required): {a['statement']}")
         elif a["kind"] == "defect":
             out.append(f"[recall:{a['id']}] The final review reports, at any severity: {a['statement']}")
         else:

@@ -1,0 +1,14 @@
+{
+ "configs": {
+  "new_skill": "antagonistic-review@c49d1ff#full",
+  "part_three_reviewers": "antagonistic-review@c49d1ff#three",
+  "part_single_reviewer": "antagonistic-review@c49d1ff#single",
+  "old_skill": "pr-review-local@2100c6e",
+  "builtin_code_review": "code-review"
+ },
+ "baselines": [
+  "old_skill",
+  "builtin_code_review"
+ ],
+ "runs": 3
+}

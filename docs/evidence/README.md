@@ -82,6 +82,16 @@ what produced each number, and the [whitepaper](../whitepaper.md) draws them tog
   measured on pipeline tasks, and Haiku costs ignore the long-prompt price, so they are lower bounds.
 - Read: [postmortem](2026-10-19-cadence-core-postmortem.md)
 
+## Review skill eval (25 October): set up, not run
+
+- Question: does a candidate review skill, or a part of it, find more reproduced defects than `/pr-review-local`
+  and the built-in `code-review` on the same stored diffs?
+- Sample: 11 stored shapes-r2 trees, 3 repeats per configuration. Known answers from the grader and the
+  survivability pilot.
+- Result: none yet. The reviewer runs wait for dispatch as Agent-tool subagents.
+- Read: [set-up and run lists](2026-10-25-review-skill/README.md)
+
+
 ## Scripts kept with the data
 
 The scripts beside each round's data (`grade.py`, `run_arm.sh` and others) are the exact ones used for that
