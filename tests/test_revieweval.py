@@ -82,3 +82,37 @@ def test_compare_reads_a_workspace(tmp_path: Path) -> None:
     assert got["summary"]["new_skill"]["recall"]["mean"] == 1.0
     assert got["summary"]["old_skill"]["recall"]["mean"] == 0.5
     assert set(got["verdicts"]["new_skill"]) == {"old_skill"}
+
+
+def _layout(work: Path, cadence: Path, *cases: str) -> list[str]:
+    import argparse
+    args = argparse.Namespace(work=work, iteration="it", cadence=cadence, config=["builtin=code-review"],
+                              baseline=["builtin"], runs=1, cases=list(cases))
+    compare.layout(args)
+    return (work / "it" / "dispatch.jsonl").read_text().splitlines()
+
+
+def test_subset_layout_keeps_the_other_cases_and_runs_clone_the_prepared_tree(tmp_path: Path) -> None:
+    import subprocess
+    names = [c["name"] for c in compare.cases()]
+    for n in names[:2]:
+        repo = tmp_path / "trees" / n / "repo"
+        repo.mkdir(parents=True)
+        g = ["git", "-C", str(repo), "-c", "user.name=t", "-c", "user.email=t@t"]
+        subprocess.run(g[:3] + ["init", "-q", "-b", "base"], check=True)
+        subprocess.run(g + ["commit", "-q", "--allow-empty", "-m", "b"], check=True)
+        subprocess.run(g + ["checkout", "-q", "-b", "review"], check=True)
+        subprocess.run(g + ["commit", "-q", "--allow-empty", "-m", "r"], check=True)
+    built = tmp_path / "built" / names[0]
+    built.mkdir(parents=True)
+    subprocess.run(["git", "clone", "-q", "-b", "review", str(tmp_path / "trees" / names[0] / "repo"),
+                    str(built / "repo")], check=True)
+    (built / "build.log").write_text("log\n")
+    full = _layout(tmp_path, tmp_path)
+    assert len(full) == 2 * len(names)
+    assert sorted(_layout(tmp_path, tmp_path, names[0])) == sorted(full)
+    run = tmp_path / "it" / names[0] / "builtin" / "run-1"
+    assert (run / "source").read_text().strip() == str(tmp_path / "trees" / names[0] / "repo")
+    compare.setup(run)
+    out = subprocess.run(["git", "-C", str(run / "repo"), "branch"], capture_output=True, text=True).stdout
+    assert "base" in out and "review" in out

@@ -140,6 +140,9 @@ def layout(args) -> None:
     root = args.work / args.iteration
     configs = dict(c.split("=", 1) for c in args.config)
     picked = [c for c in cases() if not args.cases or c["name"] in args.cases]
+    meta = {"configs": configs, "baselines": args.baseline, "runs": args.runs}
+    if args.cases and (root / "configs.json").exists() and json.loads((root / "configs.json").read_text()) != meta:
+        raise SystemExit(f"{root} was laid out with other configurations: a subset re-layout must use the same ones")
     dispatch = []
     for case in picked:
         cdir = root / case["name"]
@@ -156,8 +159,7 @@ def layout(args) -> None:
             for k in range(1, args.runs + 1):
                 run = cdir / config / f"run-{k}"
                 (run / "outputs").mkdir(parents=True, exist_ok=True)
-                src = built / "repo" if (built / "repo").exists() else tree
-                (run / "source").write_text(f"{src}\n")
+                (run / "source").write_text(f"{tree}\n")  # the prepared tree has `base`; built/repo does not
                 steps, review_files = steps_for(spec, args.cadence, args.work, run, pr)
                 (run / "steps.json").write_text(json.dumps({"config": spec, "steps": steps,
                                                             "review_files": review_files}, indent=1) + "\n")
@@ -171,9 +173,12 @@ def layout(args) -> None:
                                  "step": "grade", "after": [st["id"] for st in steps], "diff": str(run / "repo"),
                                  "prompt": (run / "grader.md").read_text().strip(), "output": str(run / "grading.json"),
                                  "timing": None})
-    (root / "configs.json").write_text(json.dumps({"configs": configs, "baselines": args.baseline,
-                                                   "runs": args.runs}, indent=1) + "\n")
-    with open(root / "dispatch.jsonl", "w") as f:
+    (root / "configs.json").write_text(json.dumps(meta, indent=1) + "\n")
+    path = root / "dispatch.jsonl"
+    if args.cases and path.exists():  # a subset re-layout replaces only its cases' lines, never the rest
+        kept = [ln for ln in path.read_text().splitlines() if json.loads(ln)["case"] not in args.cases]
+        dispatch = sorted([json.loads(ln) for ln in kept] + dispatch, key=lambda d: d["case"])
+    with open(path, "w") as f:
         for d in dispatch:
             f.write(json.dumps(d) + "\n")
     print(f"{len(picked)} cases x {len(configs)} configurations x {args.runs} runs: {len(dispatch)} dispatches in "
