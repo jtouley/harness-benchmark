@@ -6,6 +6,7 @@
 | `survey-shapes-r2.md` | A survey of the 10 shapes-r2 Cadence runs other than P1 core-6 (P1 full-5 was lost), one row per run, with citations. |
 | `check-attribution.md` | Dispatch item 8: the per-check grade of 13 runs, and which Cadence block produced each passing answer. |
 | `skill-review-R1.md` | Dispatch item 1: which core-6 findings were in R1's reach, which rule let each through, and whether #228, #229 and #231 close it, with proposed skill text against #231's head (`4c437ca`). |
+| `skill-review-R2.md` | Dispatch item 3: R2's skill and gate (`skills/test-benchmark/SKILL.md`, `scripts/test_benchmark_gate.py`). |
 | `skill-review-fixround.md` | Dispatch item 2: whether each core-6 fix commit fixed the class or only the named instance, and which rule wording drives that. |
 | `skill-review-plan.md` | Dispatch item 4: the plan blocks P1, P3 and P4 (plan-create, plan-review, plan-update) on core-6, P2 full-5 and P2 full-6. |
 | `skill-review-E1.md` | Dispatch item 5: E1's skill text (`commands/spec-driven.md`, `references/execution-protocol.md`). |
@@ -20,7 +21,7 @@
 
 Each file tags its claims. `postmortem-weaknesses.md` and `check-attribution.md` use **[V]** (checked with the
 author's own tool calls), **[I]** (inferred) and, in the first, **[L]** (taken from the postmortem log without
-re-checking). `skill-review-fixround.md`, `skill-review-plan.md`, `skill-review-E1.md` and `skill-review-A5.md` use the same [V]/[I] tags. `skill-review-R1.md` has no tags; it cites
+re-checking). `skill-review-R2.md`, `skill-review-fixround.md`, `skill-review-plan.md`, `skill-review-E1.md` and `skill-review-A5.md` use the same [V]/[I] tags. `skill-review-R1.md` has no tags; it cites
 its sources in a closing Sources section, and any skill text the skill reviews propose is a proposal, not a merged change.
 `survey-shapes-r2.md` cites every claim to a source tag (`rec:`, `sc:`, `T:`, tree paths, `rg:`).
 Official scores are round(reward x 7) from `scores.jsonl`.
