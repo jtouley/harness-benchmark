@@ -1,0 +1,41 @@
+mkdir -p out/marts/mart_edit_windows_5min out/marts/mart_fy2024_monthly
+uv run python -m engine pipelines/stream.yml --duration 90
+warning: The `UV_NATIVE_TLS` environment variable is deprecated and will be removed in a future release. Use `UV_SYSTEM_CERTS` instead.
+uv run dbt build --project-dir transform --profiles-dir transform --select tag:stream
+warning: The `UV_NATIVE_TLS` environment variable is deprecated and will be removed in a future release. Use `UV_SYSTEM_CERTS` instead.
+[0m03:33:09  Running with dbt=1.11.6
+[0m03:33:09  Registered adapter: duckdb=1.11.0
+[0m03:33:10  Found 12 models, 30 data tests, 500 macros
+[0m03:33:10  
+[0m03:33:10  Concurrency: 4 threads (target='dev')
+[0m03:33:10  
+[0m03:33:10  1 of 12 START sql incremental model main.fct_edit .............................. [RUN]
+[0m03:33:11  1 of 12 OK created sql incremental model main.fct_edit ......................... [[32mOK[0m in 0.48s]
+[0m03:33:11  2 of 12 START test accepted_values_fct_edit_actor_type__bot__human ............. [RUN]
+[0m03:33:11  3 of 12 START test not_null_fct_edit_event_time ................................ [RUN]
+[0m03:33:11  4 of 12 START test not_null_fct_edit_late ...................................... [RUN]
+[0m03:33:11  5 of 12 START test not_null_fct_edit_meta_id ................................... [RUN]
+[0m03:33:11  4 of 12 PASS not_null_fct_edit_late ............................................ [[32mPASS[0m in 0.25s]
+[0m03:33:11  6 of 12 START test unique_fct_edit_meta_id ..................................... [RUN]
+[0m03:33:11  5 of 12 PASS not_null_fct_edit_meta_id ......................................... [[32mPASS[0m in 0.23s]
+[0m03:33:11  2 of 12 PASS accepted_values_fct_edit_actor_type__bot__human ................... [[32mPASS[0m in 0.28s]
+[0m03:33:11  3 of 12 PASS not_null_fct_edit_event_time ...................................... [[32mPASS[0m in 0.27s]
+[0m03:33:11  6 of 12 PASS unique_fct_edit_meta_id ........................................... [[32mPASS[0m in 0.04s]
+[0m03:33:11  7 of 12 START sql incremental model main.mart_edit_windows_5min ................ [RUN]
+[0m03:33:11  7 of 12 OK created sql incremental model main.mart_edit_windows_5min ........... [[32mOK[0m in 0.10s]
+[0m03:33:11  8 of 12 START test accepted_values_mart_edit_windows_5min_actor_type__bot__human  [RUN]
+[0m03:33:11  9 of 12 START test not_null_mart_edit_windows_5min_edit_count .................. [RUN]
+[0m03:33:11  11 of 12 START test not_null_mart_edit_windows_5min_window_start ............... [RUN]
+[0m03:33:11  10 of 12 START test not_null_mart_edit_windows_5min_window_key ................. [RUN]
+[0m03:33:11  10 of 12 PASS not_null_mart_edit_windows_5min_window_key ....................... [[32mPASS[0m in 0.06s]
+[0m03:33:11  12 of 12 START test unique_mart_edit_windows_5min_window_key ................... [RUN]
+[0m03:33:11  11 of 12 PASS not_null_mart_edit_windows_5min_window_start ..................... [[32mPASS[0m in 0.07s]
+[0m03:33:11  8 of 12 PASS accepted_values_mart_edit_windows_5min_actor_type__bot__human ..... [[32mPASS[0m in 0.09s]
+[0m03:33:11  9 of 12 PASS not_null_mart_edit_windows_5min_edit_count ........................ [[32mPASS[0m in 0.09s]
+[0m03:33:11  12 of 12 PASS unique_mart_edit_windows_5min_window_key ......................... [[32mPASS[0m in 0.03s]
+[0m03:33:11  
+[0m03:33:11  Finished running 2 incremental models, 10 data tests in 0 hours 0 minutes and 1.41 seconds (1.41s).
+[0m03:33:11  
+[0m03:33:11  [32mCompleted successfully[0m
+[0m03:33:11  
+[0m03:33:11  Done. PASS=12 WARN=0 ERROR=0 SKIP=0 NO-OP=0 TOTAL=12

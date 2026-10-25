@@ -1,0 +1,75 @@
+{
+ "graded_snapshot": "69eec7b7dba15cdfc8868bb7370cded8911f0bb5",
+ "marts": [
+  "mart_award_net_fy2024",
+  "mart_county_fy2024",
+  "mart_edit_window_5min",
+  "mart_edits_all_by_wiki",
+  "mart_late_events",
+  "mart_obligations_monthly",
+  "mart_obligations_monthly_state",
+  "mart_source_totals_monthly"
+ ],
+ "pinned": {
+  "checks": {
+   "1": true,
+   "2": true,
+   "3": false,
+   "4": false,
+   "5": false,
+   "6": false,
+   "7": false
+  },
+  "grader_commit": "c344bea44951cfc5a3a3a99aaa598fdaaedabba8",
+  "grader_tree": "8a0977e42fa02981802090d1f9517efe537994c4",
+  "idempotent": true,
+  "passed": 2,
+  "reward": 0.0,
+  "stream_ok": false
+ },
+ "run_id": "20261024-P1-cadence-haiku-core-4",
+ "task": "P1",
+ "transcript_blob": {
+  "path": "blobs/0033b0876a681c642686efd94a7e8ac5d9e7f7e098f0f194719d085f4288d1da.gz",
+  "sha256": "0033b0876a681c642686efd94a7e8ac5d9e7f7e098f0f194719d085f4288d1da",
+  "store": "runs-store"
+ },
+ "tree_blob": {
+  "path": "blobs/163539bd78b29dd5a8b1fc22f7d12022c64a1e16003700172a7c95afd0e5d967.gz",
+  "sha256": "163539bd78b29dd5a8b1fc22f7d12022c64a1e16003700172a7c95afd0e5d967",
+  "store": "runs-store"
+ },
+ "v3": {
+  "checks": {
+   "1": {
+    "pass": true,
+    "resolution": "table mart_obligations_monthly, stated operation: sum(net_obligations); by awarding_agency_code"
+   },
+   "2": {
+    "pass": true,
+    "resolution": "table mart_county_fy2024"
+   },
+   "3": {
+    "pass": true,
+    "resolution": "table mart_award_net_fy2024, stated operation: filter net_obligations < 0; count(*)"
+   },
+   "4": {
+    "pass": false,
+    "resolution": "unresolved: note: cannot read 'Also read mart_obligations_monthly_state and mart_source_totals_monthly'"
+   },
+   "5": {
+    "pass": false,
+    "resolution": "table mart_edits_all_by_wiki"
+   },
+   "6": {
+    "pass": false,
+    "resolution": "unresolved: note: cannot read 'Sum edit_count per window'"
+   },
+   "7": {
+    "pass": false,
+    "resolution": "table mart_late_events, stated operation: count(*)"
+   }
+  },
+  "passed": 3
+ }
+}

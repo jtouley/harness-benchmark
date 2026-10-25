@@ -1,0 +1,31 @@
+test -n "90" || { echo "make stream: DURATION=<seconds> is required" >&2; exit 2; }
+mkdir -p out
+uv run python -m engine stream pipelines/stream.yml --duration 90
+warning: The `UV_NATIVE_TLS` environment variable is deprecated and will be removed in a future release. Use `UV_SYSTEM_CERTS` instead.
+Traceback (most recent call last):
+  File "<frozen runpy>", line 198, in _run_module_as_main
+  File "<frozen runpy>", line 88, in _run_code
+  File "/tmp/claude-0/-home-user/fd6221f8-f79d-5dc4-b0f6-aa7efcbaf9ac/scratchpad/w3/20261024-P2-cadence-haiku-full-4/g/repo/engine/__main__.py", line 50, in <module>
+    sys.exit(main(sys.argv[1:]))
+             ^^^^^^^^^^^^^^^^^^
+  File "/tmp/claude-0/-home-user/fd6221f8-f79d-5dc4-b0f6-aa7efcbaf9ac/scratchpad/w3/20261024-P2-cadence-haiku-full-4/g/repo/engine/__main__.py", line 40, in main
+    run_stream(args.pipeline, root=args.root, duration=args.duration)
+  File "/tmp/claude-0/-home-user/fd6221f8-f79d-5dc4-b0f6-aa7efcbaf9ac/scratchpad/w3/20261024-P2-cadence-haiku-full-4/g/repo/engine/run.py", line 44, in run_stream
+    return consume(url, consumer, deadline=time.monotonic() + duration)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/tmp/claude-0/-home-user/fd6221f8-f79d-5dc4-b0f6-aa7efcbaf9ac/scratchpad/w3/20261024-P2-cadence-haiku-full-4/g/repo/engine/stream.py", line 134, in consume
+    consumer.process(batch)
+  File "/tmp/claude-0/-home-user/fd6221f8-f79d-5dc4-b0f6-aa7efcbaf9ac/scratchpad/w3/20261024-P2-cadence-haiku-full-4/g/repo/engine/stream.py", line 93, in process
+    row = flatten_event(json.loads(item["data"]), self.arrivals)
+                        ^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.12/json/__init__.py", line 346, in loads
+    return _default_decoder.decode(s)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.12/json/decoder.py", line 337, in decode
+    obj, end = self.raw_decode(s, idx=_w(s, 0).end())
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.12/json/decoder.py", line 353, in raw_decode
+    obj, end = self.scan_once(s, idx)
+               ^^^^^^^^^^^^^^^^^^^^^^
+json.decoder.JSONDecodeError: Unterminated string starting at: line 1 column 651 (char 650)
+make: *** [Makefile:12: stream] Error 1

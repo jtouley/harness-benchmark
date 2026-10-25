@@ -1,0 +1,2 @@
+make stream: not implemented
+make: *** [Makefile:7: stream] Error 1

@@ -1,0 +1,37 @@
+# For each analyst check, the mart and the columns that answer it. Checks 1 to 7 follow the spec order.
+checks:
+  - check: 1
+    question: FY2024 net obligations per awarding agency
+    mart: out/marts/mart_obligations_monthly/mart_obligations_monthly.parquet
+    columns: [awarding_agency_code, net_obligations]
+    note: Sum net_obligations by awarding_agency_code.
+  - check: 2
+    question: The ten counties with the highest FY2024 obligations per person
+    mart: out/marts/mart_county_fy2024/mart_county_fy2024.parquet
+    columns: [county_fips, county_name, obligations_per_person]
+    note: Order by obligations_per_person descending, nulls last. Take ten rows.
+  - check: 3
+    question: The number of awards with a net negative obligation in FY2024
+    mart: out/marts/mart_award_net_fy2024/mart_award_net_fy2024.parquet
+    columns: [awarding_agency_code, award_key, net_obligations]
+    note: Count the rows with net_obligations below zero.
+  - check: 4
+    question: For one month, county totals add up to state totals, and state totals add up to the source total
+    mart: out/marts/mart_obligations_monthly/mart_obligations_monthly.parquet
+    columns: [month_start, county_fips, net_obligations]
+    note: September 2024. Also read mart_obligations_monthly_state (state_fips, net_obligations) and mart_source_totals_monthly (month_start, net_obligations).
+  - check: 5
+    question: For the stream, edits and net bytes per wiki for the replayed hour, split human and bot, late events included
+    mart: out/marts/mart_edits_all_by_wiki/mart_edits_all_by_wiki.parquet
+    columns: [wiki, actor_type, edit_count, net_bytes]
+    note: Counts every consumed edit, on time or late.
+  - check: 6
+    question: For the stream, the 5-minute windows with the most edits on en.wikipedia.org (on-time edits only)
+    mart: out/marts/mart_edit_window_5min/mart_edit_window_5min.parquet
+    columns: [window_start, wiki, edit_count]
+    note: Filter wiki to enwiki (the en.wikipedia.org wiki id). Sum edit_count per window and take ten rows.
+  - check: 7
+    question: For the stream, the count of late events
+    mart: out/marts/mart_late_events/mart_late_events.parquet
+    columns: [meta_id, window_start, high_water_mark]
+    note: Count the rows.

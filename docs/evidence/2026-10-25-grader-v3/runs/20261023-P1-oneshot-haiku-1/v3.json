@@ -1,0 +1,46 @@
+{
+ "checks": {
+  "1": {
+   "interpretation": "primary",
+   "pass": true,
+   "reading": "agency_code -> net_obligations",
+   "source": "query"
+  },
+  "2": {
+   "error": "no county column and per-person column found",
+   "pass": false,
+   "source": "query"
+  },
+  "3": {
+   "interpretation": "primary",
+   "pass": true,
+   "reading": "negative_awards",
+   "source": "query"
+  },
+  "4": {
+   "error": "no month column found",
+   "pass": false,
+   "source": "query"
+  },
+  "5": {
+   "interpretation": "primary",
+   "pass": true,
+   "reading": "wiki, actor_type -> edits, net_bytes_added",
+   "source": "query"
+  },
+  "6": {
+   "interpretation": "primary",
+   "pass": true,
+   "reading": "window_start -> edit_count",
+   "source": "query"
+  },
+  "7": {
+   "interpretation": "primary",
+   "pass": true,
+   "reading": "late_events",
+   "source": "query"
+  }
+ },
+ "passed": 5,
+ "total": 7
+}

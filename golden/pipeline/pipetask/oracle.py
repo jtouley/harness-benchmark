@@ -13,6 +13,15 @@ answers it" and fixes no format. So this reader accepts the shapes an engineer w
 
 Each published mart (a folder under out/marts/) is a DuckDB view named after its folder, so a query can
 name marts directly. Only out/marts/ is visible: the spec says anything downstream reads only that.
+
+Grader v3 (owner, 2026-10-24; docs/method/grading.md#grader-v3) reads three more shapes, all of them "the
+table and column (or SQL view) that answers it" (prompt.md:41):
+
+- an operation stated in plain words beside the table and columns (`how:`, `note:`, `aggregation:`, `rows:`,
+  ...): ops.py reads it with a fixed grammar and the plan is applied to the mart's rows. Words the grammar
+  cannot read make the entry unresolved: the check fails with the reason, for every arm alike;
+- a query nested one level down (`queries: {answer: ...}`): the one named `answer`, or the only one;
+- a path to a file inside a mart's folder (`out/marts/<mart>/data.parquet`): that mart.
 """
 
 from __future__ import annotations
@@ -23,6 +32,8 @@ from pathlib import Path
 
 import duckdb
 import yaml
+
+from . import ops
 
 QUERY_KEYS = ("sql", "query", "view", "sql_view", "select")
 TABLE_KEYS = ("table", "model", "mart", "relation", "path", "source", "name")
@@ -145,6 +156,9 @@ def _table_name(text: str, con) -> str:
     """Resolve 'out/marts/x', 'main.x', 'x.parquet' or 'x' to a registered mart view."""
     views = {r[0].lower(): r[0] for r in con.execute("select view_name from duckdb_views() where not internal").fetchall()}
     candidates = [text.strip().rstrip("/")]
+    inside = re.match(r"(?:\./)?out/marts/([^/]+)/[^/]+$", candidates[0])
+    if inside:  # v3: a file inside a mart's folder is that mart
+        candidates.append(inside.group(1))
     base = re.split(r"[/\\]", candidates[0])[-1]
     candidates += [base, base.split(".")[-1], re.sub(r"\.parquet$", "", base)]
     if "." in base:
@@ -156,7 +170,31 @@ def _table_name(text: str, con) -> str:
     raise MapError(f"no published mart named {text!r} under out/marts/")
 
 
-def resolve(entry, con) -> Result:
+def _nested_query(lower: dict) -> str | None:
+    """v3: a query one level down (`queries: {answer: ...}`): the one keyed `answer`, else the only one."""
+    for key in ("queries", "query", "sql", "sql_view", "view"):
+        value = lower.get(key)
+        if not isinstance(value, dict):
+            continue
+        found = {str(k).lower(): v for k, v in value.items() if isinstance(v, str) and _looks_like_sql(v)}
+        if "answer" in found:
+            return found["answer"]
+        if len(found) == 1:
+            return next(iter(found.values()))
+        if found:
+            raise MapError(f"unresolved: {key} holds {len(found)} queries ({', '.join(sorted(found))}) and none "
+                           "is named answer")
+    return None
+
+
+def _marts(con) -> list[str]:
+    return [r[0] for r in con.execute("select view_name from duckdb_views() where not internal").fetchall()]
+
+
+def resolve(entry, con, check: str | None = None, operations: bool = False) -> Result:
+    """The rows an entry answers with. `operations`: apply an operation stated in words (v3, the pipeline
+    grader; P4's grader does not). `check`: the check number, for the v3 rule of check 4 (its month and
+    roll-up are the check's own, see _apply)."""
     hints: list[str] = []
     query = table = None
     if isinstance(entry, str):
@@ -178,6 +216,8 @@ def resolve(entry, con) -> Result:
                 table = v
                 break
         if query is None and table is None:
+            query = _nested_query(lower)
+        if query is None and table is None:
             for k in TABLE_KEYS:
                 if isinstance(lower.get(k), str):
                     table = lower[k]
@@ -192,8 +232,15 @@ def resolve(entry, con) -> Result:
     if query is not None:
         sql, source = query.strip().rstrip(";"), "query"
     else:
-        name = _table_name(table, con)
+        try:
+            name = _table_name(table, con)
+        except MapError:
+            if re.search(r",|\band\b|\s\(", table):
+                raise MapError(f"unresolved: the entry names several tables and no query: {table!r}") from None
+            raise
         sql, source = f"select * from {sql_name(name)}", f"table {name}"
+        if operations and isinstance(entry, dict):
+            return _apply(entry, name, con, hints, check)
     try:
         rel = _without_time_zones(con.sql(sql))
         rows = rel.fetchall()
@@ -201,6 +248,64 @@ def resolve(entry, con) -> Result:
         raise MapError(f"{source} failed: {str(exc).splitlines()[0]}") from exc
     return Result(columns=list(rel.columns), types=[str(t) for t in rel.types], rows=rows,
                   hints=[h.lower() for h in hints], source=source)
+
+
+_MONTH_LITERAL = re.compile(r"\d{4}-\d{2}(?:-\d{2})?")
+
+
+def _apply(entry: dict, name: str, con, hints: list[str], check: str | None) -> Result:
+    """v3: a table entry's rows after the operation its words state (ops.py), or the table as published when
+    it states none. Check 4 keeps its rows at the grain published: the month it reads is the answer key's and
+    the roll-up (county to state to source) is what the check itself does, so only an entry's filters on
+    other columns apply."""
+    source = f"table {name}"
+    rel = con.sql(f"select * from {sql_name(name)}")
+    columns, types = list(rel.columns), [str(t) for t in rel.types]
+    try:
+        plan = ops.parse(entry, columns, _marts(con), hints)
+    except ops.Unresolved as exc:
+        raise MapError(f"unresolved: {exc}") from None
+    if plan is not None and check == "4":
+        plan = ops.Plan(filters=[f for f in plan.filters if not _MONTH_LITERAL.fullmatch(str(f[2]))],
+                        noted=plan.noted + ["check 4: month and roll-up are the check's own"])
+    if plan is None or plan.empty():
+        sql, names = f"select * from {sql_name(name)}", []
+    else:
+        measure = _measure(plan, columns, types, hints)
+        try:
+            sql, names = ops.sql(plan, name, measure)
+        except ops.Unresolved as exc:
+            raise MapError(f"unresolved: {exc}") from None
+        source = f"table {name}, stated operation: {plan.describe()}"
+    try:
+        rel = _without_time_zones(con.sql(sql))
+        rows = rel.fetchall()
+    except duckdb.Error as exc:
+        raise MapError(f"{source} failed: {str(exc).splitlines()[0]}") from exc
+    out_cols, out_types = list(rel.columns), [str(t) for t in rel.types]
+    if plan is not None and plan.divide:
+        try:
+            out_cols, rows = ops.divide_rows(plan, out_cols, rows)
+        except ops.Unresolved as exc:
+            raise MapError(f"unresolved: {exc}") from None
+        out_types = out_types[:len(out_cols) - 1] + ["DECIMAL"]
+    return Result(columns=out_cols, types=out_types, rows=rows, hints=[h.lower() for h in hints], source=source)
+
+
+_NUMERIC = re.compile(r"^(DECIMAL|DOUBLE|FLOAT|REAL|HUGEINT|BIGINT|INTEGER|SMALLINT|TINYINT|UBIGINT|UINTEGER)", re.I)
+
+
+def _measure(plan, columns: list[str], types: list[str], hints: list[str]) -> str | None:
+    """The column a bare `sum` (`sum per award_key`) sums: the one numeric column the entry names besides the
+    grouping, found by its type. None when no bare sum is stated; unresolved when there is not exactly one."""
+    if not any(f == "sum" and c is None for f, c in plan.aggregates):
+        return None
+    by_lower = {c.lower(): (c, t) for c, t in zip(columns, types)}
+    named = [by_lower[h.lower()] for h in hints if h.lower() in by_lower]
+    numeric = [c for c, t in named if _NUMERIC.match(t) and c not in plan.group]
+    if len(numeric) != 1:
+        raise MapError(f"unresolved: a bare sum needs one numeric column named in the entry, found {numeric}")
+    return numeric[0]
 
 
 def _without_time_zones(rel: duckdb.DuckDBPyRelation) -> duckdb.DuckDBPyRelation:

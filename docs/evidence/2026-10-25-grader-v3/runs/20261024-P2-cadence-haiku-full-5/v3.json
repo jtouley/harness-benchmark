@@ -1,0 +1,38 @@
+{
+ "checks": {
+  "1": {
+   "interpretation": "primary",
+   "pass": true,
+   "reading": "agency_code -> net_obligations",
+   "source": "table mart_fy2024_monthly, stated operation: filter grain = 'agency'"
+  },
+  "2": {
+   "error": "no county column and per-person column found",
+   "pass": false,
+   "source": "table mart_fy2024_monthly, stated operation: filter grain = 'county'"
+  },
+  "3": {
+   "error": "no published mart named 'out/warehouse.duckdb fct_award_transaction' under out/marts/",
+   "pass": false
+  },
+  "4": {
+   "error": "no month column found",
+   "pass": false,
+   "source": "table mart_fy2024_monthly, stated operation: filter grain = 'county' and grain = 'state'"
+  },
+  "5": {
+   "error": "no published mart named 'out/warehouse.duckdb fct_edit' under out/marts/",
+   "pass": false
+  },
+  "6": {
+   "error": "unresolved: rows: cannot read 'summed over namespace and actor_type per window'",
+   "pass": false
+  },
+  "7": {
+   "error": "no published mart named 'out/warehouse.duckdb fct_edit' under out/marts/",
+   "pass": false
+  }
+ },
+ "passed": 1,
+ "total": 7
+}

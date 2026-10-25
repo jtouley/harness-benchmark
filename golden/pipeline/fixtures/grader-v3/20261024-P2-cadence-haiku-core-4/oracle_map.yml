@@ -1,0 +1,39 @@
+# For each check in the spec ("Checks the analysts will run"), the table and column that answers it.
+# Question A tables are published under out/marts/<name>/part-0.parquet. Question B tables likewise.
+
+checks:
+  - id: 1
+    question: FY2024 net obligations per awarding agency
+    table: mart_monthly_obligations
+    columns: [agency_name, net_obligations]
+    how: sum(net_obligations) grouped by agency_name, over all months and places
+  - id: 2
+    question: The ten counties with the highest FY2024 obligations per person
+    table: mart_county_fy2024
+    columns: [county_fips, county_name, obligations_per_person]
+    how: order by obligations_per_person desc, county_fips asc; take 10; counties with no population are excluded
+  - id: 3
+    question: The number of awards with a net negative obligation in FY2024
+    table: mart_award_fy2024
+    columns: [award_key, net_obligation]
+    how: count(*) where net_obligation < 0
+  - id: 4
+    question: For one month, county totals add up to state totals, and state totals add up to the source total
+    table: mart_monthly_obligations
+    columns: [state_fips, county_fips, month_start, net_obligations]
+    how: month_start = 2024-07-01; sum by state_fips equals sum by (state_fips, county_fips) rolled up; the source total is sum(federal_action_obligation) over fct_award_transaction where fy2024 and that month
+  - id: 5
+    question: For the stream, edits and net bytes per wiki for the replayed hour, split human and bot (late events included)
+    table: fct_edit
+    columns: [wiki, actor_type, net_bytes, meta_id, event_time]
+    how: count(*) and sum(net_bytes) grouped by wiki and actor_type, where event_time is in the replayed hour (the first full UTC hour of the capture)
+  - id: 6
+    question: For the stream, the 5-minute windows with the most edits on en.wikipedia.org (on-time edits only)
+    table: mart_window_5m
+    columns: [wiki, window_start, edit_count]
+    how: wiki = dim_wiki.dbname where dim_wiki.site_host = 'en.wikipedia.org' (enwiki); sum(edit_count) grouped by window_start; order by sum desc, window_start asc
+  - id: 7
+    question: For the stream, the count of late events
+    table: late_events
+    columns: [meta_id]
+    how: count(*)

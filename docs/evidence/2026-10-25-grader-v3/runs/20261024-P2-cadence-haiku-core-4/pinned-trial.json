@@ -1,0 +1,98 @@
+{
+ "build": [
+  {
+   "cmd": "make build",
+   "exit": 0,
+   "log": "build-1.log",
+   "seconds": 9.8
+  },
+  {
+   "cmd": "make build",
+   "exit": 0,
+   "log": "build-2.log",
+   "seconds": 6.8
+  }
+ ],
+ "build_timeout": 1800,
+ "changed_by_second_build": [],
+ "checks": {
+  "1": {
+   "interpretation": "primary",
+   "pass": true,
+   "reading": "agency_name -> net_obligations",
+   "source": "table mart_monthly_obligations"
+  },
+  "2": {
+   "interpretation": "primary",
+   "pass": true,
+   "reading": "county_fips -> obligations_per_person",
+   "source": "table mart_county_fy2024"
+  },
+  "3": {
+   "expected": "1122",
+   "got": "7918",
+   "pass": false,
+   "source": "table mart_award_fy2024",
+   "traps": [],
+   "unexplained": true
+  },
+  "4": {
+   "expected": "{\"counties\": {\"01069\": \"75000.00\", \"02016\": \"15996.00\", \"02020\": \"196993.00\", \"02050\": \"29878.00\", \"02063\": \"10000.00\", \"02066\": \"10000.00\", \"02068\": \"7025.00\", \"02070\": \"10000.00\", \"02090\": \"0.00\", \"02100\": \"10000.00\", \"02110\": \"190000.00\", \"02122\": \"27466.00\", \"02150\": \"29971.00\", \"02158\": \"10000.00\", \"02164\": \"50000.00\", \"02195\": \"20000.00\", \"02198\": \"20000.00\", \"02240\": \"10000.00\", \"02275\": \"1...",
+   "got": "{\"counties\": {}, \"month\": \"2024-07\", \"states\": {\"01\": \"204004.17\", \"02\": \"2586242.00\", \"04\": \"11707289.98\", \"05\": \"4748653.00\", \"06\": \"9005420.18\", \"08\": \"14055693.00\", \"09\": \"5907487.00\", \"10\": \"800768.00\", \"11\": \"10899436.11\", \"12\": \"24364885.19\", \"13\": \"4292416.96\", \"15\": \"1435464.24\", \"16\": \"4156616.00\", \"17\": \"-178746.01\", \"18\": \"1707409.12\", \"19\": \"9489172.24\", \"20\": \"4388311.71\", \"21\": \"509...",
+   "pass": false,
+   "source": "table mart_monthly_obligations",
+   "traps": [],
+   "unexplained": true
+  },
+  "5": {
+   "error": "no published mart named 'fct_edit' under out/marts/",
+   "pass": false
+  },
+  "6": {
+   "error": "no published mart named 'mart_window_5m' under out/marts/",
+   "pass": false
+  },
+  "7": {
+   "error": "no published mart named 'late_events' under out/marts/",
+   "pass": false
+  }
+ },
+ "deadline": 600.0,
+ "deadline_hit": false,
+ "durations": [
+  30,
+  90
+ ],
+ "idempotent": true,
+ "keepalive": 5.0,
+ "make_fresh_home": false,
+ "make_user": null,
+ "passed": 2,
+ "reward": 0.0,
+ "seed": 1,
+ "snapshot": {
+  "commit": "28ac48c86b59be3c5753835d76c04f0c283967ea",
+  "files": 0
+ },
+ "speed": 60.0,
+ "stream": [
+  {
+   "cmd": "make stream DURATION=30",
+   "exit": 2,
+   "log": "stream-1.log",
+   "seconds": 16.3
+  },
+  {
+   "cmd": "make stream DURATION=90",
+   "exit": 2,
+   "log": "stream-2.log",
+   "seconds": 1.7
+  }
+ ],
+ "stream_connections": 3,
+ "stream_grace": 300,
+ "stream_ok": false,
+ "stream_positions_needed": 11774,
+ "stream_positions_served": 5970,
+ "total": 7
+}

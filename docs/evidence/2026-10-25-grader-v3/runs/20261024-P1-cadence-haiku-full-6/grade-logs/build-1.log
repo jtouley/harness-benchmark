@@ -1,0 +1,86 @@
+uv run python -m pipeline.batch
+warning: The `UV_NATIVE_TLS` environment variable is deprecated and will be removed in a future release. Use `UV_SYSTEM_CERTS` instead.
+Using CPython 3.12.3 interpreter at: /usr/bin/python3.12
+Creating virtual environment at: .venv
+Installed 83 packages in 382ms
+uv run dbt build --project-dir transform --profiles-dir transform --exclude tag:stream
+warning: The `UV_NATIVE_TLS` environment variable is deprecated and will be removed in a future release. Use `UV_SYSTEM_CERTS` instead.
+[0m03:26:18  Running with dbt=1.11.6
+[0m03:26:19  Registered adapter: duckdb=1.11.0
+[0m03:26:19  Unable to do partial parsing because saved manifest not found. Starting full parse.
+[0m03:26:22  [[33mWARNING[0m]: Constraint types are not supported for external
+materializations and will be ignored.  Set 'warn_unsupported: false' on this
+constraint to ignore this warning.
+[0m03:26:22  [[33mWARNING[0m]: Constraint types are not supported for external
+materializations and will be ignored.  Set 'warn_unsupported: false' on this
+constraint to ignore this warning.
+[0m03:26:22  [[33mWARNING[0m]: Constraint types are not supported for external
+materializations and will be ignored.  Set 'warn_unsupported: false' on this
+constraint to ignore this warning.
+[0m03:26:22  [[33mWARNING[0m]: Constraint types are not supported for external
+materializations and will be ignored.  Set 'warn_unsupported: false' on this
+constraint to ignore this warning.
+[0m03:26:22  [[33mWARNING[0m]: Constraint types are not supported for external
+materializations and will be ignored.  Set 'warn_unsupported: false' on this
+constraint to ignore this warning.
+[0m03:26:22  [[33mWARNING[0m]: Constraint types are not supported for external
+materializations and will be ignored.  Set 'warn_unsupported: false' on this
+constraint to ignore this warning.
+[0m03:26:22  [[33mWARNING[0m]: Constraint types are not supported for external
+materializations and will be ignored.  Set 'warn_unsupported: false' on this
+constraint to ignore this warning.
+[0m03:26:22  [[33mWARNING[0m]: Constraint types are not supported for external
+materializations and will be ignored.  Set 'warn_unsupported: false' on this
+constraint to ignore this warning.
+[0m03:26:23  Found 13 models, 24 data tests, 500 macros
+[0m03:26:23  
+[0m03:26:23  Concurrency: 4 threads (target='dev')
+[0m03:26:23  
+[0m03:26:24  1 of 21 START sql view model main.stg_census_county_population ................. [RUN]
+[0m03:26:24  2 of 21 START sql view model main.stg_usaspending_transactions ................. [RUN]
+[0m03:26:24  2 of 21 OK created sql view model main.stg_usaspending_transactions ............ [[32mOK[0m in 0.22s]
+[0m03:26:24  1 of 21 OK created sql view model main.stg_census_county_population ............ [[32mOK[0m in 0.24s]
+[0m03:26:24  3 of 21 START test not_null_stg_census_county_population_county_fips ........... [RUN]
+[0m03:26:24  4 of 21 START test not_null_stg_usaspending_transactions_transaction_key ....... [RUN]
+[0m03:26:24  6 of 21 START test unique_stg_usaspending_transactions_transaction_key ......... [RUN]
+[0m03:26:24  5 of 21 START test unique_stg_census_county_population_county_fips ............. [RUN]
+[0m03:26:24  3 of 21 PASS not_null_stg_census_county_population_county_fips ................. [[32mPASS[0m in 0.14s]
+[0m03:26:24  4 of 21 PASS not_null_stg_usaspending_transactions_transaction_key ............. [[32mPASS[0m in 0.13s]
+[0m03:26:24  5 of 21 PASS unique_stg_census_county_population_county_fips ................... [[32mPASS[0m in 0.08s]
+[0m03:26:24  6 of 21 PASS unique_stg_usaspending_transactions_transaction_key ............... [[32mPASS[0m in 0.09s]
+[0m03:26:24  7 of 21 START sql external model main.dim_agency ............................... [RUN]
+[0m03:26:24  9 of 21 START sql external model main.dim_place ................................ [RUN]
+[0m03:26:24  10 of 21 START sql external model main.fct_award_transaction ................... [RUN]
+[0m03:26:24  8 of 21 START sql external model main.dim_date ................................. [RUN]
+[0m03:26:25  7 of 21 OK created sql external model main.dim_agency .......................... [[32mOK[0m in 0.75s]
+[0m03:26:25  11 of 21 START test not_null_dim_agency_agency_code ............................ [RUN]
+[0m03:26:25  8 of 21 OK created sql external model main.dim_date ............................ [[32mOK[0m in 0.81s]
+[0m03:26:25  12 of 21 START test unique_dim_agency_agency_code .............................. [RUN]
+[0m03:26:25  9 of 21 OK created sql external model main.dim_place ........................... [[32mOK[0m in 0.83s]
+[0m03:26:25  13 of 21 START test not_null_dim_date_date_key ................................. [RUN]
+[0m03:26:25  10 of 21 OK created sql external model main.fct_award_transaction .............. [[32mOK[0m in 0.85s]
+[0m03:26:25  14 of 21 START test unique_dim_date_date_key ................................... [RUN]
+[0m03:26:25  11 of 21 PASS not_null_dim_agency_agency_code .................................. [[32mPASS[0m in 0.07s]
+[0m03:26:25  15 of 21 START test not_null_dim_place_place_key ............................... [RUN]
+[0m03:26:25  13 of 21 PASS not_null_dim_date_date_key ....................................... [[32mPASS[0m in 0.07s]
+[0m03:26:25  12 of 21 PASS unique_dim_agency_agency_code .................................... [[32mPASS[0m in 0.09s]
+[0m03:26:25  16 of 21 START test unique_dim_place_place_key ................................. [RUN]
+[0m03:26:25  17 of 21 START test not_null_fct_award_transaction_transaction_key ............. [RUN]
+[0m03:26:25  14 of 21 PASS unique_dim_date_date_key ......................................... [[32mPASS[0m in 0.06s]
+[0m03:26:25  18 of 21 START test unique_fct_award_transaction_transaction_key ............... [RUN]
+[0m03:26:25  16 of 21 PASS unique_dim_place_place_key ....................................... [[32mPASS[0m in 0.07s]
+[0m03:26:25  15 of 21 PASS not_null_dim_place_place_key ..................................... [[32mPASS[0m in 0.09s]
+[0m03:26:25  17 of 21 PASS not_null_fct_award_transaction_transaction_key ................... [[32mPASS[0m in 0.06s]
+[0m03:26:25  18 of 21 PASS unique_fct_award_transaction_transaction_key ..................... [[32mPASS[0m in 0.05s]
+[0m03:26:25  19 of 21 START sql external model main.mart_monthly_county_agency .............. [RUN]
+[0m03:26:25  19 of 21 OK created sql external model main.mart_monthly_county_agency ......... [[32mOK[0m in 0.15s]
+[0m03:26:25  20 of 21 START test not_null_mart_monthly_county_agency_row_key ................ [RUN]
+[0m03:26:25  21 of 21 START test unique_mart_monthly_county_agency_row_key .................. [RUN]
+[0m03:26:25  20 of 21 PASS not_null_mart_monthly_county_agency_row_key ...................... [[32mPASS[0m in 0.05s]
+[0m03:26:25  21 of 21 PASS unique_mart_monthly_county_agency_row_key ........................ [[32mPASS[0m in 0.03s]
+[0m03:26:25  
+[0m03:26:25  Finished running 5 external models, 14 data tests, 2 view models in 0 hours 0 minutes and 2.07 seconds (2.07s).
+[0m03:26:26  
+[0m03:26:26  [32mCompleted successfully[0m
+[0m03:26:26  
+[0m03:26:26  Done. PASS=21 WARN=0 ERROR=0 SKIP=0 NO-OP=0 TOTAL=21

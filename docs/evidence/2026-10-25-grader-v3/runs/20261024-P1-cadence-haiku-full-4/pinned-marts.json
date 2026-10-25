@@ -1,0 +1,41 @@
+{
+ "checks": {
+  "1": {
+   "interpretation": "primary",
+   "pass": true,
+   "reading": "agency_code -> net_obligation",
+   "source": "query"
+  },
+  "2": {
+   "interpretation": "primary",
+   "pass": true,
+   "reading": "place_key -> obligation_per_person",
+   "source": "query"
+  },
+  "3": {
+   "interpretation": "primary",
+   "pass": true,
+   "reading": "negative_awards",
+   "source": "query"
+  },
+  "4": {
+   "error": "no month column found",
+   "pass": false,
+   "source": "query"
+  },
+  "5": {
+   "error": "query failed: Catalog Error: Table with name fct_edit does not exist!",
+   "pass": false
+  },
+  "6": {
+   "error": "query failed: Catalog Error: Table with name fct_edit does not exist!",
+   "pass": false
+  },
+  "7": {
+   "error": "query failed: Catalog Error: Table with name late_events does not exist!",
+   "pass": false
+  }
+ },
+ "passed": 3,
+ "total": 7
+}

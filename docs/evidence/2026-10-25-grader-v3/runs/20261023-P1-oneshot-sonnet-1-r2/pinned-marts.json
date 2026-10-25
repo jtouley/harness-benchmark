@@ -1,0 +1,49 @@
+{
+ "checks": {
+  "1": {
+   "interpretation": "primary",
+   "pass": true,
+   "reading": "agency_key -> net_obligations",
+   "source": "query"
+  },
+  "2": {
+   "expected": "[[\"11001\", \"129.07\"], [\"46065\", \"76.85\"], [\"31181\", \"75.17\"], [\"19011\", \"70.09\"], [\"02110\", \"63.97\"], [\"21073\", \"56.40\"], [\"02198\", \"46.67\"], [\"29051\", \"39.95\"], [\"28149\", \"38.14\"], [\"02164\", \"38.02\"]]",
+   "got": "[[\"17167\", \"10.00\"], [\"26065\", \"9.00\"], [\"42043\", \"8.00\"], [\"53067\", \"7.00\"], [\"30049\", \"6.00\"], [\"29051\", \"5.00\"], [\"50023\", \"4.00\"], [\"12073\", \"3.00\"], [\"46065\", \"2.00\"], [\"21073\", \"1.00\"]]",
+   "pass": false,
+   "source": "query",
+   "traps": [],
+   "unexplained": true
+  },
+  "3": {
+   "interpretation": "primary",
+   "pass": true,
+   "reading": "awards_net_negative",
+   "source": "query"
+  },
+  "4": {
+   "error": "no month column found",
+   "pass": false,
+   "source": "query"
+  },
+  "5": {
+   "interpretation": "primary",
+   "pass": true,
+   "reading": "wiki, actor_type -> edits, net_bytes_added",
+   "source": "query"
+  },
+  "6": {
+   "interpretation": "primary",
+   "pass": true,
+   "reading": "window_start -> edits",
+   "source": "query"
+  },
+  "7": {
+   "interpretation": "primary",
+   "pass": true,
+   "reading": "late_events",
+   "source": "query"
+  }
+ },
+ "passed": 5,
+ "total": 7
+}

@@ -1,0 +1,38 @@
+# One entry per analyst check: the check number, the table and the column or view that answers it.
+# Checks 1 to 7 are here.
+checks:
+  - check: 1
+    table: out/marts/mart_fy2024_monthly/data.parquet
+    column: net_obligations
+    rows: grain = 'agency'
+    test: tests/test_checks.py::test_fy2024_net_obligations_per_agency
+  - check: 2
+    table: out/marts/mart_fy2024_monthly/data.parquet
+    column: obligations_per_person
+    rows: grain = 'county'
+    test: tests/test_checks.py::test_top_ten_counties_per_person
+  - check: 3
+    table: out/warehouse.duckdb fct_award_transaction
+    column: obligation_amount
+    rows: sum by award_key below zero
+    test: tests/test_checks.py::test_negative_net_award_count
+  - check: 4
+    table: out/marts/mart_fy2024_monthly/data.parquet
+    column: net_obligations
+    rows: grain = 'county' and grain = 'state'
+    test: tests/test_checks.py::test_county_sums_to_state_and_source
+  - check: 5
+    table: out/warehouse.duckdb fct_edit
+    column: net_bytes
+    rows: late is false or late is true, grouped by wiki and actor_type, first hour of event time
+    test: tests/test_checks.py::test_stream_edits_and_bytes_per_wiki
+  - check: 6
+    table: out/marts/mart_edit_windows_5min/data.parquet
+    column: edit_count
+    rows: server_name = 'en.wikipedia.org', on-time edits, summed over namespace and actor_type per window
+    test: tests/test_checks.py::test_top_windows_en_wikipedia
+  - check: 7
+    table: out/warehouse.duckdb fct_edit
+    column: late
+    rows: late is true
+    test: tests/test_checks.py::test_late_event_count

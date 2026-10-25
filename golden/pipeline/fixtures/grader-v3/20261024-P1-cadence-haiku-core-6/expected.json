@@ -1,0 +1,72 @@
+{
+ "graded_snapshot": "7b156d11ca9dd94308caa5a83ea15ff7fbc60a9b",
+ "marts": [
+  "edits_by_wiki_actor",
+  "late_events",
+  "mart_award_fy2024",
+  "mart_monthly_obligations",
+  "window_5min"
+ ],
+ "pinned": {
+  "checks": {
+   "1": true,
+   "2": false,
+   "3": false,
+   "4": false,
+   "5": true,
+   "6": true,
+   "7": true
+  },
+  "grader_commit": "c344bea44951cfc5a3a3a99aaa598fdaaedabba8",
+  "grader_tree": "8a0977e42fa02981802090d1f9517efe537994c4",
+  "idempotent": true,
+  "passed": 4,
+  "reward": 0.5714,
+  "stream_ok": true
+ },
+ "run_id": "20261024-P1-cadence-haiku-core-6",
+ "task": "P1",
+ "transcript_blob": {
+  "path": "blobs/870ecb7cf16ec9247197fd9a77ee4b7dccb5a14b639bd48f451a826d937212e0.gz",
+  "sha256": "870ecb7cf16ec9247197fd9a77ee4b7dccb5a14b639bd48f451a826d937212e0",
+  "store": "runs-store"
+ },
+ "tree_blob": {
+  "path": "blobs/7d12f417df2ad7aad2ca817b881e086fda9e8e38dd862a86a4dcd4d51e95e5d8.gz",
+  "sha256": "7d12f417df2ad7aad2ca817b881e086fda9e8e38dd862a86a4dcd4d51e95e5d8",
+  "store": "runs-store"
+ },
+ "v3": {
+  "checks": {
+   "1": {
+    "pass": true,
+    "resolution": "table mart_monthly_obligations, stated operation: sum(net_obligations); by agency_code"
+   },
+   "2": {
+    "pass": true,
+    "resolution": "table mart_monthly_obligations, stated operation: sum(net_obligations); by county_fips; divided by county_population_2024"
+   },
+   "3": {
+    "pass": true,
+    "resolution": "table mart_award_fy2024, stated operation: filter net_obligations < 0; count(*)"
+   },
+   "4": {
+    "pass": true,
+    "resolution": "table mart_monthly_obligations"
+   },
+   "5": {
+    "pass": true,
+    "resolution": "table edits_by_wiki_actor"
+   },
+   "6": {
+    "pass": true,
+    "resolution": "table window_5min, stated operation: filter domain = 'en.wikipedia.org'; sum(edit_count); by window_start"
+   },
+   "7": {
+    "pass": true,
+    "resolution": "table late_events, stated operation: count(*)"
+   }
+  },
+  "passed": 7
+ }
+}

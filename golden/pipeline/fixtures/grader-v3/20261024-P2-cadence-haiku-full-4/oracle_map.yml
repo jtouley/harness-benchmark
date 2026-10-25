@@ -1,0 +1,38 @@
+# For each analyst check of the spec: the published mart and the columns that answer it.
+# Analysts read out/marts/<mart>/ only. Each check reads the mart named here.
+checks:
+  - id: 1
+    question: FY2024 net obligations per awarding agency
+    table: mart_obligations_monthly
+    columns: [agency_code, net_obligations]
+    how: sum net_obligations over all rows, grouped by agency_code
+  - id: 2
+    question: The ten counties with the highest FY2024 obligations per person
+    table: mart_obligations_monthly
+    columns: [county_fips, net_obligations, population]
+    how: sum net_obligations per county_fips, divide by population (July 1, 2024 basis)
+  - id: 3
+    question: The number of awards with a net negative obligation in FY2024
+    table: mart_award_net_obligations
+    columns: [award_key, is_net_negative]
+    how: count rows where is_net_negative
+  - id: 4
+    question: County totals add up to state totals, and state totals add up to the source total (one month)
+    table: mart_obligations_monthly
+    columns: [month_start, state_fips, county_fips, net_obligations]
+    how: for month_start 2024-09-01, sum net_obligations by state_fips, then sum all states
+  - id: 5
+    question: Edits and net bytes per wiki for the replayed hour, split human and bot (late included)
+    table: mart_wiki_actor_totals
+    columns: [wiki, actor_type, edit_count, late_edit_count, net_bytes_added]
+    how: one row per wiki and actor_type; edit_count counts on-time and late edits
+  - id: 6
+    question: The 5-minute windows with the most edits on en.wikipedia.org (on-time edits only)
+    table: mart_edit_windows_5min
+    columns: [window_start, wiki, edit_count]
+    how: filter wiki = enwiki, sum edit_count per window_start, order by count descending
+  - id: 7
+    question: The count of late events
+    table: mart_late_events_by_type
+    columns: [type, late_count]
+    how: sum late_count over all types

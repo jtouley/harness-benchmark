@@ -1,0 +1,122 @@
+mkdir -p out out/marts/dim_agency out/marts/dim_place out/marts/dim_date out/marts/fct_award_transaction out/marts/mart_obligations_monthly out/marts/mart_obligations_monthly_state out/marts/mart_source_totals_monthly out/marts/mart_county_fy2024 out/marts/mart_award_net_fy2024
+uv run python -m pipeline.batch
+warning: The `UV_NATIVE_TLS` environment variable is deprecated and will be removed in a future release. Use `UV_SYSTEM_CERTS` instead.
+Using CPython 3.12.3 interpreter at: /usr/bin/python3.12
+Creating virtual environment at: .venv
+Installed 81 packages in 248ms
+uv run dbt build --project-dir transform --profiles-dir transform --exclude tag:stream
+warning: The `UV_NATIVE_TLS` environment variable is deprecated and will be removed in a future release. Use `UV_SYSTEM_CERTS` instead.
+[0m03:26:07  Running with dbt=1.11.6
+[0m03:26:08  Registered adapter: duckdb=1.11.0
+[0m03:26:08  Unable to do partial parsing because saved manifest not found. Starting full parse.
+[0m03:26:11  [[33mWARNING[0m][MissingArgumentsPropertyInGenericTestDeprecation]: Deprecated
+functionality
+Found top-level arguments to test `relationships` defined on
+'fct_award_transaction' in package 'open_data_pipeline'
+(models/marts/schema.yml). Arguments to generic tests should be nested under the
+`arguments` property.
+[0m03:26:12  Found 18 models, 47 data tests, 3 sources, 501 macros
+[0m03:26:12  
+[0m03:26:12  Concurrency: 4 threads (target='dev')
+[0m03:26:12  
+[0m03:26:13  1 of 44 START sql external model main.dim_agency ............................... [RUN]
+[0m03:26:13  2 of 44 START sql view model main.stg_census_county ............................ [RUN]
+[0m03:26:13  3 of 44 START sql view model main.stg_usaspending_awards ....................... [RUN]
+[0m03:26:13  3 of 44 OK created sql view model main.stg_usaspending_awards .................. [[32mOK[0m in 0.35s]
+[0m03:26:13  2 of 44 OK created sql view model main.stg_census_county ....................... [[32mOK[0m in 0.37s]
+[0m03:26:13  4 of 44 START sql view model main.int_county_population ........................ [RUN]
+[0m03:26:13  6 of 44 START sql external model main.fct_award_transaction .................... [RUN]
+[0m03:26:13  5 of 44 START sql external model main.dim_date ................................. [RUN]
+[0m03:26:13  4 of 44 OK created sql view model main.int_county_population ................... [[32mOK[0m in 0.12s]
+[0m03:26:13  7 of 44 START sql external model main.dim_place ................................ [RUN]
+[0m03:26:13  1 of 44 OK created sql external model main.dim_agency .......................... [[32mOK[0m in 0.58s]
+[0m03:26:13  8 of 44 START test not_null_dim_agency_agency_code ............................. [RUN]
+[0m03:26:13  5 of 44 OK created sql external model main.dim_date ............................ [[32mOK[0m in 0.37s]
+[0m03:26:13  6 of 44 OK created sql external model main.fct_award_transaction ............... [[32mOK[0m in 0.37s]
+[0m03:26:13  9 of 44 START test not_null_dim_agency_agency_name ............................. [RUN]
+[0m03:26:13  10 of 44 START test unique_dim_agency_agency_code .............................. [RUN]
+[0m03:26:13  8 of 44 PASS not_null_dim_agency_agency_code ................................... [[32mPASS[0m in 0.21s]
+[0m03:26:13  11 of 44 START test agency_dim_complete ........................................ [RUN]
+[0m03:26:13  10 of 44 PASS unique_dim_agency_agency_code .................................... [[32mPASS[0m in 0.05s]
+[0m03:26:13  12 of 44 START test not_null_fct_award_transaction_award_key ................... [RUN]
+[0m03:26:13  9 of 44 PASS not_null_dim_agency_agency_name ................................... [[32mPASS[0m in 0.11s]
+[0m03:26:13  13 of 44 START test not_null_fct_award_transaction_federal_action_obligation ... [RUN]
+[0m03:26:14  11 of 44 PASS agency_dim_complete .............................................. [[32mPASS[0m in 0.12s]
+[0m03:26:14  14 of 44 START test not_null_fct_award_transaction_transaction_key ............. [RUN]
+[0m03:26:14  12 of 44 PASS not_null_fct_award_transaction_award_key ......................... [[32mPASS[0m in 0.07s]
+[0m03:26:14  15 of 44 START test relationships_fct_award_transaction_awarding_agency_code__agency_code__ref_dim_agency_  [RUN]
+[0m03:26:14  7 of 44 OK created sql external model main.dim_place ........................... [[32mOK[0m in 0.42s]
+[0m03:26:14  16 of 44 START test unique_fct_award_transaction_transaction_key ............... [RUN]
+[0m03:26:14  13 of 44 PASS not_null_fct_award_transaction_federal_action_obligation ......... [[32mPASS[0m in 0.08s]
+[0m03:26:14  17 of 44 START test not_null_dim_date_date_key ................................. [RUN]
+[0m03:26:14  14 of 44 PASS not_null_fct_award_transaction_transaction_key ................... [[32mPASS[0m in 0.06s]
+[0m03:26:14  15 of 44 PASS relationships_fct_award_transaction_awarding_agency_code__agency_code__ref_dim_agency_  [[32mPASS[0m in 0.07s]
+[0m03:26:14  18 of 44 START test not_null_dim_date_fiscal_year .............................. [RUN]
+[0m03:26:14  19 of 44 START test not_null_dim_date_month_start .............................. [RUN]
+[0m03:26:14  17 of 44 PASS not_null_dim_date_date_key ....................................... [[32mPASS[0m in 0.05s]
+[0m03:26:14  16 of 44 PASS unique_fct_award_transaction_transaction_key ..................... [[32mPASS[0m in 0.06s]
+[0m03:26:14  20 of 44 START test relationships_fct_award_transaction_date_key__date_key__ref_dim_date_  [RUN]
+[0m03:26:14  21 of 44 START test unique_dim_date_date_key ................................... [RUN]
+[0m03:26:14  18 of 44 PASS not_null_dim_date_fiscal_year .................................... [[32mPASS[0m in 0.06s]
+[0m03:26:14  22 of 44 START test not_null_dim_place_county_fips ............................. [RUN]
+[0m03:26:14  19 of 44 PASS not_null_dim_date_month_start .................................... [[32mPASS[0m in 0.07s]
+[0m03:26:14  23 of 44 START test not_null_dim_place_place_key ............................... [RUN]
+[0m03:26:14  20 of 44 PASS relationships_fct_award_transaction_date_key__date_key__ref_dim_date_  [[32mPASS[0m in 0.09s]
+[0m03:26:14  21 of 44 PASS unique_dim_date_date_key ......................................... [[32mPASS[0m in 0.09s]
+[0m03:26:14  25 of 44 START test relationships_fct_award_transaction_place_key__place_key__ref_dim_place_  [RUN]
+[0m03:26:14  24 of 44 START test not_null_dim_place_state_fips .............................. [RUN]
+[0m03:26:14  22 of 44 PASS not_null_dim_place_county_fips ................................... [[32mPASS[0m in 0.15s]
+[0m03:26:14  26 of 44 START test unique_dim_place_place_key ................................. [RUN]
+[0m03:26:14  23 of 44 PASS not_null_dim_place_place_key ..................................... [[32mPASS[0m in 0.16s]
+[0m03:26:14  27 of 44 START sql external model main.mart_source_totals_monthly .............. [RUN]
+[0m03:26:14  24 of 44 PASS not_null_dim_place_state_fips .................................... [[32mPASS[0m in 0.20s]
+[0m03:26:14  25 of 44 PASS relationships_fct_award_transaction_place_key__place_key__ref_dim_place_  [[32mPASS[0m in 0.22s]
+[0m03:26:14  28 of 44 START sql external model main.mart_award_net_fy2024 ................... [RUN]
+[0m03:26:14  26 of 44 PASS unique_dim_place_place_key ....................................... [[32mPASS[0m in 0.18s]
+[0m03:26:14  29 of 44 START sql external model main.mart_county_fy2024 ...................... [RUN]
+[0m03:26:14  30 of 44 START sql external model main.mart_obligations_monthly ................ [RUN]
+[0m03:26:14  27 of 44 OK created sql external model main.mart_source_totals_monthly ......... [[32mOK[0m in 0.47s]
+[0m03:26:14  31 of 44 START sql external model main.mart_obligations_monthly_state .......... [RUN]
+[0m03:26:14  29 of 44 OK created sql external model main.mart_county_fy2024 ................. [[32mOK[0m in 0.37s]
+[0m03:26:14  32 of 44 START test not_null_mart_source_totals_monthly_month_start ............ [RUN]
+[0m03:26:14  28 of 44 OK created sql external model main.mart_award_net_fy2024 .............. [[32mOK[0m in 0.43s]
+[0m03:26:14  30 of 44 OK created sql external model main.mart_obligations_monthly ........... [[32mOK[0m in 0.39s]
+[0m03:26:14  33 of 44 START test unique_mart_source_totals_monthly_month_start .............. [RUN]
+[0m03:26:14  34 of 44 START test unknown_county_in_totals ................................... [RUN]
+[0m03:26:14  32 of 44 PASS not_null_mart_source_totals_monthly_month_start .................. [[32mPASS[0m in 0.05s]
+[0m03:26:14  35 of 44 START test not_null_mart_county_fy2024_place_key ...................... [RUN]
+[0m03:26:14  33 of 44 PASS unique_mart_source_totals_monthly_month_start .................... [[32mPASS[0m in 0.07s]
+[0m03:26:15  36 of 44 START test unique_mart_county_fy2024_place_key ........................ [RUN]
+[0m03:26:15  34 of 44 PASS unknown_county_in_totals ......................................... [[32mPASS[0m in 0.07s]
+[0m03:26:15  37 of 44 START test grain_unique_mart_award_net_fy2024_awarding_agency_code__award_key  [RUN]
+[0m03:26:15  35 of 44 PASS not_null_mart_county_fy2024_place_key ............................ [[32mPASS[0m in 0.08s]
+[0m03:26:15  38 of 44 START test not_null_mart_award_net_fy2024_award_key ................... [RUN]
+[0m03:26:15  37 of 44 PASS grain_unique_mart_award_net_fy2024_awarding_agency_code__award_key  [[32mPASS[0m in 0.05s]
+[0m03:26:15  39 of 44 START test not_null_mart_award_net_fy2024_awarding_agency_code ........ [RUN]
+[0m03:26:15  36 of 44 PASS unique_mart_county_fy2024_place_key .............................. [[32mPASS[0m in 0.10s]
+[0m03:26:15  40 of 44 START test grain_unique_mart_obligations_monthly_month_start__state_fips__county_fips__awarding_agency_code  [RUN]
+[0m03:26:15  39 of 44 PASS not_null_mart_award_net_fy2024_awarding_agency_code .............. [[32mPASS[0m in 0.45s]
+[0m03:26:15  41 of 44 START test not_null_mart_obligations_monthly_month_start .............. [RUN]
+[0m03:26:15  38 of 44 PASS not_null_mart_award_net_fy2024_award_key ......................... [[32mPASS[0m in 0.50s]
+[0m03:26:15  40 of 44 PASS grain_unique_mart_obligations_monthly_month_start__state_fips__county_fips__awarding_agency_code  [[32mPASS[0m in 0.41s]
+[0m03:26:15  41 of 44 PASS not_null_mart_obligations_monthly_month_start .................... [[32mPASS[0m in 0.03s]
+[0m03:26:15  31 of 44 OK created sql external model main.mart_obligations_monthly_state ..... [[32mOK[0m in 0.75s]
+[0m03:26:15  42 of 44 START test grain_unique_mart_obligations_monthly_state_month_start__state_fips__awarding_agency_code  [RUN]
+[0m03:26:15  43 of 44 START test not_null_mart_obligations_monthly_state_month_start ........ [RUN]
+[0m03:26:15  44 of 44 START test state_per_person_uses_county_sum ........................... [RUN]
+[0m03:26:15  42 of 44 PASS grain_unique_mart_obligations_monthly_state_month_start__state_fips__awarding_agency_code  [[32mPASS[0m in 0.05s]
+[0m03:26:15  44 of 44 PASS state_per_person_uses_county_sum ................................. [[32mPASS[0m in 0.04s]
+[0m03:26:15  43 of 44 PASS not_null_mart_obligations_monthly_state_month_start .............. [[32mPASS[0m in 0.05s]
+[0m03:26:15  
+[0m03:26:15  Finished running 9 external models, 32 data tests, 3 view models in 0 hours 0 minutes and 2.86 seconds (2.86s).
+[0m03:26:15  
+[0m03:26:15  [32mCompleted successfully[0m
+[0m03:26:15  
+[0m03:26:15  Done. PASS=44 WARN=0 ERROR=0 SKIP=0 NO-OP=0 TOTAL=44
+[0m03:26:15  [[33mWARNING[0m][DeprecationsSummary]: Deprecated functionality
+Summary of encountered deprecations:
+- MissingArgumentsPropertyInGenericTestDeprecation: 3 occurrences
+To see all deprecation instances instead of just the first occurrence of each,
+run command again with the `--show-all-deprecations` flag. You may also need to
+run with `--no-partial-parse` as some deprecations are only encountered during
+parsing.

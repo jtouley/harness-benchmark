@@ -1,0 +1,77 @@
+[
+ {
+  "run": "20261024-P1-cadence-haiku-core-4",
+  "check": "3",
+  "matches_key": true
+ },
+ {
+  "run": "20261024-P1-cadence-haiku-core-5",
+  "check": "2",
+  "matches_key": true
+ },
+ {
+  "run": "20261024-P1-cadence-haiku-core-5",
+  "check": "3",
+  "matches_key": true
+ },
+ {
+  "run": "20261024-P1-cadence-haiku-core-5",
+  "check": "4",
+  "matches_key": true
+ },
+ {
+  "run": "20261024-P1-cadence-haiku-core-6",
+  "check": "2",
+  "matches_key": true
+ },
+ {
+  "run": "20261024-P1-cadence-haiku-core-6",
+  "check": "3",
+  "matches_key": true
+ },
+ {
+  "run": "20261024-P1-cadence-haiku-core-6",
+  "check": "4",
+  "matches_key": true
+ },
+ {
+  "run": "20261024-P1-cadence-haiku-full-6",
+  "check": "3",
+  "matches_key": true
+ },
+ {
+  "run": "20261024-P2-cadence-haiku-core-4",
+  "check": "3",
+  "matches_key": true
+ },
+ {
+  "run": "20261024-P2-cadence-haiku-core-6",
+  "check": "3",
+  "matches_key": true
+ },
+ {
+  "run": "20261024-P2-cadence-haiku-core-6",
+  "check": "5",
+  "matches_key": true
+ },
+ {
+  "run": "20261024-P2-cadence-haiku-core-6",
+  "check": "7",
+  "matches_key": true
+ },
+ {
+  "run": "20261024-P2-cadence-haiku-full-4",
+  "check": "2",
+  "matches_key": true
+ },
+ {
+  "run": "20261024-P2-cadence-haiku-full-4",
+  "check": "3",
+  "matches_key": true
+ },
+ {
+  "run": "20261024-P2-cadence-haiku-full-5",
+  "check": "1",
+  "matches_key": true
+ }
+]

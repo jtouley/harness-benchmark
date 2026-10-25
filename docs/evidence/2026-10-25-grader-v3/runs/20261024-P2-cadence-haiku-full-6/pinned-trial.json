@@ -1,0 +1,108 @@
+{
+ "build": [
+  {
+   "cmd": "make build",
+   "exit": 0,
+   "log": "build-1.log",
+   "seconds": 10.2
+  },
+  {
+   "cmd": "make build",
+   "exit": 0,
+   "log": "build-2.log",
+   "seconds": 6.9
+  }
+ ],
+ "build_timeout": 1800,
+ "changed_by_second_build": [],
+ "checks": {
+  "1": {
+   "interpretation": "primary",
+   "pass": true,
+   "reading": "agency_name -> net_obligations",
+   "source": "query"
+  },
+  "2": {
+   "error": "no county column and per-person column found",
+   "pass": false,
+   "source": "query"
+  },
+  "3": {
+   "interpretation": "primary",
+   "pass": true,
+   "reading": "count_star()",
+   "source": "query"
+  },
+  "4": {
+   "error": "entry names no table or query: {'check': 4, 'question': 'For one month, county totals add up to state totals, and state totals add up to the source total', 'month': '2024-03', 'layer': 'published out/marts (Parquet), with the raw lake as the source total (A-8)', 'tables': ['out/marts/mart_obligations_monthly', 'out/marts/fct_award_transaction', 'out/marts/dim_place'], 'columns': ['net_obligations', 'state_code', 'county_code', 'federal_action_obligation', 'place_key'], 'test': 'tests/test_marts_real_data.py::test_county_totals_sum_to_state_and_source'}",
+   "pass": false
+  },
+  "5": {
+   "expected": "{\"dewiki|bot\": [62, 87343], \"dewiki|human\": [171, 48236], \"enwiki|bot\": [3218, 5660289], \"enwiki|human\": [6435, 1033126], \"enwiktionary|bot\": [64, 880], \"enwiktionary|human\": [142, 11665], \"eswiki|bot\": [144, 56356], \"eswiki|human\": [573, 127935], \"frwiki|bot\": [936, 628782], \"frwiki|human\": [239, 110607], \"itwiki|bot\": [41, 64153], \"itwiki|human\": [156, 64503], \"jawiki|bot\": [63, 9176], \"jawiki|h...",
+   "got": "{\"dewiki|bot\": [48504, 9], \"dewiki|human\": [14121, 37], \"enwiki|bot\": [30700, 507], \"enwiki|human\": [209556, 1341], \"enwiktionary|human\": [5243, 38], \"eswiki|bot\": [22690, 15], \"eswiki|human\": [56906, 92], \"frwiki|bot\": [86385, 202], \"frwiki|human\": [57142, 100], \"itwiki|human\": [2739, 53], \"jawiki|bot\": [-172, 12], \"jawiki|human\": [-167901, 56], \"ptwiki|bot\": [1009, 14], \"ptwiki|human\": [29892, 3...",
+   "pass": false,
+   "source": "query",
+   "traps": [],
+   "unexplained": true
+  },
+  "6": {
+   "expected": "[[1792023900, 985], [1792024200, 918], [1792023600, 892], [1792022400, 816], [1792023000, 796]]",
+   "got": "[[1792022400, 818], [1792023000, 796], [1792022700, 782], [1792021800, 706], [1792022100, 670]]",
+   "pass": false,
+   "reading": "window_start -> edits",
+   "source": "query",
+   "traps": [],
+   "unexplained": true
+  },
+  "7": {
+   "got": "0",
+   "pass": false,
+   "reading": "count_star()",
+   "source": "query",
+   "traps": [
+    "F4",
+    "F5",
+    "S3",
+    "S3-drops"
+   ]
+  }
+ },
+ "deadline": 600.0,
+ "deadline_hit": false,
+ "durations": [
+  30,
+  90
+ ],
+ "idempotent": true,
+ "keepalive": 5.0,
+ "make_fresh_home": false,
+ "make_user": null,
+ "passed": 2,
+ "reward": 0.2857,
+ "seed": 1,
+ "snapshot": {
+  "commit": "d66f7d7b88c3f5e65020767b0950f6c4f1f6ba2a",
+  "files": 0
+ },
+ "speed": 60.0,
+ "stream": [
+  {
+   "cmd": "make stream DURATION=30",
+   "exit": 0,
+   "log": "stream-1.log",
+   "seconds": 32.6
+  },
+  {
+   "cmd": "make stream DURATION=90",
+   "exit": 0,
+   "log": "stream-2.log",
+   "seconds": 92.8
+  }
+ ],
+ "stream_connections": 3,
+ "stream_grace": 300,
+ "stream_ok": true,
+ "stream_positions_needed": 11774,
+ "stream_positions_served": 16504,
+ "total": 7
+}

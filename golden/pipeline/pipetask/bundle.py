@@ -109,7 +109,7 @@ def bundle(out_dir: Path) -> list[Path]:
     out_dir.mkdir(parents=True, exist_ok=True)
     return [
         _build(out_dir / "replay.pyz", ["schedule.py", "replay.py"], [CAPTURE], REPLAY_MAIN),
-        _build(out_dir / "grader.pyz", ["schedule.py", "replay.py", "oracle.py", "grade.py", "trial.py"],
+        _build(out_dir / "grader.pyz", ["schedule.py", "replay.py", "ops.py", "oracle.py", "grade.py", "trial.py"],
                [CAPTURE, KEY], GRADER_MAIN.format(deps=GRADER_DEPS)),
     ]
 
@@ -118,7 +118,7 @@ def bundle_holdout(out_dir: Path) -> list[Path]:
     """grader-p4.pyz: the P4 grader with the P4 key inside. trial.py comes along for the reset, the mart
     digest and the make runner it shares with P1 to P3 (and its imports, replay and schedule)."""
     out_dir.mkdir(parents=True, exist_ok=True)
-    return [_build(out_dir / "grader-p4.pyz", ["schedule.py", "replay.py", "oracle.py", "grade.py", "trial.py",
+    return [_build(out_dir / "grader-p4.pyz", ["schedule.py", "replay.py", "ops.py", "oracle.py", "grade.py", "trial.py",
                                                "p4grade.py", "p4trial.py"], [KEY_P4],
                    GRADER_P4_MAIN.format(deps=GRADER_DEPS))]
 

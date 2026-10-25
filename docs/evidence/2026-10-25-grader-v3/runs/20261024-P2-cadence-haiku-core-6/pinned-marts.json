@@ -1,0 +1,51 @@
+{
+ "checks": {
+  "1": {
+   "interpretation": "primary",
+   "pass": true,
+   "reading": "agency_code -> net_obligations",
+   "source": "table mart_fy2024_monthly"
+  },
+  "2": {
+   "error": "no county column and per-person column found",
+   "pass": false,
+   "source": "table mart_fy2024_monthly"
+  },
+  "3": {
+   "expected": "1122",
+   "got": "9820",
+   "pass": false,
+   "source": "table fct_award_transaction",
+   "traps": [],
+   "unexplained": true
+  },
+  "4": {
+   "error": "no published mart named 'mart_fy2024_monthly, mart_fy2024_state_monthly, fct_award_transaction' under out/marts/",
+   "pass": false
+  },
+  "5": {
+   "expected": "{\"dewiki|bot\": [62, 87343], \"dewiki|human\": [171, 48236], \"enwiki|bot\": [3218, 5660289], \"enwiki|human\": [6435, 1033126], \"enwiktionary|bot\": [64, 880], \"enwiktionary|human\": [142, 11665], \"eswiki|bot\": [144, 56356], \"eswiki|human\": [573, 127935], \"frwiki|bot\": [936, 628782], \"frwiki|human\": [239, 110607], \"itwiki|bot\": [41, 64153], \"itwiki|human\": [156, 64503], \"jawiki|bot\": [63, 9176], \"jawiki|h...",
+   "got": "{\"dewiki|bot\": [689246, 172], \"dewiki|human\": [1840204, 194], \"enwiki|bot\": [36638584, 4723], \"enwiki|human\": [71972823, 25029], \"enwiktionary|bot\": [369453, 882], \"enwiktionary|human\": [1435028, 2726], \"eswiki|bot\": [1601513, 1399], \"eswiki|human\": [6755986, 4027], \"frwiki|bot\": [10252159, 34689], \"frwiki|human\": [2093183, 230], \"itwiki|bot\": [502507, 5861], \"itwiki|human\": [1422831, 942], \"jawik...",
+   "pass": false,
+   "source": "table fct_edit",
+   "traps": [],
+   "unexplained": true
+  },
+  "6": {
+   "interpretation": "primary",
+   "pass": true,
+   "reading": "window_start -> edit_count",
+   "source": "table mart_window_5min"
+  },
+  "7": {
+   "expected": "60",
+   "got": "12876",
+   "pass": false,
+   "source": "table fct_edit",
+   "traps": [],
+   "unexplained": true
+  }
+ },
+ "passed": 2,
+ "total": 7
+}

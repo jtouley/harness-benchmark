@@ -1,0 +1,86 @@
+{
+ "build": [
+  {
+   "cmd": "make build",
+   "exit": 2,
+   "log": "build-1.log",
+   "seconds": 0.0
+  },
+  {
+   "cmd": "make build",
+   "exit": 2,
+   "log": "build-2.log",
+   "seconds": 0.0
+  }
+ ],
+ "build_timeout": 1800,
+ "changed_by_second_build": [],
+ "checks": {
+  "1": {
+   "error": "oracle_map.yml is missing",
+   "pass": false
+  },
+  "2": {
+   "error": "oracle_map.yml is missing",
+   "pass": false
+  },
+  "3": {
+   "error": "oracle_map.yml is missing",
+   "pass": false
+  },
+  "4": {
+   "error": "oracle_map.yml is missing",
+   "pass": false
+  },
+  "5": {
+   "error": "oracle_map.yml is missing",
+   "pass": false
+  },
+  "6": {
+   "error": "oracle_map.yml is missing",
+   "pass": false
+  },
+  "7": {
+   "error": "oracle_map.yml is missing",
+   "pass": false
+  }
+ },
+ "deadline": 600.0,
+ "deadline_hit": false,
+ "durations": [
+  30,
+  90
+ ],
+ "idempotent": false,
+ "keepalive": 5.0,
+ "make_fresh_home": false,
+ "make_user": null,
+ "passed": 0,
+ "reward": 0.0,
+ "seed": 1,
+ "snapshot": {
+  "commit": "834c0ccc7f8d63ab19feebfca200d4d76a03b23c",
+  "files": 0
+ },
+ "speed": 60.0,
+ "stream": [
+  {
+   "cmd": "make stream DURATION=30",
+   "exit": 2,
+   "log": "stream-1.log",
+   "seconds": 0.0
+  },
+  {
+   "cmd": "make stream DURATION=90",
+   "exit": 2,
+   "log": "stream-2.log",
+   "seconds": 0.0
+  }
+ ],
+ "stream_connections": 0,
+ "stream_grace": 300,
+ "stream_ok": false,
+ "stream_positions_needed": 11774,
+ "stream_positions_served": 0,
+ "total": 7
+}

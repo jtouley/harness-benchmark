@@ -1,0 +1,72 @@
+{
+ "graded_snapshot": "17e526108313fbeefa3c8fbfbf67900dff204e03",
+ "marts": [
+  "fct_award_transaction",
+  "fct_edit",
+  "mart_fy2024_monthly",
+  "mart_fy2024_state_monthly",
+  "mart_window_5min"
+ ],
+ "pinned": {
+  "checks": {
+   "1": true,
+   "2": false,
+   "3": false,
+   "4": false,
+   "5": false,
+   "6": true,
+   "7": false
+  },
+  "grader_commit": "c344bea44951cfc5a3a3a99aaa598fdaaedabba8",
+  "grader_tree": "8a0977e42fa02981802090d1f9517efe537994c4",
+  "idempotent": true,
+  "passed": 2,
+  "reward": 0.2857,
+  "stream_ok": true
+ },
+ "run_id": "20261024-P2-cadence-haiku-core-6",
+ "task": "P2",
+ "transcript_blob": {
+  "path": "blobs/5710395edef7222ebcd3efd9e9064637b9f982931290ed2036fdb32cdd8b83a6.gz",
+  "sha256": "5710395edef7222ebcd3efd9e9064637b9f982931290ed2036fdb32cdd8b83a6",
+  "store": "runs-store"
+ },
+ "tree_blob": {
+  "path": "blobs/c1894c77cd83afba99e02bab49e6a51a1411f29e911c160bf42978df0e456cf5.gz",
+  "sha256": "c1894c77cd83afba99e02bab49e6a51a1411f29e911c160bf42978df0e456cf5",
+  "store": "runs-store"
+ },
+ "v3": {
+  "checks": {
+   "1": {
+    "pass": true,
+    "resolution": "query"
+   },
+   "2": {
+    "pass": false,
+    "resolution": "query"
+   },
+   "3": {
+    "pass": true,
+    "resolution": "query"
+   },
+   "4": {
+    "pass": false,
+    "resolution": "unresolved: queries holds 3 queries (county_by_state, source_total, state) and none is named answer"
+   },
+   "5": {
+    "pass": true,
+    "resolution": "query"
+   },
+   "6": {
+    "pass": true,
+    "resolution": "query"
+   },
+   "7": {
+    "pass": true,
+    "resolution": "query"
+   }
+  },
+  "passed": 5
+ }
+}

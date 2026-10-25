@@ -1,0 +1,59 @@
+mkdir -p out out/marts/fct_edit out/marts/mart_edit_window_5min out/marts/mart_late_events out/marts/mart_edits_all_by_wiki
+uv run python -m pipeline.stream --duration 90
+warning: The `UV_NATIVE_TLS` environment variable is deprecated and will be removed in a future release. Use `UV_SYSTEM_CERTS` instead.
+uv run dbt build --project-dir transform --profiles-dir transform --select tag:stream
+warning: The `UV_NATIVE_TLS` environment variable is deprecated and will be removed in a future release. Use `UV_SYSTEM_CERTS` instead.
+[0m03:28:56  Running with dbt=1.11.6
+[0m03:28:56  Registered adapter: duckdb=1.11.0
+[0m03:28:57  Found 18 models, 47 data tests, 3 sources, 501 macros
+[0m03:28:57  
+[0m03:28:57  Concurrency: 4 threads (target='dev')
+[0m03:28:57  
+[0m03:28:57  1 of 21 START sql view model main.stg_late_events .............................. [RUN]
+[0m03:28:57  2 of 21 START sql view model main.stg_stream_edits ............................. [RUN]
+[0m03:28:57  1 of 21 OK created sql view model main.stg_late_events ......................... [[32mOK[0m in 0.18s]
+[0m03:28:57  2 of 21 OK created sql view model main.stg_stream_edits ........................ [[32mOK[0m in 0.18s]
+[0m03:28:57  3 of 21 START sql incremental model main.fct_edit .............................. [RUN]
+[0m03:28:57  4 of 21 START sql incremental model main.mart_late_events ...................... [RUN]
+[0m03:28:57  4 of 21 OK created sql incremental model main.mart_late_events ................. [[32mOK[0m in 0.32s]
+[0m03:28:57  5 of 21 START test not_null_mart_late_events_meta_id ........................... [RUN]
+[0m03:28:57  6 of 21 START test unique_mart_late_events_meta_id ............................. [RUN]
+[0m03:28:57  3 of 21 OK created sql incremental model main.fct_edit ......................... [[32mOK[0m in 0.36s]
+[0m03:28:57  7 of 21 START test fct_edit_has_no_late_events ................................. [RUN]
+[0m03:28:57  8 of 21 START test not_null_fct_edit_meta_id ................................... [RUN]
+[0m03:28:57  6 of 21 PASS unique_mart_late_events_meta_id ................................... [[32mPASS[0m in 0.08s]
+[0m03:28:57  9 of 21 START test unique_fct_edit_meta_id ..................................... [RUN]
+[0m03:28:57  5 of 21 PASS not_null_mart_late_events_meta_id ................................. [[32mPASS[0m in 0.11s]
+[0m03:28:57  7 of 21 PASS fct_edit_has_no_late_events ....................................... [[32mPASS[0m in 0.07s]
+[0m03:28:57  8 of 21 PASS not_null_fct_edit_meta_id ......................................... [[32mPASS[0m in 0.07s]
+[0m03:28:57  9 of 21 PASS unique_fct_edit_meta_id ........................................... [[32mPASS[0m in 0.04s]
+[0m03:28:57  10 of 21 START sql incremental model main.mart_edit_window_5min ................ [RUN]
+[0m03:28:57  11 of 21 START sql external model main.mart_edits_all_by_wiki .................. [RUN]
+[0m03:28:58  10 of 21 OK created sql incremental model main.mart_edit_window_5min ........... [[32mOK[0m in 0.15s]
+[0m03:28:58  12 of 21 START test not_null_mart_edit_window_5min_actor_type .................. [RUN]
+[0m03:28:58  13 of 21 START test not_null_mart_edit_window_5min_namespace ................... [RUN]
+[0m03:28:58  14 of 21 START test not_null_mart_edit_window_5min_wiki ........................ [RUN]
+[0m03:28:58  12 of 21 PASS not_null_mart_edit_window_5min_actor_type ........................ [[32mPASS[0m in 0.11s]
+[0m03:28:58  15 of 21 START test not_null_mart_edit_window_5min_window_start ................ [RUN]
+[0m03:28:58  14 of 21 PASS not_null_mart_edit_window_5min_wiki .............................. [[32mPASS[0m in 0.11s]
+[0m03:28:58  13 of 21 PASS not_null_mart_edit_window_5min_namespace ......................... [[32mPASS[0m in 0.12s]
+[0m03:28:58  16 of 21 START test window_counts_match_fact ................................... [RUN]
+[0m03:28:58  11 of 21 OK created sql external model main.mart_edits_all_by_wiki ............. [[32mOK[0m in 0.30s]
+[0m03:28:58  17 of 21 START test window_grain_unique ........................................ [RUN]
+[0m03:28:58  18 of 21 START test window_start_is_multiple_of_300 ............................ [RUN]
+[0m03:28:58  16 of 21 PASS window_counts_match_fact ......................................... [[32mPASS[0m in 0.06s]
+[0m03:28:58  19 of 21 START test grain_unique_mart_edits_all_by_wiki_wiki__actor_type ....... [RUN]
+[0m03:28:58  15 of 21 PASS not_null_mart_edit_window_5min_window_start ...................... [[32mPASS[0m in 0.10s]
+[0m03:28:58  20 of 21 START test not_null_mart_edits_all_by_wiki_actor_type ................. [RUN]
+[0m03:28:58  17 of 21 PASS window_grain_unique .............................................. [[32mPASS[0m in 0.08s]
+[0m03:28:58  21 of 21 START test not_null_mart_edits_all_by_wiki_wiki ....................... [RUN]
+[0m03:28:58  18 of 21 PASS window_start_is_multiple_of_300 .................................. [[32mPASS[0m in 0.08s]
+[0m03:28:58  19 of 21 PASS grain_unique_mart_edits_all_by_wiki_wiki__actor_type ............. [[32mPASS[0m in 0.06s]
+[0m03:28:58  20 of 21 PASS not_null_mart_edits_all_by_wiki_actor_type ....................... [[32mPASS[0m in 0.05s]
+[0m03:28:58  21 of 21 PASS not_null_mart_edits_all_by_wiki_wiki ............................. [[32mPASS[0m in 0.04s]
+[0m03:28:58  
+[0m03:28:58  Finished running 1 external model, 3 incremental models, 15 data tests, 2 view models in 0 hours 0 minutes and 1.31 seconds (1.31s).
+[0m03:28:58  
+[0m03:28:58  [32mCompleted successfully[0m
+[0m03:28:58  
+[0m03:28:58  Done. PASS=21 WARN=0 ERROR=0 SKIP=0 NO-OP=0 TOTAL=21

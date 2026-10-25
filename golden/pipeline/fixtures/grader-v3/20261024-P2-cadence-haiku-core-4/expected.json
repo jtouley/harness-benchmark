@@ -1,0 +1,72 @@
+{
+ "graded_snapshot": "28ac48c86b59be3c5753835d76c04f0c283967ea",
+ "marts": [
+  "dim_wiki",
+  "fct_award_transaction",
+  "mart_award_fy2024",
+  "mart_county_fy2024",
+  "mart_monthly_obligations"
+ ],
+ "pinned": {
+  "checks": {
+   "1": true,
+   "2": true,
+   "3": false,
+   "4": false,
+   "5": false,
+   "6": false,
+   "7": false
+  },
+  "grader_commit": "c344bea44951cfc5a3a3a99aaa598fdaaedabba8",
+  "grader_tree": "8a0977e42fa02981802090d1f9517efe537994c4",
+  "idempotent": true,
+  "passed": 2,
+  "reward": 0.0,
+  "stream_ok": false
+ },
+ "run_id": "20261024-P2-cadence-haiku-core-4",
+ "task": "P2",
+ "transcript_blob": {
+  "path": "blobs/886650ebb0b53c2637feee951e81545eebc76b8e9ec99197019b57e916534649.gz",
+  "sha256": "886650ebb0b53c2637feee951e81545eebc76b8e9ec99197019b57e916534649",
+  "store": "runs-store"
+ },
+ "tree_blob": {
+  "path": "blobs/21a9a43a4651c758faa4747ebe103428c5cfa582cf3704d54b5d76e27ce77c90.gz",
+  "sha256": "21a9a43a4651c758faa4747ebe103428c5cfa582cf3704d54b5d76e27ce77c90",
+  "store": "runs-store"
+ },
+ "v3": {
+  "checks": {
+   "1": {
+    "pass": true,
+    "resolution": "table mart_monthly_obligations, stated operation: sum(net_obligations); by agency_name"
+   },
+   "2": {
+    "pass": true,
+    "resolution": "table mart_county_fy2024"
+   },
+   "3": {
+    "pass": true,
+    "resolution": "table mart_award_fy2024, stated operation: filter net_obligation < 0; count(*)"
+   },
+   "4": {
+    "pass": false,
+    "resolution": "unresolved: how: cannot read 'sum by state_fips equals sum by rolled up'"
+   },
+   "5": {
+    "pass": false,
+    "resolution": "no published mart named 'fct_edit' under out/marts/"
+   },
+   "6": {
+    "pass": false,
+    "resolution": "no published mart named 'mart_window_5m' under out/marts/"
+   },
+   "7": {
+    "pass": false,
+    "resolution": "no published mart named 'late_events' under out/marts/"
+   }
+  },
+  "passed": 3
+ }
+}

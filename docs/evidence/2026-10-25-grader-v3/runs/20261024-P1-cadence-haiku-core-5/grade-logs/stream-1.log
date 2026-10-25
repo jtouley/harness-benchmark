@@ -1,0 +1,104 @@
+mkdir -p out/marts/mart_awards_monthly out/marts/mart_awards_fy2024 out/marts/fct_edit out/marts/late_events out/marts/mart_edit_windows_5min
+uv run python -m pipeline.consume_stream --duration 30
+warning: The `UV_NATIVE_TLS` environment variable is deprecated and will be removed in a future release. Use `UV_SYSTEM_CERTS` instead.
+stream landed through seq 5925
+uv run python -m pipeline.lake
+warning: The `UV_NATIVE_TLS` environment variable is deprecated and will be removed in a future release. Use `UV_SYSTEM_CERTS` instead.
+uv run dbt run --project-dir transform --profiles-dir transform --select path:models/stream --empty
+warning: The `UV_NATIVE_TLS` environment variable is deprecated and will be removed in a future release. Use `UV_SYSTEM_CERTS` instead.
+[0m03:28:16  Running with dbt=1.11.6
+[0m03:28:17  Registered adapter: duckdb=1.11.0
+[0m03:28:17  Found 15 models, 74 data tests, 501 macros, 5 unit tests
+[0m03:28:17  
+[0m03:28:17  Concurrency: 4 threads (target='dev')
+[0m03:28:17  
+[0m03:28:18  1 of 4 START sql view model main.stg_stream_events ............................. [RUN]
+[0m03:28:18  1 of 4 OK created sql view model main.stg_stream_events ........................ [[32mOK[0m in 0.22s]
+[0m03:28:18  2 of 4 START sql incremental model main.fct_edit ............................... [RUN]
+[0m03:28:18  2 of 4 OK created sql incremental model main.fct_edit .......................... [[32mOK[0m in 0.23s]
+[0m03:28:18  3 of 4 START sql table model main.late_events .................................. [RUN]
+[0m03:28:18  4 of 4 START sql incremental model main.mart_edit_windows_5min ................. [RUN]
+[0m03:28:19  4 of 4 OK created sql incremental model main.mart_edit_windows_5min ............ [[32mOK[0m in 0.20s]
+[0m03:28:19  3 of 4 OK created sql table model main.late_events ............................. [[32mOK[0m in 0.24s]
+[0m03:28:19  
+[0m03:28:19  Finished running 2 incremental models, 1 table model, 1 view model in 0 hours 0 minutes and 1.15 seconds (1.15s).
+[0m03:28:19  
+[0m03:28:19  [32mCompleted successfully[0m
+[0m03:28:19  
+[0m03:28:19  Done. PASS=4 WARN=0 ERROR=0 SKIP=0 NO-OP=0 TOTAL=4
+uv run dbt build --project-dir transform --profiles-dir transform --select path:models/stream
+warning: The `UV_NATIVE_TLS` environment variable is deprecated and will be removed in a future release. Use `UV_SYSTEM_CERTS` instead.
+[0m03:28:23  Running with dbt=1.11.6
+[0m03:28:23  Registered adapter: duckdb=1.11.0
+[0m03:28:24  Found 15 models, 74 data tests, 501 macros, 5 unit tests
+[0m03:28:24  
+[0m03:28:24  Concurrency: 4 threads (target='dev')
+[0m03:28:24  
+[0m03:28:24  1 of 31 START sql view model main.stg_stream_events ............................ [RUN]
+[0m03:28:24  1 of 31 OK created sql view model main.stg_stream_events ....................... [[32mOK[0m in 0.15s]
+[0m03:28:24  2 of 31 START unit_test fct_edit::fct_edit_incremental_skips_meta_ids_already_landed  [RUN]
+[0m03:28:25  2 of 31 PASS fct_edit::fct_edit_incremental_skips_meta_ids_already_landed ...... [[32mPASS[0m in 0.33s]
+[0m03:28:25  3 of 31 START unit_test fct_edit::fct_edit_keeps_first_arrival_and_flags_late_edits  [RUN]
+[0m03:28:25  3 of 31 PASS fct_edit::fct_edit_keeps_first_arrival_and_flags_late_edits ....... [[32mPASS[0m in 0.13s]
+[0m03:28:25  4 of 31 START sql incremental model main.fct_edit .............................. [RUN]
+[0m03:28:25  4 of 31 OK created sql incremental model main.fct_edit ......................... [[32mOK[0m in 0.30s]
+[0m03:28:25  5 of 31 START test not_null_fct_edit_actor_type ................................ [RUN]
+[0m03:28:25  6 of 31 START test not_null_fct_edit_event_epoch ............................... [RUN]
+[0m03:28:25  7 of 31 START test not_null_fct_edit_event_time ................................ [RUN]
+[0m03:28:25  8 of 31 START test not_null_fct_edit_is_late ................................... [RUN]
+[0m03:28:25  7 of 31 PASS not_null_fct_edit_event_time ...................................... [[32mPASS[0m in 0.09s]
+[0m03:28:25  9 of 31 START test not_null_fct_edit_meta_id ................................... [RUN]
+[0m03:28:25  6 of 31 PASS not_null_fct_edit_event_epoch ..................................... [[32mPASS[0m in 0.12s]
+[0m03:28:25  10 of 31 START test not_null_fct_edit_net_bytes ................................ [RUN]
+[0m03:28:25  8 of 31 PASS not_null_fct_edit_is_late ......................................... [[32mPASS[0m in 0.09s]
+[0m03:28:25  5 of 31 PASS not_null_fct_edit_actor_type ...................................... [[32mPASS[0m in 0.13s]
+[0m03:28:25  11 of 31 START test not_null_fct_edit_stream_seq ............................... [RUN]
+[0m03:28:25  12 of 31 START test not_null_fct_edit_wiki ..................................... [RUN]
+[0m03:28:25  9 of 31 PASS not_null_fct_edit_meta_id ......................................... [[32mPASS[0m in 0.05s]
+[0m03:28:25  13 of 31 START test not_null_fct_edit_window_start_epoch ....................... [RUN]
+[0m03:28:25  10 of 31 PASS not_null_fct_edit_net_bytes ...................................... [[32mPASS[0m in 0.05s]
+[0m03:28:25  14 of 31 START test unique_fct_edit_meta_id .................................... [RUN]
+[0m03:28:25  11 of 31 PASS not_null_fct_edit_stream_seq ..................................... [[32mPASS[0m in 0.07s]
+[0m03:28:25  12 of 31 PASS not_null_fct_edit_wiki ........................................... [[32mPASS[0m in 0.06s]
+[0m03:28:25  13 of 31 PASS not_null_fct_edit_window_start_epoch ............................. [[32mPASS[0m in 0.05s]
+[0m03:28:25  14 of 31 PASS unique_fct_edit_meta_id .......................................... [[32mPASS[0m in 0.04s]
+[0m03:28:25  15 of 31 START unit_test late_events::late_events_holds_only_late_edits ........ [RUN]
+[0m03:28:25  16 of 31 START unit_test mart_edit_windows_5min::window_mart_recounts_only_the_touched_windows  [RUN]
+[0m03:28:25  15 of 31 PASS late_events::late_events_holds_only_late_edits ................... [[32mPASS[0m in 0.11s]
+[0m03:28:25  17 of 31 START sql table model main.late_events ................................ [RUN]
+[0m03:28:25  16 of 31 PASS mart_edit_windows_5min::window_mart_recounts_only_the_touched_windows  [[32mPASS[0m in 0.14s]
+[0m03:28:25  18 of 31 START unit_test mart_edit_windows_5min::window_mart_counts_on_time_edits_only  [RUN]
+[0m03:28:26  17 of 31 OK created sql table model main.late_events ........................... [[32mOK[0m in 0.16s]
+[0m03:28:26  19 of 31 START test not_null_late_events_meta_id ............................... [RUN]
+[0m03:28:26  20 of 31 START test not_null_late_events_prior_max_event_epoch ................. [RUN]
+[0m03:28:26  21 of 31 START test not_null_late_events_window_start_epoch .................... [RUN]
+[0m03:28:26  21 of 31 PASS not_null_late_events_window_start_epoch .......................... [[32mPASS[0m in 0.03s]
+[0m03:28:26  22 of 31 START test unique_late_events_meta_id ................................. [RUN]
+[0m03:28:26  19 of 31 PASS not_null_late_events_meta_id ..................................... [[32mPASS[0m in 0.04s]
+[0m03:28:26  20 of 31 PASS not_null_late_events_prior_max_event_epoch ....................... [[32mPASS[0m in 0.04s]
+[0m03:28:26  18 of 31 PASS mart_edit_windows_5min::window_mart_counts_on_time_edits_only .... [[32mPASS[0m in 0.19s]
+[0m03:28:26  23 of 31 START sql incremental model main.mart_edit_windows_5min ............... [RUN]
+[0m03:28:26  22 of 31 PASS unique_late_events_meta_id ....................................... [[32mPASS[0m in 0.04s]
+[0m03:28:26  23 of 31 OK created sql incremental model main.mart_edit_windows_5min .......... [[32mOK[0m in 0.13s]
+[0m03:28:26  24 of 31 START test not_null_mart_edit_windows_5min_actor_type ................. [RUN]
+[0m03:28:26  25 of 31 START test not_null_mart_edit_windows_5min_built_through_seq .......... [RUN]
+[0m03:28:26  26 of 31 START test not_null_mart_edit_windows_5min_edit_count ................. [RUN]
+[0m03:28:26  27 of 31 START test not_null_mart_edit_windows_5min_net_bytes .................. [RUN]
+[0m03:28:26  24 of 31 PASS not_null_mart_edit_windows_5min_actor_type ....................... [[32mPASS[0m in 0.10s]
+[0m03:28:26  28 of 31 START test not_null_mart_edit_windows_5min_server_name ................ [RUN]
+[0m03:28:26  26 of 31 PASS not_null_mart_edit_windows_5min_edit_count ....................... [[32mPASS[0m in 0.12s]
+[0m03:28:26  25 of 31 PASS not_null_mart_edit_windows_5min_built_through_seq ................ [[32mPASS[0m in 0.13s]
+[0m03:28:26  29 of 31 START test not_null_mart_edit_windows_5min_wiki ....................... [RUN]
+[0m03:28:26  27 of 31 PASS not_null_mart_edit_windows_5min_net_bytes ........................ [[32mPASS[0m in 0.11s]
+[0m03:28:26  30 of 31 START test not_null_mart_edit_windows_5min_window_start_epoch ......... [RUN]
+[0m03:28:26  31 of 31 START test not_null_mart_edit_windows_5min_window_start_utc ........... [RUN]
+[0m03:28:26  28 of 31 PASS not_null_mart_edit_windows_5min_server_name ...................... [[32mPASS[0m in 0.09s]
+[0m03:28:26  31 of 31 PASS not_null_mart_edit_windows_5min_window_start_utc ................. [[32mPASS[0m in 0.05s]
+[0m03:28:26  30 of 31 PASS not_null_mart_edit_windows_5min_window_start_epoch ............... [[32mPASS[0m in 0.07s]
+[0m03:28:26  29 of 31 PASS not_null_mart_edit_windows_5min_wiki ............................. [[32mPASS[0m in 0.08s]
+[0m03:28:26  
+[0m03:28:26  Finished running 2 incremental models, 1 table model, 22 data tests, 5 unit tests, 1 view model in 0 hours 0 minutes and 2.26 seconds (2.26s).
+[0m03:28:26  
+[0m03:28:26  [32mCompleted successfully[0m
+[0m03:28:26  
+[0m03:28:26  Done. PASS=31 WARN=0 ERROR=0 SKIP=0 NO-OP=0 TOTAL=31

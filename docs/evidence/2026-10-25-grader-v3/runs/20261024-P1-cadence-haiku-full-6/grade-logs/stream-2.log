@@ -1,0 +1,48 @@
+uv run python -m pipeline.stream --duration 90
+warning: The `UV_NATIVE_TLS` environment variable is deprecated and will be removed in a future release. Use `UV_SYSTEM_CERTS` instead.
+uv run dbt build --project-dir transform --profiles-dir transform --select +fct_edit +late_events +window_5min
+warning: The `UV_NATIVE_TLS` environment variable is deprecated and will be removed in a future release. Use `UV_SYSTEM_CERTS` instead.
+[0m03:29:28  Running with dbt=1.11.6
+[0m03:29:29  Registered adapter: duckdb=1.11.0
+[0m03:29:29  Found 13 models, 24 data tests, 500 macros
+[0m03:29:29  
+[0m03:29:29  Concurrency: 4 threads (target='dev')
+[0m03:29:29  
+[0m03:29:29  1 of 16 START sql view model main.stg_stream_edits ............................. [RUN]
+[0m03:29:30  1 of 16 OK created sql view model main.stg_stream_edits ........................ [[32mOK[0m in 0.24s]
+[0m03:29:30  2 of 16 START sql incremental model main.int_edit_events ....................... [RUN]
+[0m03:29:30  2 of 16 OK created sql incremental model main.int_edit_events .................. [[32mOK[0m in 0.22s]
+[0m03:29:30  3 of 16 START test not_null_int_edit_events_meta_id ............................ [RUN]
+[0m03:29:30  4 of 16 START test unique_int_edit_events_meta_id .............................. [RUN]
+[0m03:29:30  3 of 16 PASS not_null_int_edit_events_meta_id .................................. [[32mPASS[0m in 0.08s]
+[0m03:29:30  4 of 16 PASS unique_int_edit_events_meta_id .................................... [[32mPASS[0m in 0.08s]
+[0m03:29:30  5 of 16 START sql external model main.fct_edit ................................. [RUN]
+[0m03:29:30  6 of 16 START sql incremental model main.int_window_5min ....................... [RUN]
+[0m03:29:30  7 of 16 START sql external model main.late_events .............................. [RUN]
+[0m03:29:30  6 of 16 OK created sql incremental model main.int_window_5min .................. [[32mOK[0m in 0.22s]
+[0m03:29:30  8 of 16 START test not_null_int_window_5min_window_key ......................... [RUN]
+[0m03:29:30  9 of 16 START test unique_int_window_5min_window_key ........................... [RUN]
+[0m03:29:30  9 of 16 PASS unique_int_window_5min_window_key ................................. [[32mPASS[0m in 0.06s]
+[0m03:29:30  8 of 16 PASS not_null_int_window_5min_window_key ............................... [[32mPASS[0m in 0.07s]
+[0m03:29:30  10 of 16 START sql external model main.window_5min ............................. [RUN]
+[0m03:29:31  7 of 16 OK created sql external model main.late_events ......................... [[32mOK[0m in 0.51s]
+[0m03:29:31  11 of 16 START test not_null_late_events_meta_id ............................... [RUN]
+[0m03:29:31  12 of 16 START test unique_late_events_meta_id ................................. [RUN]
+[0m03:29:31  11 of 16 PASS not_null_late_events_meta_id ..................................... [[32mPASS[0m in 0.05s]
+[0m03:29:31  5 of 16 OK created sql external model main.fct_edit ............................ [[32mOK[0m in 0.58s]
+[0m03:29:31  13 of 16 START test not_null_fct_edit_meta_id .................................. [RUN]
+[0m03:29:31  14 of 16 START test unique_fct_edit_meta_id .................................... [RUN]
+[0m03:29:31  12 of 16 PASS unique_late_events_meta_id ....................................... [[32mPASS[0m in 0.07s]
+[0m03:29:31  10 of 16 OK created sql external model main.window_5min ........................ [[32mOK[0m in 0.27s]
+[0m03:29:31  13 of 16 PASS not_null_fct_edit_meta_id ........................................ [[32mPASS[0m in 0.05s]
+[0m03:29:31  15 of 16 START test not_null_window_5min_window_key ............................ [RUN]
+[0m03:29:31  16 of 16 START test unique_window_5min_window_key .............................. [RUN]
+[0m03:29:31  14 of 16 PASS unique_fct_edit_meta_id .......................................... [[32mPASS[0m in 0.06s]
+[0m03:29:31  15 of 16 PASS not_null_window_5min_window_key .................................. [[32mPASS[0m in 0.03s]
+[0m03:29:31  16 of 16 PASS unique_window_5min_window_key .................................... [[32mPASS[0m in 0.03s]
+[0m03:29:31  
+[0m03:29:31  Finished running 3 external models, 2 incremental models, 10 data tests, 1 view model in 0 hours 0 minutes and 1.51 seconds (1.51s).
+[0m03:29:31  
+[0m03:29:31  [32mCompleted successfully[0m
+[0m03:29:31  
+[0m03:29:31  Done. PASS=16 WARN=0 ERROR=0 SKIP=0 NO-OP=0 TOTAL=16

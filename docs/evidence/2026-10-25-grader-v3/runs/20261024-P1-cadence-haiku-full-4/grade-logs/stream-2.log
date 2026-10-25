@@ -1,0 +1,44 @@
+mkdir -p lake out/marts/fct_edit out/marts/mart_edit_windows_5min out/marts/late_events
+uv run python -m ingest.stream --duration 90
+warning: The `UV_NATIVE_TLS` environment variable is deprecated and will be removed in a future release. Use `UV_SYSTEM_CERTS` instead.
+stream stopped: duration
+uv run dbt build --project-dir transform --profiles-dir transform --select tag:stream --no-partial-parse
+warning: The `UV_NATIVE_TLS` environment variable is deprecated and will be removed in a future release. Use `UV_SYSTEM_CERTS` instead.
+[0m03:29:25  Running with dbt=1.11.6
+[0m03:29:26  Registered adapter: duckdb=1.11.0
+[0m03:29:28  Found 14 models, 33 data tests, 7 sources, 500 macros
+[0m03:29:28  
+[0m03:29:28  Concurrency: 4 threads (target='dev')
+[0m03:29:28  
+[0m03:29:29  1 of 18 START sql view model main.stg_stream_events ............................ [RUN]
+[0m03:29:29  1 of 18 ERROR creating sql view model main.stg_stream_events ................... [[31mERROR[0m in 0.07s]
+[0m03:29:29  2 of 18 SKIP test assert_first_stored_row_kept ................................. [[33mSKIP[0m]
+[0m03:29:29  3 of 18 SKIP relation main.fct_edit ............................................ [[33mSKIP[0m]
+[0m03:29:29  4 of 18 SKIP relation main.stg_late_events ..................................... [[33mSKIP[0m]
+[0m03:29:29  5 of 18 SKIP test assert_late_event_count ...................................... [[33mSKIP[0m]
+[0m03:29:29  6 of 18 SKIP test assert_null_length_counts_zero ............................... [[33mSKIP[0m]
+[0m03:29:29  7 of 18 SKIP test assert_replay_hour_edits_per_wiki ............................ [[33mSKIP[0m]
+[0m03:29:29  8 of 18 SKIP test assert_top_windows_en_wikipedia .............................. [[33mSKIP[0m]
+[0m03:29:29  9 of 18 SKIP test not_null_fct_edit_meta_id .................................... [[33mSKIP[0m]
+[0m03:29:29  11 of 18 SKIP test unique_fct_edit_meta_id ..................................... [[33mSKIP[0m]
+[0m03:29:29  10 of 18 SKIP test not_null_stg_late_events_meta_id ............................ [[33mSKIP[0m]
+[0m03:29:29  12 of 18 SKIP test unique_stg_late_events_meta_id .............................. [[33mSKIP[0m]
+[0m03:29:29  13 of 18 SKIP relation main.mart_edit_windows_5min ............................. [[33mSKIP[0m]
+[0m03:29:29  14 of 18 SKIP relation main.publish_fct_edit ................................... [[33mSKIP[0m]
+[0m03:29:29  17 of 18 SKIP test not_null_mart_edit_windows_5min_window_start ................ [[33mSKIP[0m]
+[0m03:29:29  15 of 18 SKIP relation main.publish_late_events ................................ [[33mSKIP[0m]
+[0m03:29:29  16 of 18 SKIP test assert_window_keys_unique ................................... [[33mSKIP[0m]
+[0m03:29:29  18 of 18 SKIP relation main.publish_mart_edit_windows_5min ..................... [[33mSKIP[0m]
+[0m03:29:29  
+[0m03:29:29  Finished running 3 external models, 2 incremental models, 11 data tests, 2 view models in 0 hours 0 minutes and 0.32 seconds (0.32s).
+[0m03:29:29  
+[0m03:29:29  [31mCompleted with 1 error, 0 partial successes, and 0 warnings:[0m
+[0m03:29:29  
+[0m03:29:29  [31mFailure in model stg_stream_events (models/stream/stg_stream_events.sql)[0m
+[0m03:29:29    Runtime Error in model stg_stream_events (models/stream/stg_stream_events.sql)
+  IO Error: No files found that match the pattern "lake/late_events/*.parquet"
+[0m03:29:29  
+[0m03:29:29    compiled code at target/compiled/open_data_pipeline/models/stream/stg_stream_events.sql
+[0m03:29:29  
+[0m03:29:29  Done. PASS=0 WARN=0 ERROR=1 SKIP=17 NO-OP=0 TOTAL=18
+make: *** [Makefile:15: stream] Error 1

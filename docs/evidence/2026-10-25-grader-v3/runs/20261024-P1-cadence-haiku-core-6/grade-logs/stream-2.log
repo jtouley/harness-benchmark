@@ -1,0 +1,47 @@
+uv run python -m pipeline.stream_consumer --duration 90
+warning: The `UV_NATIVE_TLS` environment variable is deprecated and will be removed in a future release. Use `UV_SYSTEM_CERTS` instead.
+mkdir -p out/marts/window_5min out/marts/late_events out/marts/edits_by_wiki_actor
+uv run dbt build --project-dir transform --profiles-dir transform --select +mart_window_5min +late_events +edits_by_wiki_actor
+warning: The `UV_NATIVE_TLS` environment variable is deprecated and will be removed in a future release. Use `UV_SYSTEM_CERTS` instead.
+[0m03:25:23  Running with dbt=1.11.6
+[0m03:25:23  Registered adapter: duckdb=1.11.0
+[0m03:25:23  Found 13 models, 32 data tests, 504 macros
+[0m03:25:23  
+[0m03:25:23  Concurrency: 4 threads (target='dev')
+[0m03:25:23  
+[0m03:25:23  1 of 15 START sql incremental model main.fact_edit ............................. [RUN]
+[0m03:25:24  1 of 15 OK created sql incremental model main.fact_edit ........................ [[32mOK[0m in 0.27s]
+[0m03:25:24  2 of 15 START test not_null_fact_edit_event_id ................................. [RUN]
+[0m03:25:24  3 of 15 START test test_event_time_utc_is_utc .................................. [RUN]
+[0m03:25:24  4 of 15 START test unique_fact_edit_event_id ................................... [RUN]
+[0m03:25:24  2 of 15 PASS not_null_fact_edit_event_id ....................................... [[32mPASS[0m in 0.09s]
+[0m03:25:24  3 of 15 PASS test_event_time_utc_is_utc ........................................ [[32mPASS[0m in 0.09s]
+[0m03:25:24  4 of 15 PASS unique_fact_edit_event_id ......................................... [[32mPASS[0m in 0.09s]
+[0m03:25:24  5 of 15 START sql external model main.edits_by_wiki_actor ...................... [RUN]
+[0m03:25:24  6 of 15 START sql external model main.late_events .............................. [RUN]
+[0m03:25:24  7 of 15 START sql incremental model main.window_5min ........................... [RUN]
+[0m03:25:24  7 of 15 OK created sql incremental model main.window_5min ...................... [[32mOK[0m in 0.24s]
+[0m03:25:24  8 of 15 START test unique_combination_of_columns_window_5min_window_start__wiki__namespace__actor_type  [RUN]
+[0m03:25:24  8 of 15 PASS unique_combination_of_columns_window_5min_window_start__wiki__namespace__actor_type  [[32mPASS[0m in 0.10s]
+[0m03:25:24  9 of 15 START sql external model main.mart_window_5min ......................... [RUN]
+[0m03:25:24  6 of 15 OK created sql external model main.late_events ......................... [[32mOK[0m in 0.39s]
+[0m03:25:24  5 of 15 OK created sql external model main.edits_by_wiki_actor ................. [[32mOK[0m in 0.39s]
+[0m03:25:24  10 of 15 START test not_null_late_events_event_id .............................. [RUN]
+[0m03:25:24  11 of 15 START test test_stream_totals_per_wiki ................................ [RUN]
+[0m03:25:24  12 of 15 START test unique_combination_of_columns_edits_by_wiki_actor_wiki__actor_type  [RUN]
+[0m03:25:24  10 of 15 PASS not_null_late_events_event_id .................................... [[32mPASS[0m in 0.10s]
+[0m03:25:24  12 of 15 PASS unique_combination_of_columns_edits_by_wiki_actor_wiki__actor_type  [[32mPASS[0m in 0.08s]
+[0m03:25:24  13 of 15 START test unique_late_events_event_id ................................ [RUN]
+[0m03:25:24  11 of 15 PASS test_stream_totals_per_wiki ...................................... [[32mPASS[0m in 0.13s]
+[0m03:25:24  13 of 15 PASS unique_late_events_event_id ...................................... [[32mPASS[0m in 0.07s]
+[0m03:25:24  9 of 15 OK created sql external model main.mart_window_5min .................... [[32mOK[0m in 0.23s]
+[0m03:25:24  14 of 15 START test test_top_windows_en_wikipedia .............................. [RUN]
+[0m03:25:24  15 of 15 START test unique_combination_of_columns_mart_window_5min_window_start__wiki__namespace__actor_type  [RUN]
+[0m03:25:24  15 of 15 PASS unique_combination_of_columns_mart_window_5min_window_start__wiki__namespace__actor_type  [[32mPASS[0m in 0.05s]
+[0m03:25:25  14 of 15 PASS test_top_windows_en_wikipedia .................................... [[32mPASS[0m in 0.08s]
+[0m03:25:25  
+[0m03:25:25  Finished running 3 external models, 2 incremental models, 10 data tests in 0 hours 0 minutes and 1.20 seconds (1.20s).
+[0m03:25:25  
+[0m03:25:25  [32mCompleted successfully[0m
+[0m03:25:25  
+[0m03:25:25  Done. PASS=15 WARN=0 ERROR=0 SKIP=0 NO-OP=0 TOTAL=15
