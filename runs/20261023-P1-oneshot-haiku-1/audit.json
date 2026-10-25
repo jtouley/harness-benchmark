@@ -1,0 +1,35 @@
+{
+ "components": {
+  "committed_history": {
+   "present": false,
+   "why": "the bundle holds only the starting repository"
+  },
+  "decisions": {
+   "committed": [],
+   "present": true,
+   "written": [
+    "DECISIONS.md"
+   ]
+  },
+  "gate_evidence": {
+   "present": false,
+   "why": "no gate verdict line in any Bash result"
+  },
+  "pr_description": {
+   "present": false,
+   "why": "no PR file with a title and body under .context/prs/, and no gh pr create with a body that returned a pull URL"
+  },
+  "regradable": {
+   "present": false,
+   "why": "no refs/graded/20261023-P1-oneshot-haiku-1 and no graded commit on the record; the bundle holds only the starting repository, so none of the graded work is in it"
+  }
+ },
+ "inputs": {
+  "transcript": "48807d44cef11e140bd485c58fce722776602bb84550e5558714dd639e81958a",
+  "tree": "6ce5e47684a2a93aaa525087dc9298e2ba5a1e3191e36abff3334bb7e4ebffba"
+ },
+ "measure": 1,
+ "present": 1,
+ "run_id": "20261023-P1-oneshot-haiku-1",
+ "unread": 0
+}

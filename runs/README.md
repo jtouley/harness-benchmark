@@ -7,6 +7,20 @@ live or stub). A run that has no folder here is not evidence.
 |---|---|---|
 | `record.json` | `python -m loop.driver` (new runs), `loop.backfill` and `loop.backfill_live` (old runs) | written once, never changed ([schema](../loop/schema/record.schema.json)) |
 | `scores.jsonl` | the driver with `--grade`, a regrade | one line per grading, appended, never edited ([schema](../loop/schema/score.schema.json)) |
+| `audit.json` | `python -m loop.driver` (new runs), `python -m loop.audit --write` (every record) | computed from the record's stored transcript and tree, never by hand; written again only when `loop.audit.MEASURE` changes |
+
+## Auditability
+
+`audit.json` is the run's auditability (owner, 2026-10-25), computed by [`loop/audit.py`](../loop/audit.py)
+from the stored bundle and transcript with fixed rules and no model, for every arm: committed history (the
+agent's own commits in the bundle), a PR with a description (Cadence's local `.context/prs/PR-*.md`, or `gh pr
+create` with a body that returned a pull URL), recorded decisions or assumptions (committed, or written during
+the run), gate evidence (gate verdict lines in Bash results), and whether the graded work can be regraded from
+storage (`refs/graded/<run_id>` in the bundle, loop.graded). The scoreboard and every postmortem report it beside
+the grader score; it never changes the score. A component whose blob is in another store (the live runs keep
+theirs in jtouley/cadence) is unread, `?`, unless `--extra-store` maps that store. `python -m loop.check` refuses a
+record without one; `python -m loop.audit --store ../runs-store --check` recomputes every file and refuses a
+difference.
 
 `citations.json` (root) is the trace of these runs into Cadence: per cited run, the cadence commits
 whose `Evidence: <run id>` trailer names it, with each commit's finding, pull request and status. `python

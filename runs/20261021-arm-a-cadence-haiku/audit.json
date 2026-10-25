@@ -1,0 +1,32 @@
+{
+ "components": {
+  "committed_history": {
+   "present": null,
+   "why": "bundle stored in git:jtouley/cadence@9954da6405804dc7eabd9e5433c2bb3ac8779265, which was not read"
+  },
+  "decisions": {
+   "present": null,
+   "why": "a blob was not read"
+  },
+  "gate_evidence": {
+   "present": null,
+   "why": "transcript stored in git:jtouley/cadence@9954da6405804dc7eabd9e5433c2bb3ac8779265, which was not read"
+  },
+  "pr_description": {
+   "present": null,
+   "why": "transcript stored in git:jtouley/cadence@9954da6405804dc7eabd9e5433c2bb3ac8779265, which was not read"
+  },
+  "regradable": {
+   "present": null,
+   "why": "bundle stored in git:jtouley/cadence@9954da6405804dc7eabd9e5433c2bb3ac8779265, which was not read"
+  }
+ },
+ "inputs": {
+  "transcript": "6a46e229c34459427f782b16e916f5daca53ad7171a2be6251ca4931ee22448c",
+  "tree": "32a7ccd6140de9dac5143eb00e2fc84596c775f644c0c755bf67bc1820c88ea9"
+ },
+ "measure": 1,
+ "present": 0,
+ "run_id": "20261021-arm-a-cadence-haiku",
+ "unread": 5
+}

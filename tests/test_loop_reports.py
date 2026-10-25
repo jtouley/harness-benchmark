@@ -279,7 +279,7 @@ def test_a_driver_one_shot_of_a_later_batch_is_history_in_the_table(tmp_path):
     runs = tmp_path / "runs"
     _one_shot(runs, "20261023-P1-oneshot-haiku-1", "2026-10-23-batch-f", "claude-haiku-5-5", 5, "c" * 40)
     row = next(line for line in scoreboard.table(runs).splitlines() if "| one-shot |" in line)
-    assert "| 5/7 |" in row and row.split("|")[9].strip() == "—"  # listed, with no time ratio of its own
+    assert "| 5/7 |" in row and row.split("|")[10].strip() == "—"  # listed, with no time ratio of its own
 
 
 def test_without_a_pinned_bar_the_gate_says_so(tmp_path):

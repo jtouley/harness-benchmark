@@ -1,0 +1,55 @@
+{
+ "components": {
+  "committed_history": {
+   "commits": 19,
+   "present": true
+  },
+  "decisions": {
+   "committed": [
+    "DECISIONS.md"
+   ],
+   "present": true,
+   "written": [
+    ".context/adversarial/adversarial_spec.md",
+    ".context/plans/spec.plan.md",
+    "DECISIONS.md"
+   ]
+  },
+  "gate_evidence": {
+   "fail": 4,
+   "gates": [
+    "adversarial-review-gate",
+    "ops-gate",
+    "plan-create-gate",
+    "plan-review-gate",
+    "plan-update-gate",
+    "pr-review-local-gate",
+    "test-benchmark-gate-code",
+    "test-benchmark-gate-plan",
+    "validate-gate"
+   ],
+   "pass": 12,
+   "present": true,
+   "verdicts": 16
+  },
+  "pr_description": {
+   "hosted": [],
+   "local": [
+    ".context/prs/PR-343fc76b-8087-444a-a7a8-77f6aa07c49b.md"
+   ],
+   "present": true
+  },
+  "regradable": {
+   "present": false,
+   "why": "no refs/graded/20261024-P2-cadence-haiku-full-4 and no graded commit on the record; the bundle holds 19 commit(s) of the agent's, but the grader's snapshot of the working tree (any uncommitted work) is not in it"
+  }
+ },
+ "inputs": {
+  "transcript": "365090db4ad269c245a2197e5b15cc56614ed46975a3445cf757dc68b822ce2e",
+  "tree": "07f25bf4d7ea5a9b0d7891fd4dca792f6e2bcf819e2de01a40429aa9090c7d12"
+ },
+ "measure": 1,
+ "present": 4,
+ "run_id": "20261024-P2-cadence-haiku-full-4",
+ "unread": 0
+}

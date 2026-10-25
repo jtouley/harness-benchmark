@@ -1,0 +1,32 @@
+{
+ "components": {
+  "committed_history": {
+   "present": false,
+   "why": "bundle not stored (not kept; the host container is gone)"
+  },
+  "decisions": {
+   "present": false,
+   "why": "no decisions or assumptions record in the bundle's commits or the transcript"
+  },
+  "gate_evidence": {
+   "present": false,
+   "why": "transcript not stored (not committed (19 Oct write-up, amended per #55))"
+  },
+  "pr_description": {
+   "present": false,
+   "why": "transcript not stored (not committed (19 Oct write-up, amended per #55))"
+  },
+  "regradable": {
+   "present": false,
+   "why": "bundle not stored (not kept; the host container is gone)"
+  }
+ },
+ "inputs": {
+  "transcript": null,
+  "tree": null
+ },
+ "measure": 1,
+ "present": 0,
+ "run_id": "20261019-P1-cadence-core-opus-2-interrupted",
+ "unread": 0
+}

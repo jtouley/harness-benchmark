@@ -24,6 +24,21 @@ Score is round(reward x total)/total, the scoreboard's; Passed is the grader's p
 | 2026-10-22T00:48:35Z | `20261022-P1-cadence-core-haiku-3` | P1 | E4 | credentials hard stop: no GitHub PR URL under adapter none | 0/7 | 0/7 | 0.0 | true | yes |
 | 2026-10-22T01:42:44Z | `20261022-P2-cadence-core-haiku-3` | P2 | P7 | retries hard stop: P7 failed three times after a replan from E1 | 0/7 | 0/7 | 0.0 | false | yes |
 
+## Auditability
+
+What each run left that a reader can check, computed by code from its stored record, bundle and transcript (loop.audit, runs/<id>/audit.json; owner, 2026-10-25). It is reported beside the score and never changes it. Commits: the agent's own commits in the bundle. PR: a pull request with a description (Cadence's local .context/prs/PR-*.md, or a gh pr create with a body). Decisions: a decisions or assumptions record, committed or written during the run. Gates: gate verdict lines in the transcript. Regradable: the bundle holds refs/graded/<run> at the graded commit. ? is a component whose blob is in a store that was not read.
+
+| Run | Arm | Score | Audit | Commits | PR | Decisions | Gates | Regradable |
+|---|---|---|---|---|---|---|---|---|
+| `20261021-P1-cadence-core-haiku-0-killed` | cadence-core | not scored | 0/5 | no | no | no | no | no |
+| `20261021-P1-cadence-core-haiku-1` | cadence-core | 0/7 | 0/5 | no | no | no | no | no |
+| `20261021-P2-cadence-core-haiku-1` | cadence-core | 0/7 | 0/5 | no | no | no | no | no |
+| `20261021-P1-cadence-core-haiku-2` | cadence-core | 0/7 | 0/5 | no | no | no | no | no |
+| `20261021-P2-cadence-core-haiku-2a-killed` | cadence-core | not scored | 0/5 | no | no | no | no | no |
+| `20261021-P2-cadence-core-haiku-2` | cadence-core | 0/7 | 0/5 | no | no | no | no | no |
+| `20261022-P1-cadence-core-haiku-3` | cadence-core | 0/7 | 0/5 | no | no | no | no | no |
+| `20261022-P2-cadence-core-haiku-3` | cadence-core | 0/7 | 0/5 | no | no | no | no | no |
+
 ## Speed
 
 Each Cadence run's agent session, and its ratio to the mean one-shot session of the same task and model (loop.speed; stretch goal: at most 1.25). The one-shots are the pinned baselines (baselines.json; Basis names the runs): no later batch moves these numbers. A run above the goal is flagged, with its three slowest blocks. Cap: whether the run hit its guard cap or backstop. A run that stopped early keeps its ratio and says so.

@@ -1,0 +1,32 @@
+{
+ "components": {
+  "committed_history": {
+   "present": false,
+   "why": "bundle not stored (not committed; the host container is gone)"
+  },
+  "decisions": {
+   "present": false,
+   "why": "no decisions or assumptions record in the bundle's commits or the transcript"
+  },
+  "gate_evidence": {
+   "present": false,
+   "why": "transcript not stored (not committed (5 to 9 MB each, host paths); the host container is gone)"
+  },
+  "pr_description": {
+   "present": false,
+   "why": "transcript not stored (not committed (5 to 9 MB each, host paths); the host container is gone)"
+  },
+  "regradable": {
+   "present": false,
+   "why": "bundle not stored (not committed; the host container is gone)"
+  }
+ },
+ "inputs": {
+  "transcript": null,
+  "tree": null
+ },
+ "measure": 1,
+ "present": 0,
+ "run_id": "20261022-P1-cadence-core-haiku-3",
+ "unread": 0
+}
