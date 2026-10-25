@@ -1,0 +1,48 @@
+{
+ "components": {
+  "committed_history": {
+   "commits": 7,
+   "present": true
+  },
+  "decisions": {
+   "committed": [
+    "DECISIONS.md"
+   ],
+   "present": true,
+   "written": [
+    ".context/plans/spec.plan.md",
+    "DECISIONS.md"
+   ]
+  },
+  "gate_evidence": {
+   "fail": 1,
+   "gates": [
+    "plan-create-gate",
+    "plan-update-gate",
+    "validate-gate"
+   ],
+   "pass": 2,
+   "present": true,
+   "verdicts": 3
+  },
+  "pr_description": {
+   "hosted": [],
+   "local": [
+    ".context/prs/PR-daec4340-3b5b-4c29-94e3-5a3ab14f282d.md"
+   ],
+   "present": true
+  },
+  "regradable": {
+   "present": true,
+   "ref": "refs/graded/20261025-P1-cadence-haiku-core-3"
+  }
+ },
+ "inputs": {
+  "transcript": "78497cb7e8d0fc1d8cce3edbb66a0a098369bc9fe9dd89c6c1b4e5ae84b7d473",
+  "tree": "f5d33e42614ef28b132b37781fad4993c1a784791a5e161759853bb54e3bbdbe"
+ },
+ "measure": 1,
+ "present": 5,
+ "run_id": "20261025-P1-cadence-haiku-core-3",
+ "unread": 0
+}
