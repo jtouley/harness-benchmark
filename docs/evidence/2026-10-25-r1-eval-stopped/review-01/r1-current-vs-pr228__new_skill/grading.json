@@ -1,0 +1,125 @@
+{
+ "expectations": [
+  {
+   "text": "[control:no-stream-trap-failure] The stream consumer gets past the invalid frame and reaches the end of the replay. A review that reports, as must-fix, that the consumer loops or crashes on the invalid frame is a false finding. The final review makes no such must-fix claim.",
+   "passed": true,
+   "evidence": "No must-fix says the consumer loops or crashes on the invalid frame. The review treats the 'data is not JSON' frame as a counted skip ('corrupt JSON in data | counted skip | tested'; the build log's one skip line is cited in MF-3 only to show that no counts are printed). MF-1's crash is about a list-valued meta.id, a different input, and the tree confirms it (TypeError: unhashable type: 'list')."
+  },
+  {
+   "text": "[recall:live-endpoint-no-user-agent-silent-exit] The final review reports as must-fix, shown from the code or a local stub (an outside request is not required): The consumer sends no User-Agent header (the live endpoint that the spec names requires one), and every connect failure is swallowed: on an unreachable or refusing endpoint the consumer prints nothing and exits 0.",
+   "passed": false,
+   "evidence": "User-Agent is never mentioned. The adversarial table rates the offline host as 'retries once per second until DURATION ... bounded; not tested' and raises no finding about the silent exit 0. The tree does have the bug: _connect sends only Accept and Last-Event-ID, and _read_until returns quietly on OSError."
+  },
+  {
+   "text": "[recall:stop-mid-flush-drops-events] The final review reports as must-fix: A stop or crash between dlt normalize and load leaves a pending package; the next run builds its seen-set and checkpoint without it and drops events it read, against the spec's stop/start rule.",
+   "passed": false,
+   "evidence": "Nothing about pending dlt packages or a stop between normalize and load. The review instead cleared checkpoint replacement and resume ('Checked and not a finding ... probe_resume.py')."
+  },
+  {
+   "text": "[recall:make-stream-fails-on-fresh-tree] The final review reports, at any severity: `make stream` fails on a fresh tree unless `make build` ran first (fact_edit reads lake/sitematrix_sites).",
+   "passed": false,
+   "evidence": "Not reported. fact_edit appears only in N4, as a CTE that the oracle copies. The review did not run make stream again and does not discuss the order dependency on make build."
+  },
+  {
+   "text": "[recall:check-7-test-never-runs-placeholder-row] The final review reports, at any severity: The check-7 dbt test is never selected (no ref()), and when wired in it shows out/marts/late_events holds one all-NULL placeholder row when there are no late events.",
+   "passed": false,
+   "evidence": "Half found. MF-6 reports that test_late_events_count has no ref() and is never selected, and the tree confirms this: dbt ls on the stream selection lists 10 tests, none of them this one. The review never wired the test in, though, and does not report the all-NULL placeholder row in late_events, which is the defect the test would expose. The fix it proposes (add a ref and rebuild) says nothing about the test then failing. The expectation has both parts, so this is a fail."
+  },
+  {
+   "text": "[recall:dim-date-never-built] The final review reports, at any severity: The date dimension is never built by the build selection, although the spec requires a date dimension.",
+   "passed": false,
+   "evidence": "N5 says only 'dim_date is not used by any mart or test.' It does not say dim_date is never built by the make selections, and it does not tie this to the spec's date-dimension requirement. 'Unused' and 'not built, so a required table is missing' are different claims, and the burden of proof is not met."
+  },
+  {
+   "text": "[recall:lake-drops-source-fields] The final review reports, at any severity: The lake does not keep the source data: stream_raw drops most event fields and adds derived columns, and the batch lake retypes timestamps and adds variant columns.",
+   "passed": false,
+   "evidence": "Not reported. The review takes the lake layout as given. The tree shows flatten() keeps 10 fields, but the review raises nothing about raw fidelity."
+  },
+  {
+   "text": "[recall:check-4-not-answerable-from-marts] The final review reports, at any severity: Check 4 cannot be answered from out/marts (no state or source totals), and the batch oracle tests go through the same macros as the models.",
+   "passed": false,
+   "evidence": "The opposite: the walk marks checks 1-4 'cleared' from the PASS lines. Reuse item 2 lists only the oracle copies of CTEs and does not flag that the batch oracles share the models' macros (usaspending_raw, obligations_per_person)."
+  },
+  {
+   "text": "[recall:malformed-event-crashes-on-restart] The final review reports, at any severity: A wrong-typed event (for example a list-valued field) crashes the consumer on every restart, and wrong-typed fields land inconsistent rows.",
+   "passed": true,
+   "evidence": "MF-1: a list-valued meta.id raises TypeError, _read_until does not catch it, the process stops and the pending batch is not flushed (so the checkpoint does not move past it). MF-2: bot='false' lands with bot=True but actor_type='human', and namespace='zero' lands as NULL. Running the review's repro scripts on a copy of the tree reproduced both. The review does not say in so many words that the crash repeats on every restart, but an unflushed batch with no checkpoint advance is that mechanism. Passed, with that caveat."
+  },
+  {
+   "text": "[recall:territories-published-as-unknown] The final review reports, at any severity: Territories are published with state_name 'UNKNOWN', the same label as the no-state sentinel.",
+   "passed": false,
+   "evidence": "Not reported. N3 is about county_name being NULL for 13 codes missing from the Census file. It does not cover territories getting state_name 'UNKNOWN', or that label colliding with the sentinel."
+  }
+ ],
+ "summary": {
+  "passed": 2,
+  "failed": 8,
+  "total": 10,
+  "pass_rate": 0.2
+ },
+ "timing": {
+  "executor_duration_seconds": 305.8,
+  "total_duration_seconds": 305.8
+ },
+ "claims": [
+  {
+   "claim": "MF-1: a non-string (list) meta.id crashes the consumer with TypeError: unhashable type: 'list'; _read_until catches only OSError/HTTPException so the pending batch is not flushed",
+   "type": "factual",
+   "verified": true,
+   "evidence": "_accept checks 'event_id in self.seen' with no type check (_field_problem does not check meta.id). Running outputs/repro/repro_consumer.py on a copy of the tree printed 'CRASH TypeError: unhashable type: 'list'' with raw landed: []."
+  },
+  {
+   "claim": "MF-2: bot/namespace/wiki/type are not type-checked; bot='false' lands with bot=True and actor_type='human'; namespace='zero' lands as NULL with no skip",
+   "type": "factual",
+   "verified": true,
+   "evidence": "flatten() uses bool(event.get('bot')) for bot and 'bot' if bot is True for actor_type. probe_values.py printed 'bot='false' -> raw bot: True ... events actor_type: human | events bot: True' and 'namespace='zero' -> raw namespace: None'."
+  },
+  {
+   "claim": "MF-3: the stream consumer prints no accounting counts (read, committed, duplicates, skipped, dead-lettered)",
+   "type": "factual",
+   "verified": true,
+   "evidence": "stream_consumer.py's only print is _skip's stderr line. run() and main() print nothing. Whether this is must-fix is the reviewer's own walk requirement, not a defect in behavior."
+  },
+  {
+   "claim": "MF-4: pipeline/batch_load.py prints nothing about rows read per table",
+   "type": "factual",
+   "verified": true,
+   "evidence": "grep finds no print in pipeline/batch_load.py."
+  },
+  {
+   "claim": "MF-5: tests/test_stream_consumer.py::_replay_ids copies the connect/read loop of StreamConsumer._connect and _lines",
+   "type": "factual",
+   "verified": true,
+   "evidence": "_replay_ids builds its own HTTPConnection and an inner lines() generator that matches _lines (readline until EOF or deadline). The duplication is there. Making it must-fix rests on the repo's dry-extension rule, a style rule, not a correctness one."
+  },
+  {
+   "claim": "MF-6: transform/tests/test_late_events_count.sql has no ref() and is not selected by either Makefile dbt selection",
+   "type": "factual",
+   "verified": true,
+   "evidence": "grep -L 'ref(' over transform/tests/*.sql returns only this file. 'dbt ls --select +mart_window_5min +late_events +edits_by_wiki_actor --resource-type test' lists 10 tests without it."
+  }
+ ],
+ "user_notes_summary": {
+  "uncertainties": [],
+  "needs_review": [],
+  "workarounds": [
+   "The reviewer did not re-run make build or make stream; it read the one existing build.log instead."
+  ]
+ },
+ "eval_feedback": {
+  "suggestions": [
+   {
+    "assertion": "[recall:malformed-event-crashes-on-restart]",
+    "reason": "'On every restart' is the part that tells this apart from a one-off crash, but a review can show the crash without ever restarting. Think about requiring the review to show the restart loop: the checkpoint does not advance, so the same event replays."
+   },
+   {
+    "assertion": "[recall:check-7-test-never-runs-placeholder-row]",
+    "reason": "This joins two findings: the test is not selected, and the placeholder row it would expose. Many reviews will find only the first. Splitting them would credit partial recall separately, or record that the conjunction is meant to be strict."
+   },
+   {
+    "reason": "Four of six must-fixes in this review (MF-3, MF-4, MF-5, and to some degree MF-6) are about process, logging or style. No expectation penalizes inflating must-fix severity. A precision control for that would help."
+   }
+  ],
+  "overall": "The recall expectations discriminate well. This review hit 2 of 9 recall items plus the control. Its must-fix claims are all true in the tree, but it missed the high-severity live-endpoint and stop-mid-flush defects."
+ }
+}

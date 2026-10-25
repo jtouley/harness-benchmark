@@ -1,0 +1,227 @@
+ANTAGONISTIC CODE REVIEW - REVIEWER B
+=====================================
+Change under review: branch `review` against `base`, in
+  /var/tmp/revieweval/antagonistic-vs-baselines/review-01/new_skill/run-1/repo
+(45 files, +2085 / -2). Build log read: /var/tmp/revieweval/antagonistic-vs-baselines/review-01/build.log
+Full build was NOT re-run. Reproduction script for the stream findings:
+  /var/tmp/revieweval/antagonistic-vs-baselines/review-01/new_skill/run-1/outputs/reviewB_probes.py
+  run as:  <repo>/.venv/bin/python -I <that file> <repo>
+
+BOTTOM LINE
+-----------
+The batch half (USAspending + Census + sitematrix into marts 1-4 and 8) looks sound. Every number I could
+recompute from the raw files agrees with the design, and the source facts in DECISIONS.md check out.
+The stream half is where the risk is. The consumer crashes on malformed-but-parseable input, which
+contradicts its own docstring. The check 7 oracle never runs under either make target. Several stated
+behaviours (flush cadence, stop at DURATION, what stream_raw contains) are overstated. Do not sign off on the
+stream half until findings 1-4 are fixed or explicitly accepted.
+
+SEVERITY KEY: High = wrong result, crash of a normal run, or a test that gives false comfort.
+              Medium = real defect with bounded impact or a stated guarantee that does not hold.
+              Low = robustness, docs, or hygiene.
+
+
+FINDINGS (highest first)
+========================
+
+1. [HIGH] Check 7 test never runs under either make target. False comfort.
+   Where: /var/tmp/revieweval/.../repo/transform/tests/test_late_events_count.sql line 11
+          (`read_parquet('out/marts/late_events/*.parquet')`), no ref() to late_events.
+   Evidence (verified):
+   - build.log has no line for test_late_events_count. The stream run (`make stream DURATION=90`,
+     `dbt build --select +mart_window_5min +late_events +edits_by_wiki_actor`) lists 15 nodes, and this
+     test is not among them. The build run's test list is also missing it.
+   - `dbt ls --select +mart_window_5min +late_events +edits_by_wiki_actor --resource-type test` does not
+     list it. `dbt ls --select +mart_monthly_obligations +mart_award_fy2024 --resource-type test` does not
+     list it either.
+   - Cause: the test reads the mart through read_parquet, not ref(), so dbt has no edge to late_events and
+     the +late_events selector does not reach it.
+   Consequence: check 7 (late event count) has no executed oracle. DECISIONS.md lines 117-120 say three
+   stream tests cover checks 5, 6 and 7. Only two run.
+   Fix: replace the read_parquet with {{ ref('late_events') }} and re-run dbt ls to confirm the test is
+   selected. Also make sure the build log shows it PASS.
+
+2. [HIGH] Consumer crashes on malformed-but-parseable input. The docstring promises it will not.
+   Where: pipeline/stream_consumer.py
+     - line 66 (`raw.decode("utf-8")` inside iter_sse), called from the for loop at line 162. The outer
+       try (line 171) catches only OSError and http.client.HTTPException, so UnicodeDecodeError escapes.
+     - line 200 (`if event_id in self.seen`): meta.id that is a list or dict raises TypeError.
+     - line 206 (`if row["type"] in EDIT_TYPES`): a list-valued type raises TypeError.
+     - lines 176-189 (_connect) catch only OSError; a bad status line raises http.client.BadStatusLine
+       (an HTTPException), which escapes because the caller at lines 157-160 also catches only OSError.
+   Evidence (verified by running the probe script against a local server, temp lake):
+     invalid UTF-8 byte in a data line  -> CRASH UnicodeDecodeError
+     meta.id = ["x"]                    -> CRASH TypeError: unhashable type: 'list'
+     type = ["edit"]                    -> CRASH TypeError: unhashable type: 'list'
+     "HTTP/1.1 garbage" status line     -> CRASH BadStatusLine
+     In each case the next good event in the same stream never lands.
+   Why it matters: a crash ends the run early. `make stream` then fails before its dbt step. The module
+   docstring for _skip (line 271) says the design is that "one bad event does not stop the stream". The
+   tests cover only wrong-typed length and timestamp (test_stream_consumer.py line 69), so this gap is
+   untested.
+   Fix: validate meta.id and type are strings in _field_problem. Decode with errors="replace", or catch
+   UnicodeDecodeError per line and skip it. Catch HTTPException in _connect and in _read_until. Add a test
+   for each case.
+
+3. [MEDIUM] Wrong-typed fields are silently coerced or nulled. Some are not logged at all.
+   Where: pipeline/stream_consumer.py _field_problem (lines 253-267) checks only timestamp and length.
+   Evidence (verified):
+     namespace = "Talk"  -> lands with namespace NULL, no skip message
+     namespace = "0"     -> lands as 0 (dlt coerces to the bigint column)
+     wiki = 123          -> lands as the string "123"
+   Read from code, not run: flatten (line 91) uses bool(event.get("bot")) for the bot column, but
+   actor_type (line 94) uses `is True`. So bot = "false" gives bot = True and actor_type = "human". The two
+   columns disagree.
+   Why it matters: a NULL namespace is part of window_5min's unique key
+   (transform/models/star/window_5min.sql line 3). NULL keys do not collide in a merge, so incremental
+   duplicates are possible. I did not run dbt to confirm; the schema test (GROUP BY) would catch them only if
+   they materialise.
+   Fix: validate namespace (int or null), wiki (string), bot (bool), and reject the event with a logged
+   skip rather than coercing.
+
+4. [MEDIUM] A silent stream overruns DURATION by the socket timeout.
+   Where: pipeline/stream_consumer.py _lines (lines 275-281) checks the deadline only between lines, and
+   readline (line 278) blocks for up to SOCKET_TIMEOUT (5.0 s, line 25).
+   Evidence (verified): one event, then no heartbeats and no EOF, DURATION = 0.5 s -> run() returned after
+   5.52 s (socket_timeout 5.0).
+   The unit test test_consumer_heartbeatsOnly_stopsAtDuration covers heartbeats only, so it does not catch
+   this. DECISIONS.md line 79 and the `make stream` default (60 s) imply the run stops on time.
+   Fix: give each readline a timeout of min(socket_timeout, deadline - now), or drive reads with select()
+   against the deadline. Add a silent-stream test.
+
+5. [MEDIUM] `make stream` results depend on run history, not only on DURATION.
+   Where: DECISIONS.md lines 103-107 and 113-116. _accept/flush append to lake/stream_raw, and _connect
+   resumes from the checkpoint (lines 182-183). A second `make stream` continues the same replay.
+   Evidence: the build log's make stream run (DURATION=90) runs on whatever lake already exists. The stream
+   marts and checks 5-7 are cumulative. DECISIONS.md says so (line 107, "a later make stream run adds to
+   them"), but the "replayed hour" in A-18 becomes "whatever this lake holds", not a fixed hour.
+   Fix: either make the stream step start from an empty lake (or take an explicit lake-reset flag), or state
+   in the Makefile and in the answer which run defines the hour. Do not leave it implicit.
+
+6. [MEDIUM] Oracles share code with the models, so most tests check consistency, not correctness.
+   Evidence (read from code, confirmed by grep):
+     - usaspending_raw() (transform/macros/usaspending_raw.sql) is used by stg_usaspending_awards and by the
+       oracles for checks 1, 2, 3 and 4. A wrong column mapping (for example award_key or the place codes)
+       passes every test.
+     - test_top_ten_counties_per_person.sql line 18 takes population from dim_place, which is the model
+       whose population rule (Amendment A, the 2021 fallback) the test is supposed to check.
+     - The late rule is written twice (lateness.py and stream_raw_arrivals.sql) from the same reading of the
+       spec. The tests check that the two agree. They do not check that the reading is right (for example,
+       whether high-water includes non-edit events, and whether exactly 600 s is late).
+   Mitigation I did run: I recomputed checks 1 to 3 in Python directly from the raw CSVs and Census files,
+   with no SQL and no shared macro (values below). The author can compare these to out/marts directly.
+   Fix: add one oracle that is not built from the repo's macros, or at least say in DECISIONS.md which
+   answers are only cross-checked for consistency.
+
+7. [LOW-MEDIUM] mart_award_fy2024 takes order-dependent values, and the rerun check does not cover it.
+   Where: transform/models/marts/mart_award_fy2024.sql lines 9-10 use any_value() for agency_code,
+   state_fips and county_fips.
+   Evidence (verified from raw data): 2 of 7,918 awards have more than one place of performance:
+     ASST_NON_FEL29493424_418 -> (09,09170) and (09,09009)
+     ASST_NON_21FXDWY001_485  -> (56,'') and (35,'')
+   No award has more than one agency code.
+   The rerun check (tests/check_rerun.py lines 15 and 22-28) compares only out/marts/mart_monthly_obligations.
+   It never compares mart_award_fy2024, so the claim in DECISIONS.md line 134-135 ("compares the mart rows
+   and data columns") overstates it.
+   Fix: decide and document a deterministic place rule (for example, the place of the largest transaction,
+   or a count of places), and extend check_rerun.py to all three batch marts.
+
+8. [LOW] A checkpoint can be reset to null, which drops Last-Event-ID on the next connection.
+   Where: pipeline/stream_consumer.py line 212 (`_pending_last_id = sse_id`) and line 242
+   (`last_landed_id = _pending_last_id`).
+   Evidence (verified by a local server): an event with no `id:` line, received after an event with id a1,
+   leaves the next connection with no Last-Event-ID (headers: None, a1, None, c3...). Events in the gap would
+   be lost. The real stream always sends an id, so the likelihood is low.
+   Fix: keep the last non-null id: `if sse_id is not None: self._pending_last_id = sse_id`.
+
+9. [LOW] Documentation overstates several guarantees. Each one is a sentence the author could fix in place.
+   a. DECISIONS.md lines 70-71 and stream_consumer.py docstring line 3 say stream_raw holds "every unique
+      event received, before any filter". Malformed events are skipped before the raw append (lines 191-199),
+      and test_consumer_wrongTypedFields_skipsEventAndStreamContinues (line 80) asserts they are absent. The
+      oracle is blind to them, which matters for checks 5 and 7.
+   b. DECISIONS.md lines 72-73 say a batch flushes "every 5 seconds". The time check runs only after an
+      event arrives (lines 169-170, _batch_full). A quiet stream holds events until the next event, a
+      disconnect, or the deadline.
+   c. DECISIONS.md lines 134-135: see finding 7.
+   d. DECISIONS.md lines 117-120: see finding 1 (three stream tests, only two run).
+   e. tests/test_stream_consumer.py line 112 is named test_consumer_replayAtLocalUrl_landsUniqueEdits but
+      asserts raw events, not edits. It is also skipped in this environment ("local replay is not running"),
+      so the claim that the real replay is tested does not hold for this build.
+   f. DECISIONS.md line 103-107 (3,600 s run, 21,502 events, 12,876 edits, one skipped event): not in
+      build.log, which contains only `make stream DURATION=90`. I could not verify these counts. Ask for the
+      run log.
+
+10. [INFO] The spec is not in the review copy, so spec ids cannot be checked.
+   oracle_map.yml and DECISIONS.md cite spec/spec.md and ids such as A-2, A-4, A-7, A-17, G-22, N-3. The
+   repo has no spec/ directory, and I was not allowed to read outside the copy. I checked the code against
+   DECISIONS.md's paraphrase only. Ask the author to include the relevant spec sections in the review pack.
+
+11. [INFO] Test-suite side effects and naming.
+   tests/test_rerun.py runs make build twice inside the unit suite, which takes minutes and writes out/.
+   Running `python -m unittest` with discovery therefore builds the whole pipeline. Consider moving it behind a
+   flag.
+
+12. [INFO] Connecticut uses mixed geography, and the effect on the top ten is small.
+   Old county codes (09001-09013) use 2021 populations, and the planning-region codes (09110, 09170, 09180)
+   use 2024 populations. The recompute below shows no Connecticut county in the top ten, so the result does
+   not change. The mixing is still worth a sentence in the spec answer.
+
+
+WHAT I VERIFIED AND FOUND CORRECT
+=================================
+- Build log: `make build` PASS=26 ERROR=0; `make stream DURATION=90` PASS=15 ERROR=0; exit 0 for both.
+  The log has one skipped malformed event in the stream run ("data is not JSON").
+- Unit tests in the copy (excluding test_rerun): 48 run, OK, 1 skipped (live replay not running).
+  Command: `<repo>/.venv/bin/python -m unittest tests.test_stream_parsing tests.test_stream_consumer
+  tests.test_lateness tests.test_batch_parsing tests.test_batch_load`.
+- Census: 2021 file has Fairfield County 09001 = 959768. The 2024 file has no row for 09001 or the seven
+  territory codes (60050, 66010, 69110, 72021, 72113, 72127, 78030), and neither file has them. The 2024 file
+  has nine Connecticut planning-region rows that sum to the state row (3,675,069). Both files are
+  non-UTF-8 (Latin-1), as DECISIONS.md says.
+- USAspending (8 zips, 9,820 rows): no duplicate transaction keys within or across zips; no null or blank
+  agency codes; no obligation amount with more than two decimals; one agency name per code; action dates
+  inside FY2024. State-only rows = 7,724 and rows with neither = 57, matching DECISIONS.md line 41-42.
+  The 13 unmatched place codes are exactly the six Connecticut and seven territory codes in DECISIONS.md.
+- obligations_per_person macro: hand-checked for c = 1 cent with population 3, 400 and 200. Rounding is
+  half-away-from-zero, and the four-decimal result is right. Negative amounts are handled by the sign term.
+- Late rule boundary: is_late is strict (exactly 600 s is not late), and the consumer and oracle agree on
+  that boundary (tests/test_lateness.py covers it).
+- Makefile uses tabs correctly; `.gitignore` covers lake/, out/ and transform/.user.yml.
+- Incremental dbt logic (fact_edit, window_5min) reads correctly to me. A late-only batch does not lose
+  windows. Note the NULL-namespace key risk in finding 3.
+
+
+INDEPENDENT RECOMPUTE (for comparison with out/marts; computed from raw CSV and Census, no repo SQL)
+-----------------------------------------------------------------------------------------------------
+Check 1, FY2024 net obligations by awarding agency (dollars):
+  417  164,522,022.53
+  418  166,315,027.20
+  474  279,998,069.91
+  485  831,182,097.03
+Check 2, top ten counties by FY2024 obligations per person (population: 2024 file, else 2021 fallback;
+  UNKNOWN county excluded; per-person computed without the macro rounding):
+  11001 129.0682   46065 76.8547   31181 75.1654   19011 70.0886   02110 63.9713
+  21073 56.3973    02198 46.6702   29051 39.9498   28149 38.1401   02164 38.0228
+  (11th: 32510 at 37.9291, so there is no tie at the cut-off.)
+Check 3, FY2024 awards with negative net obligation (award-level, both award types): 1,122.
+Caveat: my award-level check 3 count uses the same FY filter and grouping as the test oracle, so it checks
+the mart, not the interpretation.
+
+
+WHAT I DID NOT VERIFY
+=====================
+- Stream counts and replay behaviour (DECISIONS.md 81-87, 103-107). The local replay is not running here and
+  the lake is not in the copy.
+- The rerun check (tests/check_rerun.py). It runs make build, which I was not to repeat.
+- Any mart output. out/ is not in the copy, so I could not compare the mart to the recompute above.
+- Spec conformance (finding 10).
+
+
+SUGGESTED ORDER OF WORK
+=======================
+1. Finding 1 (one-line ref() change, then dbt ls to confirm).
+2. Finding 2 (validation plus HTTPException handling, with tests).
+3. Finding 4 (deadline-bounded reads, with a silent-stream test).
+4. Finding 3 (field validation for namespace, wiki, bot).
+5. Finding 7 (deterministic place rule, extend check_rerun to all three batch marts).
+6. Findings 5, 6, 8, 9: decisions and doc fixes.

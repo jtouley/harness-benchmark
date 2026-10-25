@@ -37,9 +37,12 @@ python -m revieweval.compare layout --work $W --iteration <name> --cadence <cade
 ```
 
 `layout` writes `$W/<name>/dispatch.jsonl`: one line per subagent, with the run folder, the step, the steps it
-waits for (`after`), the diff, the prompt and the output path. For each run folder:
+waits for (`after`), the diff, the prompt and the output path. Naming cases after the options lays out only
+those cases. Layout never rewrites an iteration: when `$W/<name>/` exists, even half written, it stops, so use a
+new `--iteration`. Runs laid out before 2026-10-25's fix point `source` at `built/<case>/repo`, which has no `base`
+branch; `setup` refuses them, and any clone they already have without `base`, and they need a new layout. For each run folder:
 
-1. `python -m revieweval.compare setup <run>` (its own clone of the tree).
+1. `python -m revieweval.compare setup <run>` (its own clone of the prepared tree, which has `review` and `base`).
 2. Dispatch each step when its `after` steps are done; steps with the same `after` go in the same turn. A line
    with `output` ending in `.md` takes the subagent's final report as that file.
 3. Write `<run>/timing.json` as `{"steps": {"<step>": {"duration_ms": n, "total_tokens": n}}}` from each

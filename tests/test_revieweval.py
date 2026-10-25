@@ -2,8 +2,12 @@
 
 from __future__ import annotations
 
+import argparse
 import json
+import subprocess
 from pathlib import Path
+
+import pytest
 
 from revieweval import compare
 
@@ -82,3 +86,57 @@ def test_compare_reads_a_workspace(tmp_path: Path) -> None:
     assert got["summary"]["new_skill"]["recall"]["mean"] == 1.0
     assert got["summary"]["old_skill"]["recall"]["mean"] == 0.5
     assert set(got["verdicts"]["new_skill"]) == {"old_skill"}
+
+
+def _layout(work: Path, iteration: str, *cases: str) -> list[str]:
+    compare.layout(argparse.Namespace(work=work, iteration=iteration, cadence=work, config=["builtin=code-review"],
+                                      baseline=["builtin"], runs=1, cases=list(cases)))
+    return (work / iteration / "dispatch.jsonl").read_text().splitlines()
+
+
+def test_layout_never_rewrites_an_iteration_and_runs_clone_a_tree_with_base(tmp_path: Path) -> None:
+    names = [c["name"] for c in compare.cases()]
+    tree = tmp_path / "trees" / names[0] / "repo"
+    tree.mkdir(parents=True)
+    g = ["git", "-C", str(tree), "-c", "user.name=t", "-c", "user.email=t@t"]
+    subprocess.run(g[:3] + ["init", "-q", "-b", "base"], check=True)
+    subprocess.run(g + ["commit", "-q", "--allow-empty", "-m", "b"], check=True)
+    subprocess.run(g + ["checkout", "-q", "-b", "review"], check=True)
+    subprocess.run(g + ["commit", "-q", "--allow-empty", "-m", "r"], check=True)
+    built = tmp_path / "built" / names[0]
+    built.mkdir(parents=True)
+    subprocess.run(["git", "clone", "-q", "-b", "review", str(tree), str(built / "repo")], check=True)
+    (built / "build.log").write_text("log\n")
+    full = _layout(tmp_path, "it")
+    assert len(full) == 2 * len(names)
+    for subset in ((), (names[0],)):
+        with pytest.raises(SystemExit, match="exists"):
+            _layout(tmp_path, "it", *subset)
+    with pytest.raises(SystemExit, match="unknown cases: review-1"):
+        _layout(tmp_path, "it2", "review-1")
+    assert (tmp_path / "it" / "dispatch.jsonl").read_text().splitlines() == full
+    run = tmp_path / "it" / names[0] / "builtin" / "run-1"
+    assert (run / "source").read_text().strip() == str(tree)
+    compare.setup(run)
+    out = subprocess.run(["git", "-C", str(run / "repo"), "branch"], capture_output=True, text=True).stdout
+    assert "base" in out and "review" in out
+    old = tmp_path / "it" / names[0] / "builtin" / "run-old"  # a run as #130 laid it out: source is built/repo
+    old.mkdir()
+    (old / "source").write_text(f"{built / 'repo'}\n")
+    with pytest.raises(SystemExit, match="no `base` branch"):
+        compare.setup(old)
+    assert not (old / "repo").exists()
+    subprocess.run(["git", "clone", "-q", "-b", "review", str(built / "repo"), str(old / "repo")], check=True)
+    with pytest.raises(SystemExit, match="clone .* has no `base` branch"):  # what #130's failed setup left behind
+        compare.setup(old)
+    missing = tmp_path / "it" / names[0] / "builtin" / "run-missing"
+    missing.mkdir()
+    (missing / "source").write_text(f"{tmp_path / 'nowhere'}\n")
+    with pytest.raises(SystemExit, match="is not a git clone"):
+        compare.setup(missing)
+    (tmp_path / "it" / "dispatch.jsonl").unlink()  # a half-written iteration is not rewritten either
+    with pytest.raises(SystemExit, match="exists"):
+        _layout(tmp_path, "it")
+    compare.layout(argparse.Namespace(work=tmp_path, iteration="it3", cadence=tmp_path, config=["b=code-review"],
+                                      baseline=[], runs=1, cases=None))
+    assert len((tmp_path / "it3" / "dispatch.jsonl").read_text().splitlines()) == 2 * len(names)

@@ -1,0 +1,14 @@
+{
+ "config": "code-review",
+ "steps": [
+  {
+   "id": "review",
+   "after": [],
+   "save_report_to": "/var/tmp/revieweval/antagonistic-vs-baselines/review-01/builtin_code_review/run-1/outputs/final-review-review-01.md",
+   "prompt": "/code-review /var/tmp/revieweval/antagonistic-vs-baselines/review-01/builtin_code_review/run-1/repo"
+  }
+ ],
+ "review_files": [
+  "/var/tmp/revieweval/antagonistic-vs-baselines/review-01/builtin_code_review/run-1/outputs/final-review-review-01.md"
+ ]
+}
