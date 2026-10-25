@@ -1,0 +1,153 @@
+ANTAGONISTIC REVIEW: commit 736d6fe "change under review"
+Tree: /tmp/claude-0/-home-user/fd6221f8-f79d-5dc4-b0f6-aa7efcbaf9ac/scratchpad/survive/run2/t1/tree
+Method: cloned to a scratch copy (/tmp/claude-0/-home-user/fd6221f8-f79d-5dc4-b0f6-aa7efcbaf9ac/scratchpad/review-t1A/w),
+ran make build, make stream (30s and then 90s, against the local replay on :8099), the full unittest suite and
+tests/check_rerun.py, and wrote my own oracles that share no code with the models: a Decimal oracle reading the raw
+USAspending zips and Census CSVs, and a fresh SSE client that read the whole replay (21,502 unique events) and
+recomputed lateness, windows and per-wiki totals in Python. I did not modify or commit anything in the tree.
+
+======================================================================
+0. BLOCKER FOR THE REVIEW ITSELF
+======================================================================
+[F0] spec/spec.md is not in the repo, not in history (git log --all -- 'spec*' is empty), and not anywhere on disk.
+  DECISIONS.md and oracle_map.yml cite spec ids (A-2..A-19, G-22, G-24, N-2, N-3, "Amendment A", "A-stop") and
+  "checks 1 to 7". I could not check any of those ids against their text. Every finding below that depends on how
+  the spec is read is marked [spec-dependent]. Ask: commit the spec, or tell us where it lives.
+
+======================================================================
+1. VERIFIED BUGS / GAPS (reproduced)
+======================================================================
+[F1] HIGH - `make stream` fails on a fresh tree unless `make build` ran first.
+  Repro (fresh clone, no lake/ or out/): `make stream DURATION=3` ->
+    Runtime Error in model fact_edit: IO Error: No files found that match the pattern "lake/sitematrix_sites/*.parquet"
+    Done. PASS=0 ERROR=1 SKIP=14 ; make: *** [Makefile:14: stream] Error 1
+  Cause: fact_edit.sql (and test_top_windows_en_wikipedia.sql) read lake/sitematrix_sites, which only
+  pipeline.batch_load writes. .gitignore says the grader deletes lake/ and out/ first, so the order of targets matters.
+  DECISIONS says build "does not touch the stream tables" but never says stream needs build.
+  Fix options (pick one): land sitematrix_sites from the stream target too (e.g. a small `--sitematrix-only` entry in
+  batch_load called before the consumer), or make the stream target depend on a lake/sitematrix_sites target in the
+  Makefile, or at least document the order in DECISIONS.
+
+[F2] MEDIUM - Check 4 cannot be answered from out/marts, and its test is mostly circular. [spec-dependent]
+  oracle_map check 4 says "compare with the state total" and "with the source total", but mart_monthly_obligations
+  holds no state obligation total and no source total. An analyst who reads only out/marts (the spec says they do, per
+  DECISIONS) can only sum county rows by state, which agrees with itself by construction.
+  test_county_state_source_reconcile takes state totals from fact_award_transaction joined to dim_place. Those are
+  models, not the raw lake, and both come from the same stg_usaspending_awards rows as the mart, so the county vs state
+  comparison cannot fail. That contradicts DECISIONS ("compare the marts with an oracle read from the raw lake, not
+  from the models").
+  Same for check 2: test_top_ten_counties_per_person takes population from ref('dim_place'), so a population or
+  fallback bug in dim_place would pass.
+  And all four batch oracles get their columns through the same macro usaspending_raw() that the models use, so a
+  wrong column choice in that macro (agency, place or amount) would be invisible to every test.
+  What I already did for the author: an independent Decimal oracle read the raw zips and Census CSVs directly
+  (/tmp/claude-0/-home-user/fd6221f8-f79d-5dc4-b0f6-aa7efcbaf9ac/scratchpad/review-t1A/batch_oracle.py).
+  Checks 1 to 4 all match the published marts:
+    check 1: 417=164,522,022.53  418=166,315,027.20  474=279,998,069.91  485=831,182,097.03 (match)
+    check 2: top ten 11001, 46065, 31181, 19011, 02110, 21073, 02198, 29051, 28149, 02164 (match; no tie at rank 10:
+             38.0228 vs 37.9291 at rank 11)
+    check 3: 1,122 net-negative awards of 7,918 (match)
+    check 4: every (month, state) total matches the raw total for all 12 months, UNKNOWN state included (match)
+  So the numbers are right today. The gap is that the tests are not independent, and check 4 is not answerable from
+  the marts. Suggested fix: publish a state/month total (or a source-total row), and have the tests read raw columns
+  inline instead of through usaspending_raw()/dim_place.
+
+[F3] MEDIUM - Territories are published with state_name 'UNKNOWN', which collides with the A-12 sentinel.
+  dim_place takes state names only from Census county rows. The Census files have no rows for 60, 66, 69, 72, 78, so
+  those places get state_name 'UNKNOWN' and county_name NULL. Effect in mart_monthly_obligations:
+    state 72 (PR) $12,372,178.72 / 33 rows; 66 $5,685,941.95 / 15; 69 $1,382,703.51 / 9; 60 $827,238.00 / 8;
+    78 $740,219.32 / 9. That is about $21.0M under state_name 'UNKNOWN', next to the real UNKNOWN state
+    ($6,296,142.19 / 18 rows). 19 mart rows have a NULL county_name.
+  The award files carry primary_place_of_performance_state_name and primary_place_of_performance_county_name. Use
+  them as a fallback for names the Census files lack, or label these places something other than the sentinel.
+
+[F4] MEDIUM - The published mart hides which population year it used. [spec-dependent]
+  For the Connecticut old-county codes, mart_monthly_obligations.county_population_2024 holds the 2021 estimate (for
+  example 09001 = 959,768), but the mart has no population_year column. Only dim_place has it, and dim_place is not
+  published. An analyst reading out/marts/ cannot see that the fallback was applied. Add population_year (or rename
+  the column) in the mart and its contract.
+  Doc inaccuracy too: DECISIONS says "the six Connecticut codes take their 2021 estimate", but dim_place has eight
+  2021 rows (09007 Middlesex and 09015 Windham as well; no award uses them). test_census_fallback_uses_earlier_estimate
+  checks only 09001.
+
+[F5] LOW-MEDIUM - mart_award_fy2024 uses any_value() for agency_code, state_fips and county_fips.
+  Two awards have transactions in more than one place:
+    ASST_NON_21FXDWY001_485: WY (56) -125,000 and +60,000; NM (35) -196,570 -> published as 35/UNKNOWN
+    ASST_NON_FEL29493424_418: 09009 +60,000; 09170 +40,000 and -60,000 -> published as 09170
+  The choice depends on scan order. I showed this with shuffled input: the same any_value query returned all four
+  combinations (/tmp/claude-0/-home-user/fd6221f8-f79d-5dc4-b0f6-aa7efcbaf9ac/scratchpad/review-t1A/anyv.py).
+  Four dbt rebuilds on the current single-file lake gave the same rows each time, so this is latent, not observed.
+  tests/check_rerun.py compares only mart_monthly_obligations (MART_GLOB), so it would not catch drift in
+  mart_award_fy2024, even though DECISIONS says the check "compares the mart rows".
+  Fix: a deterministic rule (arg_max by action_date and transaction_key, or 'MULTIPLE'), and add mart_award_fy2024
+  (and ideally the stream marts) to the rerun check. dim_agency's first(agency_name) is the same pattern; today each
+  code has one name, so it is harmless.
+
+[F6] LOW - Consumer validation is partial. Wrongly typed bot or namespace values land as inconsistent rows.
+  Probe (/tmp/claude-0/-home-user/fd6221f8-f79d-5dc4-b0f6-aa7efcbaf9ac/scratchpad/review-t1A/probes/probe_ns2.py,
+  using the repo's FakeReplay):
+    bot = "false" (a string) -> stream_raw.bot = True (bool("false")) but actor_type = 'human'. The check-5 oracle
+      classifies by `bot` and the mart by actor_type, so they would disagree.
+    namespace = "Talk"       -> dlt adds a variant column namespace__v_text to both stream_raw and stream_events, and
+      namespace is NULL in the marts. This is silent schema drift.
+  _field_problem checks only timestamp, length and meta. Add bool-or-null for bot, int-or-null for namespace, and
+  str for wiki and type, and build `bot` from the same test as actor_type.
+  The replay data does not contain these cases (I checked all 21,502 events), so this is hardening.
+
+[F7] LOW (reasoned, not reproduced) - Stream landing is not atomic across tables.
+  stream_raw, stream_events and stream_checkpoint are separate jobs in one dlt run. Dedup trusts stream_raw, and the
+  high-water mark is restored from stream_checkpoint. After a crash part-way through a load:
+    - if stream_raw landed but stream_events did not, those edits are in `seen` and are never landed again. The edits
+      are lost for good.
+    - if stream_raw landed but the checkpoint did not, the restored high_water is lower than the real maximum, so later
+      late flags can differ from the oracle (which recomputes from stream_raw).
+    - dlt also retries pending packages from out/dlt-stream on the next run, after StreamConsumer.__init__ has already
+      read `seen`, so a resumed package and the re-received events could both land, giving duplicate event_ids.
+  Cheap fix: derive high_water at start-up as max(timestamp) over stream_raw (by the documented rule it is the same
+  value), and derive `seen` after finishing any pending dlt package (pipeline.load() before reading the lake).
+
+======================================================================
+2. MINOR / HYGIENE
+======================================================================
+[F8] Canary events: the replay has 2 events with meta.domain = "canary" and no type, timestamp or namespace. They land
+  in stream_raw with NULLs. The marts are unaffected (they are not edits), but say so in DECISIONS or filter them.
+[F9] stream_raw also stores the derived actor_type and net_bytes (flatten() is shared), so it is not purely "raw".
+  RAW_COLUMNS does not declare those two columns.
+[F10] The 5-second flush is checked only when an event arrives (_batch_full is called inside the event loop). With
+  heartbeats only, nothing flushes until the deadline. DECISIONS' "every 5 seconds" is true only while events flow.
+  The deadline can also overrun by up to SOCKET_TIMEOUT (5s), because readline() blocks.
+[F11] dbt prints MissingArgumentsPropertyInGenericTestDeprecation x3. Move unique_combination_of_columns' argument
+  under `arguments:` in schema.yml before a dbt upgrade turns this into an error.
+[F12] DECISIONS wording: "7,724 awards have a state and no county, and 57 have neither" counts transactions, not awards
+  (the counts are confirmed as transactions: 2,039 / 7,724 / 57 of 9,820).
+[F13] tests/test_rerun.py runs `make build` twice in the real repo root as a side effect of the unit suite (52s, and it
+  rewrites lake/ and out/). That is acceptable but surprising; consider a temp copy or a marker.
+[F14] test_top_ten_counties_per_person and the actual CTE use `order by ... limit 10` with no tie-breaker. No tie today
+  (see F2), but add county_fips as a second sort key.
+[F15] main(): only `--duration N` is parsed (`--duration=N` is silently ignored and gives 60s). The URL path is not
+  defaulted to "/" if STREAM_URL has no path.
+
+======================================================================
+3. CHECKED AND CONFIRMED (no action needed; you do not need to re-verify these)
+======================================================================
+- make build: PASS=26/26. Unit suite: 49 tests OK, including the live-replay test (the replay was reachable).
+  check_rerun: "2724 rows, 12 data columns unchanged".
+- make stream twice (30s, then 90s; the second run used the incremental path): PASS=15/15 both times.
+  make build after make stream leaves the stream tables intact, and the stream dbt build still passes afterwards.
+- DECISIONS stream numbers reproduced exactly: 21,502 unique events, 12,876 edits/new, event time span 3,603s,
+  1 non-JSON event skipped.
+- Independent stream oracle (fresh client, my own lateness code;
+  /tmp/claude-0/-home-user/fd6221f8-f79d-5dc4-b0f6-aa7efcbaf9ac/scratchpad/review-t1A/compare.py):
+  late events 60 = mart 60 (identical event_id set); edits_by_wiki_actor 18 rows, counts and net_bytes identical;
+  window_5min 674 rows identical after an incremental run spanning a consumer restart (so the high-water restore
+  works); top-10 en.wikipedia windows identical (985, 918, 892, 816, 796, 784, 772, 760, 716, 707).
+  Late count is robust to the open choice of high-water source: all events and edits only both give 60, and no edit
+  sits exactly at the 600s boundary.
+- County FIPS in the awards are 5 digits and always prefixed by their state FIPS (0 mismatches), so the place_key
+  join with Census STATE||COUNTY is sound. Money columns are all plain decimals with at most 2 places (no silent
+  rounding), and every action_date is inside FY2024.
+- dim_place.state_population_2024 equals the Census SUMLEV 040 state row for every state (0 mismatches), CT included
+  (3,675,069).
+- obligations_per_person integer-arithmetic macro: the half-up rounding formula is correct (it matches Decimal
+  ROUND_HALF_UP on the top counties).
+- event_time_utc conversion and test are correct, and there are no wikis without a sitematrix domain.

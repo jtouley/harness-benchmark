@@ -1,0 +1,155 @@
+ANTAGONISTIC REVIEW: P1 oneshot haiku-1 (open-data pipeline: dlt -> Parquet lake -> dbt-duckdb -> out/marts)
+Reviewed: every Write/Edit and every file-writing Bash call in transcript.jsonl, replayed in order onto the P1
+skeleton (golden/pipeline/P1/skeleton plus data/raw). The rebuilt tree matches the agent's final `git status`.
+Then I ran it for real: the golden grader (pipetask.trial, seed 1, durations 30,90, fresh HOME, offline uv),
+the answer key, and targeted probes. Only local data and local servers were used.
+
+VERDICT: Request changes. The pipeline mechanics are mostly sound: idempotent marts, and the stream is
+exactly-once under F1-F6. But as shipped it scores 0/7 with the grader. Three small, verified fixes take it to 7/7.
+
+Score trail (all measured by me, not taken from the author):
+  as shipped, grader from its own cwd ............................ 0/7  (every check: "file system operations are disabled")
+  as shipped, grade run with cwd = repo root ..................... 5/7  (2 and 4 fail: map returns ungradeable shapes)
+  + portable oracle map (mart names, right columns) .............. 5/7  (2 and 4 now fail on DATA: wrong place)
+  + place of performance + dim_place dedup fix ................... 7/7
+  Idempotence (two builds, mart digests) ......................... pass
+  Stream (2 runs, 5 connections, F1-F5 faults, F6 restart) ....... pass, exit 0 both runs
+The patch that got 7/7 (the three fixes, verified) was in the scratch copy; its content is reproduced in the
+"Ready-made fixes" section at the bottom.
+
+======================================================================================================
+HIGH
+======================================================================================================
+
+H1. oracle_map.yml only works when run from the repo root, and checks 2 and 4 return shapes nobody can check.
+  - Every query hard-codes read_parquet('out/marts/...') with a path relative to the cwd. The file says "Paths are
+    relative to the repo root". Anyone running it from another directory, a BI tool, or the grader (which
+    exposes each mart as a view named after its folder and allows reads only under out/marts/) gets 0/7.
+    VERIFIED: the grader output is "Permission Error: Cannot access file "out/marts/..." - file system
+    operations are disabled by configuration" on all 7 checks. reward 0.0.
+  - Check 2 returns county_name and state_code but no county FIPS, so the ten counties are not machine-
+    identifiable (names repeat across states, and Connecticut has old and new codes). VERIFIED: "no county column
+    and per-person column found".
+  - Check 4 returns three scalars for a single hard-coded month (2024-06). county_sum and state_sum are the
+    same SUM over the same rows, so the check is a tautology: it cannot fail and proves no reconciliation. There
+    is no per-county or per-state breakdown and no month column. VERIFIED: "no month column found".
+  FIX (verified): name the marts, not file paths, and return the identifying columns, e.g.
+    2: select county_fips, obligations_per_person from mart_obligations_fy_county where fiscal_year = 2024
+       and obligations_per_person is not null order by obligations_per_person desc limit 10
+    4: select month_start, state_code, county_fips, net_obligations from mart_obligations_monthly
+  If the map also has to work for a person at a shell, keep a `table:` entry per check (the mart folder name) next
+  to the SQL rather than a cwd-relative path.
+
+H2. Money is placed at the recipient's address. The checks expect place of performance, so checks 2 and 4 come
+    out wrong.
+  - DECISIONS.md #1 picks prime_award_transaction_recipient_* ("where the money went is the recipient"). For
+    USAspending geography, "where the money went" is conventionally the place of performance, and the trap
+    catalog (B5) is written in terms of the place-of-performance county. A DC-headquartered recipient that
+    performs work in Alaska is the case analysts are asking about.
+  - VERIFIED against the key: with recipient fields, check 2's top 10 is 21073 190.60, 46065 136.73, 12073
+    110.62 ... and the expected list is 11001 129.07, 46065 76.85, 31181 75.17 ... Check 4 (2024-07) county map
+    differs too, e.g. 02020 1,911,403.00 against an expected 196,993.00.
+  - FIX (verified): in both staging models, swap the two FIPS sources:
+      prime_award_transaction_recipient_state_fips_code  -> prime_award_transaction_place_of_performance_state_fips_code
+      prime_award_transaction_recipient_county_fips_code -> prime_award_transaction_place_of_performance_county_fips_code
+    With H3's fix this rebuilds green (104/104) and passes checks 1-4. Follow-ups the author still has to do:
+    use primary_place_of_performance_county_name for award-only county names, rename recipient_* columns
+    downstream, and update the numbers in DECISIONS.md #1, #5 and #6 (unassigned counts, CT code list).
+
+H3. dim_place builds its key from a non-key attribute, so place_key can repeat. The repeat breaks the build or,
+    without the test, double-counts money.
+  - award_places is `select distinct place_key, county_fips, state_fips, award_county_name`. If one place_key has
+    two county-name spellings (or one "Unassigned county" bucket covers rows with different raw county names),
+    it yields two rows. Every mart joins dim_place on place_key, so a duplicate multiplies that place's money.
+  - It passes today only because the recipient-name data happens to be consistent. VERIFIED: switching to place
+    of performance (H2) makes it fire: "FAIL 52 unique_dim_place_place_key". dbt then skips 21 downstream nodes
+    and make build exits non-zero.
+  - FIX (verified): `select place_key, min(county_fips), min(state_fips), min(county_name) ... group by place_key`.
+
+H4. The incremental stream state lives outside lake/ and out/, so new events are silently dropped.
+  - profiles.yml path out/warehouse.duckdb is resolved from transform/, so the store_* incremental tables live in
+    transform/out/warehouse.duckdb, not in out/. The consumer numbers arrivals from the lake (seq restarts at 1 on
+    an empty lake). The store keeps only `arrival_seq > max(arrival_seq) in {{ this }}`.
+  - VERIFIED: I ran rm -rf lake out (the spec's two output folders), then make build, then make stream DURATION=25.
+    The consumer landed 9,169 events (lake max seq 9,169). fct_edit still shows the deleted lake's 12,876 edits
+    (max seq 21,502). None of the 9,169 new events was published. Exit code 0, no warning. Before the stream run,
+    make build had already republished 12,876 edits from a lake that held 0 stream rows.
+  - The grader hides this only because it runs `git clean -ffdx`. DECISIONS.md #21 ("the lake is the consumer's
+    only state ... cannot drift") is false for the models.
+  - FIX: put the warehouse under out/ (path: ../out/warehouse.duckdb), or run --full-refresh on the store_*
+    models when the lake's max(_arrival_seq) is below the store's, or filter the increment on event_key not
+    already present instead of on seq.
+
+======================================================================================================
+MEDIUM
+======================================================================================================
+
+M1. A connection cut in the middle of a UTF-8 character crashes the consumer.
+  - sse_events() decodes each line with raw.decode("utf-8"). The patch at transcript step 694 removed ValueError
+    from the reconnect `except (OSError, http.client.HTTPException)`, so UnicodeDecodeError (a ValueError) now
+    escapes run() and `make stream` fails.
+  - VERIFIED with a 20-line local socket server that sends one good event, then cuts inside "é":
+    "RAISED UnicodeDecodeError ... unexpected end of data", and the exception is not in the caught tuple.
+    The graded replay closes only on frame boundaries, so it does not trigger this. The real stream.wikimedia.org,
+    which the spec names for the live demo, can.
+  - FIX: decode only complete lines (a line ending in "\n"), or decode with errors="replace" for the partial line,
+    or catch UnicodeDecodeError next to OSError and reconnect.
+
+M2. "Running make build twice must not change any output" is not true for the lake (the spec lists the lake as an
+    output).
+  - VERIFIED: two runs of ingest/batch.py give different hashes over lake/. _dlt_load_id changes in every row
+    (1792895398.157946 -> 1792895687.0055513), the Parquet file names change, and the file count grows from 10 to 11
+    (dlt's _dlt_loads keeps a record per load). Only the marts are stable, which is all the grader digests.
+    DECISIONS.md #31 claims idempotence without this caveat.
+  - FIX: either say plainly that the lake carries per-load metadata and only the marts are byte-stable, or make
+    the load deterministic: clear the _dlt_loads/ table folders for replace tables and pin the load id or drop it
+    from the raw tables.
+
+======================================================================================================
+LOW / NITS
+======================================================================================================
+
+L1. After `make build` alone, each stream mart holds one all-NULL row, and the key tests cannot see it.
+  VERIFIED on a clean tree: fct_edit, late_events and mart_edit_window_5m each contain exactly one row of NULLs,
+  so check 7 would report "1 late event". dbt still reports PASS=104, because dbt-duckdb registers an empty
+  external model as a view `... WHERE edit_key IS NOT NULL AND ...`, and not_null/unique run on that filtered view,
+  not on the published Parquet. DECISIONS.md #28 discloses the NULL row but not that the tests are blind to it.
+  Suggest writing the empty file yourself (COPY ... WHERE false) or adding a test that reads the published Parquet.
+
+L2. obligations_per_person goes through floating point: in DuckDB, DECIMAL / BIGINT is DOUBLE (VERIFIED with
+  typeof), and the result is then cast to decimal(18,2). The checks pass, but rounding at half a cent can go either
+  way. Cast population to DECIMAL first, or round explicitly.
+
+L3. `make stream` on a fresh tree (no `make build` first) should fail. The dbt build in the stream target also
+  builds the batch models, which read lake/raw/*, and that does not exist yet. This is inferred from the code; I
+  did not run it. Either run the batch ingest when lake/raw is missing, or select only the stream models
+  (dbt build -s +fct_edit +late_events +mart_edit_window_5m).
+
+L4. The check 1 SQL filters fiscal_year = 2024 on fiscal_year from dim_date, which is correct. But the fact table
+  has no guard that every row is FY2024 (no accepted_values test on fiscal_year), so a future file with
+  out-of-year rows would pass the tests.
+
+======================================================================================================
+VERIFIED OK (so the author doesn't need to re-prove these)
+======================================================================================================
+- The PR's numbers hold. The fact table sums to $1,442,017,216.67, which equals the sum of the key's four agency
+  answers. Check 1 matches per agency, and check 3 = 1,122 matches the key.
+- Two consecutive make build runs leave every mart digest unchanged (grader: changed_by_second_build = []).
+- Stream: under the seeded faults (disconnects, re-sent Last-Event-ID groups, shuffled order, held-back late
+  batch, invalid JSON frame) and a stop/start between the two runs, checks 5, 6 and 7 match the key exactly.
+  Lateness on stream time and dedup by meta.id are correct.
+- Money sums are decimal end to end (decimal(18,2) -> SUM gives a decimal).
+
+======================================================================================================
+Ready-made fixes (applied in my scratch copy, then 7/7 and 104/104 dbt nodes green)
+======================================================================================================
+1. transform/models/staging/stg_usaspending_{assistance,contracts}.sql: swap recipient -> place_of_performance
+   for the state FIPS and county FIPS columns (2 lines per file).
+2. transform/models/marts/dim_place.sql, CTE award_places:
+     select place_key, min(recipient_county_fips) as county_fips, min(recipient_state_fips) as state_fips,
+            min(recipient_county_name) as award_county_name
+     from {{ ref('int_usaspending_transactions') }} group by place_key
+3. oracle_map.yml: query the marts by name (see H1). For check 2, return county_fips. For check 4, return
+   (month_start, state_code, county_fips, net_obligations) rows, not three scalars.
+Not yet patched or verified, and still needed: H4 (move the warehouse under out/), M1 (decode guard),
+M2 (lake determinism or an honest DECISIONS entry), and updating DECISIONS.md for the PoP switch.

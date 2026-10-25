@@ -1,0 +1,11 @@
+P1-core-4 FAIL 172.3 the entry point check fails in a clean checkout of 02b11a068ccd: `make stream DURATION=150`: it connected 21 times with one Last-Event-ID and did not get past that position (22 connections, 16279 event frames). Each record that it cannot use is a counted skip or a dead-letter, and the position moves
+P1-core-5 FAIL 185.2 the entry point check fails in a clean checkout of 6074d8954823: `make stream DURATION=150`: it connected 7 times with one Last-Event-ID and did not get past that position (8 connections, 15981 event frames). Each record that it cannot use is a counted skip or a dead-letter, and the position moves p
+P1-core-6 OK 177.5 
+P1-full-4 FAIL 173.9 the entry point check fails in a clean checkout of c63c13f93c1e: `make stream DURATION=150`: it connected 107 times with one Last-Event-ID and did not get past that position (108 connections, 17990 event frames). Each record that it cannot use is a counted skip or a dead-letter, and the position mov
+P1-full-6 OK 178.9 
+P2-core-4 FAIL 53.3 the entry point check fails in a clean checkout of aa9a497ffcc9: `make stream DURATION=150`: it exited 2; `make stream DURATION=150`: it printed a Python traceback; `make stream DURATION=150`: it did not read to the end of its input: no connection got only comments for 10 s after its last event fram
+P2-core-5 FAIL 180.0 the entry point check fails in a clean checkout of 1009b9a42790: `make stream DURATION=150`: it read no event frame from its input localhost:8099 (0 connections)
+P2-core-6 OK 171.7 
+P2-full-4 FAIL 54.7 the entry point check fails in a clean checkout of e30c0cef38af: `make stream DURATION=150`: it exited 2; `make stream DURATION=150`: it printed a Python traceback; `make stream DURATION=150`: it did not read to the end of its input: no connection got only comments for 10 s after its last event fram
+P2-full-5 OK 168.6 
+P2-full-6 FAIL 165.8 the entry point check fails in a clean checkout of 9ed8cdd0926e: `make stream DURATION=150`: it did not read to the end of its input: no connection got only comments for 10 s after its last event frame (1 connections, 14005 event frames). Give the run enough time to drain the input, or fix the reade

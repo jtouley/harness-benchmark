@@ -1,0 +1,186 @@
+ANTAGONISTIC REVIEW: 20261023-P1-oneshot-haiku-1 (open-data pipeline: USAspending batch + Wikimedia stream)
+==========================================================================================================
+
+How this was reviewed
+---------------------
+- I rebuilt the change from transcript.jsonl. I replayed every Write and Edit, plus the heredoc, sed and python file
+  writes inside Bash calls, on top of the skeleton. The skeleton is pyproject.toml, uv.lock, data/raw, and the
+  profiles.yml, dbt_project.yml and .gitignore exactly as the transcript prints them.
+- I ran it with a venv already on disk that has the pinned versions (dlt 1.31.0, dbt-core 1.11.6, dbt-duckdb 1.11.0,
+  duckdb 1.5.6, Python 3.12.3). I dropped `uv run --frozen` locally so nothing was downloaded. No external network was
+  used. The stream tests used the local replay server at localhost:8099.
+- I wrote my own reference implementations instead of trusting the author's numbers:
+  * Batch: plain Python with decimal.Decimal over the raw zips and the Census CSVs.
+  * Stream: a raw curl capture of one uninterrupted connection (21,502 events, 1 truncated copy, 2 canaries, a 60-minute
+    event-time span). I recomputed lateness, the windows and the per-wiki totals from it with a sequential loop.
+- Reproduced: `make build` passes 104/104. The batch answers match my reference exactly:
+  * agency totals: 417 = 164,522,022.53; 418 = 166,315,027.20; 474 = 279,998,069.91; 485 = 831,182,097.03
+  * total 1,442,017,216.67
+  * 1,122 awards with a net negative obligation
+  * the same top-10 counties per person (Franklin KY 190.60 ... Sangamon IL 83.51)
+- Reproduced: the stream is exactly-once across restarts. I ran short `make stream` runs, then 3x SIGKILL, 1x SIGTERM
+  and 1x SIGINT at different points, then finished. The lake ended with 21,502 rows: 21,502 distinct meta_ids and
+  21,502 contiguous arrival_seq values. The published marts match my reference exactly: 60 late events (same id set),
+  674 window rows with 0 mismatches, and per-wiki edits and bytes with 0 mismatches.
+- Reproduced: contracts are really enforced on the `external` models. I changed a type in the YAML and renamed a column
+  in the SQL; both fail the build.
+
+So the core logic is sound. The findings below are what is broken around it.
+
+----------------------------------------------------------------------------------------------------------------------
+F1 [HIGH] Stream marts go stale and silently ignore new events once lake/ and out/ are removed. transform/out survives.
+----------------------------------------------------------------------------------------------------------------------
+Where: transform/profiles.yml (`path: out/warehouse.duckdb`, resolved from cwd=transform/ by the Makefile), together
+with the incremental filters in models/stream/store_*.sql:
+`where arrival_seq > (select coalesce(max(arrival_seq), 0) from {{ this }})`.
+
+The incremental state lives in transform/out/warehouse.duckdb, not under out/. The .gitignore says the grader
+"removes lake/ and out/ first", and that does not touch transform/out. The author always ran
+`rm -rf lake out transform/out`, so this path was never exercised. DECISIONS #29 says the state "is rebuilt from the
+lake whenever the file is missing", but the file is not missing in this scenario.
+
+Reproduced (after a full stream run):
+  rm -rf lake out          # what the grader does
+  make build               -> lake stream rows: 0, yet fct_edit has 12,876 rows (max arrival_seq 21,502) and
+                              late_events has 60 rows: data from a lake that no longer exists
+  make stream DURATION=8   -> landed 2,858 new events; fct_edit is still 12,876 rows / max seq 21,502.
+                              The new events get arrival_seq 1..2,858, which is <= the old max, so every
+                              incremental model filters them out.
+All 104 dbt tests still PASS in both states.
+
+Fix, verified: change profiles.yml to `path: ../out/warehouse.duckdb`. The Makefile's `mkdir -p transform/out` can
+then go. With that change, rerunning the same sequence gave lake 2,854 rows and fct_edit max seq 2,854: correct.
+Wiping only out/ and keeping lake/ also works afterwards (stream resumed from the lake, 4,354 rows, no duplicates).
+Belt and braces: add a guard to store_arrivals (or a singular test) that fails when
+max(arrival_seq) in {{ this }} > max(_arrival_seq) in the lake. That catches a wipe of lake/ alone too, which the
+path fix does not cover.
+
+----------------------------------------------------------------------------------------------------------------------
+F2 [HIGH] An empty stream mart publishes one all-NULL row, so oracle check 7 (and check 5) gives a wrong answer.
+----------------------------------------------------------------------------------------------------------------------
+Where: marts/late_events.sql, marts/fct_edit.sql, marts/mart_edit_window_5m.sql, and oracle_map.yml checks 5 and 7.
+
+The author knew about this ("I'll deal with that once there's real data") but never fixed it. DECISIONS #28 says it
+only happens before any stream run and pushes the cost onto analysts ("filter on the key column"). That is wrong.
+A short run is enough:
+  make build; make stream DURATION=6   -> 2,237 events landed, 0 of them late
+  late_events parquet: count(*) = 1, count(event_key) = 0
+  oracle check 7 SQL (`select count(*) ...`) returns 1. The right answer is 0.
+After `make build` alone, check 5 returns [(None, None, 1, None)], a fake NULL wiki with 1 edit.
+The not_null and unique tests still pass, because they run against the store and the view, not the published file.
+
+Fix options:
+(a) Make the oracle SQL robust: `count(event_key)`, `where edit_key is not null`.
+(b) Better: stop publishing the NULL row, e.g. a post-hook that rewrites the file with `where <key> is not null`.
+(c) Test the published Parquet itself, e.g. a singular test that reads read_parquet(out/marts/...) and asserts
+    count(*) = count(key).
+At minimum, correct DECISIONS #28: "this does not happen after make stream" is false.
+
+----------------------------------------------------------------------------------------------------------------------
+F3 [MEDIUM] The consumer crashes when a disconnect cuts a multi-byte UTF-8 character.
+----------------------------------------------------------------------------------------------------------------------
+Where: ingest/stream.py, sse_events(): `line = raw.decode("utf-8")`, and Consumer.run(), which only catches
+`(OSError, http.client.HTTPException)`.
+
+UnicodeDecodeError is a ValueError, so it escapes the reconnect handler. The spec says the replay "behaves like the
+real service, including disconnects", and the stream has a lot of non-ASCII text (ja, fr, es, de, pt wikis), so a
+drop in the middle of a character is realistic. I saw no disconnect in a 180-second single connection, so the
+reconnect path is essentially untested by the author: their only reconnects came from their own JSON bug.
+
+Reproduced with a 20-line local fake SSE server that writes `id: 1\ndata: {...,"title":"<first byte of é>` and then
+closes:
+  STREAM_URL=http://127.0.0.1:8765/ python ingest/stream.py --duration 5
+  -> Traceback ... UnicodeDecodeError: 'utf-8' codec can't decode byte 0xc3 ... ; rc=1
+`make stream` then aborts before dbt runs. Already-flushed data is safe, and a rerun resumes correctly.
+
+Fix: in sse_events, a line from the iterator that does not end in b"\n" is a torn final line. Return (the server
+dropped) instead of decoding it. Or add UnicodeDecodeError to the handler in run(). Do not use errors="replace":
+that would land corrupted payloads.
+
+----------------------------------------------------------------------------------------------------------------------
+F4 [MEDIUM] `make build` is not byte-stable: row order changes between runs in 4 marts.
+----------------------------------------------------------------------------------------------------------------------
+The rule is "Running it twice must not change any output." The author's check (074) sorted or hashed the rows, so it
+hid this. DECISIONS #31 says "byte-identical", which is not true at the file level.
+Two consecutive `make build` runs, comparing file md5 and unsorted row order:
+  dim_agency                  bytes DIFF, order DIFF
+  dim_place                   bytes DIFF, order DIFF
+  mart_obligations_fy_county  bytes DIFF, order DIFF
+  mart_obligations_monthly    bytes DIFF, order DIFF
+  (the other 6 marts are byte-identical)
+The sorted contents are identical, so the data does not change; only the file layout does. A grader that hashes
+files will still flag it.
+Fix: add an `order by` on the grain key at the end of each of those four marts (agency_code, place_key, grain_key).
+DuckDB keeps insertion order with `preserve_insertion_order` on, which is the default, so the files then come out
+stable.
+
+----------------------------------------------------------------------------------------------------------------------
+F5 [MEDIUM] `make stream` fails on a fresh checkout before `make build` (rc=2).
+----------------------------------------------------------------------------------------------------------------------
+Reproduced: `rm -rf lake out transform/out; make stream DURATION=3`. 737 events land, then `dbt build` (the whole
+project) errors on stg_sitematrix_wikis, stg_census_county and stg_usaspending_*, because lake/raw does not exist.
+The stream marts never get published.
+The stream models do not depend on any batch model. Fix: have the `stream` target run
+`dbt build --select stg_recentchange+` (and dim_wiki if wanted), or make it depend on the batch lake existing.
+
+----------------------------------------------------------------------------------------------------------------------
+F6 [LOW-MEDIUM] Spec gap: staging and intermediate models have no key tests and no YAML grain docs.
+----------------------------------------------------------------------------------------------------------------------
+"Document the grain of each model. Test the keys of each model with dbt tests." Six models have neither a schema
+YAML nor any test:
+stg_usaspending_assistance, stg_usaspending_contracts, stg_census_county, stg_sitematrix_wikis, stg_recentchange,
+int_usaspending_transactions. Only some have a grain comment in the SQL. The seed state_fips has no unique test
+either.
+Effort we can save the author: these are the exact keys, and all of them already hold on the data.
+  stg_usaspending_assistance.transaction_source_key  unique+not_null (9,404 rows, all distinct)
+  stg_usaspending_contracts.transaction_source_key   unique+not_null (416)
+  stg_census_county.county_fips                      unique+not_null
+  stg_sitematrix_wikis.wiki_id                       unique+not_null (1,073 distinct)
+  stg_recentchange.event_key                         unique+not_null; arrival_seq unique
+  int_usaspending_transactions.transaction_key       unique+not_null (9,820)
+  seed state_fips.state_fips                         unique+not_null
+
+----------------------------------------------------------------------------------------------------------------------
+F7 [LOW] Oracle check 4 is a tautology and cannot fail.
+----------------------------------------------------------------------------------------------------------------------
+oracle_map.yml check 4 computes county_sum = sum(m.net_obligations) and state_sum = sum over states of
+sum(m.net_obligations). Both are the same rows of the same table, so they are always equal. Only the comparison
+against fct_award_transaction tests anything. It does not show that "county totals add up to state totals" per state.
+Suggest per-state rows: state_code, sum over that state's counties in the monthly mart, and that state's total from
+fct_award_transaction joined to dim_place, with a mismatch flag. The June 2024 total itself (264,837,644.85) is right.
+
+----------------------------------------------------------------------------------------------------------------------
+F8 [LOW] Minor correctness, documentation and design points (no action strictly needed; listed so nobody has to re-check)
+----------------------------------------------------------------------------------------------------------------------
+a. The per-person division goes through floating point. `decimal / bigint` in DuckDB returns DOUBLE (verified:
+   typeof = DOUBLE), and is then cast to decimal(18,2). The money sums themselves are exact decimal(38,2), so the
+   "no floating-point sums" rule is met. Use an explicit decimal cast if the ratio should be exact too.
+b. Connecticut mixes two geographies. Awards use both the old county codes (09001-09013, 2021 population) and the
+   2024 planning-region codes (09110-09190, 2024 population), and these overlap on the ground. CT per-person values
+   and the county ranking are therefore not comparable within CT. Amendment A allows this, but DECISIONS should say
+   the two overlap. Also, dim_place carries 8 old CT counties (including 09015 Windham), while DECISIONS #6 lists 7.
+   The 8th has no awards, so this is harmless.
+c. The lake is not quite "source data plus load metadata" for the site matrix. sitematrix_wikis is a flattened
+   projection that drops the language-level `dir` field and the specials' `private` (44 sites) and `fishbowl`
+   (19 sites) flags.
+d. The stream includes non-Wikipedia projects (enwiktionary), although the question is about "Wikipedia". This is a
+   defensible choice, but DECISIONS does not record it.
+e. The consumer holds every meta_id in memory and reads them all from the lake at start-up. That is fine for one
+   replayed hour, but grows without bound in a live demo against stream.wikimedia.org. Bounding it by the resume
+   window would be enough.
+f. Checked and fine (so nobody has to re-check): Last-Event-ID resume is inclusive from the first event of that SSE id
+   (32 re-sent and skipped after an 8-second restart, no gaps). The lateness rule (strict >, high-water over every
+   earlier first arrival of any type) matches the spec and my reference. The 60 late events are 59 edits and 1 `new`,
+   as DECISIONS #13 says. Contracts are enforced. Decimal amounts all have 2 dp in the source, so the
+   decimal(18,2) cast loses nothing. All rows are FY2024.
+
+----------------------------------------------------------------------------------------------------------------------
+Priority for the author
+-----------------------
+1. F1: profiles path to ../out/warehouse.duckdb (verified fix), plus a lake/store consistency guard.
+2. F2: stop publishing the NULL row, or at least make the oracle SQL count keys. Fix DECISIONS #28.
+3. F3: handle a torn final line in sse_events.
+4. F4: `order by` in 4 marts. F5: scope the stream target's dbt selection.
+5. F6: paste in the key tests listed above. F7: make check 4 a per-state reconciliation.
+
+(Scratch used for this review has been deleted.)

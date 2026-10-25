@@ -1,0 +1,10 @@
+P1-core-4 FAIL 419.5 the entry point check fails in a clean checkout of 02b11a068ccd: `make stream DURATION=400`: it connected 70 times with one Last-Event-ID and did not get past that position (71 connections, 17298 event frames). Each record that it cannot use is a counted skip or a dead-letter, and the position moves
+P1-core-5 FAIL 433.2 the entry point check fails in a clean checkout of 6074d8954823: `make stream DURATION=400`: it connected 15 times with one Last-Event-ID and did not get past that position (16 connections, 16140 event frames). Each record that it cannot use is a counted skip or a dead-letter, and the position moves
+P1-core-6 OK 427.0 
+P1-full-4 FAIL 422.7 the entry point check fails in a clean checkout of c63c13f93c1e: `make stream DURATION=400`: it connected 355 times with one Last-Event-ID and did not get past that position (356 connections, 23124 event frames). Each record that it cannot use is a counted skip or a dead-letter, and the position mov
+P1-full-6 OK 423.0 
+P2-core-4 FAIL 53.3 the entry point check fails in a clean checkout of aa9a497ffcc9: `make stream DURATION=400`: it exited 2; `make stream DURATION=400`: it printed a Python traceback; `make stream DURATION=400`: it did not read to the end of its input: no connection got only comments for 10 s after its last event fram
+P2-core-5 FAIL 421.4 the entry point check fails in a clean checkout of 1009b9a42790: `make stream DURATION=400`: it connected 16 times with one Last-Event-ID and did not get past that position (17 connections, 16161 event frames). Each record that it cannot use is a counted skip or a dead-letter, and the position moves
+P2-core-6 OK 419.3 
+P2-full-4 FAIL 65.4 the entry point check fails in a clean checkout of e30c0cef38af: `make stream DURATION=400`: it exited 2; `make stream DURATION=400`: it printed a Python traceback; `make stream DURATION=400`: it did not read to the end of its input: no connection got only comments for 10 s after its last event fram
+P2-full-5 OK 426.8 

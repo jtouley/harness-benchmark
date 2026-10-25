@@ -1,0 +1,2 @@
+P1-core-4 FAIL 173.3 the entry point check fails in a clean checkout of 02b11a068ccd: `make stream DURATION=150`: it connected 21 times with one Last-Event-ID and did not get past that position (22 connections, 16274 event frames). Each record that it cannot use is a counted skip or a dead-letter, and the position moves
+P2-core-6 OK 173.0 
