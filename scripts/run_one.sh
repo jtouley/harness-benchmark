@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# One benchmark Cadence run ($BATCH: batch F iteration 1, then the 2026-10-24-shapes head to head, its round 2, 2026-10-24-shapes-r2, and round 3, 2026-10-25-shapes-r3), from a fresh cloud container of this environment (host method, the
+# One benchmark Cadence run ($BATCH: batch F iteration 1, then the 2026-10-24-shapes head to head, its round 2, 2026-10-24-shapes-r2, round 3, 2026-10-25-shapes-r3, and its smoke run on the unmerged fix, BATCH=2026-10-25-smoke-r3fix), from a fresh cloud container of this environment (host method, the
 # subscription through the session's HTTPS proxy). One run per container: the dev replay owns localhost:8099,
 # which the spec itself names (golden/pipeline/P1/prompt.md:17), so two runs never share a host.
 #
@@ -196,6 +196,12 @@ git -C "$WORK/hb" worktree add -q --detach "$GRADER" "$GRADER_SHA" || die "harne
 
 log "cloning cadence at $CADENCE_SHA"
 git clone -q "$CADENCE_REPO" "$PLUGIN" || die "cannot clone $CADENCE_REPO"
+# The clone has every branch head, so a pin on an unmerged branch (2026-10-25-smoke-r3fix: cadence #234,
+# fix/shapes-r3) is there. A pin whose branch is gone (merged and deleted) is still a pull request head: fetch
+# those as remote refs, so the checkout finds it and the remote-branch check below sees it.
+if ! git -C "$PLUGIN" cat-file -e "$CADENCE_SHA^{commit}" 2>/dev/null; then
+  git -C "$PLUGIN" fetch -q origin '+refs/pull/*/head:refs/remotes/origin/pull/*' || die "cannot fetch cadence pull request heads"
+fi
 git -C "$PLUGIN" checkout -q --detach "$CADENCE_SHA" || die "cadence has no commit $CADENCE_SHA"
 [ -n "$(git -C "$PLUGIN" branch -r --contains HEAD)" ] || die "cadence $CADENCE_SHA is on no remote branch"
 [ -z "$(git -C "$PLUGIN" status --porcelain --ignored)" ] || die "the plugin clone is not clean"
