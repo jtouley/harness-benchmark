@@ -1,0 +1,1 @@
+{"error": null, "graded_at": "2026-10-25T07:57:12Z", "grader": {"commit": "10172ce8e7564d61b9ff17a3fe2b625269b0e37c", "repo": "jtouley/harness-benchmark", "tree": "8a0977e42fa02981802090d1f9517efe537994c4"}, "idempotent": true, "passed": 0, "reward": 0.0, "run_id": "20261025-P2-cadence-haiku-core-2", "source": "driver", "stream_ok": false, "total": 7}
