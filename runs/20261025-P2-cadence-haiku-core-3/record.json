@@ -1,0 +1,142 @@
+{
+ "api_error": null,
+ "arm": "cadence",
+ "batch": "2026-10-25-shapes-r3",
+ "cadence": {
+  "published_in": [
+   "origin/main"
+  ],
+  "repo": "https://github.com/jtouley/cadence",
+  "sha": "9fafe099aaef7e53a5cd896c3d550d1be82c9154",
+  "tree": "ff1d7462b4c793b23abc467df4d2fd6df12da1c5",
+  "tree_clean": true
+ },
+ "claude_version": "2.1.310",
+ "command": [
+  "uv",
+  "run",
+  "-q",
+  "--frozen",
+  "--project",
+  "/var/tmp/run-one/20261025-P2-cadence-haiku-core-3/hb",
+  "python",
+  "/var/tmp/run-one/20261025-P2-cadence-haiku-core-3/hb/scripts/host_trial.py",
+  "P2",
+  "--out",
+  "/var/tmp/run-one/20261025-P2-cadence-haiku-core-3/run/20261025-P2-cadence-haiku-core-3",
+  "--model",
+  "claude-haiku-5-5",
+  "--auth",
+  "proxy",
+  "--plugin-dir",
+  "/var/tmp/run-one/20261025-P2-cadence-haiku-core-3/plugin",
+  "--peer-model",
+  "haiku",
+  "--agent-cap",
+  "21600",
+  "--shape",
+  "core",
+  "--grader-root",
+  "/var/tmp/run-one/20261025-P2-cadence-haiku-core-3/grader"
+ ],
+ "cost": {
+  "list_usd": "0.237327",
+  "reported_usd": 0.3082451099999998,
+  "tokens": {
+   "cache_read": 7598346,
+   "cache_write": 460304,
+   "input": 318,
+   "output": 207547
+  }
+ },
+ "counts": {
+  "counts": true,
+  "why": "driver run on a clean published plugin tree"
+ },
+ "ended_at": "2026-10-25T07:24:37Z",
+ "exit_code": 0,
+ "graded": {
+  "commit": "188edcd6a7f70a380514bd8ef97e79e1f45075e5",
+  "ref": "refs/graded/20261025-P2-cadence-haiku-core-3"
+ },
+ "isolation": {
+  "auth": "proxy",
+  "contact": [],
+  "cwd": "/var/tmp/run-one/20261025-P2-cadence-haiku-core-3/run/20261025-P2-cadence-haiku-core-3",
+  "cwd_contents": [
+   "driver.out",
+   "home/",
+   "spec/"
+  ],
+  "fresh_home": true,
+  "home": "/var/tmp/run-one/20261025-P2-cadence-haiku-core-3/run/20261025-P2-cadence-haiku-core-3/home",
+  "method": "host",
+  "other_cadence_checkouts": []
+ },
+ "kind": "benchmark",
+ "model_requested": "claude-haiku-5-5",
+ "models_served": [
+  "claude-haiku-5-5"
+ ],
+ "provenance": {
+  "evidence": [],
+  "source": "driver"
+ },
+ "request_id": "P2-spec",
+ "run_id": "20261025-P2-cadence-haiku-core-3",
+ "schema": 1,
+ "session_id": "38187a47-0506-483e-a37f-afd5fed7ae5e",
+ "shape": "core",
+ "spec": {
+  "path": "/var/tmp/run-one/20261025-P2-cadence-haiku-core-3/run/20261025-P2-cadence-haiku-core-3/spec/spec.md",
+  "prompt": "/cadence /var/tmp/run-one/20261025-P2-cadence-haiku-core-3/run/20261025-P2-cadence-haiku-core-3/spec/spec.md",
+  "sha256": "a204ef29b4d721d59775aa45965702f76bc5d649caacf6b5b19d0bc44d5c9419"
+ },
+ "started_at": "2026-10-25T07:06:10Z",
+ "stop_point": {
+  "block": "P1",
+  "reason": "hard stop retries: P1 and P4 do not converge: P4 writes the MF-3 source note into acceptance row 5, and P1 rejects any annotation in the row 5 check cell. Retry budget spent (one fix round per block). (FAIL  no active cadence session)"
+ },
+ "task": "P2",
+ "timing": {
+  "agent_active_seconds": 1089.115,
+  "agent_wall_seconds": 1090.9,
+  "blocks": {
+   "plan-create": {
+    "calls": 2,
+    "seconds": 366.143,
+    "unfinished": 0
+   },
+   "plan-review": {
+    "calls": 1,
+    "seconds": 123.608,
+    "unfinished": 0
+   },
+   "plan-update": {
+    "calls": 2,
+    "seconds": 148.366,
+    "unfinished": 0
+   },
+   "vibe-test": {
+    "calls": 1,
+    "seconds": 246.731,
+    "unfinished": 0
+   }
+  },
+  "cap_seconds": 21600,
+  "hit_cap": false,
+  "run_wall_seconds": 1106.818
+ },
+ "transcript": {
+  "bytes": 1299797,
+  "path": "blobs/d5060ad0a412a092329ed7af3c8a16c9320d2f9d20654170838b6a5cef3b53bd.gz",
+  "sha256": "d5060ad0a412a092329ed7af3c8a16c9320d2f9d20654170838b6a5cef3b53bd",
+  "store": "git:jtouley/harness-benchmark@runs-store"
+ },
+ "tree": {
+  "bytes": 4183192,
+  "path": "blobs/9dfb6853f00c63d7928c51e7efc8bbdb4573ee4ca52a7e84a410c6300dd1bf76.gz",
+  "sha256": "9dfb6853f00c63d7928c51e7efc8bbdb4573ee4ca52a7e84a410c6300dd1bf76",
+  "store": "git:jtouley/harness-benchmark@runs-store"
+ }
+}
