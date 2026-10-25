@@ -1,0 +1,216 @@
+ANTAGONISTIC REVIEW - 20261023-P1-oneshot-haiku-1 (reviewer B)
+====================================================================
+
+How this was verified
+---------------------
+The change exists only as a transcript, so I rebuilt it. I exported the P1 skeleton (the commit "cadence config for
+the trial"; its file list matches the transcript's `git ls-files`). Then I replayed every Write and Edit call, and
+every Bash call that writes files (heredocs, sed, python patches), in transcript order. The reconstruction is faithful:
+the grep line numbers printed in the transcript (stream.py:64/73/160/186, batch.py:103) match my copy, and
+`make build` gives the same "PASS=104 ... TOTAL=104".
+
+Tooling: the pinned versions (dlt 1.31.0, duckdb 1.5.6, dbt-core 1.11.6, dbt-duckdb 1.11.0, Python 3.12). I used an
+existing venv with those versions through a `uv run` shim, not a new `uv sync`. The only stream source was the local
+replay at localhost:8099, plus my own local test servers and proxies. No external network.
+
+Independent oracles (my own code, not the author's reference_check.py):
+  - A raw SSE capture of the whole replay over one 240 s connection: 21,502 parseable events, 1 truncated copy,
+    21,502 distinct meta.id values, 60.05 minutes of event time.
+  - A recomputation of the batch checks straight from the unzipped CSVs.
+
+VERDICT: the numbers are right on the happy path. The exactly-once and resume claims break in three reproducible
+failure modes (F1, F2, F4), and one published-output defect (F3) makes oracle check 7 return a wrong answer on short
+runs. Request changes. Fixes for F1, F3, F4 and F7 are written and tested below, so the author only has to apply them.
+
+
+WHAT I CONFIRMED (no action needed)
+-----------------------------------
+C1  Check 1, per agency (from raw CSVs): 417=164,522,022.53; 418=166,315,027.20; 474=279,998,069.91;
+    485=831,182,097.03. Same as the marts.
+C2  Check 2, top 10 per person (raw CSVs joined to POPESTIMATE2024): same 10 counties and the same cents
+    (Franklin KY 190.60 ... Sangamon IL 83.51).
+C3  Check 3: 1,122 awards with a net negative obligation, same from raw. No award key appears in both families,
+    so the family prefix changes nothing.
+C4  Total 1,442,017,216.67 over 9,820 rows, and June 2024 = 264,837,644.85. Both match the raw CSVs.
+C5  Stream, full replay through `make stream DURATION=240`: the lake's meta.id set equals my capture exactly
+    (0 missing, 0 extra, 0 duplicates).
+C6  Lateness and windows, my own recomputation in capture order: 60 late events (59 edit, 1 new), the same set of
+    event_keys as late_events, 674 window rows with 0 mismatches against mart_edit_window_5m, and 12,816 on-time
+    edits. The count stays 60 if the high-water mark uses edits only, and if the boundary is >= instead of >.
+    The result does not depend on those readings.
+C7  Resume on a shared SSE id: an id can be shared by up to about 54 consecutive events. Resuming with
+    Last-Event-ID=X restarts at the FIRST event that carries X (tested on a run of 5, at positions 1061-1065).
+    Re-sends are therefore whole runs, and the meta.id check drops them. No loss.
+C8  Forced disconnects: a local TCP proxy cut every connection after a random 100 KB to 1.5 MB, often mid-event.
+    The consumer still landed all 21,502 events, skipped 176 re-sent copies, and the marts again gave 60, 12,876
+    and 674. Resetting lake/stream while out/dlt was still there also worked.
+C9  Connecticut fallback: the old county codes 09001-09013 use the 2021 estimate, which is the latest available for
+    them in these files. That is correct under Amendment A, and DECISIONS #6 says so.
+
+
+FINDINGS
+--------
+
+F1 [HIGH, reproduced] A crash during a flush loses events on the next run (or duplicates them).
+    Where: ingest/stream.py, Consumer.__init__ and flush().
+    The docstring and DECISIONS #24 say: "if the process dies before a load, those events were never landed, and
+    the next run reads them again." Not true. A kill after dlt's extract step leaves a pending load package in
+    out/dlt. On the next run, read_lake_state() runs first and does not see those events, so the consumer
+    re-consumes them from the stream. Then the first flush's pipeline.run(rows) LOADS THE OLD PACKAGE AND DROPS
+    `rows`. dlt logs only a WARNING: "The pipeline `run` method will now load the pending load packages. The data
+    you passed to the run function will not be extracted." flush() still adds len(rows) to the landed count, and
+    seen and last_sse_id have already moved on, so those events are gone for good.
+    Repro: I left a 300-row extract-only package (the next 300 events, seq 1129-1428) and ran
+    `make stream DURATION=3`. The lake ended with 1,991 rows. Capture positions 1428-1627 (200 events) are
+    missing. _arrival_seq jumps from 1428 to 1629. The run printed "landed 1063" and dbt still passed 104/104.
+    If the pending package is larger than the first batch, you get duplicate meta_ids and arrival_seqs instead.
+    Fix (tested; after the fix the same simulation gave no new loss, no duplicates and no seq gap):
+        self.pipeline = stream_pipeline()
+    +   if self.pipeline.has_pending_data:
+    +       # A previous run died mid-flush. Finish its package first, so the lake state below includes it.
+    +       self.pipeline.run()
+        self.seen, self.last_sse_id, self.next_seq = read_lake_state()
+    Also suggested: in flush(), check that the returned LoadInfo contains this batch, and fail loudly if not.
+
+F2 [HIGH if the grader runs in place, reproduced] The incremental state lives outside out/, so the marts can stop
+    matching the lake.
+    Where: transform/profiles.yml is `path: out/warehouse.duckdb`, which resolves to transform/out/warehouse.duckdb.
+    The incremental store_* tables live there. The repo's own .gitignore says the grader removes lake/ and out/.
+    Neither of those holds this file.
+    Repro: make build; make stream DURATION=6 (3,455 events). Then rm -rf lake out; make build;
+    make stream DURATION=3. The lake now has 1,128 rows, but fct_edit still shows 1,899 edits with
+    max(arrival_seq)=3455, the old data. The incremental filter `arrival_seq > max(...)` drops every new row
+    (new seqs restart at 1). dbt still passed 104/104. The author hit this too (transcript: "rm -rf transform/out &&
+    make build" after the canary fix), but DECISIONS #29 only covers the opposite case (warehouse missing).
+    Fix (tested): set profiles.yml to `path: ../out/warehouse.duckdb`. The same scenario then gives lake 793 and
+    fct_edit max seq 793. For the case where only lake/stream is removed, also make store_arrivals fall back to a
+    full rebuild when max(_arrival_seq) in the lake is below max(arrival_seq) in {{ this }}.
+
+F3 [HIGH, reproduced] Empty stream marts publish an all-NULL row, so oracle check 7 says 1 when the answer is 0.
+    Where: every external model. dbt-duckdb 1.11.0's external.sql inserts one NULL row into empty results before
+    writing the file, then reads the file back through a view that filters that row out. That is why the
+    not_null and unique tests pass while the published Parquet holds a NULL key.
+    Repro: rm -rf lake out transform/out; make build; make stream DURATION=4 (1,500 events, none late). Then the
+    oracle_map check 7 query returns [(1,)], and late_events.parquet holds one row of 11 NULLs. After `make build`
+    alone, fct_edit, late_events and mart_edit_window_5m each hold one NULL row. DECISIONS #28 documents the quirk
+    and tells analysts to filter, but oracle_map.yml's own queries do not filter. Both "every mart has events
+    after make stream" and "count of late events" depend on DURATION, which the grader picks.
+    Fix (tested, with PASS=119 and the extra tests below): override the materialization in the root project. Copy
+    .venv/.../dbt/include/duckdb/macros/materializations/external.sql to transform/macros/external_no_null_row.sql
+    and delete this block:
+        -- if relation is empty, write a non-empty table with column names and null values
+        {% call statement('main', language='sql') -%}
+          {% if row_count[0][0] == 0 %}
+          insert into {{ temp_relation }} values ( ... NULL, ... )
+          {% endif %}
+        {%- endcall %}
+    Result: late_events.parquet has 0 rows and keeps its typed schema (event_key VARCHAR, arrival_seq BIGINT, ...).
+    Then update DECISIONS #28.
+
+F4 [MEDIUM, reproduced] A disconnect inside a multi-byte UTF-8 character crashes `make stream` instead of resuming.
+    Where: sse_events(): `line = raw.decode("utf-8")`. When the connection ends mid-line, urllib yields the partial
+    last line. If the cut falls inside a multi-byte character, decoding raises UnicodeDecodeError. That is a
+    ValueError, which the author removed from the reconnect `except`, so it escapes run() and the make exits
+    non-zero. dbt does not run.
+    Repro: a local server sends one good event, then `data: {..."title":"Do\xc3` and closes. sse_events yields
+    x1, then raises UnicodeDecodeError ("unexpected end of data"), which the consumer's
+    (OSError, HTTPException) handler does not catch. My proxy run (C8) only got lucky on byte boundaries.
+    jawiki, dewiki, frwiki and itwiki titles and comments are full of multi-byte characters, so in a live demo
+    with real disconnects this is likely.
+    Fix: ignore a trailing line that has no b"\n" (it is incomplete by definition): `if not raw.endswith(b"\n"):
+    break`. Or decode with errors="replace", or add UnicodeDecodeError to the reconnect except.
+
+F5 [MEDIUM, reproduced] `make build` is not byte-idempotent, and the lake changes on every build.
+    Two back-to-back builds with nothing changed: the md5 of dim_place, mart_obligations_monthly and
+    mart_obligations_fy_county differs (row order; the models have no ORDER BY and run with threads: 4). The
+    lake also gets a new parquet file name and a new _dlt_load_id value per table, plus one more
+    lake/raw/_dlt_loads/*.jsonl file per build (33 files, then 34). The author compared sorted row hashes, and
+    DECISIONS #31 calls the result "byte-identical", which it is not. The spec says "must not change any output".
+    Fix: add `order by <grain key>` to every mart model's final select (DuckDB keeps insertion order in COPY).
+    Either accept the dlt metadata churn in the lake and state it in DECISIONS, or narrow the #31 claim.
+
+F6 [MEDIUM, reproduced] `make stream` fails on a clean checkout without `make build` first.
+    rm -rf lake out transform/out; make stream DURATION=2: it lands 325 events, then the dbt build fails on all
+    staging models over lake/raw, and make exits 2. The stream target runs a full `dbt build`.
+    Fix: in the stream target, run `dbt build --select stg_recentchange+ dim_wiki`. That is also faster, because
+    the batch models stop rebuilding on every stream run. Or have the stream target depend on the batch lake.
+
+F7 [MEDIUM, spec rule] Staging and intermediate models have no key tests and no documented grain.
+    The spec says "Document the grain of each model. Test the keys of each model with dbt tests." These six models
+    have no YAML: stg_usaspending_assistance, stg_usaspending_contracts, stg_census_county, stg_sitematrix_wikis,
+    stg_recentchange and int_usaspending_transactions.
+    Done for the author: the YAML below goes in transform/models/staging/_staging.yml and
+    transform/models/intermediate/_intermediate.yml. All 15 tests pass on the full data: the build went from
+    PASS=104 to PASS=119, with 0 errors.
+      # _staging.yml
+      version: 2
+      models:
+        - name: stg_usaspending_assistance
+          description: "Typed FY2024 assistance transactions. Grain: one row per transaction_source_key."
+          columns: [{name: transaction_source_key, tests: [not_null, unique]}]
+        - name: stg_usaspending_contracts
+          description: "Typed FY2024 contract transactions. Grain: one row per transaction_source_key."
+          columns: [{name: transaction_source_key, tests: [not_null, unique]}]
+        - name: stg_census_county
+          description: "County population (2024 estimate, 2021 fallback). Grain: one row per county_fips."
+          columns: [{name: county_fips, tests: [not_null, unique]}]
+        - name: stg_sitematrix_wikis
+          description: "Wikimedia wikis. Grain: one row per wiki_id."
+          columns: [{name: wiki_id, tests: [not_null, unique]}]
+        - name: stg_recentchange
+          description: "Landed change events, first arrival only, canaries dropped. Grain: one row per event_key."
+          columns:
+            - {name: event_key, tests: [not_null, unique]}
+            - {name: arrival_seq, tests: [not_null, unique]}
+      # _intermediate.yml
+      version: 2
+      models:
+        - name: int_usaspending_transactions
+          description: "Assistance and contract transactions unioned. Grain: one row per transaction_key."
+          columns:
+            - {name: transaction_key, tests: [not_null, unique]}
+            - {name: place_key, tests: [not_null]}
+    The store_* models have key tests but describe their columns only partly. That is acceptable.
+
+F8 [LOW] Oracle check 4 cannot fail.
+    county_sum and state_sum both sum the same column of the same mart rows, and "source_total" is read from
+    fct_award_transaction, which is the pipeline's own output, not the source. I checked June 2024 against the
+    raw CSVs (264,837,644.85) and it is right. The query, though, proves nothing. Suggestion: also publish a
+    state-level monthly mart, or compare the state total with fct grouped by the recipient_state_code of the
+    source, and compute source_total from the lake (lake/raw/usaspending_*).
+
+F9 [LOW] The reconnect telemetry and two DECISIONS statements are inaccurate.
+    - Clean server closes are not counted. During the proxy-cut run the log said "0 reconnects", although many
+      connections were cut and 176 copies were re-sent. Count both paths.
+    - DECISIONS #22 says "the last landed event comes back once". In fact the whole run of events sharing that SSE
+      id comes back (C7). Harmless, but the description is wrong.
+    - DECISIONS #13 says both "59 edits and 1 page creation" and "every late event here is an edit". Say: every
+      late event is an edit or new.
+
+F10 [LOW] "The lake keeps the source's data and adds only load metadata" is not fully true.
+    - dlt renames columns: `obligated_amount_from_COVID-19_supplementals_for_overall_award` becomes
+      `..._covid_19_...`, and the IIJA columns likewise (4 columns in assistance). This is not in DECISIONS.
+    - Empty strings become NULL at load time (batch.py). I found no empty strings in the field I spot-checked, but
+      the code does it for every field.
+    - sitematrix_wikis is flattened, and the source's `private` and `fishbowl` flags are dropped.
+    Document these, or land the sitematrix untouched and flatten it in staging.
+
+F11 [LOW, not verified: external network was off limits] Live demo against stream.wikimedia.org.
+    urllib sends the default "Python-urllib/3.12" User-Agent. Wikimedia's User-Agent policy asks clients for a
+    descriptive UA, and generic ones can be refused. Set an explicit User-Agent header in sse_events. The
+    STREAM_URL environment override is the only switch; nothing in the Makefile or docs says how to point at the
+    live stream.
+
+F12 [NOTE] Interpretation (not a bug, worth one line in DECISIONS).
+    Locating money by recipient county puts the top-10 per-person list on state capitals (Franklin KY, Hughes SD,
+    Leon FL, Cole MO, Lewis and Clark MT, Thurston WA, Dauphin PA, Ingham MI, Sangamon IL...), because state arts
+    and humanities councils receive pass-through grants there. Place-of-performance county would be better, but it
+    is NULL on 7,781 of 9,820 rows, so the recipient choice is defensible. DECISIONS #1 should state this
+    consequence so analysts do not misread the ranking.
+
+
+PRIORITY FOR THE AUTHOR
+-----------------------
+Must fix: F1, F3 (fixes tested above, paste in), F2 (one-line profiles change, tested), F4 (one line).
+Should fix: F5 (add ORDER BY), F6 (stream --select), F7 (paste the YAML above).
+Nice to have: F8 to F12.

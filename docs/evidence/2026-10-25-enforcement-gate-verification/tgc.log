@@ -1,0 +1,11 @@
+============================= test session starts ==============================
+platform linux -- Python 3.13.16, pytest-9.1.1, pluggy-1.6.0
+rootdir: /home/user/cadence-gate
+configfile: pyproject.toml
+plugins: platformdirs-4.13.5
+collected 46 items
+
+tests/gates/test_gate_common.py ........................................ [ 86%]
+......                                                                   [100%]
+
+============================= 46 passed in 21.89s ==============================

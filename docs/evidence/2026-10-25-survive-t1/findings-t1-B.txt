@@ -1,0 +1,169 @@
+ANTAGONISTIC REVIEW - commit 736d6fe "change under review"
+Tree: /tmp/claude-0/-home-user/fd6221f8-f79d-5dc4-b0f6-aa7efcbaf9ac/scratchpad/survive/run2/t1/tree
+All runs were done in scratch copies (work/, work2/). The tree itself was not modified.
+Probe scripts: /tmp/claude-0/-home-user/fd6221f8-f79d-5dc4-b0f6-aa7efcbaf9ac/scratchpad/survive/run2/t1/scripts/
+
+======================================================================
+0. BLOCKER FOR THE REVIEW ITSELF
+======================================================================
+F0  spec/spec.md is not in the tree and has never been in git history (checked `git log --all -- 'spec*'`).
+    DECISIONS.md and oracle_map.yml cite A-/G-/N- ids and "Amendment A" from it. I could not check those
+    ids against the text. I reviewed against DECISIONS.md, oracle_map.yml and the data READMEs. Someone
+    who has the spec should confirm the deliberate deviation listed in DECISIONS: A-2 says dedup against
+    lake/stream_events/, but the code dedups against lake/stream_raw/. The reasoning given is sound.
+
+======================================================================
+1. HIGH
+======================================================================
+F1  One malformed event crashes the consumer, and it then stays stuck on every restart. Events it has
+    already read are lost. (Violates the A-stop rule in DECISIONS: "no event that it read is lost".)
+    Reproduced with a fake SSE server (scripts/probe_consumer.py, scripts/probe_poison.py):
+      - a data line with invalid UTF-8      -> UnicodeDecodeError (iter_sse .decode, not caught)
+      - meta.id is a list or object         -> TypeError: unhashable (`event_id in self.seen`)
+      - type is a list                      -> TypeError: unhashable (`row["type"] in EDIT_TYPES`)
+      - timestamp/length/namespace > int64  -> dlt PipelineStepFailed "Integer exceeds 64-bit" in _flush
+      - a bad HTTP status line              -> http.client.BadStatusLine from _connect (only OSError is
+                                               caught around _connect; HTTPException is caught only in the read loop)
+    In every case the pending micro-batch (up to 2,000 events or 5 s) is dropped. Since the checkpoint is
+    older than the bad event, a restart sends the same Last-Event-ID, the replay sends the same event
+    again, and the consumer crashes again. probe_poison.py: 3 restarts, stream_raw stays [e1, e2], and
+    e4 and e5 never land. `make stream` stops before dbt runs.
+    Suggested fix, ready to apply:
+      a) pipeline/stream_consumer.py iter_sse: `raw.decode("utf-8", errors="replace")` (or catch
+         UnicodeDecodeError per line and drop that event).
+      b) Make _field_problem reject wrong types before flatten:
+           INT64_MIN, INT64_MAX = -2**63, 2**63 - 1
+           def _is_int_or_none(v):
+               return v is None or (isinstance(v, int) and not isinstance(v, bool) and INT64_MIN <= v <= INT64_MAX)
+           # in _field_problem, after the meta/length object checks:
+           if meta is not None and not isinstance(meta.get("id"), (str, type(None))): return "meta.id is not a string"
+           for key in ("type", "wiki", "server_name"):
+               if not isinstance(event.get(key), (str, type(None))): return f"{key} is not a string"
+           if not _is_int_or_none(event.get("namespace")): return "namespace is not an integer"
+           if not isinstance(event.get("bot"), (bool, type(None))): return "bot is not a boolean"
+      c) _read_until: `except (OSError, http.client.HTTPException): return` around self._connect().
+      d) run(): wrap the loop in try/finally so self._flush() runs on the way out (or at least log loudly).
+      Add tests for each case in tests/test_stream_consumer.py::test_consumer_wrongTypedFields_* style.
+
+======================================================================
+2. MEDIUM
+======================================================================
+F2  check 7 (test_late_events_count) never runs. It is not selected by `make stream` or by the
+    "quality gate" in DECISIONS. The test reads read_parquet('out/marts/late_events/*.parquet') and has no
+    ref(), so dbt does not tie it to late_events. `--select +late_events` leaves it out.
+    Verified: compared `dbt ls` for both make selections with the list of all tests. The only tests not
+    selected are test_late_events_count and the two dim_date tests (see F10). Run on its own it PASSES
+    (60 late = 60).
+    Fix: add `-- depends_on: {{ ref('late_events') }}` as the first line of
+    transform/tests/test_late_events_count.sql. That keeps the N-3 direct read of out/marts/.
+
+F3  `make stream` fails unless `make build` has already run. fact_edit reads lake/sitematrix_sites, which
+    only batch_load writes. Verified: with sitematrix_sites missing, `IO Error: No files found that match
+    the pattern "lake/sitematrix_sites/*.parquet"`, and all 14 downstream nodes are skipped. .gitignore says
+    the grader removes lake/ and out/ first, so running `make stream` before `make build` fails.
+    Fix (Makefile, stream target, first line):
+        test -d lake/sitematrix_sites || uv run python -m pipeline.batch_load
+    Or document the order in DECISIONS "Make targets".
+
+F4  A null namespace or wiki duplicates rows in the incremental window_5min, double-counts edits and fails
+    the build. The unique key is [window_start, wiki, namespace, actor_type]. delete+insert cannot match
+    NULL key parts, so the old row stays and the recomputed row is added.
+    Reproduced (scripts/probe_nullns.py): edits with no "namespace" key in two loads that hit the same
+    window. After run 2, window_5min holds both (…, None, 'human', 2) and (…, None, 'human', 3), and
+    unique_combination_of_columns fails.
+    How NULLs get in: _field_problem allows a missing namespace or wiki. A wrong-typed namespace or wiki
+    (string or object) also ends up null (F5).
+    Fix: reject the event in the consumer (F1b), or in window_5min filter
+    `and f.namespace is not null and f.wiki is not null` (or coalesce to a sentinel such as -1 / '').
+
+F5  Wrong-typed fields drift the lake schema without any warning. namespace="talk" lands as a new dlt
+    variant column namespace__v_text with namespace=NULL. wiki={"x":1} lands as wiki__x with wiki=NULL.
+    The models read read_parquet(glob) without union_by_name, so DuckDB keeps the first file's schema and
+    drops the variant column (verified with a 3-file drift test). The edit then has a null namespace or
+    wiki (see F4) and no error is raised. The fix is the same validation as F1b.
+
+F6  bot handling is inconsistent. flatten() sets `bot = bool(event.get("bot"))` but
+    `actor_type = "bot" if event.get("bot") is True`. With bot="false" (a string) the lake row has
+    bot=True and actor_type='human' (verified in the landed parquet). test_stream_totals_per_wiki groups
+    the oracle by `bot`, the mart groups by actor_type, so check 5 would fail. Fix: one rule, e.g.
+    `"bot": event.get("bot") is True`, plus the F1b bool check.
+
+F7  Amendment A says the population year is recorded, but the published mart does not record it.
+    population_year exists only in dim_place (in the warehouse). out/marts/mart_monthly_obligations has
+    no year column, and its column `county_population_2024` holds the 2021 estimate for 09001, 09003,
+    09005, 09009, 09011 and 09013 (13 mart rows). DECISIONS says analysts read out/marts/ only.
+    Fix: add `p.population_year as county_population_year` to mart_monthly_obligations, and add it to the
+    schema.yml contract (data_type integer).
+
+======================================================================
+3. LOW
+======================================================================
+F8  Territories look like the UNKNOWN sentinel. For state_fips 60, 66, 69, 72 and 78 the mart shows
+    state_name='UNKNOWN' (dim_place coalesces the missing name to 'UNKNOWN'), county_name NULL for the 7
+    real county codes, and state_population_2024 NULL. Puerto Rico (72) is about $12.4M in total. An
+    analyst cannot tell "state 72, name unknown" from the A-12 UNKNOWN place. Fix: a 5-row seed of
+    territory names, or leave state_name NULL instead of 'UNKNOWN' for a real FIPS code.
+
+F9  mart_award_fy2024 uses any_value() for agency, state and county. Two awards have transactions in more
+    than one place: ASST_NON_21FXDWY001_485 (state 35 vs 56) and ASST_NON_FEL29493424_418 (09170 vs 09009).
+    The published state or county for them is arbitrary. Six rebuilds gave the same output (same md5), so
+    this is not flaky today. But the rerun check (tests/check_rerun.py) compares only
+    mart_monthly_obligations, so it would not catch a change. Fix: arg_max(state_fips, action_date), or
+    drop those columns, and extend MART_GLOB in check_rerun.py to every batch mart.
+
+F10 dim_date is never built. No mart depends on it, so `make build` (+mart_*) skips it and its two
+    tests. fact_award_transaction has no date key either. The star schema in DECISIONS lists dim_date.
+    Fix: add dim_date to the make build selection (or `--select +mart_monthly_obligations
+    +mart_award_fy2024 dim_date`).
+
+F11 Some oracle tests are weaker than DECISIONS claims ("oracle read from the raw lake, not from the models"):
+    - test_county_state_source_reconcile: the county-vs-state half takes state totals from
+      fact_award_transaction joined to dim_place, which is the same input as the mart, so it nearly
+      proves itself.
+    - test_top_ten_counties_per_person: the expected side takes population from dim_place (a model). It
+      uses a one-way EXCEPT and never checks that actual has 10 rows.
+    - The stream oracle (stream_raw_arrivals) reads columns that the same flatten() wrote, so a flatten bug
+      would affect both sides (F6 is the one exception).
+    I recomputed checks 1 to 4 independently (see "Verified" below) and they are correct today. The gap is
+    in how well the tests would catch a future regression. Suggest doing the state roll-up with the
+    A-12 rule straight from usaspending_raw(), and reading population from the census lake tables.
+
+F12 oracle_map.yml check 5 says "each wiki has one row per actor type". Nothing fills missing combinations
+    with zero rows, so a wiki with only human edits has a single row. That happens to hold in the current
+    data (9 wikis x 2). Reword it to "one row per wiki and actor type that has edits".
+
+F13 oracle_map.yml check 2's recipe (sum / county_population_2024) gives a DOUBLE in DuckDB
+    (129.0682318262727), not the exact 4-place value. The exact column obligations_per_person is
+    per-month only. Either say this in the recipe or publish the FY per-county value.
+
+F14 tests/test_rerun.py runs `make build` in the real repo root during the unit test suite, so it rewrites
+    lake/ and out/ and needs uv. Worth a comment or a skip flag.
+
+F15 Nit: the obligations_per_person macro overflows (round(amount*100) on DECIMAL(18)) near the top of
+    the decimal(18,2) range, somewhere between $1e14 and $1e16. That is not reachable with this data.
+
+======================================================================
+4. VERIFIED (so the author does not need to re-check these)
+======================================================================
+- From a clean state, `make build` steps: batch_load plus dbt gives PASS=26. tests/check_rerun.py reports
+  "2724 rows, 12 data columns unchanged".
+- All 48 Python unit tests pass (the live-replay test ran: localhost:8099 answered).
+- Checks 1 to 4 against an independent Python/Decimal oracle that reads the raw zips and Census CSVs
+  directly (no lake, no dbt; scripts/oracle_batch.py):
+    check 1 per-agency totals: exact match.
+    check 2 top ten: 11001 129.0682, 46065 76.8547, 31181 75.1654, 19011 70.0886, 02110 63.9713, 21073 56.3973,
+            02198 46.6702, 29051 39.9498, 28149 38.1401, 02164 38.0228 (no tie at #10; #11 = 37.9291). Matches the mart.
+    check 3: 1122 negative-net awards (of 7918; 671 have net zero). Matches.
+    check 4: state and source totals per month match exactly.
+- DECISIONS data claims hold: 9,820 FY2024 transactions, 7,724 with a state and no county (STATE-WIDE scope),
+  57 with neither (foreign / multi-state), 13 place codes missing from the 2024 file, 09001 = 959768
+  (2021), CT state population = sum of the 9 planning regions = 3,675,069. Every action_date falls in FY2024,
+  no obligations are empty, and transaction keys are unique.
+- obligations_per_person macro: fuzzed against Decimal ROUND_HALF_UP with 3,005 cases, 0 mismatches.
+- Stream: two 30 s runs against the replay landed 21,502 unique events (no duplicates) and 12,876 edits,
+  with an event-time span of 3,603 s. That matches the DECISIONS numbers. One non-JSON event was skipped.
+- Late rule: an independent Python recompute from the stream_raw arrival order gives 60 late edits, the
+  same ids as out/marts/late_events.
+- Incremental vs --full-refresh after two loads: window_5min (674 rows), late_events (60) and
+  edits_by_wiki_actor (18) are identical in both directions.
+- The deadline holds: --duration 30 took 31.3 s wall.

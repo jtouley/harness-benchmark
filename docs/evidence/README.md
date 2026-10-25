@@ -87,3 +87,17 @@ what produced each number, and the [whitepaper](../whitepaper.md) draws them tog
 The scripts beside each round's data (`grade.py`, `run_arm.sh` and others) are the exact ones used for that
 round, kept unchanged except for file paths, so it can be regraded. Current tooling lives in [`cbench/`](../../cbench/),
 [`scripts/`](../../scripts/) and [`runner/`](../../runner/).
+
+## Agent write-ups and evidence (23 to 25 October)
+
+Write-ups and scripts from read-only agents, committed by the evidence agent so that nothing stays in agents
+(postmortem front matter, Oct 25). Each folder's README says who produced it and what is verified.
+
+- [Review of the P1 core-6 run](2026-10-25-survive-t1/): three reviews, the consolidation, oracles and probes
+- [Reviews of the Oct 23 P1 one-shots](2026-10-25-oneshot-findings/)
+- [Postmortem write-ups and skill reviews](2026-10-25-survive-postmortem/), including the per-check grid that the
+  grader-v3 regrade must reproduce
+- [Cadence run-learnings](2026-10-25-cadence-learnings/): 86 run documents and a roll-up, all proposals unevaluated
+- [Speed replay](2026-10-25-speed-replay/): stored transcripts through the supervisor rules (projected, not run)
+- [Enforcement-gate verification](2026-10-25-enforcement-gate-verification/)
+- [Time bucketing](2026-10-25-time-bucketing/): `bucket.py`

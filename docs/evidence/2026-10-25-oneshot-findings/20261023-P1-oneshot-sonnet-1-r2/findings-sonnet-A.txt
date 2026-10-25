@@ -1,0 +1,165 @@
+ANTAGONISTIC REVIEW: P1 oneshot sonnet-1 r2 (dlt + dbt-duckdb pipeline)
+Reviewer: Claude (findings-sonnet-A)
+Date: 2026-10-25
+
+HOW THIS WAS VERIFIED
+- The code exists only in the transcript, so I rebuilt it. I assembled the P1 starting repo (skeleton plus
+  data/raw) and replayed every Bash command from the transcript in order: same commands, same shell-cwd
+  tracking, every run/network/kill command stubbed out. The resulting files match the final
+  `git status` list in the transcript (34 files). Answer keys and reference solutions were not consulted.
+- Ran it for real: uv sync --offline, `make build` x2 with a fresh HOME, `make stream` many times against
+  the local replay at localhost:8099, kill -9 and resume runs, and a local fake SSE server for fault
+  injection. All network traffic stayed local.
+- Wrote my own reference implementations to check the numbers:
+  (a) batch: Python csv + Decimal straight over the raw zips and census CSVs;
+  (b) stream: a full curl capture of the replay (21,503 data lines), deduped by meta.id with canaries
+      dropped, and lateness worked out in arrival order.
+
+=====================================================================================================
+FINDINGS (most severe first)
+=====================================================================================================
+
+[F1] HIGH: the stream consumer crashes on a read timeout or a connection reset. These are the faults it
+     claims to survive.
+  Where: pipeline/stream_consumer.py, `_lines()` (resp.raw.read1) plus `except (requests.RequestException, OSError)`.
+  Why: late in the session (transcript cmd 566) the reader moved from requests' iter_lines to
+     `resp.raw.read1()`. That call skips requests' exception wrapping, so urllib3 errors now escape
+     unwrapped: ReadTimeoutError and ProtocolError("Connection broken: ConnectionResetError"). Neither is a
+     RequestException or an OSError (their MRO ends at urllib3.exceptions.HTTPError -> Exception; checked
+     in the venv). The exception escapes consume() and the process exits 1. `make stream` then exits 2 and
+     the dbt step never runs.
+  Making it worse: the read timeout is (5, 5), and I measured the replay's keep-alive interval at exactly
+     5.0 s. Any idle period is therefore a race between the keep-alive and the timeout.
+  Reproduced:
+   - Against the real local replay, resumed `make stream DURATION=30|25`: 1 of 4 runs exited rc=2 with
+     urllib3.exceptions.ReadTimeoutError in _lines -> read1.
+   - Fake local SSE server sending 5 events then a TCP RST: rc=1, ProtocolError, 0 of 10 events landed.
+   - Fake server sending 5 events then stalling 7 s: rc=1, ReadTimeoutError, 0 of 10 events landed.
+  Why the author did not see it: the only "stream dropped (ConnectionError); resuming" in the transcript
+     (cmd 451) happened BEFORE the read1 switch. There, requests wrapped the urllib3 error. After the switch,
+     no run in the transcript happened to hit a drop.
+  Fix (tested; with it both fault cases give rc=0 and 10/10 distinct events):
+     --- a/pipeline/stream_consumer.py
+     +++ b/pipeline/stream_consumer.py
+     @@
+      import dlt
+      import requests
+     +import urllib3
+     @@
+     -            with requests.get(url, headers=headers, stream=True, timeout=(5, 5)) as resp:
+     +            with requests.get(url, headers=headers, stream=True, timeout=(5, 15)) as resp:
+     @@
+     -        except (requests.RequestException, OSError) as exc:
+     +        except (requests.RequestException, urllib3.exceptions.HTTPError, OSError) as exc:
+     The deadline stays responsive on a quiet stream without a 5 s read timeout, because sse_events
+     already yields (None, None) on every ':' keep-alive. Also wrap the main loop in try/finally so that
+     `lander.flush()` runs on any unexpected exception (see F2).
+
+[F2] MEDIUM: any unexpected exception discards the in-memory micro-batch, and the run makes no progress.
+  consume() calls lander.flush() only after the while loop. An exception escaping the loop (F1 being one)
+  throws away up to 2000 events / 10 s of buffer and skips the dbt build. No events are LOST, because the
+  checkpoint only advances after a landed batch. But the run fails and has to re-read everything.
+  Fix: put the loop in try/finally and call lander.flush() in the finally block (the flush already
+  checkpoints only after the dlt load succeeds).
+
+[F3] MEDIUM (analytic, needs a decision from the analysts): all ten of the "top 10 counties per person"
+     are state-capital counties.
+  The batch numbers are correct for the chosen design, which attributes money to the RECIPIENT county.
+  But the top 10 is Franklin KY (Frankfort), Hughes SD (Pierre), Leon FL (Tallahassee), Washington VT
+  (Montpelier), Cole MO (Jefferson City), Lewis and Clark MT (Helena), Thurston WA (Olympia), Dauphin PA
+  (Harrisburg), Ingham MI (Lansing), Sangamon IL (Springfield). 10 of 10 are state capitals. That is the
+  signature of state arts, humanities and service commissions receiving STATE-WIDE grants. Read this way,
+  check 2 answers "where the grantee's office is", not "where the money went".
+  The same ranking by place-of-performance county (my computation, raw files, 2024 estimate with 2021
+  fallback) is entirely different: 11001 DC 129.07, 46065 Hughes SD 76.85, 31181 NE 75.17, 19011 IA 70.09,
+  02110 AK 63.97, ...
+  DECISIONS.md does justify the choice (82% of assistance rows have a STATE-WIDE place of performance with
+  no county). Ask the author to state the capital-county effect in the oracle_map note for check 2 and in
+  DECISIONS.md, so the analysts can accept or reject it knowingly. A "pop_county with recipient fallback"
+  variant does not change much (state-wide grants still have no county).
+
+[F4] LOW-MEDIUM (spec ambiguity that changes answers): what counts as an "edit" in checks 5 and 6.
+  The oracle map counts only type in (edit, new). The spec calls the fact table "edits at the grain of one
+  change event", which suggests every change event (also log and categorize) is an "edit". Under the two
+  readings, the enwiki top-5 windows (check 6) come out in a different order:
+    edit/new only (as mapped): 00:25 (985), 00:30 (918), 00:20 (892), 00:00 (816), 00:10 (796)
+    all change events:         00:25 (1507), 00:00 (1476), 00:20 (1471), 00:30 (1421), 00:15 (1307)
+  Check 5 changes the same way (for example, enwiki human edits 6,435 vs change events 10,720).
+  mart_edit_windows already has event_count and fct_edits has every event, so switching readings is a
+  one-line oracle_map change. The author should confirm which reading the analysts mean.
+  Related nit: check 6 says "en.wikipedia.org" but the map filters wiki='enwiki'. 146 enwiki events have
+  meta.domain auth.wikimedia.org (newusers/abusefilter log events). They do not matter under the edit/new
+  reading, but they would under the all-events reading.
+
+[F5] LOW: event time is `timestamp`, not meta.dt (documented). This is a real fork in the answers, so it
+     should get a line in the oracle_map note.
+  On the full capture, 173 events land in a different 5-minute window depending on the choice, and the
+  late count is 60 with `timestamp` vs 59 with meta.dt.
+
+[F6] LOW: canary events are dropped by accident, not by rule.
+  DECISIONS.md says canaries "are dropped in staging". What actually drops them is
+  `where ... "timestamp" is not null` in stg_wiki_recentchange; there is no domain filter. If a canary ever
+  carried a timestamp, it would count as a change. Add an explicit `meta_domain <> 'canary'` filter.
+
+[F7] LOW: unbounded growth and output churn across runs (the marts themselves are deterministic).
+  - out/.dlt keeps every load package, including full parquet copies under
+    load/loaded/*/completed_jobs. Each `make build` adds about 7 MB. dlt loads metadata accumulates in
+    lake/_dlt_loads (59 files after my runs).
+  - Every `make stream` re-lands the last 120 s of the stream (656 duplicate rows, with full raw JSON),
+    even when there is nothing new. After my test runs the lake held 26,369 rows for 21,502 distinct ids.
+  - out/warehouse.duckdb changes on every build. The marts under out/marts are byte-identical.
+  Suggest: set dlt `load.delete_completed_jobs=true` (or truncate the loaded packages), and consider
+  moving dlt state out of out/ since out/ is the published area.
+
+[F8] LOW: one model has no key test. The spec says "Test the keys of each model".
+  stg_wiki_recentchange (grain: one landed copy) is the only one of the 18 models without a key test.
+  Add unique_combination on (load_id, batch_row).
+  Also: staging.yml uses `unique_combination: columns:` without `arguments:`, which triggers dbt 1.11's
+  MissingArgumentsPropertyInGenericTestDeprecation warning on every run.
+
+[F9] LOW: the lake reshapes the site matrix instead of keeping the source's data.
+  ingest_batch.py flattens the sitematrix, drops `dir` (language level) and the top-level `count`, and
+  turns absent closed/private into False. The stream table keeps a `raw` JSON column; do the same here, or
+  keep all fields as-is.
+
+[F10] INFO: nothing is committed.
+  The transcript's final state is untracked files after `git reset -q`. Any reset that runs
+  `git clean -ffdx` (the grader's reset does) deletes the whole change. Make sure it is committed before
+  hand-off.
+
+[F11] INFO: `requests` and `pyarrow` are imported directly but only arrive transitively (dlt,
+  dlt[parquet]). The rules forbid changing pyproject, so this is a note only.
+
+=====================================================================================================
+CHECKED AND HOLDS UP (no need to send these back to the author)
+=====================================================================================================
+- Batch checks recomputed independently from the raw zips (9,820 rows: 9,404 assistance + 416 contracts,
+  all FY2024, no empty amounts). The marts match exactly:
+    C1 net per agency: 417 = 164,522,022.53; 418 = 166,315,027.20; 474 = 279,998,069.91;
+       485 = 831,182,097.03
+    C2 top 10 (recipient county): identical counties, values and populations (Franklin KY 190.6010, ...)
+    C3 awards with net negative obligation: 1122 (of 7,918; 671 more net to exactly zero)
+    C4 2024-03: counties -> states -> source all equal 24,238,469.74
+- The 7 old Connecticut county codes (09001..09013) really do appear next to the planning-region codes
+  (091xx). The 2021-vintage fallback is applied to them as DECISIONS.md says. The 15 unmatched places are
+  PR, GU, AS, MP and VI codes, as claimed.
+- Model contracts are really enforced on the external models. I broke one on purpose (wrong type, renamed
+  column) and dbt failed with "enforced contract that failed".
+- `make build` twice with a fresh HOME: every file under out/marts is byte-identical (md5). dbt reports
+  58/58 PASS for batch and 32/32 for stream, matching the claims.
+- Stream answers match my independent capture exactly (C5 table for all 9 wikis x human/bot, C6 windows,
+  C7 = 60 late events, 21,500 distinct non-canary events) in each of these scenarios:
+    (a) a single 60 s run;
+    (b) 8 consecutive `make stream DURATION=12` runs (exercises the incremental lateness logic and
+        int_edit_windows recomputation across runs);
+    (c) two kill -9 runs, then a resume.
+- Resume margin: SSE-id timestamps run up to 1,188 s ahead of meta.dt, and they are furthest ahead for
+  the late events (896-1,188 s). Even so, resuming with the checkpoint taken just before the late batch,
+  minus 120 s, re-delivered all 60 late events. The replay resumes by stream position, so 120 s is enough
+  here.
+- A truncated JSON event in the middle of the stream (a fault in the replay) is re-sent right away and is
+  handled. Canary events (2) are excluded; see F6 for how.
+- The lateness rule is implemented correctly: strict ">", window_end + 600 s, a running max over first
+  arrivals in (load_id, batch_row) order, seeded across runs.
+
+Scratch used for the review was deleted afterwards.

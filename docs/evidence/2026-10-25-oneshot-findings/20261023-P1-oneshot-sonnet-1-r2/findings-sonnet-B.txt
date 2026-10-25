@@ -1,0 +1,147 @@
+ANTAGONISTIC REVIEW: 20261023-P1-oneshot-sonnet-1-r2 (P1: dlt + dbt-duckdb pipeline)
+Reviewer: B. Date: 2026-10-25.
+
+HOW THIS WAS VERIFIED (so the author does not have to)
+- The original repo (/home/user/bf/runs/.../repo) no longer exists. I rebuilt it: the P1 skeleton and
+  data/raw from golden/pipeline, then I replayed every file-writing command in the transcript, in
+  order (22 Bash calls: heredocs, python patch scripts, sed). The rebuilt tree has the same file list as
+  the author's final `git status` (transcript line 597). `make build` gives the same agency totals the
+  transcript shows (417 = 164522022.53 and so on).
+- I ran the real grader (pipetask.trial, seed 1, replay on a private port 18099, durations 30,90, with
+  --snapshot-worktree). That runs make build twice, make stream twice and the fault schedule F1-F6. I
+  only used local data and a local replay server. No external network calls.
+- Then I made the fixes below in the scratch copy and graded again to confirm each one.
+
+RESULT AS DELIVERED: reward 0.0 (0/7). Build is idempotent: yes. stream_ok: yes (5 connections,
+21503 positions served, 11774 needed).
+- Every one of the 7 checks fails with the same error: "Permission Error: Cannot access file
+  out/marts/... - file system operations are disabled by configuration".
+- After fixing only the map paths: 5/7 (checks 1, 3, 5, 6, 7 pass; 2 and 4 fail).
+- After also fixing the geography and the check-4 map entry: 7/7.
+
+The stream half is solid. It handled disconnects, resend on resume, the invalid frame, out-of-order
+events, the held-back late batch and stop/start, and it got the exact answers. The batch star schema,
+the decimal money handling, the FY filter, Connecticut and Amendment A are correct. The failures are in
+the geography choice and in the oracle map.
+
+======================================================================================================
+F1 [BLOCKER] The oracle_map.yml SQL uses relative file paths, so it fails anywhere except a shell
+   opened at the repo root.
+   Where: oracle_map.yml, all 7 `sql:` blocks, e.g. `from 'out/marts/mart_agency_fy2024/mart_agency_fy2024.parquet'`.
+   - The paths only resolve when the current directory is the repo root. A BI tool, a notebook or the
+     grader's sandboxed DuckDB connection gets no answer at all.
+   - In the grader, this alone takes the run from 5/7 to 0/7.
+   - The map header says "runnable as-is in DuckDB from the repo root". That was the only setup the
+     author tested (transcript ~590).
+   Fix (verified): name each mart, which the reader exposes as a view per out/marts/<folder>, e.g.
+   `from mart_agency_fy2024`. If raw paths are wanted for humans, keep them as a comment.
+   One-liner I used:
+     sed -E -i "s#'out/marts/([a-z_0-9]+)/[a-z_0-9]+\.parquet'#\1#g" oracle_map.yml
+
+F2 [HIGH, wrong answer to checks 2 and 4] The geography is the RECIPIENT's county, not the place of
+   performance.
+   Where: transform/models/staging/stg_usaspending_transactions.sql (both union branches); the
+   reasoning is in DECISIONS.md "Geography = the recipient's county".
+   - The author's argument is that place of performance (PoP) has no county on most rows. That fact is
+     true: 72.7% of dollars have no PoP county; it is 2039 of 9820 rows WITH a PoP county. The
+     conclusion drawn from it is wrong.
+   - Those rows are STATE-WIDE grants (NEA/NEH/IMLS/AmeriCorps money to state agencies). Booking them to
+     the recipient's address puts a whole state's grant in the state-capital county.
+   - The author's own top-10 "per person" list shows it. All ten are state-capital counties: Franklin
+     KY 190.60, Hughes SD, Leon FL, Washington VT, Cole MO, Lewis and Clark MT, Thurston WA, Dauphin PA,
+     Ingham MI, Sangamon IL. That is an artifact, not "where the money went".
+   - With PoP and state-only rows kept as "unknown county" (SS000, which dim_place already supports),
+     the top 10 starts 11001 DC 129.07, 46065 76.85, 31181 75.17. That matches the expected answer.
+   - Check 4 (the July 2024 county totals) also changes, because almost all of that month's money is
+     state-level.
+   - Spec wording: "where did ... money go ... by state, county". USAspending's own geography views use
+     place of performance for this.
+   Fix (verified 7/7 together with F3), in both branches of the union:
+     prime_award_transaction_place_of_performance_state_fips_code  as recipient_state_fips,
+     prime_award_transaction_place_of_performance_county_fips_code as recipient_county_fips,
+     primary_place_of_performance_state_name / _county_name        (descriptive columns),
+     primary_place_of_performance_state_code (contracts only; the assistance files have no such column,
+     so use null there, otherwise the view fails with a Binder Error).
+   Also rename the recipient_* aliases and rewrite the DECISIONS.md bullet. The SS000/00000 handling,
+   the reconciliation test and dim_place work unchanged (make build: PASS=58).
+
+F3 [HIGH] The check-4 map entry returns three scalars for a hard-coded month, not the breakdown the
+   check asks for.
+   Where: oracle_map.yml, entry 4_month_county_state_source_reconciliation.
+   - The entry fixes `year_month = '2024-03'` and returns states_sum_of_counties, source_total and
+     ties_out.
+   - Check 4 is "for one month, county totals add up to state totals, state totals add up to the
+     source". An analyst (and the grader) needs month x state x county rows, so the month can be chosen
+     and the county and state totals compared. The grader reports "no month column found".
+   - The query is also close to a tautology. "States" are computed by summing the same county rows, so
+     county-to-state can never fail. Only the comparison with the source is a real test.
+   Fix (verified):
+     sql: select year_month, state_fips,
+                 case when county_key like '__000' then null else county_key end as county_fips,
+                 net_obligations
+          from mart_obligations_monthly
+   - The sentinel SS000/00000 keys must come out as null. Otherwise a consumer that recognises FIPS
+     columns sees mostly non-county values once F2 is applied (most of the money is state-level).
+   - A stronger option is to publish real nulls for the unknown county in the mart and keep the
+     sentinel only in dim_place.
+
+F4 [MEDIUM] The check-2 map entry puts per_person_rank as the first numeric column.
+   - The grader read per_person_rank (10, 9, 8 ...) as the per-person value.
+   - Lead with county_key and obligations_per_person, order by rank, and drop the extra numeric columns
+     (net_obligations, population) or put them after the answer. Verified: once F2 is in, it passes.
+
+F5 [LOW] Canary events are dropped only by accident, not by the rule DECISIONS.md states.
+   - DECISIONS says canary events (meta.domain = "canary") are dropped in staging. The code actually
+     drops rows `where meta_id is not null and "timestamp" is not null`
+     (stg_wiki_recentchange.sql).
+   - The 2 canary events in this capture are bare meta-only objects, so they happen to have no
+     timestamp. A canary that carries change fields would be counted as an edit.
+   - Add `and coalesce(meta_domain, '') <> 'canary'` (the column is already landed as meta_domain) so
+     the code matches the documented rule.
+
+F6 [LOW] The incremental cursor relies on wall-clock dlt load ids.
+   - int_edit_events filters `load_seq > max(load_seq)`, where load_seq = cast(_dlt_load_id as double),
+     a wall-clock epoch.
+   - If the clock steps back between two consumer runs (NTP, a container moved between hosts), the newer
+     load gets a smaller id and dbt skips it for good. Those events are lost silently.
+   - The `event_id not in (select event_id from this)` predicate already prevents double counting, so
+     the load_seq predicate is only an optimisation. Either drop it, or have the consumer write a
+     monotonic run/batch sequence of its own (e.g. stored next to the checkpoint) and order by that.
+   - Also minor: a 17-significant-digit load id cast to double loses its last digit or two. This is
+     harmless at a 10 s flush interval, but a string/decimal compare would be exact.
+
+F7 [LOW] The RESUME_MARGIN_MS = 120 s rationale is inaccurate, but the behaviour is safe.
+   - I read the replay protocol (resume at the first position whose id timestamp >= the sent one; ids
+     are a running max). Under it, resuming from the exact checkpointed id cannot skip anything. The
+     120 s rewind only causes extra re-sends: e.g. connection 2 started at position 3408 after the close
+     at 4036, so about 630 events came again. Dedupe absorbs them.
+   - The docstring and DECISIONS say the rewind is needed because ids "can be ahead of events still to
+     come". That is not what happens. Either drop the margin or describe it as defence in depth for the
+     live service.
+
+F8 [LOW] The PR description is the task statement, not a description of the change.
+   - PR-description.md repeats the spec verbatim. It does not say what was built, what was verified
+     (tests, idempotence hash check, kill -9 test) or which choices are contestable (geography!).
+   - The reviewer had to reconstruct all of this from DECISIONS.md and the transcript.
+
+VERIFIED OK (no action; listed so nobody re-checks them)
+- Money: DECIMAL(18,2) cast with DECIMAL(38,2) sums, exact. Check 1 matches the key to the cent.
+- FY2024 filter on action_date. Deobligations are kept. "Net negative award" means the award's FY sum
+  is below 0 (check 3 passes).
+- FIPS are kept as text with leading zeros. The census files are read as Latin-1.
+- Amendment A: POPESTIMATE2024, falling back to the latest earlier estimate. The fallback covers the 7
+  old Connecticut counties (2021 vintage). PR, GU, AS, MP and VI have no estimate in either file; I
+  checked the raw CSVs and the author's claim is true.
+- make build run twice is byte-identical (the grader's digests are unchanged). All 58 batch and 32
+  stream dbt tests pass.
+- Stream: dedupe by meta.id, first arrival wins. Lateness uses stream time with a running max seeded
+  from the stored state across runs. Late events are in fct_edits and late_events and not in the
+  window mart. Checks 5, 6 and 7 pass against the key under the full fault schedule and the grader's
+  stop/start.
+- No null namespaces in fct_edits, so the composite unique_key in int_edit_windows' delete+insert is
+  safe.
+
+SUGGESTED ORDER FOR THE AUTHOR: F1, F2 and F3 together (that gives 7/7, verified), then F4, then F5 and
+F6 (one-line hardening each).
+
+Scratch reconstruction used for verification has been deleted after the review.
