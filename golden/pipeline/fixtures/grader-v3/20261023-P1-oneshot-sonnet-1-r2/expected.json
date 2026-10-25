@@ -1,0 +1,75 @@
+{
+ "graded_snapshot": "3efe0cf163ce97ed4c1e2de081ac686e29f71d64",
+ "marts": [
+  "fct_award_transactions",
+  "fct_edits",
+  "late_events",
+  "mart_agency_fy2024",
+  "mart_award_net_fy2024",
+  "mart_county_fy2024",
+  "mart_edit_windows",
+  "mart_obligations_monthly"
+ ],
+ "pinned": {
+  "checks": {
+   "1": true,
+   "2": false,
+   "3": true,
+   "4": false,
+   "5": true,
+   "6": true,
+   "7": true
+  },
+  "grader_commit": "c344bea44951cfc5a3a3a99aaa598fdaaedabba8",
+  "grader_tree": "8a0977e42fa02981802090d1f9517efe537994c4",
+  "idempotent": true,
+  "passed": 5,
+  "reward": 0.7143,
+  "stream_ok": true
+ },
+ "run_id": "20261023-P1-oneshot-sonnet-1-r2",
+ "task": "P1",
+ "transcript_blob": {
+  "path": "blobs/0fea8b4fb449122d8abccf91cff40fb973eca31375b5818e02f103debbcd677a.gz",
+  "sha256": "0fea8b4fb449122d8abccf91cff40fb973eca31375b5818e02f103debbcd677a",
+  "store": "runs-store"
+ },
+ "tree_blob": {
+  "path": "blobs/2b29ac2fefb9d5afd18c59e7ccb8333e6ecd2745af892f3c2c37a59b12e87942.gz",
+  "sha256": "2b29ac2fefb9d5afd18c59e7ccb8333e6ecd2745af892f3c2c37a59b12e87942",
+  "store": "runs-store"
+ },
+ "v3": {
+  "checks": {
+   "1": {
+    "pass": true,
+    "resolution": "query"
+   },
+   "2": {
+    "pass": false,
+    "resolution": "query"
+   },
+   "3": {
+    "pass": true,
+    "resolution": "query"
+   },
+   "4": {
+    "pass": false,
+    "resolution": "query"
+   },
+   "5": {
+    "pass": true,
+    "resolution": "query"
+   },
+   "6": {
+    "pass": true,
+    "resolution": "query"
+   },
+   "7": {
+    "pass": true,
+    "resolution": "query"
+   }
+  },
+  "passed": 5
+ }
+}

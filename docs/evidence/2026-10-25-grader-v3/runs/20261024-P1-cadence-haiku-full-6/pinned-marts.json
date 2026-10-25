@@ -1,0 +1,56 @@
+{
+ "checks": {
+  "1": {
+   "interpretation": "primary",
+   "pass": true,
+   "reading": "agency_code -> net_obligations",
+   "source": "table mart_monthly_county_agency"
+  },
+  "2": {
+   "error": "no county column and per-person column found",
+   "pass": false,
+   "source": "table mart_monthly_county_agency"
+  },
+  "3": {
+   "expected": "1122",
+   "got": "9820",
+   "pass": false,
+   "source": "table fct_award_transaction",
+   "traps": [],
+   "unexplained": true
+  },
+  "4": {
+   "expected": "{\"counties\": {\"01069\": \"75000.00\", \"02016\": \"15996.00\", \"02020\": \"196993.00\", \"02050\": \"29878.00\", \"02063\": \"10000.00\", \"02066\": \"10000.00\", \"02068\": \"7025.00\", \"02070\": \"10000.00\", \"02090\": \"0.00\", \"02100\": \"10000.00\", \"02110\": \"190000.00\", \"02122\": \"27466.00\", \"02150\": \"29971.00\", \"02158\": \"10000.00\", \"02164\": \"50000.00\", \"02195\": \"20000.00\", \"02198\": \"20000.00\", \"02240\": \"10000.00\", \"02275\": \"1...",
+   "got": "{\"counties\": {\"02024\": \"411943230.84\"}, \"month\": \"2024-07\", \"states\": {\"01\": \"204004.17\", \"02\": \"2586242.00\", \"04\": \"11707289.98\", \"05\": \"4748653.00\", \"06\": \"9005420.18\", \"08\": \"14055693.00\", \"09\": \"5907487.00\", \"10\": \"800768.00\", \"11\": \"10899436.11\", \"12\": \"24364885.19\", \"13\": \"4292416.96\", \"15\": \"1435464.24\", \"16\": \"4156616.00\", \"17\": \"-178746.01\", \"18\": \"1707409.12\", \"19\": \"9489172.24\", \"20\": \"...",
+   "pass": false,
+   "source": "table mart_monthly_county_agency",
+   "traps": [],
+   "unexplained": true
+  },
+  "5": {
+   "expected": "{\"dewiki|bot\": [62, 87343], \"dewiki|human\": [171, 48236], \"enwiki|bot\": [3218, 5660289], \"enwiki|human\": [6435, 1033126], \"enwiktionary|bot\": [64, 880], \"enwiktionary|human\": [142, 11665], \"eswiki|bot\": [144, 56356], \"eswiki|human\": [573, 127935], \"frwiki|bot\": [936, 628782], \"frwiki|human\": [239, 110607], \"itwiki|bot\": [41, 64153], \"itwiki|human\": [156, 64503], \"jawiki|bot\": [63, 9176], \"jawiki|h...",
+   "got": "{\"None|human\": [0, 2447638], \"dewiki|bot\": [87343, 993175], \"dewiki|human\": [13164, 2437724], \"enwiki|bot\": [5655438, 57225093], \"enwiki|human\": [765336, 115271786], \"enwiktionary|bot\": [124, 2494445], \"enwiktionary|human\": [8978, 4315821], \"eswiki|bot\": [53494, 5158756], \"eswiki|human\": [50017, 9845475], \"frwiki|bot\": [411913, 10744042], \"frwiki|human\": [91830, 4168061], \"itwiki|bot\": [13570, 562...",
+   "pass": false,
+   "source": "table fct_edit",
+   "traps": [],
+   "unexplained": true
+  },
+  "6": {
+   "expected": "[[1792023900, 985], [1792024200, 918], [1792023600, 892], [1792022400, 816], [1792023000, 796]]",
+   "got": "[[1792023900, 1500], [1792022400, 1461], [1792023600, 1455], [1792024200, 1409], [1792023300, 1302]]",
+   "pass": false,
+   "reading": "window_start -> edit_count",
+   "source": "table window_5min",
+   "traps": [],
+   "unexplained": true
+  },
+  "7": {
+   "interpretation": "primary",
+   "pass": true,
+   "reading": "row count",
+   "source": "table late_events"
+  }
+ },
+ "passed": 2,
+ "total": 7
+}

@@ -1,0 +1,25 @@
+# For each check in the spec, the table and column (or view) that answers it.
+# Marts are Parquet files under out/marts/<mart>/<mart>.parquet.
+- question: "Check 1: FY2024 net obligations per awarding agency"
+  table: mart_monthly_county_agency
+  column: net_obligations
+- question: "Check 2: the ten counties with the highest FY2024 obligations per person"
+  table: mart_monthly_county_agency
+  column: obligations_per_person
+- question: "Check 3: the number of awards with a net negative obligation in FY2024"
+  table: fct_award_transaction
+  column: federal_action_obligation
+  aggregation: "sum per award_key, then count the awards whose sum is below zero"
+- question: "Check 4: county totals add up to state totals, and state totals add up to the source total"
+  table: mart_monthly_county_agency
+  column: net_obligations
+- question: "Check 5: edits and net bytes per wiki for the replayed hour, split human and bot (late included)"
+  table: fct_edit
+  column: net_bytes
+- question: "Check 6: the 5-minute windows with the most edits on en.wikipedia.org (on-time only)"
+  table: window_5min
+  column: edit_count
+  aggregation: "sum edit_count over namespace and actor_type, per window_start, where wiki is en.wikipedia.org"
+- question: "Check 7: the count of late events"
+  table: late_events
+  column: meta_id

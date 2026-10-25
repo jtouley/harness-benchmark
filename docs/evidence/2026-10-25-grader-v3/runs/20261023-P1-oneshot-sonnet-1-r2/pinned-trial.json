@@ -1,0 +1,101 @@
+{
+ "build": [
+  {
+   "cmd": "make build",
+   "exit": 0,
+   "log": "build-1.log",
+   "seconds": 17.2
+  },
+  {
+   "cmd": "make build",
+   "exit": 0,
+   "log": "build-2.log",
+   "seconds": 10.4
+  }
+ ],
+ "build_timeout": 1800,
+ "changed_by_second_build": [],
+ "checks": {
+  "1": {
+   "interpretation": "primary",
+   "pass": true,
+   "reading": "agency_key -> net_obligations",
+   "source": "query"
+  },
+  "2": {
+   "expected": "[[\"11001\", \"129.07\"], [\"46065\", \"76.85\"], [\"31181\", \"75.17\"], [\"19011\", \"70.09\"], [\"02110\", \"63.97\"], [\"21073\", \"56.40\"], [\"02198\", \"46.67\"], [\"29051\", \"39.95\"], [\"28149\", \"38.14\"], [\"02164\", \"38.02\"]]",
+   "got": "[[\"17167\", \"10.00\"], [\"26065\", \"9.00\"], [\"42043\", \"8.00\"], [\"53067\", \"7.00\"], [\"30049\", \"6.00\"], [\"29051\", \"5.00\"], [\"50023\", \"4.00\"], [\"12073\", \"3.00\"], [\"46065\", \"2.00\"], [\"21073\", \"1.00\"]]",
+   "pass": false,
+   "source": "query",
+   "traps": [],
+   "unexplained": true
+  },
+  "3": {
+   "interpretation": "primary",
+   "pass": true,
+   "reading": "awards_net_negative",
+   "source": "query"
+  },
+  "4": {
+   "error": "no month column found",
+   "pass": false,
+   "source": "query"
+  },
+  "5": {
+   "interpretation": "primary",
+   "pass": true,
+   "reading": "wiki, actor_type -> edits, net_bytes_added",
+   "source": "query"
+  },
+  "6": {
+   "interpretation": "primary",
+   "pass": true,
+   "reading": "window_start -> edits",
+   "source": "query"
+  },
+  "7": {
+   "interpretation": "primary",
+   "pass": true,
+   "reading": "late_events",
+   "source": "query"
+  }
+ },
+ "deadline": 600.0,
+ "deadline_hit": false,
+ "durations": [
+  30,
+  90
+ ],
+ "idempotent": true,
+ "keepalive": 5.0,
+ "make_fresh_home": false,
+ "make_user": null,
+ "passed": 5,
+ "reward": 0.7143,
+ "seed": 1,
+ "snapshot": {
+  "commit": "3efe0cf163ce97ed4c1e2de081ac686e29f71d64",
+  "files": 34
+ },
+ "speed": 60.0,
+ "stream": [
+  {
+   "cmd": "make stream DURATION=30",
+   "exit": 0,
+   "log": "stream-1.log",
+   "seconds": 37.4
+  },
+  {
+   "cmd": "make stream DURATION=90",
+   "exit": 0,
+   "log": "stream-2.log",
+   "seconds": 101.0
+  }
+ ],
+ "stream_connections": 5,
+ "stream_grace": 300,
+ "stream_ok": true,
+ "stream_positions_needed": 11774,
+ "stream_positions_served": 21503,
+ "total": 7
+}

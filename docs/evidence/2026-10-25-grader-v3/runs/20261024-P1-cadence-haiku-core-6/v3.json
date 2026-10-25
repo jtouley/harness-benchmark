@@ -1,0 +1,48 @@
+{
+ "checks": {
+  "1": {
+   "interpretation": "primary",
+   "pass": true,
+   "reading": "agency_code -> sum_net_obligations",
+   "source": "table mart_monthly_obligations, stated operation: sum(net_obligations); by agency_code"
+  },
+  "2": {
+   "interpretation": "primary",
+   "pass": true,
+   "reading": "county_fips -> sum_net_obligations_per_county_population_2024",
+   "source": "table mart_monthly_obligations, stated operation: sum(net_obligations); by county_fips; divided by county_population_2024"
+  },
+  "3": {
+   "interpretation": "primary",
+   "pass": true,
+   "reading": "row_count",
+   "source": "table mart_award_fy2024, stated operation: filter net_obligations < 0; count(*)"
+  },
+  "4": {
+   "interpretation": "primary",
+   "pass": true,
+   "reading": "month month_start, state state_fips, county county_fips -> net_obligations",
+   "source": "table mart_monthly_obligations"
+  },
+  "5": {
+   "interpretation": "primary",
+   "pass": true,
+   "reading": "wiki, actor_type -> edit_count, net_bytes",
+   "source": "table edits_by_wiki_actor"
+  },
+  "6": {
+   "interpretation": "primary",
+   "pass": true,
+   "reading": "window_start -> sum_edit_count",
+   "source": "table window_5min, stated operation: filter domain = 'en.wikipedia.org'; sum(edit_count); by window_start"
+  },
+  "7": {
+   "interpretation": "primary",
+   "pass": true,
+   "reading": "row_count",
+   "source": "table late_events, stated operation: count(*)"
+  }
+ },
+ "passed": 7,
+ "total": 7
+}

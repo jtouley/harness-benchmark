@@ -1,0 +1,59 @@
+{
+ "checks": {
+  "1": {
+   "interpretation": "primary",
+   "pass": true,
+   "reading": "agency_code -> sum_net_obligations_usd",
+   "source": "table mart_awards_monthly, stated operation: sum(net_obligations_usd); by agency_code"
+  },
+  "2": {
+   "interpretation": "primary",
+   "pass": true,
+   "reading": "county_fips -> sum_net_obligations_usd_per_population",
+   "source": "table mart_awards_monthly, stated operation: sum(net_obligations_usd); by county_fips; divided by population"
+  },
+  "3": {
+   "interpretation": "primary",
+   "pass": true,
+   "reading": "row_count",
+   "source": "table mart_awards_fy2024, stated operation: filter is_net_negative = true; count(*)"
+  },
+  "4": {
+   "interpretation": "primary",
+   "pass": true,
+   "reading": "month month_label, state state_fips, county county_fips -> net_obligations_usd",
+   "source": "table mart_awards_monthly"
+  },
+  "5": {
+   "expected": "{\"dewiki|bot\": [62, 87343], \"dewiki|human\": [171, 48236], \"enwiki|bot\": [3218, 5660289], \"enwiki|human\": [6435, 1033126], \"enwiktionary|bot\": [64, 880], \"enwiktionary|human\": [142, 11665], \"eswiki|bot\": [144, 56356], \"eswiki|human\": [573, 127935], \"frwiki|bot\": [936, 628782], \"frwiki|human\": [239, 110607], \"itwiki|bot\": [41, 64153], \"itwiki|human\": [156, 64503], \"jawiki|bot\": [63, 9176], \"jawiki|h...",
+   "got": "{\"dewiki|bot\": [48510, 16], \"dewiki|human\": [-4098, 70], \"enwiki|bot\": [185292, 1196], \"enwiki|human\": [183575, 2787], \"enwiktionary|bot\": [0, 361], \"enwiktionary|human\": [5097, 111], \"eswiki|bot\": [-25445, 114], \"eswiki|human\": [-5898, 184], \"frwiki|bot\": [97248, 257], \"frwiki|human\": [45640, 359], \"itwiki|bot\": [0, 9], \"itwiki|human\": [-10159, 78], \"jawiki|bot\": [-251, 14], \"jawiki|human\": [-171...",
+   "pass": false,
+   "source": "table fct_edit, stated operation: sum(net_bytes), count(*); by wiki, actor_type",
+   "traps": [],
+   "unexplained": true
+  },
+  "6": {
+   "expected": "[[1792023900, 985], [1792024200, 918], [1792023600, 892], [1792022400, 816], [1792023000, 796]]",
+   "got": "[[1792021800, 1195], [1792022100, 1091], [1792021500, 879], [1792022400, 768]]",
+   "pass": false,
+   "reading": "window_start_utc -> sum_edit_count",
+   "source": "table mart_edit_windows_5min, stated operation: filter server_name = 'en.wikipedia.org'; sum(edit_count); by window_start_utc",
+   "traps": [],
+   "unexplained": true
+  },
+  "7": {
+   "got": "0",
+   "pass": false,
+   "reading": "row_count",
+   "source": "table late_events, stated operation: count(*)",
+   "traps": [
+    "F4",
+    "F5",
+    "S3",
+    "S3-drops"
+   ]
+  }
+ },
+ "passed": 4,
+ "total": 7
+}

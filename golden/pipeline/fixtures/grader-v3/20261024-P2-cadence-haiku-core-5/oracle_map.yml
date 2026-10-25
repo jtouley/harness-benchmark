@@ -1,0 +1,51 @@
+# For each check in the spec's "Checks the analysts will run": the published table under out/marts/
+# and the columns (or the SQL) that answer it. Each check test in tests/test_checks.py reads these.
+checks:
+  1:
+    question: FY2024 net obligations per awarding agency
+    table: mart_monthly_obligations
+    published: out/marts/mart_monthly_obligations/mart_monthly_obligations.parquet
+    columns: [agency_code, net_obligations]
+    sql: "select agency_code, sum(net_obligations) from mart_monthly_obligations group by agency_code"
+  2:
+    question: The ten counties with the highest FY2024 obligations per person
+    table: mart_monthly_obligations
+    published: out/marts/mart_monthly_obligations/mart_monthly_obligations.parquet
+    columns: [county_fips, net_obligations, population]
+    sql: >
+      select county_fips, sum(net_obligations) / any_value(population) as per_person
+      from mart_monthly_obligations where county_fips <> 'unknown' group by county_fips
+      order by per_person desc limit 10
+  3:
+    question: The number of awards with a net negative obligation in FY2024
+    table: mart_award_fy2024
+    published: out/marts/mart_award_fy2024/mart_award_fy2024.parquet
+    columns: [award_key, net_obligations]
+    sql: "select count(*) from mart_award_fy2024 where net_obligations < 0"
+  4:
+    question: For one month, county totals add up to state totals, and state totals add up to the source total
+    table: mart_monthly_obligations
+    published: out/marts/mart_monthly_obligations/mart_monthly_obligations.parquet
+    columns: [state_fips, county_fips, month, net_obligations]
+    sql: "select state_fips, sum(net_obligations) from mart_monthly_obligations where month = DATE '2024-07-01' group by state_fips"
+  5:
+    question: For the stream, edits and net bytes per wiki for the replayed hour, split human and bot, late events included
+    table: mart_replay_hour
+    published: out/marts/mart_replay_hour/mart_replay_hour.parquet
+    columns: [wiki, actor_type, edit_count, net_bytes_added, replay_start, replay_end]
+    sql: "select wiki, actor_type, edit_count, net_bytes_added from mart_replay_hour order by wiki, actor_type"
+  6:
+    question: For the stream, the 5-minute windows with the most edits on en.wikipedia.org (on-time only)
+    table: mart_window_5min
+    published: out/marts/mart_window_5min/mart_window_5min.parquet
+    columns: [wiki, window_start, edit_count]
+    sql: >
+      select window_start, sum(edit_count) as edits from mart_window_5min
+      where wiki = 'enwiki' group by window_start order by edits desc, window_start
+      -- enwiki is en.wikipedia.org in data/raw/sitematrix.json (A-10)
+  7:
+    question: For the stream, the count of late events
+    table: mart_late_events
+    published: out/marts/mart_late_events/mart_late_events.parquet
+    columns: [meta_id, event_time, watermark_at_arrival]
+    sql: "select count(*) from mart_late_events"

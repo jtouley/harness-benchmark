@@ -1,0 +1,41 @@
+uv run python -m engine run pipelines/stream.yml --lake-root lake --duration 30
+warning: The `UV_NATIVE_TLS` environment variable is deprecated and will be removed in a future release. Use `UV_SYSTEM_CERTS` instead.
+mkdir -p out/marts/dim_agency out/marts/dim_date out/marts/dim_place out/marts/dim_wiki out/marts/fct_award_transaction out/marts/fct_edit out/marts/mart_fy2024_monthly out/marts/mart_fy2024_state_monthly out/marts/mart_window_5min
+uv run dbt build --project-dir transform --profiles-dir transform --vars '{"lake_root": "lake"}' --select +fct_edit +mart_window_5min
+warning: The `UV_NATIVE_TLS` environment variable is deprecated and will be removed in a future release. Use `UV_SYSTEM_CERTS` instead.
+[0m03:30:46  Running with dbt=1.11.6
+[0m03:30:46  Registered adapter: duckdb=1.11.0
+[0m03:30:47  Found 14 models, 25 data tests, 502 macros
+[0m03:30:47  
+[0m03:30:47  Concurrency: 4 threads (target='dev')
+[0m03:30:47  
+[0m03:30:47  1 of 12 START sql incremental model main.fct_edit .............................. [RUN]
+[0m03:30:47  2 of 12 START sql view model main.stg_sitematrix ............................... [RUN]
+[0m03:30:48  2 of 12 OK created sql view model main.stg_sitematrix .......................... [[32mOK[0m in 0.30s]
+[0m03:30:48  3 of 12 START test not_null_stg_sitematrix_wiki_id ............................. [RUN]
+[0m03:30:48  4 of 12 START test unique_stg_sitematrix_wiki_id ............................... [RUN]
+[0m03:30:48  1 of 12 OK created sql incremental model main.fct_edit ......................... [[32mOK[0m in 0.67s]
+[0m03:30:48  5 of 12 START test not_null_fct_edit_meta_id ................................... [RUN]
+[0m03:30:48  6 of 12 START test unique_fct_edit_meta_id ..................................... [RUN]
+[0m03:30:48  4 of 12 PASS unique_stg_sitematrix_wiki_id ..................................... [[32mPASS[0m in 0.39s]
+[0m03:30:48  3 of 12 PASS not_null_stg_sitematrix_wiki_id ................................... [[32mPASS[0m in 0.40s]
+[0m03:30:48  7 of 12 START sql table model main.dim_wiki .................................... [RUN]
+[0m03:30:48  5 of 12 PASS not_null_fct_edit_meta_id ......................................... [[32mPASS[0m in 0.09s]
+[0m03:30:48  6 of 12 PASS unique_fct_edit_meta_id ........................................... [[32mPASS[0m in 0.10s]
+[0m03:30:48  7 of 12 OK created sql table model main.dim_wiki ............................... [[32mOK[0m in 0.10s]
+[0m03:30:48  8 of 12 START test not_null_dim_wiki_wiki_id ................................... [RUN]
+[0m03:30:48  9 of 12 START test unique_dim_wiki_wiki_id ..................................... [RUN]
+[0m03:30:48  8 of 12 PASS not_null_dim_wiki_wiki_id ......................................... [[32mPASS[0m in 0.05s]
+[0m03:30:48  9 of 12 PASS unique_dim_wiki_wiki_id ........................................... [[32mPASS[0m in 0.05s]
+[0m03:30:48  10 of 12 START sql incremental model main.mart_window_5min ..................... [RUN]
+[0m03:30:48  10 of 12 OK created sql incremental model main.mart_window_5min ................ [[32mOK[0m in 0.04s]
+[0m03:30:48  11 of 12 START test not_null_mart_window_5min_window_key ....................... [RUN]
+[0m03:30:48  12 of 12 START test unique_mart_window_5min_window_key ......................... [RUN]
+[0m03:30:48  12 of 12 PASS unique_mart_window_5min_window_key ............................... [[32mPASS[0m in 0.03s]
+[0m03:30:48  11 of 12 PASS not_null_mart_window_5min_window_key ............................. [[32mPASS[0m in 0.04s]
+[0m03:30:48  
+[0m03:30:48  Finished running 2 incremental models, 1 table model, 8 data tests, 1 view model in 0 hours 0 minutes and 1.19 seconds (1.19s).
+[0m03:30:48  
+[0m03:30:48  [32mCompleted successfully[0m
+[0m03:30:48  
+[0m03:30:48  Done. PASS=12 WARN=0 ERROR=0 SKIP=0 NO-OP=0 TOTAL=12

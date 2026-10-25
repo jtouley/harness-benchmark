@@ -1,0 +1,65 @@
+warning: The `UV_NATIVE_TLS` environment variable is deprecated and will be removed in a future release. Use `UV_SYSTEM_CERTS` instead.
+warning: The `UV_NATIVE_TLS` environment variable is deprecated and will be removed in a future release. Use `UV_SYSTEM_CERTS` instead.
+[0m03:31:09  Running with dbt=1.11.6
+[0m03:31:10  Registered adapter: duckdb=1.11.0
+[0m03:31:10  Found 13 models, 20 data tests, 12 sources, 500 macros
+[0m03:31:10  
+[0m03:31:10  Concurrency: 4 threads (target='dev')
+[0m03:31:10  
+[0m03:31:10  1 of 25 START sql view model main.stg_census_counties .......................... [RUN]
+[0m03:31:10  2 of 25 START sql view model main.stg_sitematrix ............................... [RUN]
+[0m03:31:10  3 of 25 START sql view model main.stg_usaspending_transactions ................. [RUN]
+[0m03:31:11  1 of 25 OK created sql view model main.stg_census_counties ..................... [[32mOK[0m in 0.31s]
+[0m03:31:11  2 of 25 OK created sql view model main.stg_sitematrix .......................... [[32mOK[0m in 0.29s]
+[0m03:31:11  3 of 25 OK created sql view model main.stg_usaspending_transactions ............ [[32mOK[0m in 0.28s]
+[0m03:31:11  4 of 25 START test not_null_stg_census_counties_county_fips .................... [RUN]
+[0m03:31:11  6 of 25 START test unique_stg_census_counties_county_fips ...................... [RUN]
+[0m03:31:11  7 of 25 START test unique_stg_sitematrix_dbname ................................ [RUN]
+[0m03:31:11  5 of 25 START test not_null_stg_sitematrix_dbname .............................. [RUN]
+[0m03:31:11  5 of 25 PASS not_null_stg_sitematrix_dbname .................................... [[32mPASS[0m in 0.11s]
+[0m03:31:11  8 of 25 START test not_null_stg_usaspending_transactions_award_key ............. [RUN]
+[0m03:31:11  4 of 25 PASS not_null_stg_census_counties_county_fips .......................... [[32mPASS[0m in 0.14s]
+[0m03:31:11  7 of 25 PASS unique_stg_sitematrix_dbname ...................................... [[32mPASS[0m in 0.11s]
+[0m03:31:11  9 of 25 START test not_null_stg_usaspending_transactions_obligation ............ [RUN]
+[0m03:31:11  10 of 25 START test not_null_stg_usaspending_transactions_transaction_key ...... [RUN]
+[0m03:31:11  6 of 25 PASS unique_stg_census_counties_county_fips ............................ [[32mPASS[0m in 0.14s]
+[0m03:31:11  11 of 25 START test unique_stg_usaspending_transactions_transaction_key ........ [RUN]
+[0m03:31:11  8 of 25 PASS not_null_stg_usaspending_transactions_award_key ................... [[32mPASS[0m in 0.10s]
+[0m03:31:11  10 of 25 PASS not_null_stg_usaspending_transactions_transaction_key ............ [[32mPASS[0m in 0.11s]
+[0m03:31:11  9 of 25 PASS not_null_stg_usaspending_transactions_obligation .................. [[32mPASS[0m in 0.12s]
+[0m03:31:11  11 of 25 PASS unique_stg_usaspending_transactions_transaction_key .............. [[32mPASS[0m in 0.10s]
+[0m03:31:11  12 of 25 START sql table model main.dim_agency ................................. [RUN]
+[0m03:31:11  13 of 25 START sql table model main.dim_date ................................... [RUN]
+[0m03:31:11  14 of 25 START sql table model main.dim_place .................................. [RUN]
+[0m03:31:11  12 of 25 OK created sql table model main.dim_agency ............................ [[32mOK[0m in 0.46s]
+[0m03:31:11  15 of 25 START test unique_dim_agency_agency_code .............................. [RUN]
+[0m03:31:11  13 of 25 OK created sql table model main.dim_date .............................. [[32mOK[0m in 0.45s]
+[0m03:31:11  14 of 25 OK created sql table model main.dim_place ............................. [[32mOK[0m in 0.48s]
+[0m03:31:11  16 of 25 START test unique_dim_date_date_day ................................... [RUN]
+[0m03:31:11  17 of 25 START test unique_dim_place_place_key ................................. [RUN]
+[0m03:31:11  15 of 25 PASS unique_dim_agency_agency_code .................................... [[32mPASS[0m in 0.05s]
+[0m03:31:11  17 of 25 PASS unique_dim_place_place_key ....................................... [[32mPASS[0m in 0.04s]
+[0m03:31:11  18 of 25 START sql table model main.fct_award_transaction ...................... [RUN]
+[0m03:31:12  16 of 25 PASS unique_dim_date_date_day ......................................... [[32mPASS[0m in 0.06s]
+[0m03:31:12  18 of 25 OK created sql table model main.fct_award_transaction ................. [[32mOK[0m in 0.24s]
+[0m03:31:12  19 of 25 START test not_null_fct_award_transaction_award_key ................... [RUN]
+[0m03:31:12  20 of 25 START test relationships_fct_award_transaction_agency_code__agency_code__ref_dim_agency_  [RUN]
+[0m03:31:12  21 of 25 START test relationships_fct_award_transaction_date_day__date_day__ref_dim_date_  [RUN]
+[0m03:31:12  22 of 25 START test relationships_fct_award_transaction_place_key__place_key__ref_dim_place_  [RUN]
+[0m03:31:12  20 of 25 PASS relationships_fct_award_transaction_agency_code__agency_code__ref_dim_agency_  [[32mPASS[0m in 0.11s]
+[0m03:31:12  23 of 25 START test unique_fct_award_transaction_transaction_key ............... [RUN]
+[0m03:31:12  21 of 25 PASS relationships_fct_award_transaction_date_day__date_day__ref_dim_date_  [[32mPASS[0m in 0.11s]
+[0m03:31:12  22 of 25 PASS relationships_fct_award_transaction_place_key__place_key__ref_dim_place_  [[32mPASS[0m in 0.10s]
+[0m03:31:12  19 of 25 PASS not_null_fct_award_transaction_award_key ......................... [[32mPASS[0m in 0.12s]
+[0m03:31:12  23 of 25 PASS unique_fct_award_transaction_transaction_key ..................... [[32mPASS[0m in 0.02s]
+[0m03:31:12  24 of 25 START sql table model main.mart_obligations_monthly ................... [RUN]
+[0m03:31:12  24 of 25 OK created sql table model main.mart_obligations_monthly .............. [[32mOK[0m in 0.13s]
+[0m03:31:12  25 of 25 START test relationships_mart_obligations_monthly_place_key__place_key__ref_dim_place_  [RUN]
+[0m03:31:12  25 of 25 PASS relationships_mart_obligations_monthly_place_key__place_key__ref_dim_place_  [[32mPASS[0m in 0.03s]
+[0m03:31:12  
+[0m03:31:12  Finished running 5 table models, 17 data tests, 3 view models in 0 hours 0 minutes and 1.87 seconds (1.87s).
+[0m03:31:12  
+[0m03:31:12  [32mCompleted successfully[0m
+[0m03:31:12  
+[0m03:31:12  Done. PASS=25 WARN=0 ERROR=0 SKIP=0 NO-OP=0 TOTAL=25
+warning: The `UV_NATIVE_TLS` environment variable is deprecated and will be removed in a future release. Use `UV_SYSTEM_CERTS` instead.

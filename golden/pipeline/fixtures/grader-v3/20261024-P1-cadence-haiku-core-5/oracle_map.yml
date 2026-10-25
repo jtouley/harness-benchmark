@@ -1,0 +1,37 @@
+# For each check in the spec, the published table and the columns that answer it.
+# The check tests in tests/test_check_0N.py read these tables under out/marts/.
+- check: 1
+  question: FY2024 net obligations per awarding agency
+  table: mart_awards_monthly
+  columns: [agency_code, agency_name, net_obligations_usd]
+  how: Sum net_obligations_usd by agency_code.
+- check: 2
+  question: The ten counties with the highest FY2024 obligations per person
+  table: mart_awards_monthly
+  columns: [county_fips, county_name, net_obligations_usd, population]
+  how: Sum net_obligations_usd by county_fips over all months, divide by population, take the top ten.
+- check: 3
+  question: The number of awards with a net negative obligation in FY2024
+  table: mart_awards_fy2024
+  columns: [award_key, net_obligation_usd, is_net_negative]
+  how: Count the rows where is_net_negative is true.
+- check: 4
+  question: County totals add up to state totals, and state totals add up to the source total
+  table: mart_awards_monthly
+  columns: [month_label, state_fips, county_fips, net_obligations_usd]
+  how: For one month, sum by state_fips over the counties, then sum over the states.
+- check: 5
+  question: Edits and net bytes per wiki for the replayed hour, split human and bot, late edits included
+  table: fct_edit
+  columns: [wiki, actor_type, event_epoch, net_bytes, is_late]
+  how: Keep the rows whose event_epoch is in the replayed hour. Sum net_bytes and count rows by wiki and actor_type.
+- check: 6
+  question: The 5-minute windows with the most edits on en.wikipedia.org, on-time edits only
+  table: mart_edit_windows_5min
+  columns: [window_start_utc, server_name, edit_count]
+  how: Filter server_name to en.wikipedia.org. Sum edit_count by window_start_utc and sort by the sum, descending.
+- check: 7
+  question: The count of late events
+  table: late_events
+  columns: [meta_id, window_start_epoch, prior_max_event_epoch]
+  how: Count the rows.

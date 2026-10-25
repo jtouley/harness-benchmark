@@ -1,0 +1,98 @@
+# For each analyst check, the table and column (or SQL view) that answers it.
+# Batch tables are in out/marts/ (Parquet). Stream tables are in out/marts/ (Parquet).
+
+checks:
+  - check: 1
+    question: FY2024 net obligations per awarding agency
+    table: fct_award_transaction
+    column: obligation
+    group_by: agency_code
+    filter: "action_date in fiscal year 2024 (dim_date.fiscal_year = 2024); agency names in dim_agency"
+    sql: |
+      select f.agency_code, a.agency_name, cast(sum(f.obligation) as decimal(18,2)) as net_obligation
+      from fct_award_transaction f
+      join dim_date d on d.action_date = f.action_date
+      join dim_agency a on a.agency_code = f.agency_code
+      where d.fiscal_year = 2024
+      group by f.agency_code, a.agency_name
+
+  - check: 2
+    question: The ten counties with the highest FY2024 obligations per person
+    table: mart_monthly_place_agency
+    column: "net_obligation, population"
+    group_by: place_key
+    filter: "months Oct 2023 to Sep 2024; population is the July 1, 2024 estimate (2021 fallback for 8 counties, see DECISIONS.md)"
+    sql: |
+      select m.place_key, m.county_name, m.state_name,
+             cast(sum(m.net_obligation) / any_value(m.population) as decimal(18,4)) as obligation_per_person
+      from mart_monthly_place_agency m
+      where m.month between date '2023-10-01' and date '2024-09-01' and m.population is not null
+      group by m.place_key, m.county_name, m.state_name, m.population
+      order by obligation_per_person desc
+      limit 10
+
+  - check: 3
+    question: The number of awards with a net negative obligation in FY2024
+    table: fct_award_transaction
+    column: "award_key, obligation"
+    group_by: award_key
+    filter: "FY2024; an award is one award_key over both file types"
+    sql: |
+      select count(*) as negative_awards
+      from (
+        select f.award_key
+        from fct_award_transaction f
+        join dim_date d on d.action_date = f.action_date
+        where d.fiscal_year = 2024
+        group by f.award_key
+        having sum(f.obligation) < 0
+      )
+
+  - check: 4
+    question: "For one month: county totals add up to state totals, and state totals add up to the source total"
+    table: "mart_monthly_place_agency (county totals), fct_award_transaction (source total)"
+    column: "net_obligation (county), obligation (source)"
+    group_by: "state_fips (state totals), month (one month: 2024-09-01)"
+    filter: "month = 2024-09-01; source total is the sum of federal_action_obligation over both raw files for the month"
+    sql: |
+      select m.state_fips, sum(m.net_obligation) as state_total_from_counties
+      from mart_monthly_place_agency m
+      where m.month = date '2024-09-01'
+      group by m.state_fips
+
+  - check: 5
+    question: "For the stream: edits and net bytes per wiki for the replayed hour, split human and bot, late events included"
+    table: "fct_edit (on time) and late_events (late), both in out/marts/"
+    column: "wiki, actor_type, net_bytes (counts: count of meta_id)"
+    group_by: wiki, actor_type
+    filter: "all events in the replay (the replay is shorter than 60 minutes of event time)"
+    sql: |
+      select wiki, actor_type, count(*) as edits, sum(net_bytes) as net_bytes
+      from (
+        select wiki, actor_type, net_bytes from fct_edit
+        union all
+        select wiki, actor_type, net_bytes from late_events
+      )
+      group by wiki, actor_type
+
+  - check: 6
+    question: "For the stream: the 5-minute windows with the most edits on en.wikipedia.org (on-time edits only)"
+    table: fct_edit
+    column: "window_start, meta_id (count), server_name"
+    group_by: window_start
+    filter: "server_name = 'en.wikipedia.org'; sorted by edits descending, then window_start ascending (A-7)"
+    sql: |
+      select window_start, count(*) as edits
+      from fct_edit
+      where server_name = 'en.wikipedia.org'
+      group by window_start
+      order by edits desc, window_start asc
+
+  - check: 7
+    question: The count of late events
+    table: late_events
+    column: "meta_id (count, one row per event)"
+    group_by: none
+    filter: "all late events (first stored row of each meta_id)"
+    sql: |
+      select count(*) as late_events from late_events

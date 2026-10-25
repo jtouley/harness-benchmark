@@ -1,0 +1,45 @@
+{
+ "checks": {
+  "1": {
+   "interpretation": "primary",
+   "pass": true,
+   "reading": "agency_code -> net_obligations",
+   "source": "table mart_obligations_monthly"
+  },
+  "2": {
+   "error": "no county column and per-person column found",
+   "pass": false,
+   "source": "table mart_obligations_monthly"
+  },
+  "3": {
+   "expected": "1122",
+   "got": "7918",
+   "pass": false,
+   "source": "table mart_award_net_obligations",
+   "traps": [],
+   "unexplained": true
+  },
+  "4": {
+   "expected": "{\"counties\": {\"01069\": \"75000.00\", \"02016\": \"15996.00\", \"02020\": \"196993.00\", \"02050\": \"29878.00\", \"02063\": \"10000.00\", \"02066\": \"10000.00\", \"02068\": \"7025.00\", \"02070\": \"10000.00\", \"02090\": \"0.00\", \"02100\": \"10000.00\", \"02110\": \"190000.00\", \"02122\": \"27466.00\", \"02150\": \"29971.00\", \"02158\": \"10000.00\", \"02164\": \"50000.00\", \"02195\": \"20000.00\", \"02198\": \"20000.00\", \"02240\": \"10000.00\", \"02275\": \"1...",
+   "got": "{\"counties\": {}, \"month\": \"2024-07\", \"states\": {\"01\": \"204004.17\", \"02\": \"2586242.00\", \"04\": \"11707289.98\", \"05\": \"4748653.00\", \"06\": \"9005420.18\", \"08\": \"14055693.00\", \"09\": \"5907487.00\", \"10\": \"800768.00\", \"11\": \"10899436.11\", \"12\": \"24364885.19\", \"13\": \"4292416.96\", \"15\": \"1435464.24\", \"16\": \"4156616.00\", \"17\": \"-178746.01\", \"18\": \"1707409.12\", \"19\": \"9489172.24\", \"20\": \"4388311.71\", \"21\": \"509...",
+   "pass": false,
+   "source": "table mart_obligations_monthly",
+   "traps": [],
+   "unexplained": true
+  },
+  "5": {
+   "error": "no published mart named 'mart_wiki_actor_totals' under out/marts/",
+   "pass": false
+  },
+  "6": {
+   "error": "no published mart named 'mart_edit_windows_5min' under out/marts/",
+   "pass": false
+  },
+  "7": {
+   "error": "no published mart named 'mart_late_events_by_type' under out/marts/",
+   "pass": false
+  }
+ },
+ "passed": 1,
+ "total": 7
+}

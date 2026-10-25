@@ -1,0 +1,104 @@
+# Oracle map: for each check of the spec, the table and the SQL that answer it.
+# Each SQL reads only the published marts under out/marts/ (the spec's rule for
+# anything downstream of the lake). tests/test_checks.py runs each SQL and compares
+# its answer with a second computation from the raw files or the recorded capture.
+checks:
+  - id: 1
+    question: FY2024 net obligations per awarding agency
+    table: mart_fy2024_monthly
+    columns: [agency_code, agency_name, net_obligations]
+    queries:
+      answer: |
+        select agency_code, agency_name, sum(net_obligations) as net_obligations
+        from read_parquet('out/marts/mart_fy2024_monthly/*.parquet')
+        group by agency_code, agency_name
+        order by agency_code
+
+  - id: 2
+    question: The ten counties with the highest FY2024 obligations per person
+    table: mart_fy2024_monthly
+    columns: [county_fips, county_name, state_fips, population, net_obligations]
+    tie_rule: the lower 5-digit county code ranks first (DECISIONS.md)
+    queries:
+      answer: |
+        with county as (
+            select county_fips, county_name, state_fips,
+                   max(population) as population,
+                   sum(net_obligations) as net_obligations
+            from read_parquet('out/marts/mart_fy2024_monthly/*.parquet')
+            where population is not null and county_fips <> 'UNKNOWN'
+            group by all
+        )
+        select county_fips, county_name, state_fips, population, net_obligations
+        from county
+        order by net_obligations / population desc, county_fips asc
+        limit 10
+
+  - id: 3
+    question: The number of awards with a net negative obligation in FY2024
+    table: fct_award_transaction
+    columns: [award_type, award_key, obligation_amount]
+    queries:
+      answer: |
+        select count(*) as negative_awards
+        from (
+            select award_type, award_key
+            from read_parquet('out/marts/fct_award_transaction/*.parquet')
+            group by award_type, award_key
+            having sum(obligation_amount) < 0
+        )
+
+  - id: 4
+    question: For one month, county totals add up to state totals, and state totals add up to the source total
+    month: "2024-09"
+    table: mart_fy2024_monthly, mart_fy2024_state_monthly, fct_award_transaction
+    queries:
+      county_by_state: |
+        select state_fips, sum(net_obligations) as net_obligations
+        from read_parquet('out/marts/mart_fy2024_monthly/*.parquet')
+        where month_start = date '2024-09-01'
+        group by state_fips
+      state: |
+        select state_fips, sum(net_obligations) as net_obligations
+        from read_parquet('out/marts/mart_fy2024_state_monthly/*.parquet')
+        where month_start = date '2024-09-01'
+        group by state_fips
+      source_total: |
+        select sum(obligation_amount) as net_obligations
+        from read_parquet('out/marts/fct_award_transaction/*.parquet')
+        where date_trunc('month', action_date) = date '2024-09-01'
+
+  - id: 5
+    question: For the stream, edits and net bytes per wiki for the replayed hour, split human and bot, late events included
+    table: fct_edit
+    columns: [wiki, actor_type, edits, net_bytes]
+    queries:
+      answer: |
+        select wiki, actor_type, count(*) as edits, sum(bytes_added) as net_bytes
+        from read_parquet('out/marts/fct_edit/*.parquet')
+        group by all
+        order by wiki, actor_type
+
+  - id: 6
+    question: For the stream, the 5-minute windows with the most edits on en.wikipedia.org (on-time edits only)
+    table: mart_window_5min
+    columns: [window_start_utc, edits]
+    tie_rule: the earlier window ranks first (A-17)
+    queries:
+      answer: |
+        select window_start_utc, sum(edit_count) as edits
+        from read_parquet('out/marts/mart_window_5min/*.parquet')
+        where domain = 'https://en.wikipedia.org'
+        group by window_start_utc
+        order by edits desc, window_start_utc asc
+        limit 10
+
+  - id: 7
+    question: For the stream, the count of late events
+    table: fct_edit
+    columns: [meta_id, late]
+    queries:
+      answer: |
+        select count(*) as late_events
+        from read_parquet('out/marts/fct_edit/*.parquet')
+        where late

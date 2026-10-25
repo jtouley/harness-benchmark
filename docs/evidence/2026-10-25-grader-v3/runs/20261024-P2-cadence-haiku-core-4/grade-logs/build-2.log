@@ -1,0 +1,83 @@
+uv run python -m engine pipelines/batch.yml --lake lake
+warning: The `UV_NATIVE_TLS` environment variable is deprecated and will be removed in a future release. Use `UV_SYSTEM_CERTS` instead.
+mkdir -p out/marts/dim_place out/marts/dim_agency out/marts/dim_date out/marts/fct_award_transaction out/marts/mart_monthly_obligations out/marts/mart_county_fy2024 out/marts/mart_award_fy2024 out/marts/dim_wiki
+uv run dbt build --project-dir transform --profiles-dir transform --vars '{"lake_root": "lake", "marts_root": "out/marts"}' --exclude tag:stream
+warning: The `UV_NATIVE_TLS` environment variable is deprecated and will be removed in a future release. Use `UV_SYSTEM_CERTS` instead.
+[0m03:29:19  Running with dbt=1.11.6
+[0m03:29:19  Registered adapter: duckdb=1.11.0
+[0m03:29:20  Found 15 models, 30 data tests, 502 macros
+[0m03:29:20  
+[0m03:29:20  Concurrency: 4 threads (target='dev')
+[0m03:29:20  
+[0m03:29:20  1 of 33 START sql table model main.dim_wiki .................................... [RUN]
+[0m03:29:20  2 of 33 START sql view model main.stg_award_transactions ....................... [RUN]
+[0m03:29:20  3 of 33 START sql view model main.stg_census_2021 .............................. [RUN]
+[0m03:29:20  4 of 33 START sql view model main.stg_census_2024 .............................. [RUN]
+[0m03:29:20  2 of 33 OK created sql view model main.stg_award_transactions .................. [[32mOK[0m in 0.31s]
+[0m03:29:20  4 of 33 OK created sql view model main.stg_census_2024 ......................... [[32mOK[0m in 0.30s]
+[0m03:29:20  3 of 33 OK created sql view model main.stg_census_2021 ......................... [[32mOK[0m in 0.30s]
+[0m03:29:20  6 of 33 START sql table model main.dim_date .................................... [RUN]
+[0m03:29:20  5 of 33 START sql table model main.dim_agency .................................. [RUN]
+[0m03:29:20  7 of 33 START sql table model main.fct_award_transaction ....................... [RUN]
+[0m03:29:20  1 of 33 OK created sql table model main.dim_wiki ............................... [[32mOK[0m in 0.54s]
+[0m03:29:20  8 of 33 START sql table model main.dim_place ................................... [RUN]
+[0m03:29:20  6 of 33 OK created sql table model main.dim_date ............................... [[32mOK[0m in 0.24s]
+[0m03:29:20  9 of 33 START test not_null_dim_wiki_dbname .................................... [RUN]
+[0m03:29:20  7 of 33 OK created sql table model main.fct_award_transaction .................. [[32mOK[0m in 0.28s]
+[0m03:29:20  5 of 33 OK created sql table model main.dim_agency ............................. [[32mOK[0m in 0.28s]
+[0m03:29:20  10 of 33 START test unique_dim_wiki_dbname ..................................... [RUN]
+[0m03:29:20  11 of 33 START test not_null_dim_date_date_day ................................. [RUN]
+[0m03:29:20  9 of 33 PASS not_null_dim_wiki_dbname .......................................... [[32mPASS[0m in 0.12s]
+[0m03:29:20  11 of 33 PASS not_null_dim_date_date_day ....................................... [[32mPASS[0m in 0.07s]
+[0m03:29:20  12 of 33 START test unique_dim_date_date_day ................................... [RUN]
+[0m03:29:20  13 of 33 START test not_null_dim_agency_agency_name ............................ [RUN]
+[0m03:29:20  10 of 33 PASS unique_dim_wiki_dbname ........................................... [[32mPASS[0m in 0.11s]
+[0m03:29:20  14 of 33 START test not_null_fct_award_transaction_award_key ................... [RUN]
+[0m03:29:20  13 of 33 PASS not_null_dim_agency_agency_name .................................. [[32mPASS[0m in 0.06s]
+[0m03:29:20  15 of 33 START test not_null_fct_award_transaction_transaction_key ............. [RUN]
+[0m03:29:20  14 of 33 PASS not_null_fct_award_transaction_award_key ......................... [[32mPASS[0m in 0.06s]
+[0m03:29:20  16 of 33 START test relationships_fct_award_transaction_agency_name__agency_name__ref_dim_agency_  [RUN]
+[0m03:29:20  12 of 33 PASS unique_dim_date_date_day ......................................... [[32mPASS[0m in 0.10s]
+[0m03:29:21  17 of 33 START test relationships_fct_award_transaction_date_day__date_day__ref_dim_date_  [RUN]
+[0m03:29:21  15 of 33 PASS not_null_fct_award_transaction_transaction_key ................... [[32mPASS[0m in 0.06s]
+[0m03:29:21  8 of 33 OK created sql table model main.dim_place .............................. [[32mOK[0m in 0.31s]
+[0m03:29:21  18 of 33 START test unique_dim_agency_agency_name .............................. [RUN]
+[0m03:29:21  19 of 33 START test unique_fct_award_transaction_transaction_key ............... [RUN]
+[0m03:29:21  16 of 33 PASS relationships_fct_award_transaction_agency_name__agency_name__ref_dim_agency_  [[32mPASS[0m in 0.07s]
+[0m03:29:21  20 of 33 START test not_null_dim_place_place_key ............................... [RUN]
+[0m03:29:21  17 of 33 PASS relationships_fct_award_transaction_date_day__date_day__ref_dim_date_  [[32mPASS[0m in 0.07s]
+[0m03:29:21  21 of 33 START test relationships_fct_award_transaction_place_key__place_key__ref_dim_place_  [RUN]
+[0m03:29:21  18 of 33 PASS unique_dim_agency_agency_name .................................... [[32mPASS[0m in 0.06s]
+[0m03:29:21  19 of 33 PASS unique_fct_award_transaction_transaction_key ..................... [[32mPASS[0m in 0.06s]
+[0m03:29:21  22 of 33 START test unique_dim_place_place_key ................................. [RUN]
+[0m03:29:21  23 of 33 START sql table model main.mart_award_fy2024 .......................... [RUN]
+[0m03:29:21  20 of 33 PASS not_null_dim_place_place_key ..................................... [[32mPASS[0m in 0.07s]
+[0m03:29:21  21 of 33 PASS relationships_fct_award_transaction_place_key__place_key__ref_dim_place_  [[32mPASS[0m in 0.06s]
+[0m03:29:21  22 of 33 PASS unique_dim_place_place_key ....................................... [[32mPASS[0m in 0.06s]
+[0m03:29:21  24 of 33 START sql table model main.mart_county_fy2024 ......................... [RUN]
+[0m03:29:21  25 of 33 START sql table model main.mart_monthly_obligations ................... [RUN]
+[0m03:29:21  23 of 33 OK created sql table model main.mart_award_fy2024 ..................... [[32mOK[0m in 0.30s]
+[0m03:29:21  26 of 33 START test not_null_mart_award_fy2024_award_key ....................... [RUN]
+[0m03:29:21  27 of 33 START test unique_mart_award_fy2024_award_key ......................... [RUN]
+[0m03:29:21  24 of 33 OK created sql table model main.mart_county_fy2024 .................... [[32mOK[0m in 0.28s]
+[0m03:29:21  28 of 33 START test not_null_mart_county_fy2024_county_fips .................... [RUN]
+[0m03:29:21  26 of 33 PASS not_null_mart_award_fy2024_award_key ............................. [[32mPASS[0m in 0.07s]
+[0m03:29:21  29 of 33 START test not_null_mart_county_fy2024_place_key ...................... [RUN]
+[0m03:29:21  27 of 33 PASS unique_mart_award_fy2024_award_key ............................... [[32mPASS[0m in 0.07s]
+[0m03:29:21  30 of 33 START test unique_mart_county_fy2024_place_key ........................ [RUN]
+[0m03:29:21  25 of 33 OK created sql table model main.mart_monthly_obligations .............. [[32mOK[0m in 0.33s]
+[0m03:29:21  28 of 33 PASS not_null_mart_county_fy2024_county_fips .......................... [[32mPASS[0m in 0.06s]
+[0m03:29:21  31 of 33 START test not_null_mart_monthly_obligations_mart_key ................. [RUN]
+[0m03:29:21  32 of 33 START test relationships_mart_monthly_obligations_place_key__place_key__ref_dim_place_  [RUN]
+[0m03:29:21  30 of 33 PASS unique_mart_county_fy2024_place_key .............................. [[32mPASS[0m in 0.08s]
+[0m03:29:21  33 of 33 START test unique_mart_monthly_obligations_mart_key ................... [RUN]
+[0m03:29:21  29 of 33 PASS not_null_mart_county_fy2024_place_key ............................ [[32mPASS[0m in 0.09s]
+[0m03:29:21  31 of 33 PASS not_null_mart_monthly_obligations_mart_key ....................... [[32mPASS[0m in 0.05s]
+[0m03:29:21  32 of 33 PASS relationships_mart_monthly_obligations_place_key__place_key__ref_dim_place_  [[32mPASS[0m in 0.05s]
+[0m03:29:21  33 of 33 PASS unique_mart_monthly_obligations_mart_key ......................... [[32mPASS[0m in 0.03s]
+[0m03:29:21  
+[0m03:29:21  Finished running 8 table models, 22 data tests, 3 view models in 0 hours 0 minutes and 1.61 seconds (1.61s).
+[0m03:29:21  
+[0m03:29:21  [32mCompleted successfully[0m
+[0m03:29:21  
+[0m03:29:21  Done. PASS=33 WARN=0 ERROR=0 SKIP=0 NO-OP=0 TOTAL=33

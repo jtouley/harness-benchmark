@@ -1,0 +1,89 @@
+uv run python -I pipeline/ingest_batch.py --reference-only
+warning: The `UV_NATIVE_TLS` environment variable is deprecated and will be removed in a future release. Use `UV_SYSTEM_CERTS` instead.
+Pipeline batch load step finished in 0.02 seconds
+1 load package(s) were loaded to destination filesystem and into dataset lake
+The filesystem destination used file:///tmp/claude-0/-home-user/fd6221f8-f79d-5dc4-b0f6-aa7efcbaf9ac/scratchpad/w3/20261023-P1-oneshot-sonnet-1-r2/g/repo location to store data
+Load package 1792899245.2040617 is LOADED and contains no failed jobs
+uv run python -I pipeline/stream_consumer.py --duration 90 --url http://localhost:8099/v2/stream/recentchange
+warning: The `UV_NATIVE_TLS` environment variable is deprecated and will be removed in a future release. Use `UV_SYSTEM_CERTS` instead.
+consuming http://localhost:8099/v2/stream/recentchange for 90s; resume cursor: yes
+landed 13569 events
+mkdir -p out/marts/dim_agency/ out/marts/dim_date/ out/marts/dim_place/ out/marts/dim_wiki/ out/marts/fct_award_transactions/ out/marts/fct_edits/ out/marts/late_events/ out/marts/mart_agency_fy2024/ out/marts/mart_award_net_fy2024/ out/marts/mart_county_fy2024/ out/marts/mart_edit_windows/ out/marts/mart_obligations_monthly/
+uv run dbt build --project-dir transform --profiles-dir transform --select +tag:stream
+warning: The `UV_NATIVE_TLS` environment variable is deprecated and will be removed in a future release. Use `UV_SYSTEM_CERTS` instead.
+[0m03:35:42  Running with dbt=1.11.6
+[0m03:35:42  Registered adapter: duckdb=1.11.0
+[0m03:35:42  Found 18 models, 72 data tests, 6 sources, 501 macros
+[0m03:35:42  
+[0m03:35:42  Concurrency: 4 threads (target='dev')
+[0m03:35:42  
+[0m03:35:43  1 of 32 START sql view model main.stg_sitematrix ............................... [RUN]
+[0m03:35:43  2 of 32 START sql view model main.stg_wiki_recentchange ........................ [RUN]
+[0m03:35:43  1 of 32 OK created sql view model main.stg_sitematrix .......................... [[32mOK[0m in 0.14s]
+[0m03:35:43  4 of 32 START test unique_stg_sitematrix_wiki .................................. [RUN]
+[0m03:35:43  2 of 32 OK created sql view model main.stg_wiki_recentchange ................... [[32mOK[0m in 0.14s]
+[0m03:35:43  3 of 32 START test not_null_stg_sitematrix_wiki ................................ [RUN]
+[0m03:35:43  5 of 32 START sql incremental model main.int_edit_events ....................... [RUN]
+[0m03:35:43  3 of 32 PASS not_null_stg_sitematrix_wiki ...................................... [[32mPASS[0m in 0.10s]
+[0m03:35:43  4 of 32 PASS unique_stg_sitematrix_wiki ........................................ [[32mPASS[0m in 0.13s]
+[0m03:35:43  5 of 32 OK created sql incremental model main.int_edit_events .................. [[32mOK[0m in 0.28s]
+[0m03:35:43  6 of 32 START test accepted_values_int_edit_events_actor_type__human__bot ...... [RUN]
+[0m03:35:43  7 of 32 START test not_null_int_edit_events_event_id ........................... [RUN]
+[0m03:35:43  8 of 32 START test not_null_int_edit_events_event_ts ........................... [RUN]
+[0m03:35:43  9 of 32 START test not_null_int_edit_events_is_late ............................ [RUN]
+[0m03:35:43  6 of 32 PASS accepted_values_int_edit_events_actor_type__human__bot ............ [[32mPASS[0m in 0.06s]
+[0m03:35:43  7 of 32 PASS not_null_int_edit_events_event_id ................................. [[32mPASS[0m in 0.06s]
+[0m03:35:43  10 of 32 START test unique_int_edit_events_event_id ............................ [RUN]
+[0m03:35:43  9 of 32 PASS not_null_int_edit_events_is_late .................................. [[32mPASS[0m in 0.05s]
+[0m03:35:43  8 of 32 PASS not_null_int_edit_events_event_ts ................................. [[32mPASS[0m in 0.07s]
+[0m03:35:43  10 of 32 PASS unique_int_edit_events_event_id .................................. [[32mPASS[0m in 0.03s]
+[0m03:35:43  11 of 32 START sql external model main.dim_wiki ................................ [RUN]
+[0m03:35:43  13 of 32 START sql incremental model main.int_edit_windows ..................... [RUN]
+[0m03:35:43  12 of 32 START sql external model main.fct_edits ............................... [RUN]
+[0m03:35:43  14 of 32 START sql external model main.late_events ............................. [RUN]
+[0m03:35:43  13 of 32 OK created sql incremental model main.int_edit_windows ................ [[32mOK[0m in 0.27s]
+[0m03:35:43  15 of 32 START test unique_combination_int_edit_windows_window_start__wiki__namespace__actor_type  [RUN]
+[0m03:35:43  15 of 32 PASS unique_combination_int_edit_windows_window_start__wiki__namespace__actor_type  [[32mPASS[0m in 0.09s]
+[0m03:35:44  16 of 32 START sql external model main.mart_edit_windows ....................... [RUN]
+[0m03:35:44  11 of 32 OK created sql external model main.dim_wiki ........................... [[32mOK[0m in 0.47s]
+[0m03:35:44  14 of 32 OK created sql external model main.late_events ........................ [[32mOK[0m in 0.46s]
+[0m03:35:44  17 of 32 START test not_null_dim_wiki_wiki ..................................... [RUN]
+[0m03:35:44  18 of 32 START test unique_dim_wiki_wiki ....................................... [RUN]
+[0m03:35:44  17 of 32 PASS not_null_dim_wiki_wiki ........................................... [[32mPASS[0m in 0.07s]
+[0m03:35:44  19 of 32 START test not_null_late_events_event_id .............................. [RUN]
+[0m03:35:44  12 of 32 OK created sql external model main.fct_edits .......................... [[32mOK[0m in 0.56s]
+[0m03:35:44  20 of 32 START test unique_late_events_event_id ................................ [RUN]
+[0m03:35:44  18 of 32 PASS unique_dim_wiki_wiki ............................................. [[32mPASS[0m in 0.10s]
+[0m03:35:44  21 of 32 START test accepted_values_fct_edits_actor_type__human__bot ........... [RUN]
+[0m03:35:44  20 of 32 PASS unique_late_events_event_id ...................................... [[32mPASS[0m in 0.06s]
+[0m03:35:44  22 of 32 START test not_null_fct_edits_event_id ................................ [RUN]
+[0m03:35:44  19 of 32 PASS not_null_late_events_event_id .................................... [[32mPASS[0m in 0.09s]
+[0m03:35:44  23 of 32 START test not_null_fct_edits_event_ts ................................ [RUN]
+[0m03:35:44  21 of 32 PASS accepted_values_fct_edits_actor_type__human__bot ................. [[32mPASS[0m in 0.09s]
+[0m03:35:44  16 of 32 OK created sql external model main.mart_edit_windows .................. [[32mOK[0m in 0.30s]
+[0m03:35:44  24 of 32 START test not_null_fct_edits_is_late ................................. [RUN]
+[0m03:35:44  25 of 32 START test not_null_fct_edits_wiki .................................... [RUN]
+[0m03:35:44  22 of 32 PASS not_null_fct_edits_event_id ...................................... [[32mPASS[0m in 0.09s]
+[0m03:35:44  26 of 32 START test relationships_fct_edits_wiki__wiki__ref_dim_wiki_ .......... [RUN]
+[0m03:35:44  23 of 32 PASS not_null_fct_edits_event_ts ...................................... [[32mPASS[0m in 0.08s]
+[0m03:35:44  27 of 32 START test unique_fct_edits_event_id .................................. [RUN]
+[0m03:35:44  24 of 32 PASS not_null_fct_edits_is_late ....................................... [[32mPASS[0m in 0.06s]
+[0m03:35:44  28 of 32 START test accepted_values_mart_edit_windows_actor_type__human__bot ... [RUN]
+[0m03:35:44  25 of 32 PASS not_null_fct_edits_wiki .......................................... [[32mPASS[0m in 0.06s]
+[0m03:35:44  29 of 32 START test assert_stream_windows_match_events ......................... [RUN]
+[0m03:35:44  28 of 32 PASS accepted_values_mart_edit_windows_actor_type__human__bot ......... [[32mPASS[0m in 0.09s]
+[0m03:35:44  30 of 32 START test not_null_mart_edit_windows_wiki ............................ [RUN]
+[0m03:35:44  26 of 32 PASS relationships_fct_edits_wiki__wiki__ref_dim_wiki_ ................ [[32mPASS[0m in 0.16s]
+[0m03:35:44  27 of 32 PASS unique_fct_edits_event_id ........................................ [[32mPASS[0m in 0.14s]
+[0m03:35:44  29 of 32 PASS assert_stream_windows_match_events ............................... [[32mPASS[0m in 0.11s]
+[0m03:35:44  32 of 32 START test unique_combination_mart_edit_windows_window_start__wiki__namespace__actor_type  [RUN]
+[0m03:35:44  31 of 32 START test not_null_mart_edit_windows_window_start .................... [RUN]
+[0m03:35:44  31 of 32 PASS not_null_mart_edit_windows_window_start .......................... [[32mPASS[0m in 0.03s]
+[0m03:35:44  30 of 32 PASS not_null_mart_edit_windows_wiki .................................. [[32mPASS[0m in 0.06s]
+[0m03:35:44  32 of 32 PASS unique_combination_mart_edit_windows_window_start__wiki__namespace__actor_type  [[32mPASS[0m in 0.04s]
+[0m03:35:44  
+[0m03:35:44  Finished running 4 external models, 2 incremental models, 24 data tests, 2 view models in 0 hours 0 minutes and 1.67 seconds (1.67s).
+[0m03:35:44  
+[0m03:35:44  [32mCompleted successfully[0m
+[0m03:35:44  
+[0m03:35:44  Done. PASS=32 WARN=0 ERROR=0 SKIP=0 NO-OP=0 TOTAL=32

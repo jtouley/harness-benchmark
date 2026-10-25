@@ -1,0 +1,67 @@
+# For each analyst check: where the answer lives. Everything reads only out/marts/<table>/<table>.parquet.
+# "sql" is runnable as-is in DuckDB from the repo root (or point any BI tool at the Parquet files).
+
+checks:
+  1_net_obligations_per_agency:
+    table: mart_agency_fy2024
+    columns: [agency_key, agency_name, net_obligations]
+    sql: |
+      select agency_key, agency_name, net_obligations
+      from 'out/marts/mart_agency_fy2024/mart_agency_fy2024.parquet' order by agency_key
+
+  2_top_ten_counties_obligations_per_person:
+    table: mart_county_fy2024
+    columns: [county_key, county_name, state_code, obligations_per_person, per_person_rank]
+    note: July 1, 2024 population estimate (Amendment A); counties without any estimate are excluded from the ranking.
+    sql: |
+      select per_person_rank, county_key, county_name, state_code, net_obligations, population, obligations_per_person
+      from 'out/marts/mart_county_fy2024/mart_county_fy2024.parquet'
+      where per_person_rank <= 10 order by per_person_rank
+
+  3_awards_with_net_negative_obligation:
+    table: mart_award_net_fy2024
+    columns: [is_net_negative, award_key, net_obligations]
+    sql: |
+      select count(*) as awards_net_negative
+      from 'out/marts/mart_award_net_fy2024/mart_award_net_fy2024.parquet' where is_net_negative
+
+  4_month_county_state_source_reconciliation:
+    table: mart_obligations_monthly (county rows and state_fips), fct_award_transactions (source total)
+    columns: [month, year_month, state_fips, county_key, net_obligations]
+    note: Also enforced for every month by the dbt test tests/assert_monthly_mart_reconciles.sql.
+    sql: |
+      with m as (select * from 'out/marts/mart_obligations_monthly/mart_obligations_monthly.parquet' where year_month = '2024-03'),
+      county_to_state as (select state_fips, sum(net_obligations) as from_counties from m group by state_fips),
+      state_total as (select sum(from_counties) as from_states from county_to_state),
+      source as (select sum(obligation_amount) as source_total
+                 from 'out/marts/fct_award_transactions/fct_award_transactions.parquet'
+                 where action_date >= date '2024-03-01' and action_date < date '2024-04-01')
+      select (select from_states from state_total) as states_sum_of_counties, source_total,
+             (select from_states from state_total) = source_total as ties_out
+      from source
+
+  5_edits_and_net_bytes_per_wiki_human_vs_bot:
+    table: fct_edits
+    columns: [wiki, actor_type, is_edit, net_bytes]
+    note: >
+      Includes late events (fct_edits holds every consumed event). "Edits" are event_type edit or new
+      (is_edit); count(*) gives all change events, including log and category events.
+    sql: |
+      select wiki, actor_type, count(*) filter (where is_edit) as edits, sum(net_bytes) as net_bytes_added,
+             count(*) as change_events
+      from 'out/marts/fct_edits/fct_edits.parquet' group by wiki, actor_type order by wiki, actor_type
+
+  6_top_five_minute_windows_enwiki:
+    table: mart_edit_windows
+    columns: [window_start, wiki, edit_count]
+    note: On-time events only (late events are not in this mart). enwiki is en.wikipedia.org.
+    sql: |
+      select window_start, sum(edit_count) as edits, sum(net_bytes) as net_bytes
+      from 'out/marts/mart_edit_windows/mart_edit_windows.parquet' where wiki = 'enwiki'
+      group by window_start order by edits desc, window_start limit 10
+
+  7_late_event_count:
+    table: late_events
+    columns: [event_id]
+    sql: |
+      select count(*) as late_events from 'out/marts/late_events/late_events.parquet'

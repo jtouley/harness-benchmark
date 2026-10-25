@@ -1,0 +1,53 @@
+{
+ "checks": {
+  "1": {
+   "interpretation": "primary",
+   "pass": true,
+   "reading": "awarding_agency_code -> sum_net_obligations",
+   "source": "table mart_obligations_monthly, stated operation: sum(net_obligations); by awarding_agency_code"
+  },
+  "2": {
+   "interpretation": "primary",
+   "pass": true,
+   "reading": "county_fips -> obligations_per_person",
+   "source": "table mart_county_fy2024"
+  },
+  "3": {
+   "interpretation": "primary",
+   "pass": true,
+   "reading": "row_count",
+   "source": "table mart_award_net_fy2024, stated operation: filter net_obligations < 0; count(*)"
+  },
+  "4": {
+   "error": "unresolved: note: cannot read 'Also read mart_obligations_monthly_state and mart_source_totals_monthly'",
+   "pass": false
+  },
+  "5": {
+   "got": "{\"dewiki|bot\": [16, 48510], \"dewiki|human\": [48, 4453], \"enwiki|bot\": [674, 185350], \"enwiki|human\": [1559, 244137], \"enwiktionary|bot\": [52, 624], \"enwiktionary|human\": [44, 6062], \"eswiki|bot\": [19, -24694], \"eswiki|human\": [120, 41065], \"frwiki|bot\": [240, 98697], \"frwiki|human\": [111, 57280], \"itwiki|bot\": [9, 26416], \"itwiki|human\": [60, 3061], \"jawiki|bot\": [14, -251], \"jawiki|human\": [64, -...",
+   "pass": false,
+   "reading": "wiki, actor_type -> edit_count, net_bytes",
+   "source": "table mart_edits_all_by_wiki",
+   "traps": [
+    "F5"
+   ]
+  },
+  "6": {
+   "error": "unresolved: note: cannot read 'Sum edit_count per window'",
+   "pass": false
+  },
+  "7": {
+   "got": "0",
+   "pass": false,
+   "reading": "row_count",
+   "source": "table mart_late_events, stated operation: count(*)",
+   "traps": [
+    "F4",
+    "F5",
+    "S3",
+    "S3-drops"
+   ]
+  }
+ },
+ "passed": 3,
+ "total": 7
+}

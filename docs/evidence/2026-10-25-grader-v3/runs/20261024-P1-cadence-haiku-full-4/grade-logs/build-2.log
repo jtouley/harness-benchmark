@@ -1,0 +1,75 @@
+mkdir -p lake out/marts/dim_agency out/marts/dim_date out/marts/dim_place out/marts/fct_award_transaction out/marts/mart_monthly_place_agency
+uv run python -m ingest.batch
+warning: The `UV_NATIVE_TLS` environment variable is deprecated and will be removed in a future release. Use `UV_SYSTEM_CERTS` instead.
+uv run dbt build --project-dir transform --profiles-dir transform --select tag:batch --no-partial-parse
+warning: The `UV_NATIVE_TLS` environment variable is deprecated and will be removed in a future release. Use `UV_SYSTEM_CERTS` instead.
+[0m03:26:48  Running with dbt=1.11.6
+[0m03:26:50  Registered adapter: duckdb=1.11.0
+[0m03:26:58  Found 14 models, 33 data tests, 7 sources, 500 macros
+[0m03:26:58  
+[0m03:26:58  Concurrency: 4 threads (target='dev')
+[0m03:26:58  
+[0m03:26:59  1 of 29 START sql view model main.stg_award_transactions ....................... [RUN]
+[0m03:26:59  2 of 29 START sql view model main.stg_census_county ............................ [RUN]
+[0m03:26:59  2 of 29 OK created sql view model main.stg_census_county ....................... [[32mOK[0m in 0.37s]
+[0m03:26:59  1 of 29 OK created sql view model main.stg_award_transactions .................. [[32mOK[0m in 0.35s]
+[0m03:26:59  3 of 29 START sql external model main.dim_agency ............................... [RUN]
+[0m03:26:59  4 of 29 START sql external model main.dim_date ................................. [RUN]
+[0m03:26:59  5 of 29 START sql external model main.dim_place ................................ [RUN]
+[0m03:27:00  5 of 29 OK created sql external model main.dim_place ........................... [[32mOK[0m in 0.88s]
+[0m03:27:00  6 of 29 START test not_null_dim_place_place_key ................................ [RUN]
+[0m03:27:00  7 of 29 START test unique_dim_place_place_key .................................. [RUN]
+[0m03:27:00  3 of 29 OK created sql external model main.dim_agency .......................... [[32mOK[0m in 0.99s]
+[0m03:27:01  8 of 29 START test not_null_dim_agency_agency_code ............................. [RUN]
+[0m03:27:01  4 of 29 OK created sql external model main.dim_date ............................ [[32mOK[0m in 1.20s]
+[0m03:27:01  9 of 29 START test unique_dim_agency_agency_code ............................... [RUN]
+[0m03:27:01  7 of 29 PASS unique_dim_place_place_key ........................................ [[32mPASS[0m in 0.37s]
+[0m03:27:01  6 of 29 PASS not_null_dim_place_place_key ...................................... [[32mPASS[0m in 0.40s]
+[0m03:27:01  10 of 29 START test not_null_dim_date_action_date .............................. [RUN]
+[0m03:27:01  11 of 29 START test unique_dim_date_action_date ................................ [RUN]
+[0m03:27:01  8 of 29 PASS not_null_dim_agency_agency_code ................................... [[32mPASS[0m in 0.14s]
+[0m03:27:01  9 of 29 PASS unique_dim_agency_agency_code ..................................... [[32mPASS[0m in 0.14s]
+[0m03:27:01  12 of 29 START sql external model main.fct_award_transaction ................... [RUN]
+[0m03:27:01  10 of 29 PASS not_null_dim_date_action_date .................................... [[32mPASS[0m in 0.08s]
+[0m03:27:01  11 of 29 PASS unique_dim_date_action_date ...................................... [[32mPASS[0m in 0.11s]
+[0m03:27:01  12 of 29 OK created sql external model main.fct_award_transaction .............. [[32mOK[0m in 0.21s]
+[0m03:27:01  13 of 29 START test assert_assistance_awards_counted ........................... [RUN]
+[0m03:27:01  14 of 29 START test assert_fy2024_net_by_agency ................................ [RUN]
+[0m03:27:01  16 of 29 START test assert_state_sums_to_source ................................ [RUN]
+[0m03:27:01  15 of 29 START test assert_negative_award_count ................................ [RUN]
+[0m03:27:01  15 of 29 PASS assert_negative_award_count ...................................... [[32mPASS[0m in 0.14s]
+[0m03:27:01  17 of 29 START test not_null_fct_award_transaction_action_date ................. [RUN]
+[0m03:27:01  16 of 29 PASS assert_state_sums_to_source ...................................... [[32mPASS[0m in 0.16s]
+[0m03:27:01  14 of 29 PASS assert_fy2024_net_by_agency ...................................... [[32mPASS[0m in 0.16s]
+[0m03:27:01  18 of 29 START test not_null_fct_award_transaction_award_key ................... [RUN]
+[0m03:27:01  13 of 29 PASS assert_assistance_awards_counted ................................. [[32mPASS[0m in 0.20s]
+[0m03:27:01  19 of 29 START test not_null_fct_award_transaction_award_type .................. [RUN]
+[0m03:27:01  20 of 29 START test not_null_fct_award_transaction_place_key ................... [RUN]
+[0m03:27:01  17 of 29 PASS not_null_fct_award_transaction_action_date ....................... [[32mPASS[0m in 0.07s]
+[0m03:27:01  21 of 29 START test not_null_fct_award_transaction_transaction_key ............. [RUN]
+[0m03:27:01  18 of 29 PASS not_null_fct_award_transaction_award_key ......................... [[32mPASS[0m in 0.10s]
+[0m03:27:01  19 of 29 PASS not_null_fct_award_transaction_award_type ........................ [[32mPASS[0m in 0.09s]
+[0m03:27:01  22 of 29 START test unique_fct_award_transaction_transaction_key ............... [RUN]
+[0m03:27:01  20 of 29 PASS not_null_fct_award_transaction_place_key ......................... [[32mPASS[0m in 0.09s]
+[0m03:27:01  21 of 29 PASS not_null_fct_award_transaction_transaction_key ................... [[32mPASS[0m in 0.13s]
+[0m03:27:01  22 of 29 PASS unique_fct_award_transaction_transaction_key ..................... [[32mPASS[0m in 0.13s]
+[0m03:27:01  23 of 29 START sql external model main.mart_monthly_place_agency ............... [RUN]
+[0m03:27:02  23 of 29 OK created sql external model main.mart_monthly_place_agency .......... [[32mOK[0m in 0.33s]
+[0m03:27:02  24 of 29 START test assert_county_sums_to_state ................................ [RUN]
+[0m03:27:02  26 of 29 START test assert_top10_counties_per_person ........................... [RUN]
+[0m03:27:02  25 of 29 START test assert_monthly_per_person .................................. [RUN]
+[0m03:27:02  27 of 29 START test not_null_mart_monthly_place_agency_agency_code ............. [RUN]
+[0m03:27:02  24 of 29 PASS assert_county_sums_to_state ...................................... [[32mPASS[0m in 0.09s]
+[0m03:27:02  28 of 29 START test not_null_mart_monthly_place_agency_month ................... [RUN]
+[0m03:27:02  26 of 29 PASS assert_top10_counties_per_person ................................. [[32mPASS[0m in 0.11s]
+[0m03:27:02  29 of 29 START test not_null_mart_monthly_place_agency_place_key ............... [RUN]
+[0m03:27:02  25 of 29 PASS assert_monthly_per_person ........................................ [[32mPASS[0m in 0.12s]
+[0m03:27:02  27 of 29 PASS not_null_mart_monthly_place_agency_agency_code ................... [[32mPASS[0m in 0.10s]
+[0m03:27:02  28 of 29 PASS not_null_mart_monthly_place_agency_month ......................... [[32mPASS[0m in 0.05s]
+[0m03:27:02  29 of 29 PASS not_null_mart_monthly_place_agency_place_key ..................... [[32mPASS[0m in 0.04s]
+[0m03:27:02  
+[0m03:27:02  Finished running 5 external models, 22 data tests, 2 view models in 0 hours 0 minutes and 3.77 seconds (3.77s).
+[0m03:27:02  
+[0m03:27:02  [32mCompleted successfully[0m
+[0m03:27:02  
+[0m03:27:02  Done. PASS=29 WARN=0 ERROR=0 SKIP=0 NO-OP=0 TOTAL=29

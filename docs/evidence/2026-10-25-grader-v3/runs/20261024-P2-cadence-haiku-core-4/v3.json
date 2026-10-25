@@ -1,0 +1,40 @@
+{
+ "checks": {
+  "1": {
+   "interpretation": "primary",
+   "pass": true,
+   "reading": "agency_name -> sum_net_obligations",
+   "source": "table mart_monthly_obligations, stated operation: sum(net_obligations); by agency_name"
+  },
+  "2": {
+   "interpretation": "primary",
+   "pass": true,
+   "reading": "county_fips -> obligations_per_person",
+   "source": "table mart_county_fy2024"
+  },
+  "3": {
+   "interpretation": "primary",
+   "pass": true,
+   "reading": "row_count",
+   "source": "table mart_award_fy2024, stated operation: filter net_obligation < 0; count(*)"
+  },
+  "4": {
+   "error": "unresolved: how: cannot read 'sum by state_fips equals sum by rolled up'",
+   "pass": false
+  },
+  "5": {
+   "error": "no published mart named 'fct_edit' under out/marts/",
+   "pass": false
+  },
+  "6": {
+   "error": "no published mart named 'mart_window_5m' under out/marts/",
+   "pass": false
+  },
+  "7": {
+   "error": "no published mart named 'late_events' under out/marts/",
+   "pass": false
+  }
+ },
+ "passed": 3,
+ "total": 7
+}

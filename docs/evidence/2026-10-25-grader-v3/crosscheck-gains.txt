@@ -1,0 +1,15 @@
+20261024-P1-cadence-haiku-core-4     check 3: matches the key
+20261024-P1-cadence-haiku-core-5     check 2: matches the key
+20261024-P1-cadence-haiku-core-5     check 3: matches the key
+20261024-P1-cadence-haiku-core-5     check 4: matches the key
+20261024-P1-cadence-haiku-core-6     check 2: matches the key
+20261024-P1-cadence-haiku-core-6     check 3: matches the key
+20261024-P1-cadence-haiku-core-6     check 4: matches the key
+20261024-P1-cadence-haiku-full-6     check 3: matches the key
+20261024-P2-cadence-haiku-core-4     check 3: matches the key
+20261024-P2-cadence-haiku-core-6     check 3: matches the key
+20261024-P2-cadence-haiku-core-6     check 5: matches the key
+20261024-P2-cadence-haiku-core-6     check 7: matches the key
+20261024-P2-cadence-haiku-full-4     check 2: matches the key
+20261024-P2-cadence-haiku-full-4     check 3: matches the key
+20261024-P2-cadence-haiku-full-5     check 1: matches the key

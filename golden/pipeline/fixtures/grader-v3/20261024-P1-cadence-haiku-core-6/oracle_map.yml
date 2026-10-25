@@ -1,0 +1,45 @@
+# For each analyst check in spec/spec.md, the published table and the columns that answer it.
+# Every table is under out/marts/. Each check has a dbt singular test that compares its answer with the raw lake.
+checks:
+  - check: 1
+    question: FY2024 net obligations per awarding agency
+    table: out/marts/mart_monthly_obligations
+    columns: [agency_code, agency_name, net_obligations]
+    how: sum net_obligations by agency_code over all months (all months are FY2024)
+    test: test_fy2024_net_obligations_per_agency
+  - check: 2
+    question: The ten counties with the highest FY2024 obligations per person
+    table: out/marts/mart_monthly_obligations
+    columns: [county_fips, county_name, net_obligations, county_population_2024]
+    how: sum net_obligations by county_fips over the FY2024 months, divide by county_population_2024, order by the result, take ten
+    test: test_top_ten_counties_per_person
+  - check: 3
+    question: The number of awards with a net negative obligation in FY2024
+    table: out/marts/mart_award_fy2024
+    columns: [award_key, net_obligations]
+    how: count rows where net_obligations < 0
+    test: test_negative_net_award_count
+  - check: 4
+    question: For one month, county totals add up to state totals, and state totals add up to the source total
+    table: out/marts/mart_monthly_obligations
+    columns: [month_start, state_fips, county_fips, net_obligations]
+    how: for one month, sum net_obligations by state_fips (the county rows) and compare with the state total; sum the state totals and compare with the source total
+    test: test_county_state_source_reconcile
+  - check: 5
+    question: For the stream, edits and net bytes per wiki for the replayed hour, split human and bot, late events included
+    table: out/marts/edits_by_wiki_actor
+    columns: [wiki, domain, actor_type, edit_count, net_bytes]
+    how: read the rows directly; each wiki has one row per actor type
+    test: test_stream_totals_per_wiki
+  - check: 6
+    question: For the stream, the 5-minute windows with the most edits on en.wikipedia.org (on-time edits only)
+    table: out/marts/window_5min
+    columns: [window_start, domain, edit_count]
+    how: filter domain = en.wikipedia.org, sum edit_count by window_start, order by the sum descending, take the first ten rows
+    test: test_top_windows_en_wikipedia
+  - check: 7
+    question: For the stream, the count of late events
+    table: out/marts/late_events
+    columns: [event_id, wiki, window_start]
+    how: count rows
+    test: test_late_events_count

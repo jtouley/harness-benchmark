@@ -1,0 +1,33 @@
+uv run python -m engine pipelines/stream.yml --lake lake --duration 90
+warning: The `UV_NATIVE_TLS` environment variable is deprecated and will be removed in a future release. Use `UV_SYSTEM_CERTS` instead.
+Traceback (most recent call last):
+  File "<frozen runpy>", line 198, in _run_module_as_main
+  File "<frozen runpy>", line 88, in _run_code
+  File "/tmp/claude-0/-home-user/fd6221f8-f79d-5dc4-b0f6-aa7efcbaf9ac/scratchpad/w3/20261024-P2-cadence-haiku-core-4/g/repo/engine/__main__.py", line 5, in <module>
+    sys.exit(main())
+             ^^^^^^
+  File "/tmp/claude-0/-home-user/fd6221f8-f79d-5dc4-b0f6-aa7efcbaf9ac/scratchpad/w3/20261024-P2-cadence-haiku-core-4/g/repo/engine/cli.py", line 39, in main
+    stream(args.pipeline, args.lake, args.base, duration=args.duration)
+  File "/tmp/claude-0/-home-user/fd6221f8-f79d-5dc4-b0f6-aa7efcbaf9ac/scratchpad/w3/20261024-P2-cadence-haiku-core-4/g/repo/engine/cli.py", line 28, in stream
+    run_pipeline(Path(pipeline), **handlers)
+  File "/tmp/claude-0/-home-user/fd6221f8-f79d-5dc4-b0f6-aa7efcbaf9ac/scratchpad/w3/20261024-P2-cadence-haiku-core-4/g/repo/engine/run.py", line 114, in run_pipeline
+    _run_steps(path, spec.get("sinks", []), sinks or {}, "kind", tables, keep=False)
+  File "/tmp/claude-0/-home-user/fd6221f8-f79d-5dc4-b0f6-aa7efcbaf9ac/scratchpad/w3/20261024-P2-cadence-haiku-core-4/g/repo/engine/run.py", line 97, in _run_steps
+    result = handler(step, tables)
+             ^^^^^^^^^^^^^^^^^^^^^
+  File "/tmp/claude-0/-home-user/fd6221f8-f79d-5dc4-b0f6-aa7efcbaf9ac/scratchpad/w3/20261024-P2-cadence-haiku-core-4/g/repo/engine/stream.py", line 164, in write
+    for item in source.events(position.last_event_id):
+  File "/tmp/claude-0/-home-user/fd6221f8-f79d-5dc4-b0f6-aa7efcbaf9ac/scratchpad/w3/20261024-P2-cadence-haiku-core-4/g/repo/engine/stream.py", line 63, in events
+    event = json.loads(data)
+            ^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.12/json/__init__.py", line 346, in loads
+    return _default_decoder.decode(s)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.12/json/decoder.py", line 337, in decode
+    obj, end = self.raw_decode(s, idx=_w(s, 0).end())
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.12/json/decoder.py", line 353, in raw_decode
+    obj, end = self.scan_once(s, idx)
+               ^^^^^^^^^^^^^^^^^^^^^^
+json.decoder.JSONDecodeError: Unterminated string starting at: line 1 column 651 (char 650)
+make: *** [Makefile:17: stream] Error 1

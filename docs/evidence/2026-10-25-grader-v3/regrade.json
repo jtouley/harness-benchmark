@@ -1,0 +1,913 @@
+[
+ {
+  "run_id": "20261023-P1-oneshot-haiku-1",
+  "official": {
+   "score": 5,
+   "passed": 5,
+   "reward": 0.7143,
+   "stream_ok": true,
+   "idempotent": true,
+   "grader_commit": "563a74c551e6735581474fcff06e0429c965e00b"
+  },
+  "pinned_regrade": {
+   "score": 5,
+   "passed": 5,
+   "reward": 0.7143,
+   "stream_ok": true,
+   "idempotent": true,
+   "checks": "P.P.PPP"
+  },
+  "reproduced": true,
+  "v3": {
+   "score": 5,
+   "passed": 5,
+   "reward": 0.7143,
+   "checks": "P.P.PPP"
+  },
+  "changes": [],
+  "v3_checks": {
+   "1": {
+    "pass": true,
+    "resolution": "query"
+   },
+   "2": {
+    "pass": false,
+    "resolution": "query"
+   },
+   "3": {
+    "pass": true,
+    "resolution": "query"
+   },
+   "4": {
+    "pass": false,
+    "resolution": "query"
+   },
+   "5": {
+    "pass": true,
+    "resolution": "query"
+   },
+   "6": {
+    "pass": true,
+    "resolution": "query"
+   },
+   "7": {
+    "pass": true,
+    "resolution": "query"
+   }
+  }
+ },
+ {
+  "run_id": "20261023-P1-oneshot-sonnet-1-r2",
+  "official": {
+   "score": 5,
+   "passed": 5,
+   "reward": 0.7143,
+   "stream_ok": true,
+   "idempotent": true,
+   "grader_commit": "4132b0c47eb54b69404750ec2adca872799ebb61"
+  },
+  "pinned_regrade": {
+   "score": 5,
+   "passed": 5,
+   "reward": 0.7143,
+   "stream_ok": true,
+   "idempotent": true,
+   "checks": "P.P.PPP"
+  },
+  "reproduced": true,
+  "v3": {
+   "score": 5,
+   "passed": 5,
+   "reward": 0.7143,
+   "checks": "P.P.PPP"
+  },
+  "changes": [],
+  "v3_checks": {
+   "1": {
+    "pass": true,
+    "resolution": "query"
+   },
+   "2": {
+    "pass": false,
+    "resolution": "query"
+   },
+   "3": {
+    "pass": true,
+    "resolution": "query"
+   },
+   "4": {
+    "pass": false,
+    "resolution": "query"
+   },
+   "5": {
+    "pass": true,
+    "resolution": "query"
+   },
+   "6": {
+    "pass": true,
+    "resolution": "query"
+   },
+   "7": {
+    "pass": true,
+    "resolution": "query"
+   }
+  }
+ },
+ {
+  "run_id": "20261024-P1-cadence-haiku-core-4",
+  "official": {
+   "score": 0,
+   "passed": 2,
+   "reward": 0.0,
+   "stream_ok": false,
+   "idempotent": true,
+   "grader_commit": "c344bea44951cfc5a3a3a99aaa598fdaaedabba8"
+  },
+  "pinned_regrade": {
+   "score": 0,
+   "passed": 2,
+   "reward": 0.0,
+   "stream_ok": false,
+   "idempotent": true,
+   "checks": "PP....."
+  },
+  "reproduced": true,
+  "v3": {
+   "score": 0,
+   "passed": 3,
+   "reward": 0.0,
+   "checks": "PPP...."
+  },
+  "changes": [
+   {
+    "check": "3",
+    "pinned": false,
+    "v3": true,
+    "pinned_reason": "got 7918",
+    "v3_resolution": "table mart_award_net_fy2024, stated operation: filter net_obligations < 0; count(*)"
+   }
+  ],
+  "v3_checks": {
+   "1": {
+    "pass": true,
+    "resolution": "table mart_obligations_monthly, stated operation: sum(net_obligations); by awarding_agency_code"
+   },
+   "2": {
+    "pass": true,
+    "resolution": "table mart_county_fy2024"
+   },
+   "3": {
+    "pass": true,
+    "resolution": "table mart_award_net_fy2024, stated operation: filter net_obligations < 0; count(*)"
+   },
+   "4": {
+    "pass": false,
+    "resolution": "unresolved: note: cannot read 'Also read mart_obligations_monthly_state and mart_source_totals_monthly'"
+   },
+   "5": {
+    "pass": false,
+    "resolution": "table mart_edits_all_by_wiki"
+   },
+   "6": {
+    "pass": false,
+    "resolution": "unresolved: note: cannot read 'Sum edit_count per window'"
+   },
+   "7": {
+    "pass": false,
+    "resolution": "table mart_late_events, stated operation: count(*)"
+   }
+  }
+ },
+ {
+  "run_id": "20261024-P1-cadence-haiku-core-5",
+  "official": {
+   "score": 0,
+   "passed": 1,
+   "reward": 0.0,
+   "stream_ok": false,
+   "idempotent": true,
+   "grader_commit": "c344bea44951cfc5a3a3a99aaa598fdaaedabba8"
+  },
+  "pinned_regrade": {
+   "score": 0,
+   "passed": 1,
+   "reward": 0.0,
+   "stream_ok": false,
+   "idempotent": true,
+   "checks": "P......"
+  },
+  "reproduced": true,
+  "v3": {
+   "score": 0,
+   "passed": 4,
+   "reward": 0.0,
+   "checks": "PPPP..."
+  },
+  "changes": [
+   {
+    "check": "2",
+    "pinned": false,
+    "v3": true,
+    "pinned_reason": "no county column and per-person column found",
+    "v3_resolution": "table mart_awards_monthly, stated operation: sum(net_obligations_usd); by county_fips; divided by population"
+   },
+   {
+    "check": "3",
+    "pinned": false,
+    "v3": true,
+    "pinned_reason": "got 7918",
+    "v3_resolution": "table mart_awards_fy2024, stated operation: filter is_net_negative = true; count(*)"
+   },
+   {
+    "check": "4",
+    "pinned": false,
+    "v3": true,
+    "pinned_reason": "got {\"counties\": {}, \"month\": \"2024-07\", \"states\": {\"01\": \"20400",
+    "v3_resolution": "table mart_awards_monthly"
+   }
+  ],
+  "v3_checks": {
+   "1": {
+    "pass": true,
+    "resolution": "table mart_awards_monthly, stated operation: sum(net_obligations_usd); by agency_code"
+   },
+   "2": {
+    "pass": true,
+    "resolution": "table mart_awards_monthly, stated operation: sum(net_obligations_usd); by county_fips; divided by population"
+   },
+   "3": {
+    "pass": true,
+    "resolution": "table mart_awards_fy2024, stated operation: filter is_net_negative = true; count(*)"
+   },
+   "4": {
+    "pass": true,
+    "resolution": "table mart_awards_monthly"
+   },
+   "5": {
+    "pass": false,
+    "resolution": "table fct_edit, stated operation: sum(net_bytes), count(*); by wiki, actor_type"
+   },
+   "6": {
+    "pass": false,
+    "resolution": "table mart_edit_windows_5min, stated operation: filter server_name = 'en.wikipedia.org'; sum(edit_count); by window_start_utc"
+   },
+   "7": {
+    "pass": false,
+    "resolution": "table late_events, stated operation: count(*)"
+   }
+  }
+ },
+ {
+  "run_id": "20261024-P1-cadence-haiku-core-6",
+  "official": {
+   "score": 4,
+   "passed": 4,
+   "reward": 0.5714,
+   "stream_ok": true,
+   "idempotent": true,
+   "grader_commit": "c344bea44951cfc5a3a3a99aaa598fdaaedabba8"
+  },
+  "pinned_regrade": {
+   "score": 4,
+   "passed": 4,
+   "reward": 0.5714,
+   "stream_ok": true,
+   "idempotent": true,
+   "checks": "P...PPP"
+  },
+  "reproduced": true,
+  "v3": {
+   "score": 7,
+   "passed": 7,
+   "reward": 1.0,
+   "checks": "PPPPPPP"
+  },
+  "changes": [
+   {
+    "check": "2",
+    "pinned": false,
+    "v3": true,
+    "pinned_reason": "no county column and per-person column found",
+    "v3_resolution": "table mart_monthly_obligations, stated operation: sum(net_obligations); by county_fips; divided by county_population_2024"
+   },
+   {
+    "check": "3",
+    "pinned": false,
+    "v3": true,
+    "pinned_reason": "got 7918",
+    "v3_resolution": "table mart_award_fy2024, stated operation: filter net_obligations < 0; count(*)"
+   },
+   {
+    "check": "4",
+    "pinned": false,
+    "v3": true,
+    "pinned_reason": "got {\"counties\": {}, \"month\": \"2024-07\", \"states\": {\"01\": \"20400",
+    "v3_resolution": "table mart_monthly_obligations"
+   }
+  ],
+  "v3_checks": {
+   "1": {
+    "pass": true,
+    "resolution": "table mart_monthly_obligations, stated operation: sum(net_obligations); by agency_code"
+   },
+   "2": {
+    "pass": true,
+    "resolution": "table mart_monthly_obligations, stated operation: sum(net_obligations); by county_fips; divided by county_population_2024"
+   },
+   "3": {
+    "pass": true,
+    "resolution": "table mart_award_fy2024, stated operation: filter net_obligations < 0; count(*)"
+   },
+   "4": {
+    "pass": true,
+    "resolution": "table mart_monthly_obligations"
+   },
+   "5": {
+    "pass": true,
+    "resolution": "table edits_by_wiki_actor"
+   },
+   "6": {
+    "pass": true,
+    "resolution": "table window_5min, stated operation: filter domain = 'en.wikipedia.org'; sum(edit_count); by window_start"
+   },
+   "7": {
+    "pass": true,
+    "resolution": "table late_events, stated operation: count(*)"
+   }
+  }
+ },
+ {
+  "run_id": "20261024-P1-cadence-haiku-full-4",
+  "official": {
+   "score": 0,
+   "passed": 3,
+   "reward": 0.0,
+   "stream_ok": false,
+   "idempotent": true,
+   "grader_commit": "c344bea44951cfc5a3a3a99aaa598fdaaedabba8"
+  },
+  "pinned_regrade": {
+   "score": 0,
+   "passed": 3,
+   "reward": 0.0,
+   "stream_ok": false,
+   "idempotent": true,
+   "checks": "PPP...."
+  },
+  "reproduced": true,
+  "v3": {
+   "score": 0,
+   "passed": 3,
+   "reward": 0.0,
+   "checks": "PPP...."
+  },
+  "changes": [],
+  "v3_checks": {
+   "1": {
+    "pass": true,
+    "resolution": "query"
+   },
+   "2": {
+    "pass": true,
+    "resolution": "query"
+   },
+   "3": {
+    "pass": true,
+    "resolution": "query"
+   },
+   "4": {
+    "pass": false,
+    "resolution": "query"
+   },
+   "5": {
+    "pass": false,
+    "resolution": "query failed: Catalog Error: Table with name fct_edit does not exist!"
+   },
+   "6": {
+    "pass": false,
+    "resolution": "query failed: Catalog Error: Table with name fct_edit does not exist!"
+   },
+   "7": {
+    "pass": false,
+    "resolution": "query failed: Catalog Error: Table with name late_events does not exist!"
+   }
+  }
+ },
+ {
+  "run_id": "20261024-P1-cadence-haiku-full-6",
+  "official": {
+   "score": 2,
+   "passed": 2,
+   "reward": 0.2857,
+   "stream_ok": true,
+   "idempotent": true,
+   "grader_commit": "c344bea44951cfc5a3a3a99aaa598fdaaedabba8"
+  },
+  "pinned_regrade": {
+   "score": 2,
+   "passed": 2,
+   "reward": 0.2857,
+   "stream_ok": true,
+   "idempotent": true,
+   "checks": "P.....P"
+  },
+  "reproduced": true,
+  "v3": {
+   "score": 3,
+   "passed": 3,
+   "reward": 0.4286,
+   "checks": "P.P...P"
+  },
+  "changes": [
+   {
+    "check": "3",
+    "pinned": false,
+    "v3": true,
+    "pinned_reason": "got 9820",
+    "v3_resolution": "table fct_award_transaction, stated operation: sum(the named measure); by award_key; count of groups whose sum < 0"
+   }
+  ],
+  "v3_checks": {
+   "1": {
+    "pass": true,
+    "resolution": "table mart_monthly_county_agency"
+   },
+   "2": {
+    "pass": false,
+    "resolution": "table mart_monthly_county_agency"
+   },
+   "3": {
+    "pass": true,
+    "resolution": "table fct_award_transaction, stated operation: sum(the named measure); by award_key; count of groups whose sum < 0"
+   },
+   "4": {
+    "pass": false,
+    "resolution": "table mart_monthly_county_agency"
+   },
+   "5": {
+    "pass": false,
+    "resolution": "table fct_edit"
+   },
+   "6": {
+    "pass": false,
+    "resolution": "table window_5min, stated operation: filter wiki = 'en.wikipedia.org'; sum(edit_count); by window_start"
+   },
+   "7": {
+    "pass": true,
+    "resolution": "table late_events"
+   }
+  }
+ },
+ {
+  "run_id": "20261024-P2-cadence-haiku-core-2",
+  "official": {
+   "score": 0,
+   "passed": 0,
+   "reward": 0.0,
+   "stream_ok": false,
+   "idempotent": false,
+   "grader_commit": "caa48be7511c64e085cde4c084ba99923376539d"
+  },
+  "pinned_regrade": {
+   "score": 0,
+   "passed": 0,
+   "reward": 0.0,
+   "stream_ok": false,
+   "idempotent": false,
+   "checks": "......."
+  },
+  "reproduced": true,
+  "v3": {
+   "score": 0,
+   "passed": 0,
+   "reward": 0.0,
+   "checks": "......."
+  },
+  "changes": [],
+  "v3_checks": {
+   "1": {
+    "pass": false,
+    "resolution": "oracle_map.yml is missing"
+   },
+   "2": {
+    "pass": false,
+    "resolution": "oracle_map.yml is missing"
+   },
+   "3": {
+    "pass": false,
+    "resolution": "oracle_map.yml is missing"
+   },
+   "4": {
+    "pass": false,
+    "resolution": "oracle_map.yml is missing"
+   },
+   "5": {
+    "pass": false,
+    "resolution": "oracle_map.yml is missing"
+   },
+   "6": {
+    "pass": false,
+    "resolution": "oracle_map.yml is missing"
+   },
+   "7": {
+    "pass": false,
+    "resolution": "oracle_map.yml is missing"
+   }
+  }
+ },
+ {
+  "run_id": "20261024-P2-cadence-haiku-core-4",
+  "official": {
+   "score": 0,
+   "passed": 2,
+   "reward": 0.0,
+   "stream_ok": false,
+   "idempotent": true,
+   "grader_commit": "c344bea44951cfc5a3a3a99aaa598fdaaedabba8"
+  },
+  "pinned_regrade": {
+   "score": 0,
+   "passed": 2,
+   "reward": 0.0,
+   "stream_ok": false,
+   "idempotent": true,
+   "checks": "PP....."
+  },
+  "reproduced": true,
+  "v3": {
+   "score": 0,
+   "passed": 3,
+   "reward": 0.0,
+   "checks": "PPP...."
+  },
+  "changes": [
+   {
+    "check": "3",
+    "pinned": false,
+    "v3": true,
+    "pinned_reason": "got 7918",
+    "v3_resolution": "table mart_award_fy2024, stated operation: filter net_obligation < 0; count(*)"
+   }
+  ],
+  "v3_checks": {
+   "1": {
+    "pass": true,
+    "resolution": "table mart_monthly_obligations, stated operation: sum(net_obligations); by agency_name"
+   },
+   "2": {
+    "pass": true,
+    "resolution": "table mart_county_fy2024"
+   },
+   "3": {
+    "pass": true,
+    "resolution": "table mart_award_fy2024, stated operation: filter net_obligation < 0; count(*)"
+   },
+   "4": {
+    "pass": false,
+    "resolution": "unresolved: how: cannot read 'sum by state_fips equals sum by rolled up'"
+   },
+   "5": {
+    "pass": false,
+    "resolution": "no published mart named 'fct_edit' under out/marts/"
+   },
+   "6": {
+    "pass": false,
+    "resolution": "no published mart named 'mart_window_5m' under out/marts/"
+   },
+   "7": {
+    "pass": false,
+    "resolution": "no published mart named 'late_events' under out/marts/"
+   }
+  }
+ },
+ {
+  "run_id": "20261024-P2-cadence-haiku-core-5",
+  "official": {
+   "score": 0,
+   "passed": 3,
+   "reward": 0.0,
+   "stream_ok": false,
+   "idempotent": true,
+   "grader_commit": "c344bea44951cfc5a3a3a99aaa598fdaaedabba8"
+  },
+  "pinned_regrade": {
+   "score": 0,
+   "passed": 3,
+   "reward": 0.0,
+   "stream_ok": false,
+   "idempotent": true,
+   "checks": "PPP...."
+  },
+  "reproduced": true,
+  "v3": {
+   "score": 0,
+   "passed": 3,
+   "reward": 0.0,
+   "checks": "PPP...."
+  },
+  "changes": [],
+  "v3_checks": {
+   "1": {
+    "pass": true,
+    "resolution": "query"
+   },
+   "2": {
+    "pass": true,
+    "resolution": "query"
+   },
+   "3": {
+    "pass": true,
+    "resolution": "query"
+   },
+   "4": {
+    "pass": false,
+    "resolution": "query"
+   },
+   "5": {
+    "pass": false,
+    "resolution": "query"
+   },
+   "6": {
+    "pass": false,
+    "resolution": "query"
+   },
+   "7": {
+    "pass": false,
+    "resolution": "query"
+   }
+  }
+ },
+ {
+  "run_id": "20261024-P2-cadence-haiku-core-6",
+  "official": {
+   "score": 2,
+   "passed": 2,
+   "reward": 0.2857,
+   "stream_ok": true,
+   "idempotent": true,
+   "grader_commit": "c344bea44951cfc5a3a3a99aaa598fdaaedabba8"
+  },
+  "pinned_regrade": {
+   "score": 2,
+   "passed": 2,
+   "reward": 0.2857,
+   "stream_ok": true,
+   "idempotent": true,
+   "checks": "P....P."
+  },
+  "reproduced": true,
+  "v3": {
+   "score": 5,
+   "passed": 5,
+   "reward": 0.7143,
+   "checks": "P.P.PPP"
+  },
+  "changes": [
+   {
+    "check": "3",
+    "pinned": false,
+    "v3": true,
+    "pinned_reason": "got 9820",
+    "v3_resolution": "query"
+   },
+   {
+    "check": "5",
+    "pinned": false,
+    "v3": true,
+    "pinned_reason": "got {\"dewiki|bot\": [689246, 172], \"dewiki|human\": [1840204, 194]",
+    "v3_resolution": "query"
+   },
+   {
+    "check": "7",
+    "pinned": false,
+    "v3": true,
+    "pinned_reason": "got 12876",
+    "v3_resolution": "query"
+   }
+  ],
+  "v3_checks": {
+   "1": {
+    "pass": true,
+    "resolution": "query"
+   },
+   "2": {
+    "pass": false,
+    "resolution": "query"
+   },
+   "3": {
+    "pass": true,
+    "resolution": "query"
+   },
+   "4": {
+    "pass": false,
+    "resolution": "unresolved: queries holds 3 queries (county_by_state, source_total, state) and none is named answer"
+   },
+   "5": {
+    "pass": true,
+    "resolution": "query"
+   },
+   "6": {
+    "pass": true,
+    "resolution": "query"
+   },
+   "7": {
+    "pass": true,
+    "resolution": "query"
+   }
+  }
+ },
+ {
+  "run_id": "20261024-P2-cadence-haiku-full-4",
+  "official": {
+   "score": 0,
+   "passed": 1,
+   "reward": 0.0,
+   "stream_ok": false,
+   "idempotent": true,
+   "grader_commit": "c344bea44951cfc5a3a3a99aaa598fdaaedabba8"
+  },
+  "pinned_regrade": {
+   "score": 0,
+   "passed": 1,
+   "reward": 0.0,
+   "stream_ok": false,
+   "idempotent": true,
+   "checks": "P......"
+  },
+  "reproduced": true,
+  "v3": {
+   "score": 0,
+   "passed": 3,
+   "reward": 0.0,
+   "checks": "PPP...."
+  },
+  "changes": [
+   {
+    "check": "2",
+    "pinned": false,
+    "v3": true,
+    "pinned_reason": "no county column and per-person column found",
+    "v3_resolution": "table mart_obligations_monthly, stated operation: sum(net_obligations); by county_fips; divided by population"
+   },
+   {
+    "check": "3",
+    "pinned": false,
+    "v3": true,
+    "pinned_reason": "got 7918",
+    "v3_resolution": "table mart_award_net_obligations, stated operation: filter is_net_negative = true; count(*)"
+   }
+  ],
+  "v3_checks": {
+   "1": {
+    "pass": true,
+    "resolution": "table mart_obligations_monthly, stated operation: sum(net_obligations); by agency_code"
+   },
+   "2": {
+    "pass": true,
+    "resolution": "table mart_obligations_monthly, stated operation: sum(net_obligations); by county_fips; divided by population"
+   },
+   "3": {
+    "pass": true,
+    "resolution": "table mart_award_net_obligations, stated operation: filter is_net_negative = true; count(*)"
+   },
+   "4": {
+    "pass": false,
+    "resolution": "table mart_obligations_monthly"
+   },
+   "5": {
+    "pass": false,
+    "resolution": "no published mart named 'mart_wiki_actor_totals' under out/marts/"
+   },
+   "6": {
+    "pass": false,
+    "resolution": "no published mart named 'mart_edit_windows_5min' under out/marts/"
+   },
+   "7": {
+    "pass": false,
+    "resolution": "no published mart named 'mart_late_events_by_type' under out/marts/"
+   }
+  }
+ },
+ {
+  "run_id": "20261024-P2-cadence-haiku-full-5",
+  "official": {
+   "score": 0,
+   "passed": 0,
+   "reward": 0.0,
+   "stream_ok": true,
+   "idempotent": true,
+   "grader_commit": "c344bea44951cfc5a3a3a99aaa598fdaaedabba8"
+  },
+  "pinned_regrade": {
+   "score": 0,
+   "passed": 0,
+   "reward": 0.0,
+   "stream_ok": true,
+   "idempotent": true,
+   "checks": "......."
+  },
+  "reproduced": true,
+  "v3": {
+   "score": 1,
+   "passed": 1,
+   "reward": 0.1429,
+   "checks": "P......"
+  },
+  "changes": [
+   {
+    "check": "1",
+    "pinned": false,
+    "v3": true,
+    "pinned_reason": "no published mart named 'out/marts/mart_fy2024_monthly/data.parquet' under out/marts/",
+    "v3_resolution": "table mart_fy2024_monthly, stated operation: filter grain = 'agency'"
+   }
+  ],
+  "v3_checks": {
+   "1": {
+    "pass": true,
+    "resolution": "table mart_fy2024_monthly, stated operation: filter grain = 'agency'"
+   },
+   "2": {
+    "pass": false,
+    "resolution": "table mart_fy2024_monthly, stated operation: filter grain = 'county'"
+   },
+   "3": {
+    "pass": false,
+    "resolution": "no published mart named 'out/warehouse.duckdb fct_award_transaction' under out/marts/"
+   },
+   "4": {
+    "pass": false,
+    "resolution": "table mart_fy2024_monthly, stated operation: filter grain = 'county' and grain = 'state'"
+   },
+   "5": {
+    "pass": false,
+    "resolution": "no published mart named 'out/warehouse.duckdb fct_edit' under out/marts/"
+   },
+   "6": {
+    "pass": false,
+    "resolution": "unresolved: rows: cannot read 'summed over namespace and actor_type per window'"
+   },
+   "7": {
+    "pass": false,
+    "resolution": "no published mart named 'out/warehouse.duckdb fct_edit' under out/marts/"
+   }
+  }
+ },
+ {
+  "run_id": "20261024-P2-cadence-haiku-full-6",
+  "official": {
+   "score": 2,
+   "passed": 2,
+   "reward": 0.2857,
+   "stream_ok": true,
+   "idempotent": true,
+   "grader_commit": "c344bea44951cfc5a3a3a99aaa598fdaaedabba8"
+  },
+  "pinned_regrade": {
+   "score": 2,
+   "passed": 2,
+   "reward": 0.2857,
+   "stream_ok": true,
+   "idempotent": true,
+   "checks": "P.P...."
+  },
+  "reproduced": true,
+  "v3": {
+   "score": 2,
+   "passed": 2,
+   "reward": 0.2857,
+   "checks": "P.P...."
+  },
+  "changes": [],
+  "v3_checks": {
+   "1": {
+    "pass": true,
+    "resolution": "query"
+   },
+   "2": {
+    "pass": false,
+    "resolution": "query"
+   },
+   "3": {
+    "pass": true,
+    "resolution": "query"
+   },
+   "4": {
+    "pass": false,
+    "resolution": "entry names no table or query: {'check': 4, 'question': 'For one month, county totals add up to state totals, and state totals add up to the source total', 'month': '2024-03', 'layer': 'published out/marts (Parquet), with the raw lake as the source total (A-8)', 'tables': ['out/marts/mart_obligations_monthly', 'out/marts/fct_award_transaction', 'out/marts/dim_place'], 'columns': ['net_obligations', 'state_code', 'county_code', 'federal_action_obligation', 'place_key'], 'test': 'tests/test_marts_real_data.py::test_county_totals_sum_to_state_and_source'}"
+   },
+   "5": {
+    "pass": false,
+    "resolution": "query"
+   },
+   "6": {
+    "pass": false,
+    "resolution": "query"
+   },
+   "7": {
+    "pass": false,
+    "resolution": "query"
+   }
+  }
+ }
+]

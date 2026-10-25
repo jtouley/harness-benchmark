@@ -1,0 +1,34 @@
+{
+ "checks": {
+  "1": {
+   "error": "oracle_map.yml is missing",
+   "pass": false
+  },
+  "2": {
+   "error": "oracle_map.yml is missing",
+   "pass": false
+  },
+  "3": {
+   "error": "oracle_map.yml is missing",
+   "pass": false
+  },
+  "4": {
+   "error": "oracle_map.yml is missing",
+   "pass": false
+  },
+  "5": {
+   "error": "oracle_map.yml is missing",
+   "pass": false
+  },
+  "6": {
+   "error": "oracle_map.yml is missing",
+   "pass": false
+  },
+  "7": {
+   "error": "oracle_map.yml is missing",
+   "pass": false
+  }
+ },
+ "passed": 0,
+ "total": 7
+}

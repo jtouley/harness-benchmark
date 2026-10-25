@@ -1,0 +1,67 @@
+# For each check in the spec ("Checks the analysts will run"), the table and column that answers it.
+# The stream checks (5 to 7) read the stream marts that make stream publishes to out/marts.
+checks:
+  - check: 1
+    question: FY2024 net obligations per awarding agency
+    table: fct_award_transaction
+    columns: [agency_code, federal_action_obligation, fiscal_year]
+    joins: dim_agency on agency_code (agency_name)
+    sql: |
+      select a.agency_name, sum(f.federal_action_obligation) as net_obligations
+      from fct_award_transaction f join dim_agency a on a.agency_code = f.agency_code
+      where f.fiscal_year = 2024
+      group by a.agency_name
+  - check: 2
+    question: The ten counties with the highest FY2024 obligations per person
+    table: mart_obligations_monthly
+    columns: [net_obligations, population, county_code, county_name, place_key]
+    joins: dim_place on place_key (population is the July 1, 2024 estimate; A-7)
+    sql: |
+      select p.county_name, sum(m.net_obligations) / max(p.population) as per_person
+      from mart_obligations_monthly m join dim_place p on p.place_key = m.place_key
+      where p.population is not null
+      group by p.county_code, p.county_name
+      order by per_person desc
+      limit 10
+  - check: 3
+    question: The number of awards with a net negative obligation in FY2024
+    table: fct_award_transaction
+    columns: [award_key, federal_action_obligation, fiscal_year]
+    sql: |
+      select count(*) from (
+        select award_key, sum(federal_action_obligation) as net
+        from fct_award_transaction where fiscal_year = 2024 group by award_key
+      ) where net < 0
+  - check: 4
+    question: For one month, county totals add up to state totals, and state totals add up to the source total
+    month: "2024-03"
+    layer: published out/marts (Parquet), with the raw lake as the source total (A-8)
+    tables: [out/marts/mart_obligations_monthly, out/marts/fct_award_transaction, out/marts/dim_place]
+    columns: [net_obligations, state_code, county_code, federal_action_obligation, place_key]
+    test: tests/test_marts_real_data.py::test_county_totals_sum_to_state_and_source
+  - check: 5
+    question: For the stream, edits and net bytes per wiki for the replayed hour, split human and bot (late events included)
+    table: fct_edit
+    columns: [wiki, bot, change_type, net_bytes, event_time, is_late]
+    window: stream_replay_hour (hour_start, hour_end). The hour is the UTC hour of the first consumed event (A-15).
+    sql: |
+      select f.wiki, case when f.bot then 'bot' else 'human' end as actor, count(*) as edits, sum(f.net_bytes) as net_bytes
+      from fct_edit f cross join stream_replay_hour h
+      where f.change_type in ('edit', 'new')
+        and f.event_time >= h.hour_start and f.event_time < h.hour_end
+      group by all
+  - check: 6
+    question: For the stream, the 5-minute windows with the most edits on en.wikipedia.org (on-time edits only)
+    table: mart_edit_window_5min
+    columns: [window_start, domain, edit_count, actor_type]
+    sql: |
+      select window_start, sum(edit_count) as edits
+      from mart_edit_window_5min where domain = 'en.wikipedia.org'
+      group by window_start order by edits desc, window_start limit 10
+  - check: 7
+    question: For the stream, the count of late events
+    table: late_events
+    columns: [edit_id, is_late]
+    sql: |
+      select count(*) from late_events
+stream_replay_end: "2026-10-15T00:15:50.930000+00:00"

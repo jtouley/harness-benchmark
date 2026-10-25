@@ -1,0 +1,80 @@
+# Each analyst check: the published table and column(s) that answer it, and a query that does.
+# Paths are relative to the repo root. Run `make build` (and `make stream DURATION=<s>` for checks 5-7) first.
+checks:
+  - id: 1
+    question: FY2024 net obligations per awarding agency
+    table: out/marts/mart_obligations_monthly/mart_obligations_monthly.parquet
+    columns: [agency_code, agency_name, fiscal_year, net_obligations]
+    sql: |
+      select agency_code, agency_name, sum(net_obligations) as net_obligations
+      from read_parquet('out/marts/mart_obligations_monthly/mart_obligations_monthly.parquet')
+      where fiscal_year = 2024
+      group by agency_code, agency_name order by agency_code
+
+  - id: 2
+    question: The ten counties with the highest FY2024 obligations per person
+    table: out/marts/mart_obligations_fy_county/mart_obligations_fy_county.parquet
+    columns: [county_name, state_code, fiscal_year, obligations_per_person, population, population_year]
+    sql: |
+      select county_name, state_code, obligations_per_person, population, population_year
+      from read_parquet('out/marts/mart_obligations_fy_county/mart_obligations_fy_county.parquet')
+      where fiscal_year = 2024 and obligations_per_person is not null
+      order by obligations_per_person desc limit 10
+
+  - id: 3
+    question: Number of awards with a net negative obligation in FY2024
+    table: out/marts/fct_award_transaction/fct_award_transaction.parquet
+    columns: [award_key, fiscal_year, federal_action_obligation]
+    sql: |
+      select count(*) as negative_awards
+      from (
+        select award_key
+        from read_parquet('out/marts/fct_award_transaction/fct_award_transaction.parquet')
+        where fiscal_year = 2024
+        group by award_key
+        having sum(federal_action_obligation) < 0
+      )
+
+  - id: 4
+    question: For one month (here 2024-06), county totals = state totals = source total
+    table: out/marts/mart_obligations_monthly/mart_obligations_monthly.parquet
+    columns: [month_start, state_code, county_fips, net_obligations]
+    sql: |
+      with m as (
+        select * from read_parquet('out/marts/mart_obligations_monthly/mart_obligations_monthly.parquet')
+        where month_start = DATE '2024-06-01'
+      ), states as (
+        select state_code, sum(net_obligations) as state_total from m group by state_code
+      )
+      select
+        (select sum(net_obligations) from m) as county_sum,
+        (select sum(state_total) from states) as state_sum,
+        (select sum(federal_action_obligation) from read_parquet('out/marts/fct_award_transaction/fct_award_transaction.parquet')
+          where date_trunc('month', date_day) = DATE '2024-06-01') as source_total
+
+  - id: 5
+    question: Edits and net bytes per wiki for the replayed hour, human and bot, late events included
+    table: out/marts/fct_edit/fct_edit.parquet
+    columns: [wiki, actor_type, edit_key, net_bytes_added, is_late]
+    sql: |
+      select wiki, actor_type, count(*) as edits, sum(net_bytes_added) as net_bytes_added
+      from read_parquet('out/marts/fct_edit/fct_edit.parquet')
+      group by wiki, actor_type order by wiki, actor_type
+
+  - id: 6
+    question: The 5-minute windows with the most on-time edits on en.wikipedia.org (enwiki)
+    table: out/marts/mart_edit_window_5m/mart_edit_window_5m.parquet
+    columns: [window_start, wiki, actor_type, edit_count, net_bytes_added]
+    sql: |
+      select window_start, sum(edit_count) as edit_count
+      from read_parquet('out/marts/mart_edit_window_5m/mart_edit_window_5m.parquet')
+      where wiki = 'enwiki'
+      group by window_start order by edit_count desc limit 10
+
+  - id: 7
+    question: Count of late events
+    table: out/marts/late_events/late_events.parquet
+    columns: [event_key, event_type, lateness_seconds]
+    sql: |
+      select count(*) as late_events
+      from read_parquet('out/marts/late_events/late_events.parquet')

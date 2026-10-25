@@ -1,0 +1,64 @@
+{
+ "checks": {
+  "1": {
+   "interpretation": "primary",
+   "pass": true,
+   "reading": "awarding_agency_code -> net_obligations",
+   "source": "table mart_obligations_monthly"
+  },
+  "2": {
+   "interpretation": "primary",
+   "pass": true,
+   "reading": "county_fips -> obligations_per_person",
+   "source": "table mart_county_fy2024"
+  },
+  "3": {
+   "expected": "1122",
+   "got": "7918",
+   "pass": false,
+   "source": "table mart_award_net_fy2024",
+   "traps": [],
+   "unexplained": true
+  },
+  "4": {
+   "expected": "{\"counties\": {\"01069\": \"75000.00\", \"02016\": \"15996.00\", \"02020\": \"196993.00\", \"02050\": \"29878.00\", \"02063\": \"10000.00\", \"02066\": \"10000.00\", \"02068\": \"7025.00\", \"02070\": \"10000.00\", \"02090\": \"0.00\", \"02100\": \"10000.00\", \"02110\": \"190000.00\", \"02122\": \"27466.00\", \"02150\": \"29971.00\", \"02158\": \"10000.00\", \"02164\": \"50000.00\", \"02195\": \"20000.00\", \"02198\": \"20000.00\", \"02240\": \"10000.00\", \"02275\": \"1...",
+   "got": "{\"counties\": {}, \"month\": \"2024-07\", \"states\": {\"01\": \"204004.17\", \"02\": \"2586242.00\", \"04\": \"11707289.98\", \"05\": \"4748653.00\", \"06\": \"9005420.18\", \"08\": \"14055693.00\", \"09\": \"5907487.00\", \"10\": \"800768.00\", \"11\": \"10899436.11\", \"12\": \"24364885.19\", \"13\": \"4292416.96\", \"15\": \"1435464.24\", \"16\": \"4156616.00\", \"17\": \"-178746.01\", \"18\": \"1707409.12\", \"19\": \"9489172.24\", \"20\": \"4388311.71\", \"21\": \"509...",
+   "pass": false,
+   "source": "table mart_obligations_monthly",
+   "traps": [],
+   "unexplained": true
+  },
+  "5": {
+   "got": "{\"dewiki|bot\": [16, 48510], \"dewiki|human\": [48, 4453], \"enwiki|bot\": [674, 185350], \"enwiki|human\": [1559, 244137], \"enwiktionary|bot\": [52, 624], \"enwiktionary|human\": [44, 6062], \"eswiki|bot\": [19, -24694], \"eswiki|human\": [120, 41065], \"frwiki|bot\": [240, 98697], \"frwiki|human\": [111, 57280], \"itwiki|bot\": [9, 26416], \"itwiki|human\": [60, 3061], \"jawiki|bot\": [14, -251], \"jawiki|human\": [64, -...",
+   "pass": false,
+   "reading": "wiki, actor_type -> edit_count, net_bytes",
+   "source": "table mart_edits_all_by_wiki",
+   "traps": [
+    "F5"
+   ]
+  },
+  "6": {
+   "expected": "[[1792023900, 985], [1792024200, 918], [1792023600, 892], [1792022400, 816], [1792023000, 796]]",
+   "got": "[[1792021800, 706], [1792022100, 670], [1792021500, 472], [1792022400, 385]]",
+   "pass": false,
+   "reading": "window_start -> edit_count",
+   "source": "table mart_edit_window_5min",
+   "traps": [],
+   "unexplained": true
+  },
+  "7": {
+   "got": "0",
+   "pass": false,
+   "reading": "row count",
+   "source": "table mart_late_events",
+   "traps": [
+    "F4",
+    "F5",
+    "S3",
+    "S3-drops"
+   ]
+  }
+ },
+ "passed": 2,
+ "total": 7
+}

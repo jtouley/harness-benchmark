@@ -90,6 +90,41 @@ such as a NaN amount, which is how the Opus one-shot shipped a crash and still p
 - Limit: some checks have more than one reasonable reading of the spec, listed as open readings in the
   [trials write-up](../evidence/2026-10-15-pipeline-trials.md).
 
+#### Grader v3
+
+The owner's rules (postmortem front matter, Grading, 2026-10-24): the custom tasks stay the primary
+benchmark, graded by accepted-benchmark practice: code only, the final state, answers not form, every rule
+derivable from the task prompt. A grader that only reads the hidden reference's shape is an opinion mismatch,
+not a failure. A mapping entry that names a table and columns and states its operation in plain words is a
+valid answer, applied by a fixed, model-free parser; an entry the parser cannot resolve fails, with the
+reason logged, identically for every arm; nobody reviews unresolved entries. Stream and idempotency rules
+stay as they are.
+
+What v3 changes, all in how an `oracle_map.yml` entry is read (prompt.md:41: "the table and column (or SQL
+view) that answers it"). The answer key, the comparison with it (money to the cent, counts exact, the same
+accepted readings and traps), `stream_ok`, idempotency and the reward are unchanged.
+
+- **An operation stated in words** beside the table and columns (`how:`, `note:`, `aggregation:`, `rows:`,
+  `filter:`, `group_by:`) is read by [`pipetask/ops.py`](../../golden/pipeline/pipetask/ops.py), a fixed
+  grammar: filter, group, sum, count, divide, and a count of groups whose sum is below zero. Columns must be
+  the mart's own. The plan runs on the mart's rows and the check reads the result, as it reads any table.
+  Division is exact decimal arithmetic, as the key's, and the divisor must hold one value per group.
+- **Ordering and cutting are the check's own.** `order by`, `sort`, `take ten`, `limit` are recognised and
+  not applied: checks 2 and 6 rank the whole result themselves, as they always have.
+- **Check 4 keeps the published grain.** The month it reads is the answer key's and the roll-up (county to
+  state to source) is what the check does, so an entry's month filter and roll-up are not applied; among
+  the columns the entry names, the month, county and state columns are each found by their values.
+- **Unresolved fails.** A clause that names a column, another mart, a dotted name or an operation word that
+  the grammar cannot read makes the entry unresolved: the check fails with `unresolved: <the clause>`. A
+  clause with none of those (commentary) is skipped.
+- **Two more shapes of the same answer:** a query nested one level down (`queries: {answer: ...}`: the one
+  named `answer`, or the only one), and a path to a file inside a mart folder (`out/marts/<mart>/data.parquet`).
+- **Golden samples:** [`golden/pipeline/fixtures/grader-v3/`](../../golden/pipeline/fixtures/grader-v3/) holds
+  each stored tree's delivered map and the marts it names; `tests/test_pipeline_grader_v3.py` pins every
+  entry's resolution and every check's result, and that v3 keeps every check the pinned grader passed.
+- The regrade of every stored tree, with each change and why, and an independent recomputation of every
+  point v3 gains: [docs/evidence/2026-10-25-grader-v3](../evidence/2026-10-25-grader-v3/README.md).
+
 ## Where a model's judgment decides a number
 
 - The blind quality scores of iterations 3 and 4, including the headline 8.00 against 7.33.

@@ -249,16 +249,48 @@ def scalar_check(res, key) -> dict:
     return _verdict(cands, key)
 
 
+def _named_roles(res) -> tuple[list[int], list[int], list[int], set[int]] | None:
+    """v3: when the entry names the columns, the month, county and state columns are among them, each found by
+    its values (the column holding the most months, county codes, state codes), with no share threshold: a
+    county column may hold rows that are placed in a state only (`UNKNOWN`), as the key's state totals do.
+    None when the entry names fewer than a month and a measure column of the result."""
+    named = [i for i, c in enumerate(res.columns) if c.lower() in res.hints]
+    if len(named) < 2:
+        return None
+
+    def best(normalize, exclude=()):
+        scored = []
+        for i in named:
+            if i in exclude:
+                continue
+            values = [v for v in _column(res, i) if v is not None]
+            hits = sum(normalize(v) is not None for v in values)
+            if hits:
+                scored.append((-hits / len(values), i))
+        return [i for _, i in sorted(scored)]
+
+    months = best(year_month)[:1]
+    counties = best(county_fips, set(months))[:1]
+    states = best(state_fips, set(months) | set(counties))[:1]
+    return months, counties, states, set(named)
+
+
 def check4(res, key) -> dict:
     want = key["answer"]
-    months = key_columns(res, year_month)
-    counties = key_columns(res, county_fips, 0.5)
-    states = key_columns(res, state_fips, 0.5)
+    roles = _named_roles(res)
+    if roles and roles[0]:
+        months, counties, states, named = roles
+    else:
+        months = key_columns(res, year_month)
+        counties = key_columns(res, county_fips, 0.5)
+        states = key_columns(res, state_fips, 0.5)
+        named = set(range(len(res.columns)))
     if not months:
         return {"pass": False, "error": "no month column found"}
     cands = []
     county_col, state_col = (counties[:1] or [None])[0], (states[:1] or [None])[0]
-    for m, v in itertools.product(months[:1], numeric_columns(res, exclude={months[0], county_col, state_col})):
+    measures = [i for i in numeric_columns(res, exclude={months[0], county_col, state_col}) if i in named]
+    for m, v in itertools.product(months[:1], measures):
         rows = [r for r in res.rows if year_month(r[m]) == want["month"]]
         for c, s in [(county_col, state_col)]:
             total, by_state, by_county = Decimal(0), {}, {}
@@ -363,7 +395,7 @@ def grade(repo: Path, key: dict) -> dict:
             out[n] = {"pass": False, "error": f"oracle_map.yml has no entry for check {n}"}
             continue
         try:
-            res = oracle.resolve(entries[n], con)
+            res = oracle.resolve(entries[n], con, check=n, operations=True)
         except oracle.MapError as exc:
             out[n] = {"pass": False, "error": str(exc)}
             continue

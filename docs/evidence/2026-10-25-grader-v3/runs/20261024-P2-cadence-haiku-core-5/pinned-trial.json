@@ -1,0 +1,110 @@
+{
+ "build": [
+  {
+   "cmd": "make build",
+   "exit": 0,
+   "log": "build-1.log",
+   "seconds": 16.2
+  },
+  {
+   "cmd": "make build",
+   "exit": 0,
+   "log": "build-2.log",
+   "seconds": 11.6
+  }
+ ],
+ "build_timeout": 1800,
+ "changed_by_second_build": [],
+ "checks": {
+  "1": {
+   "interpretation": "primary",
+   "pass": true,
+   "reading": "agency_code -> sum(net_obligations)",
+   "source": "query"
+  },
+  "2": {
+   "interpretation": "primary",
+   "pass": true,
+   "reading": "county_fips -> per_person",
+   "source": "query"
+  },
+  "3": {
+   "interpretation": "primary",
+   "pass": true,
+   "reading": "count_star()",
+   "source": "query"
+  },
+  "4": {
+   "error": "no month column found",
+   "pass": false,
+   "source": "query"
+  },
+  "5": {
+   "expected": "{\"dewiki|bot\": [62, 87343], \"dewiki|human\": [171, 48236], \"enwiki|bot\": [3218, 5660289], \"enwiki|human\": [6435, 1033126], \"enwiktionary|bot\": [64, 880], \"enwiktionary|human\": [142, 11665], \"eswiki|bot\": [144, 56356], \"eswiki|human\": [573, 127935], \"frwiki|bot\": [936, 628782], \"frwiki|human\": [239, 110607], \"itwiki|bot\": [41, 64153], \"itwiki|human\": [156, 64503], \"jawiki|bot\": [63, 9176], \"jawiki|h...",
+   "got": "{\"dewiki|bot\": [16, 48510], \"dewiki|human\": [70, -4098], \"enwiki|bot\": [1196, 185292], \"enwiki|human\": [2787, 183575], \"enwiktionary|bot\": [361, 0], \"enwiktionary|human\": [111, 5097], \"eswiki|bot\": [114, -25445], \"eswiki|human\": [184, -5898], \"frwiki|bot\": [257, 97248], \"frwiki|human\": [359, 45640], \"itwiki|bot\": [9, 0], \"itwiki|human\": [78, -10159], \"jawiki|bot\": [14, -251], \"jawiki|human\": [87, ...",
+   "pass": false,
+   "source": "query",
+   "traps": [],
+   "unexplained": true
+  },
+  "6": {
+   "expected": "[[1792023900, 985], [1792024200, 918], [1792023600, 892], [1792022400, 816], [1792023000, 796]]",
+   "got": "[[1792021800, 1208], [1792022100, 1108], [1792021500, 890], [1792022400, 777]]",
+   "pass": false,
+   "reading": "window_start -> edits",
+   "source": "query",
+   "traps": [],
+   "unexplained": true
+  },
+  "7": {
+   "got": "0",
+   "pass": false,
+   "reading": "count_star()",
+   "source": "query",
+   "traps": [
+    "F4",
+    "F5",
+    "S3",
+    "S3-drops"
+   ]
+  }
+ },
+ "deadline": 600.0,
+ "deadline_hit": false,
+ "durations": [
+  30,
+  90
+ ],
+ "idempotent": true,
+ "keepalive": 5.0,
+ "make_fresh_home": false,
+ "make_user": null,
+ "passed": 3,
+ "reward": 0.0,
+ "seed": 1,
+ "snapshot": {
+  "commit": "d35d4566ddf89a66266dc2abdebd5bab49444913",
+  "files": 0
+ },
+ "speed": 60.0,
+ "stream": [
+  {
+   "cmd": "make stream DURATION=30",
+   "exit": 0,
+   "log": "stream-1.log",
+   "seconds": 39.6
+  },
+  {
+   "cmd": "make stream DURATION=90",
+   "exit": 0,
+   "log": "stream-2.log",
+   "seconds": 99.0
+  }
+ ],
+ "stream_connections": 14,
+ "stream_grace": 300,
+ "stream_ok": false,
+ "stream_positions_needed": 11774,
+ "stream_positions_served": 5902,
+ "total": 7
+}

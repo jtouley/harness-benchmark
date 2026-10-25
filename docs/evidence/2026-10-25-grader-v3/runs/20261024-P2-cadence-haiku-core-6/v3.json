@@ -1,0 +1,48 @@
+{
+ "checks": {
+  "1": {
+   "interpretation": "primary",
+   "pass": true,
+   "reading": "agency_code -> net_obligations",
+   "source": "query"
+  },
+  "2": {
+   "expected": "[[\"11001\", \"129.07\"], [\"46065\", \"76.85\"], [\"31181\", \"75.17\"], [\"19011\", \"70.09\"], [\"02110\", \"63.97\"], [\"21073\", \"56.40\"], [\"02198\", \"46.67\"], [\"29051\", \"39.95\"], [\"28149\", \"38.14\"], [\"02164\", \"38.02\"]]",
+   "got": "[[\"11001\", \"702250.00\"], [\"29051\", \"77625.00\"], [\"21073\", \"52442.00\"], [\"28149\", \"42105.00\"], [\"02110\", \"31572.00\"], [\"19011\", \"25799.00\"], [\"46065\", \"17526.00\"], [\"02198\", \"5746.00\"], [\"31181\", \"3326.00\"], [\"02164\", \"1315.00\"]]",
+   "pass": false,
+   "source": "query",
+   "traps": [],
+   "unexplained": true
+  },
+  "3": {
+   "interpretation": "primary",
+   "pass": true,
+   "reading": "negative_awards",
+   "source": "query"
+  },
+  "4": {
+   "error": "unresolved: queries holds 3 queries (county_by_state, source_total, state) and none is named answer",
+   "pass": false
+  },
+  "5": {
+   "interpretation": "primary",
+   "pass": true,
+   "reading": "wiki, actor_type -> edits, net_bytes",
+   "source": "query"
+  },
+  "6": {
+   "interpretation": "primary",
+   "pass": true,
+   "reading": "window_start_utc -> edits",
+   "source": "query"
+  },
+  "7": {
+   "interpretation": "primary",
+   "pass": true,
+   "reading": "late_events",
+   "source": "query"
+  }
+ },
+ "passed": 5,
+ "total": 7
+}

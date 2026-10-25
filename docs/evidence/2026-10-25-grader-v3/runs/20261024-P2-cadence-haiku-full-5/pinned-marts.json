@@ -1,0 +1,34 @@
+{
+ "checks": {
+  "1": {
+   "error": "no published mart named 'out/marts/mart_fy2024_monthly/data.parquet' under out/marts/",
+   "pass": false
+  },
+  "2": {
+   "error": "no published mart named 'out/marts/mart_fy2024_monthly/data.parquet' under out/marts/",
+   "pass": false
+  },
+  "3": {
+   "error": "no published mart named 'out/warehouse.duckdb fct_award_transaction' under out/marts/",
+   "pass": false
+  },
+  "4": {
+   "error": "no published mart named 'out/marts/mart_fy2024_monthly/data.parquet' under out/marts/",
+   "pass": false
+  },
+  "5": {
+   "error": "no published mart named 'out/warehouse.duckdb fct_edit' under out/marts/",
+   "pass": false
+  },
+  "6": {
+   "error": "no published mart named 'out/marts/mart_edit_windows_5min/data.parquet' under out/marts/",
+   "pass": false
+  },
+  "7": {
+   "error": "no published mart named 'out/warehouse.duckdb fct_edit' under out/marts/",
+   "pass": false
+  }
+ },
+ "passed": 0,
+ "total": 7
+}

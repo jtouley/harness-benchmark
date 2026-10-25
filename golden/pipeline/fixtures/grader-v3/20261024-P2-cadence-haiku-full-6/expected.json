@@ -1,0 +1,75 @@
+{
+ "graded_snapshot": "d66f7d7b88c3f5e65020767b0950f6c4f1f6ba2a",
+ "marts": [
+  "dim_agency",
+  "dim_place",
+  "fct_award_transaction",
+  "fct_edit",
+  "late_events",
+  "mart_edit_window_5min",
+  "mart_obligations_monthly",
+  "stream_replay_hour"
+ ],
+ "pinned": {
+  "checks": {
+   "1": true,
+   "2": false,
+   "3": true,
+   "4": false,
+   "5": false,
+   "6": false,
+   "7": false
+  },
+  "grader_commit": "c344bea44951cfc5a3a3a99aaa598fdaaedabba8",
+  "grader_tree": "8a0977e42fa02981802090d1f9517efe537994c4",
+  "idempotent": true,
+  "passed": 2,
+  "reward": 0.2857,
+  "stream_ok": true
+ },
+ "run_id": "20261024-P2-cadence-haiku-full-6",
+ "task": "P2",
+ "transcript_blob": {
+  "path": "blobs/35500c839a376787f0edea3f8ed1a53acb682420bf694afa3b00642977b5c27e.gz",
+  "sha256": "35500c839a376787f0edea3f8ed1a53acb682420bf694afa3b00642977b5c27e",
+  "store": "runs-store"
+ },
+ "tree_blob": {
+  "path": "blobs/074b57dcbe2062e4505df288610b9a3c6f0e07e5bd8dd2f3335079a67081c7ea.gz",
+  "sha256": "074b57dcbe2062e4505df288610b9a3c6f0e07e5bd8dd2f3335079a67081c7ea",
+  "store": "runs-store"
+ },
+ "v3": {
+  "checks": {
+   "1": {
+    "pass": true,
+    "resolution": "query"
+   },
+   "2": {
+    "pass": false,
+    "resolution": "query"
+   },
+   "3": {
+    "pass": true,
+    "resolution": "query"
+   },
+   "4": {
+    "pass": false,
+    "resolution": "entry names no table or query: {'check': 4, 'question': 'For one month, county totals add up to state totals, and state totals add up to the source total', 'month': '2024-03', 'layer': 'published out/marts (Parquet), with the raw lake as the source total (A-8)', 'tables': ['out/marts/mart_obligations_monthly', 'out/marts/fct_award_transaction', 'out/marts/dim_place'], 'columns': ['net_obligations', 'state_code', 'county_code', 'federal_action_obligation', 'place_key'], 'test': 'tests/test_marts_real_data.py::test_county_totals_sum_to_state_and_source'}"
+   },
+   "5": {
+    "pass": false,
+    "resolution": "query"
+   },
+   "6": {
+    "pass": false,
+    "resolution": "query"
+   },
+   "7": {
+    "pass": false,
+    "resolution": "query"
+   }
+  },
+  "passed": 2
+ }
+}
