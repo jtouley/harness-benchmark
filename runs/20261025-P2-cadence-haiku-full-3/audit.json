@@ -1,0 +1,42 @@
+{
+ "components": {
+  "committed_history": {
+   "present": false,
+   "why": "the bundle holds only the starting repository"
+  },
+  "decisions": {
+   "committed": [],
+   "present": true,
+   "written": [
+    ".context/adversarial/adversarial_spec.md",
+    ".context/plans/spec.plan.md"
+   ]
+  },
+  "gate_evidence": {
+   "fail": 0,
+   "gates": [
+    "ops-gate",
+    "validate-gate"
+   ],
+   "pass": 3,
+   "present": true,
+   "verdicts": 3
+  },
+  "pr_description": {
+   "present": false,
+   "why": "no PR file with a title and body under .context/prs/, and no gh pr create with a body that returned a pull URL"
+  },
+  "regradable": {
+   "present": true,
+   "ref": "refs/graded/20261025-P2-cadence-haiku-full-3"
+  }
+ },
+ "inputs": {
+  "transcript": "67a74411dea19b6fe9391d29658106f7a9433261900bffe4b7a16faa42ab60b9",
+  "tree": "65bdfd2866e197284b0ce28ef36ebff5ada3a269039bd1354077b759a3ba44a6"
+ },
+ "measure": 1,
+ "present": 3,
+ "run_id": "20261025-P2-cadence-haiku-full-3",
+ "unread": 0
+}
