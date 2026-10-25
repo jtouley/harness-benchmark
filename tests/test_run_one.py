@@ -40,11 +40,16 @@ def test_the_cadence_commit_comes_from_the_batch_pin_by_shape(tmp_path):
     proc = _run_one(tmp_path, "20261024-P1-cadence-haiku-full-9", "--dry-run", RUN_ONE_WORK=str(work),
                     CADENCE_SHA="085bfdcd00254594ed5f22387e4316f667e59ec7", BATCH="2026-10-24-shapes")
     assert proc.returncode == 2 and "is not the pin" in proc.stderr and "d3c2ffe" in proc.stderr
-    for shape in ("core", "full"):  # the default batch, round 2: one commit for both shapes
+    for shape in ("core", "full"):  # round 2: one commit for both shapes
         proc = _run_one(tmp_path, f"20261024-P1-cadence-haiku-{shape}-4", "--dry-run", RUN_ONE_WORK=str(work),
-                        CADENCE_SHA="085bfdcd00254594ed5f22387e4316f667e59ec7")
+                        CADENCE_SHA="085bfdcd00254594ed5f22387e4316f667e59ec7", BATCH="2026-10-24-shapes-r2")
         assert proc.returncode == 2 and "2026-10-24-shapes-r2.json" in proc.stderr
         assert "2100c6e6aa99d99309cfa8e7f8c5cee1018584b4" in proc.stderr
+    for shape in ("core", "full"):  # the default batch, round 3: the merged 2026-10-25 stack (cadence #233)
+        proc = _run_one(tmp_path, f"20261025-P2-cadence-haiku-{shape}-1", "--dry-run", RUN_ONE_WORK=str(work),
+                        CADENCE_SHA="2100c6e6aa99d99309cfa8e7f8c5cee1018584b4")
+        assert proc.returncode == 2 and "2026-10-25-shapes-r3.json" in proc.stderr
+        assert "9fafe099aaef7e53a5cd896c3d550d1be82c9154" in proc.stderr
     assert not work.exists()
     proc = _run_one(tmp_path, "20261024-P1-cadence-haiku-core-9", "--dry-run", RUN_ONE_WORK=str(work),
                     BATCH="2026-10-24-no-such-batch")
