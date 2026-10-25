@@ -1,0 +1,9 @@
+plan_create_gate exit=0
+OK  plan-create-gate
+plan_update_gate exit=1
+FAIL  plan-update-gate
+  - plan-create: .cursor/plans/spec_2f13c7.plan.md: Entry points row 2 (make stream DURATION=600): the input is `none` or `sse <url>`, not 'data/raw/sitematrix.json`, then `sse http://localhost:8099/v2/stream/recentchange'
+  - plan-create: .cursor/plans/spec_2f13c7.plan.md: Entry points: the ticket names `make stream`, and the table has no row for it
+  - plan-update: .cursor/plans/spec_2f13c7.plan.md: Command cost: `make build` runs 1200 s, over 600 s. Name a shorter command that reads the input to its end, or write `deferred: <spec line>`
+  - plan-update: .cursor/plans/spec_2f13c7.plan.md: Deliverables: the spec names `oracle_map.yml` as an output (spec line 41), and the first phase (Phase 1: Skeleton, lake load and the pinned tools) does not write it. Write a first version of each output file that the spec names in the first phase, and update it in the phase tha
+  - plan-update: .cursor/plans/spec_2f13c7.plan.md: Deliverables: the spec names `DECISIONS.md` as an output (spec line 43), and the first phase (Phase 1: Skeleton, lake load and the pinned tools) does not write it. Write a first version of each output file that the spec names in the first phase, and update it in the phase that 

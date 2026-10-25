@@ -1,0 +1,9 @@
+plan_create_gate exit=0
+OK  plan-create-gate
+plan_update_gate exit=1
+FAIL  plan-update-gate
+  - plan-create: .cursor/plans/spec_2f13c7.plan.md: Entry points row 2 (make stream DURATION=600): the input is `none` or `sse <url>`, not 'data/raw/sitematrix.json`, then `sse http://localhost:8099/v2/stream/recentchange'
+  - plan-create: .cursor/plans/spec_2f13c7.plan.md: Entry points: the ticket names `make stream`, and the table has no row for it
+  - plan-update: .cursor/plans/spec_2f13c7.plan.md: Command cost: `make build` runs 1200 s, over 600 s. Name a shorter command that reads the input to its end, or write `deferred: <spec line>`
+  - plan-update: .cursor/plans/spec_2f13c7.plan.md: Command cost: `make stream DURATION=3600`: the seconds are a whole number, `deferred: <spec line>` or `trade-off: <spec line>`, not 'not run'
+  - plan-update: .cursor/plans/spec_2f13c7.plan.md: Command cost: `make stream DURATION=3600` waits 3600 s, over 600 s. A span of data that the spec names is not a wall-clock time when the input can run faster than real time

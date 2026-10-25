@@ -1,0 +1,9 @@
+plan_create_gate exit=1
+FAIL  plan-create-gate
+  - plan-create: .cursor/plans/spec_3cbe50d7.plan.md: row 6 does not quote item 6 ('the 5-minute windows with the most edits on `en.wikipedia.org` (on-time edits only); ties broken by window start, ascending')
+  - plan-create: .cursor/plans/spec_3cbe50d7.plan.md: Command cost: `make stream DURATION=<N>`, N = the wall-clock seconds that cover the first replayed hour at the speed Phase 4 measures (2026-10-25 update, MF-1)`: the seconds are a whole number, `deferred: <spec line>` or `trade-off: <spec line>`, not 'N'
+plan_update_gate exit=1
+FAIL  plan-update-gate
+  - plan-update: the round has no P6 plan-gate report. Run /de-adversarial-reviewer plan-gate on the plan
+  - plan-update: the round has no P7 plan scorecard. Run /test-benchmark plan
+  - plan-update: the round has no P8 deferral register (.context/deferrals/<task>_deferral-register.md)

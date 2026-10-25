@@ -1,0 +1,10 @@
+plan_create_gate exit=0
+OK  plan-create-gate
+plan_update_gate exit=1
+FAIL  plan-update-gate
+  - plan-update: the round has no P6 plan-gate report. Run /de-adversarial-reviewer plan-gate on the plan
+  - plan-update: the round has no P7 plan scorecard. Run /test-benchmark plan
+  - plan-update: the round has no P8 deferral register (.context/deferrals/<task>_deferral-register.md)
+  - plan-create: .cursor/plans/spec_3cbe50d7.plan.md: row 6 does not quote item 6 ('the 5-minute windows with the most edits on `en.wikipedia.org` (on-time edits only); ties broken by window start, ascending')
+  - plan-update: .cursor/plans/spec_3cbe50d7.plan.md: Deliverables: the spec names `oracle_map.yml` as an output (spec line 41), and the first phase (Phase 1: Batch lake: ZIP, census and site matrix into Parquet) does not write it. Write a first version of each output file that the spec names in the first phase, and update it in
+  - plan-update: .cursor/plans/spec_3cbe50d7.plan.md: Deliverables: the spec names `DECISIONS.md` as an output (spec line 43), and the first phase (Phase 1: Batch lake: ZIP, census and site matrix into Parquet) does not write it. Write a first version of each output file that the spec names in the first phase, and update it in t

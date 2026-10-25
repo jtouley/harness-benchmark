@@ -1,0 +1,7 @@
+plan_create_gate exit=0
+OK  plan-create-gate
+plan_update_gate exit=1
+FAIL  plan-update-gate
+  - plan-update: plan_spec.md verdict is READY WITH CHANGES; spec.plan.md has no `## Revision ledger (review 28c79a723e00)` for MF-1, MF-2, MF-3, MF-4, MF-5, MF-6, MF-7, MF-8, MF-9, MF-10, MF-11 of plan_spec.md. Run /plan-update spec.plan.md --from-review plan_spec.md. End the update with `## Revision ledger (review 28c79a723e00
+  - plan-update: P6 adversarial_spec.md verdict is REQUEST CHANGES; spec.plan.md has no `## Revision ledger (review aa25a15c955a)` for B-1, B-2, B-3, B-4, C-1, C-2, C-3, C-4, C-5, C-6, C-7, C-8, C-9, C-10 of adversarial_spec.md. Run /plan-update spec.plan.md --from-review adversarial_spec.md. End the update with `## Revision led
+  - plan-update: P7 spec_plan.json; spec.plan.md has no `## Revision ledger (review 673e39f81ad2)` for spec-F01, spec-F02, spec-F03 of spec_plan.json. Run /plan-update spec.plan.md --from-review spec_plan.json. End the update with `## Revision ledger (review 673e39f81ad2)` and one row for each must-fix finding id: the change, or
