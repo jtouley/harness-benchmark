@@ -17,10 +17,13 @@ def test_every_case_has_a_grader_verified_answer() -> None:
     assert len(cases) == 11 and len({c["name"] for c in cases}) == 11
     for c in cases:
         assert c["name"].startswith("review-") and c["run_id"] not in c["name"]
-        kinds = {a["kind"] for a in c["answers"]}
-        assert kinds == ({"absent"} if c["grader"]["stream_ok"] else {"defect"})
-        assert all(a["verified_by"][0].startswith(f"runs/{c['run_id']}/scores.jsonl") for a in c["answers"])
+        ids = {a["id"] for a in c["answers"]}
+        stream = "no-stream-trap-failure" if c["grader"]["stream_ok"] else "stream-consumer-does-not-survive-invalid-frame"
+        assert stream in ids  # the grader's own stream_ok decides the stream answer
+        assert all(a["verified_by"] for a in c["answers"])
     assert sum(not c["grader"]["stream_ok"] for c in cases) == 6
+    pilot = [a for c in cases for a in c["answers"] if "pilot_id" in a]
+    assert {a["pilot_id"] for a in pilot} == {"H1", "H2", "M1", "M2", "M3", "M4", "M5", "M6", "M7"}
 
 
 def test_assertions_are_tagged_recall_or_control() -> None:

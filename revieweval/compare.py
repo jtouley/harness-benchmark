@@ -47,8 +47,10 @@ def cases() -> list[dict]:
 def assertions(case: dict) -> list[str]:
     out = []
     for a in case["answers"]:
-        if a["kind"] == "defect":
+        if a["kind"] == "defect" and a["severity"] == "must-fix":
             out.append(f"[recall:{a['id']}] The final review reports as must-fix: {a['statement']}")
+        elif a["kind"] == "defect":
+            out.append(f"[recall:{a['id']}] The final review reports, at any severity: {a['statement']}")
         else:
             out.append(f"[control:{a['id']}] {a['statement']} The final review makes no such must-fix claim.")
     return out
@@ -107,10 +109,11 @@ def steps_for(spec: str, cadence: Path, work: Path, run: Path, pr: str) -> tuple
         files = [f"{out}/findings-{pr}-{x}.txt" for x in letters]
         if variant in ("single", "three"):
             return steps, files
+        home = export_cadence(cadence, sha, work / "skills")
+        skill_md = home / "skills" / "antagonistic-review" / "SKILL.md"
         steps.append({"id": "consolidate", "after": list(letters), "save_report_to": None, "prompt":
-                      f"{consolidate}\n\nThe findings files: {', '.join(files)}. Save the final review to {final}: "
-                      f"for each finding an id, a severity (must-fix, should-fix or nit), a location, `reproduced: yes` "
-                      f"with the command and output or `reproduced: no` with the reason, and the letters that found it. "
+                      f"{consolidate}\n\nThe findings files: {', '.join(files)}. Apply the sections \"The standard of "
+                      f"the consolidation\" and \"The final review\" of {skill_md}, and save the final review to {final}. "
                       f"{where}"})
         steps.append({"id": "explain", "after": ["consolidate"], "save_report_to": None, "prompt":
                       f"{explain}\n\nSave it to {out}/explain-{pr}.md. {where}"})

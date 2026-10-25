@@ -18,7 +18,9 @@ Known answers, and how each is verified:
   (P1 core-4 and P2 core-5 loop, P2 core-4 crashes at engine/stream.py:63).
 - 5 control cases: `stream_ok` is true. A must-fix claim that the consumer loops or crashes on that frame is
   a false finding.
-- The survivability pilot's reproduced findings join as answers once the pilot has them.
+- review-01 (P1 core-6) also carries the survivability pilot's 9 HIGH and MEDIUM findings (H1, H2, M1 to M7),
+  each reproduced by the pilot's consolidation. The pilot reviewed the same tree (git tree 9305aa39).
+  HIGH items must be reported as must-fix; MEDIUM items count at any severity.
 
 ## Steps
 
