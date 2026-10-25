@@ -140,9 +140,12 @@ def layout(args) -> None:
     root = args.work / args.iteration
     configs = dict(c.split("=", 1) for c in args.config)
     picked = [c for c in cases() if not args.cases or c["name"] in args.cases]
+    unknown = sorted(set(args.cases) - {c["name"] for c in cases()})
+    if unknown:
+        raise SystemExit(f"unknown cases: {', '.join(unknown)}")
+    if args.cases and (root / "dispatch.jsonl").exists():  # it would replace the full run list with the subset's
+        raise SystemExit(f"{root / 'dispatch.jsonl'} exists: lay out a subset under a new --iteration")
     meta = {"configs": configs, "baselines": args.baseline, "runs": args.runs}
-    if args.cases and (root / "configs.json").exists() and json.loads((root / "configs.json").read_text()) != meta:
-        raise SystemExit(f"{root} was laid out with other configurations: a subset re-layout must use the same ones")
     dispatch = []
     for case in picked:
         cdir = root / case["name"]
@@ -174,11 +177,7 @@ def layout(args) -> None:
                                  "prompt": (run / "grader.md").read_text().strip(), "output": str(run / "grading.json"),
                                  "timing": None})
     (root / "configs.json").write_text(json.dumps(meta, indent=1) + "\n")
-    path = root / "dispatch.jsonl"
-    if args.cases and path.exists():  # a subset re-layout replaces only its cases' lines, never the rest
-        kept = [ln for ln in path.read_text().splitlines() if json.loads(ln)["case"] not in args.cases]
-        dispatch = sorted([json.loads(ln) for ln in kept] + dispatch, key=lambda d: d["case"])
-    with open(path, "w") as f:
+    with open(root / "dispatch.jsonl", "w") as f:
         for d in dispatch:
             f.write(json.dumps(d) + "\n")
     print(f"{len(picked)} cases x {len(configs)} configurations x {args.runs} runs: {len(dispatch)} dispatches in "
@@ -187,7 +186,11 @@ def layout(args) -> None:
 
 def setup(run: Path) -> None:
     """The run's own clone of its case's tree (operator step, before the run's first dispatch)."""
-    if not (run / "repo").exists():
+    repo = run / "repo"
+    if repo.exists() and subprocess.run(["git", "-C", str(repo), "rev-parse", "-q", "--verify", "refs/heads/base"],
+                                        capture_output=True).returncode != 0:
+        shutil.rmtree(repo)  # a clone without `base` (one made from built/repo) cannot be reviewed or graded
+    if not repo.exists():
         src = (run / "source").read_text().strip()
         subprocess.run(["git", "clone", "-q", "-b", "review", src, str(run / "repo")], check=True)
         subprocess.run(["git", "-C", str(run / "repo"), "branch", "-q", "base", "origin/base"], check=True)

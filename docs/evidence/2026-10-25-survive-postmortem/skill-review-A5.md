@@ -78,7 +78,7 @@ So A5 is where the data-model choices are made, and at present the defects come 
 | No such assumption | P1 full-6 |
 
 - The cost was specific to how core-6's A5 read the phrase.
-- **[I]** With no per-check grade (dispatch item 8), I cannot tell whether the wall-clock reading helped core-6 score 4/7.
+- **[I]** With no per-check grade (dispatch item 8, reverted 2026-10-25: see README), I cannot tell whether the wall-clock reading helped core-6 score 4/7.
 
 ## 3. Correction to the postmortem's "9 of 11 made the geography choice in A5" [V]
 

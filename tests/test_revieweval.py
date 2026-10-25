@@ -92,8 +92,9 @@ def _layout(work: Path, cadence: Path, *cases: str) -> list[str]:
     return (work / "it" / "dispatch.jsonl").read_text().splitlines()
 
 
-def test_subset_layout_keeps_the_other_cases_and_runs_clone_the_prepared_tree(tmp_path: Path) -> None:
+def test_subset_layout_never_replaces_a_run_list_and_setup_replaces_a_clone_without_base(tmp_path: Path) -> None:
     import subprocess
+    import pytest
     names = [c["name"] for c in compare.cases()]
     for n in names[:2]:
         repo = tmp_path / "trees" / n / "repo"
@@ -110,9 +111,14 @@ def test_subset_layout_keeps_the_other_cases_and_runs_clone_the_prepared_tree(tm
     (built / "build.log").write_text("log\n")
     full = _layout(tmp_path, tmp_path)
     assert len(full) == 2 * len(names)
-    assert sorted(_layout(tmp_path, tmp_path, names[0])) == sorted(full)
+    with pytest.raises(SystemExit, match="exists"):
+        _layout(tmp_path, tmp_path, names[0])
+    with pytest.raises(SystemExit, match="unknown cases: review-1"):
+        _layout(tmp_path, tmp_path, "review-1")
+    assert (tmp_path / "it" / "dispatch.jsonl").read_text().splitlines() == full
     run = tmp_path / "it" / names[0] / "builtin" / "run-1"
     assert (run / "source").read_text().strip() == str(tmp_path / "trees" / names[0] / "repo")
+    subprocess.run(["git", "clone", "-q", str(built / "repo"), str(run / "repo")], check=True)  # #130's clone
     compare.setup(run)
     out = subprocess.run(["git", "-C", str(run / "repo"), "branch"], capture_output=True, text=True).stdout
     assert "base" in out and "review" in out

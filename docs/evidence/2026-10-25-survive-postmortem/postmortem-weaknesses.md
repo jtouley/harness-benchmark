@@ -205,7 +205,7 @@ The outside reviewers saw the final code (736d6fe, after the fixes). An item tha
 | E4 commit-push-pr | 7.7 | 0.07 | 7 | auditability only |
 
 **[I]** The blocks that decide correctness are A5, which makes the data-model choices, and E1, which writes the code. Together they take about 70 min of peer time per run, out of 128. Every other block took the rest without changing a graded answer in the one run I could trace end to end.
-- I cannot prove this for the other ten runs. They have no outside review and no per-check grade. Dispatch item 8 asks for the per-check grade.
+- I cannot prove this for the other ten runs. They have no outside review and no per-check grade. Dispatch item 8 asked for the per-check grade; its answer was reverted (2026-10-25, see README), so there is still none.
 
 ## Dispatch list (skill reviews)
 
@@ -219,7 +219,7 @@ Every brief: read only, no network requests, no agents or `claude -p`, scratch d
 | 4 | `commands/plan-create.md`, `plan-review.md`, `plan-update.md` (P1/P3/P4) | How did "the replayed hour" become a 3600-s data step (lines 330, 345)? Why did P3 not test it against spec line 56? Why did the P2 full-5 and full-6 plans name test files that do not exist? | core6.jsonl lines 184-363; P2 full-5 and full-6 transcripts; `t1/PR-description.md` | `survive/skill-review-plan.md` |
 | 5 | `commands/spec-driven.md`, `references/execution-protocol.md` (E1) | Where did E1's 336 peer minutes go? Does E1 require a fresh clone per entry point, a crash at stage boundaries, and empty and malformed input? Does #228's spec-driven change hold? | 6 runs with `/spec-driven` and 5 without; core6.jsonl lines 391-1287 | `survive/skill-review-E1.md` |
 | 6 | `hooks/pipeline_stop_guard.py`, `scripts/activate_session.py` (A1/R7) | Why does every run log "no active cadence session"? Why did 3 runs end at E4 after 3 refusals? Why did core-6 idle 61 min after its hard stop? | record.json `stop_point` for all 11 runs; core6.jsonl lines 2480-2546 | `survive/skill-review-stopguard.md` |
-| 8 | Not a skill: the harness grader output | For each of the 11 shapes-r2 runs and the two Oct 23 one-shots, which of checks 1 to 7 passed? For each check, which block's commit or artifact produced the answer, so the correctness split can be extended past core-6? | stored grader logs, if any, for these runs; `refs/graded` where present; the bundles; the per-block table in this file | `survive/check-attribution.md` |
+| 8 | Not a skill: the harness grader output | For each of the 11 shapes-r2 runs and the two Oct 23 one-shots, which of checks 1 to 7 passed? For each check, which block's commit or artifact produced the answer, so the correctness split can be extended past core-6? | stored grader logs, if any, for these runs; `refs/graded` where present; the bundles; the per-block table in this file | `survive/check-attribution.md` (reverted 2026-10-25: its regrade source was deleted and it was never independently evaluated; see README) |
 | 7 (low) | `skills/vibe-test/SKILL.md` (A5) | Do A5's assumptions reach the plan and change E1 (22 peer min across 11 runs)? | `.context/vibetest` Writes (core6.jsonl lines 111, 164); the plans | `survive/skill-review-A5.md` |
 
 ## For the pr-review-local agent
