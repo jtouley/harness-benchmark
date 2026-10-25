@@ -299,6 +299,12 @@ another agent counts only where the host records it (an attestation file); other
 not verifiable. Report the share of items present [DR] [PF] [#41]. M10 is reported per framework. It is
 not scored against one-shot arms [v1].
 
+Amendment (owner, 2026-10-25): auditability is a headline measure, reported for every arm, one-shots
+included, beside the grader score, which it never changes. It is computed by code from what each run left in
+storage: committed history, a PR with a description, recorded decisions or assumptions, gate evidence, and
+whether the graded work can be regraded from storage. The rules are in
+[`loop/audit.py`](../../loop/audit.py); each run's result is `runs/<run_id>/audit.json` ([runs](../../runs/README.md#auditability)).
+
 ### 4.8 Measures that v2 drops
 
 | v1 measure | v2 | Source |

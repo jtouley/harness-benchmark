@@ -16,8 +16,8 @@ appends the harness-benchmark grader's score with the grader's commit
 and the git tree of golden/pipeline/pipetask. The grader must be a clean checkout for that, and when
 batches/<batch>.json pins a grader_commit, --grader-repo must be at that commit (a checkout of the pin, not
 the driver's own HEAD: the 2026-10-24-shapes-r2 scores name c344bea, the harness HEAD, not the pin 10172ce). Then it
-writes the batch's postmortem again (every committed postmortem that covers the batch, or a new
-<batch>.md) and scoreboard.md, so the record, the postmortem and the scoreboard go in one commit
+writes runs/<run_id>/audit.json (loop.audit, from the blobs it just stored), the batch's postmortem again
+(every committed postmortem that covers the batch, or a new <batch>.md) and scoreboard.md, so the record, the postmortem and the scoreboard go in one commit
 (runs/README.md, "After a merge").
 
 Only Cadence is run (owner, 2026-10-23): the one-shot baselines are pinned (baselines.json), so the
@@ -50,7 +50,7 @@ from datetime import datetime, timezone
 from decimal import Decimal
 from pathlib import Path
 
-from loop import blocks, graded, postmortem, record, scoreboard, store
+from loop import audit, blocks, graded, postmortem, record, scoreboard, store
 
 ROOT = Path(__file__).resolve().parents[1]
 GRADER_PATH = "golden/pipeline/pipetask"
@@ -554,6 +554,7 @@ def main(argv: list[str] | None = None) -> int:
             "stream_ok": grade.get("stream_ok"), "error": grade.get("error"), "source": "driver",
             "graded_at": ended})
     print(args.runs / args.run_id / "record.json")
+    print(audit.write(args.runs / args.run_id, audit.compute(rec, {store.STORE: args.store})))
     postmortems = args.postmortems or args.runs.resolve().parent / "postmortems"
     board = args.scoreboard or args.runs.resolve().parent / "scoreboard.md"
     for path in postmortem.refresh(args.batch, args.runs, postmortems):

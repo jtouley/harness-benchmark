@@ -1,0 +1,48 @@
+{
+ "components": {
+  "committed_history": {
+   "commits": 10,
+   "present": true
+  },
+  "decisions": {
+   "committed": [
+    "DECISIONS.md"
+   ],
+   "present": true,
+   "written": [
+    ".context/plans/spec.plan.md",
+    ".context/vibetest/spec_2026-10-24.md",
+    "DECISIONS.md"
+   ]
+  },
+  "gate_evidence": {
+   "fail": 0,
+   "gates": [
+    "plan-create-gate",
+    "validate-gate"
+   ],
+   "pass": 2,
+   "present": true,
+   "verdicts": 2
+  },
+  "pr_description": {
+   "hosted": [],
+   "local": [
+    ".context/prs/PR-25db5134-42ca-4fd4-bd46-8fc58b729b86.md"
+   ],
+   "present": true
+  },
+  "regradable": {
+   "present": false,
+   "why": "no refs/graded/20261024-P1-cadence-haiku-core-5 and no graded commit on the record; the bundle holds 10 commit(s) of the agent's, but the grader's snapshot of the working tree (any uncommitted work) is not in it"
+  }
+ },
+ "inputs": {
+  "transcript": "1dbfc6a43f5bf8a18fb13726048216ea163fe78e80d4568a89db8191ff636be6",
+  "tree": "3033d9dcafa090d2f536f844e35abd6a197e0da64fbe01888304d27acfa84a85"
+ },
+ "measure": 1,
+ "present": 4,
+ "run_id": "20261024-P1-cadence-haiku-core-5",
+ "unread": 0
+}

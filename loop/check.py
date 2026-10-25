@@ -22,6 +22,10 @@ tree or on the tree of a later commit in this repository's history.
 The graded commit (loop.graded): a record's `graded` ref is refs/graded/<run_id>, it names a commit, and the
 record has a tree bundle to hold it. Whether each stored bundle really holds the graded work needs the
 runs-store checkout: `python -m loop.graded --store ../runs-store`.
+
+Auditability (loop.audit): every record has a runs/<id>/audit.json of the current measure, computed from the
+record's own transcript and tree. Whether each file is what the code computes from the stored blobs needs the
+runs-store checkout: `python -m loop.audit --store ../runs-store --check`.
 """
 
 from __future__ import annotations
@@ -33,7 +37,7 @@ import subprocess
 import sys
 from pathlib import Path
 
-from loop import baselines, findings, graded, postmortem, record, scoreboard, speed
+from loop import audit, baselines, findings, graded, postmortem, record, scoreboard, speed
 
 ROOT = Path(__file__).resolve().parents[1]
 GRADER_PATH = "golden/pipeline/pipetask"
@@ -263,6 +267,7 @@ def main(argv: list[str] | None = None) -> int:
     problems = validate_tree(ROOT / "runs")
     problems += speed.problems(ROOT / "runs")
     problems += baselines.problems(ROOT / "runs")
+    problems += audit.problems(ROOT / "runs")
     problems += postmortem_problems(ROOT / "runs", postmortem.POSTMORTEMS, scoreboard_path=ROOT / "scoreboard.md")
     if args.base:
         problems += append_only(ROOT, args.base)

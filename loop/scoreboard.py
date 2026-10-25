@@ -27,7 +27,7 @@ import sys
 from collections import defaultdict
 from pathlib import Path
 
-from loop import baselines, record
+from loop import audit, baselines, record
 
 ROOT = Path(__file__).resolve().parents[1]
 TASKS = ("P1", "P2")
@@ -250,6 +250,44 @@ def shape_rows(runs: Path, pinned: Path = baselines.PATH) -> list[dict]:
     return out
 
 
+def audit_rows(runs: Path) -> list[dict]:
+    """Per task, arm, run shape and model, over the counted runs with a score: n, the mean grader score, the mean
+    auditability (components present of five) and how many runs have each component (loop.audit). A run with
+    no audit.json, or a component that was not read, is counted in `unread`."""
+    groups: dict[tuple, list[tuple[dict, dict, dict | None]]] = defaultdict(list)
+    for rec, score in scored_runs(runs):
+        groups[(rec["task"], rec["arm"], rec.get("shape") or "—", rec["model_requested"])].append(
+            (rec, score, audit.load(runs / rec["run_id"])))
+    out = []
+    for (task, arm, shape, model), rows in sorted(groups.items(),
+                                                  key=lambda kv: (kv[0][0], kv[0][1] not in ONE_SHOT_ARMS, kv[0])):
+        audits = [a for _, _, a in rows if a is not None]
+        out.append({"task": task, "arm": arm, "shape": shape, "model": model, "n": len(rows),
+                    "score": round(sum(_passed(s) for _, s, _ in rows) / len(rows), 2),
+                    "audit": round(sum(a["present"] for a in audits) / len(audits), 2) if audits else None,
+                    "has": {c: sum(1 for a in audits if a["components"][c]["present"] is True) for c in audit.COMPONENTS},
+                    "unread": (len(rows) - len(audits)) + sum(a["unread"] for a in audits)})
+    return out
+
+
+def auditability(runs: Path) -> list[str]:
+    rows = audit_rows(runs)
+    if not rows:
+        return []
+    lines = ["## Auditability", "",
+             "What each counted, scored run left that a reader can check, computed by code from its stored record, "
+             "bundle and transcript (loop.audit; owner, 2026-10-25). Reported beside the grader score for every arm; "
+             "it never changes the score. Each component column is the runs that have it, of n. Audit is the mean "
+             "count of the five components present. Unread: components whose blob is in a store that was not read.", "",
+             "| Task | Arm | Shape | Model | n | Mean score | Audit (of 5) | " + " | ".join(audit.LABELS[c] for c in audit.COMPONENTS)
+             + " | Unread |", "|---|---|---|---|---|---|---|" + "---|" * len(audit.COMPONENTS) + "---|"]
+    for r in rows:
+        mean = "—" if r["audit"] is None else f"{r['audit']:.2f}"
+        lines.append(f"| {r['task']} | {r['arm']} | {r['shape']} | {r['model']} | {r['n']} | {r['score']:.2f}/7 | {mean} | "
+                     + " | ".join(f"{r['has'][c]}/{r['n']}" for c in audit.COMPONENTS) + f" | {r['unread']} |")
+    return lines + [""]
+
+
 def table(runs: Path) -> str:
     grouped = cells(runs)
     lines = ["# Scoreboard", "",
@@ -260,11 +298,14 @@ def table(runs: Path) -> str:
              "that reached the end of the pipeline or passed a check; runs that stopped early are left out and "
              "counted. "
              "Grader trees are listed, because a score made before a grader change is not regraded when "
-             "the run's tree was not kept.", ""]
+             "the run's tree was not kept. Auditability is each run's components present out of five "
+             "(loop.audit: committed history, a PR with a description, recorded decisions or assumptions, gate "
+             "evidence, regradable from storage), in the order of Checks passed; it is reported beside the score "
+             "and never changes it.", ""]
     for task in TASKS + tuple(sorted({k[3] for k in grouped} - set(TASKS) - {None})):
         lines += [f"## {task}", "",
-                  "| First run | Arm | Cadence | Model | n | Checks passed | Mean | Agent min | Time ÷ one-shot | Grader trees |",
-                  "|---|---|---|---|---|---|---|---|---|---|"]
+                  "| First run | Arm | Cadence | Model | n | Checks passed | Mean | Auditability | Agent min | Time ÷ one-shot | Grader trees |",
+                  "|---|---|---|---|---|---|---|---|---|---|---|"]
         keyed = [(min(r["run_id"][:8] for r, _ in rows), key, rows) for key, rows in grouped.items() if key[3] == task]
         for first, (arm, sha, model, _), rows in sorted(keyed, key=lambda x: (x[1][0] != "baseline", x[0], x[1][2])):
             passed = [_passed(s) for _, s in rows]
@@ -275,8 +316,10 @@ def table(runs: Path) -> str:
             ratios, early = ([], 0) if arm in ONE_SHOT_ARMS else _ratios(runs, [r for r, _ in rows])
             lines.append(f"| {first[:4]}-{first[4:6]}-{first[6:]} | {arm} | {commit} | {model} | {len(rows)} | "
                          f"{', '.join(f'{p}/7' for p in passed)} | {sum(passed) / len(passed):.2f} | "
+                         f"{', '.join(audit.score_text(audit.load(runs / r['run_id'])) for r, _ in rows)} | "
                          f"{', '.join(f'{m:.0f}' for m in minutes) or '—'} | {'—' if arm in ONE_SHOT_ARMS else _ratio_text(ratios, early)} | {', '.join(trees)} |")
         lines.append("")
+    lines += auditability(runs)
     _, done_lines = done(runs)
     lines += ["## Done", "",
               f"The owner's Done line: P1 and P2 means meet the bar on two consecutive batches of Cadence on Haiku, "

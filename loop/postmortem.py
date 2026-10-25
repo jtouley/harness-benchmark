@@ -9,8 +9,9 @@ A postmortem named <name> covers the batches its notes file lists under "batches
 writes <batch>.md when none does; loop.check refuses a committed postmortem that is not what the
 generator writes, and a counted or cited run that is in none (runs/README.md, "After a merge").
 
-The sections are fixed: Summary, Timeline, Speed, Diagnosis, Trace, Evidence ledger (VERIFIED / CLAIMED /
-CONTRADICTED), Root causes, Decisions, Actions. The generator writes Summary and Timeline, the VERIFIED
+The sections are fixed: Summary, Timeline, Auditability, Speed, Diagnosis, Trace, Evidence ledger (VERIFIED / CLAIMED /
+CONTRADICTED), Root causes, Decisions, Actions. The generator writes Summary, Timeline and Auditability (each run's
+runs/<id>/audit.json, loop.audit, beside its score), the VERIFIED
 ledger rows (one per scored run) and the root causes (the findings in findings.jsonl that cite the batch's
 runs). Trace lists, per run, the findings that cite it and the cadence commits and pull requests that cite
 it, from citations.json (loop.trace). Hand-written lines come from the notes file: {"ledger": [{"status",
@@ -25,12 +26,12 @@ import json
 import sys
 from pathlib import Path
 
-from loop import findings, record, run_summary, scoreboard, speed, trace
+from loop import audit, findings, record, run_summary, scoreboard, speed, trace
 
 ROOT = Path(__file__).resolve().parents[1]
 POSTMORTEMS = ROOT / "postmortems"
 STATUSES = ("VERIFIED", "CLAIMED", "CONTRADICTED")
-SECTIONS = ("Summary", "Timeline", "Speed", "Diagnosis", "Trace", "Evidence ledger", "Root causes", "Decisions",
+SECTIONS = ("Summary", "Timeline", "Auditability", "Speed", "Diagnosis", "Trace", "Evidence ledger", "Root causes", "Decisions",
             "Actions")
 
 
@@ -112,6 +113,7 @@ def generate(batch: str | list[str], runs: Path, notes: dict, findings_path: Pat
                    f"{sp['reason'] or '—'} | {got} | {'yes' if rec['counts']['counts'] else 'no: ' + rec['counts']['why']} |")
     out.append("")
 
+    out += _auditability(rows, runs)
     out += _speed(rows, runs)
     out += _diagnosis(rows, notes, findings_path)
     out += _trace(rows, runs, findings_path, citations)
@@ -139,6 +141,26 @@ def generate(batch: str | list[str], runs: Path, notes: dict, findings_path: Pat
         out += [f"- {i['text'].rstrip('.')}. Runs: {_cite(i['run_ids'])}." for i in notes.get(key, [])] or ["- None recorded."]
         out.append("")
     return "\n".join(out)
+
+
+def _auditability(rows: list[tuple[dict, dict | None]], runs: Path) -> list[str]:
+    """Each run's auditability (loop.audit) beside its score: the five components and the count present."""
+    out = ["## Auditability", "",
+           "What each run left that a reader can check, computed by code from its stored record, bundle and "
+           "transcript (loop.audit, runs/<id>/audit.json; owner, 2026-10-25). It is reported beside the score and "
+           "never changes it. Commits: the agent's own commits in the bundle. PR: a pull request with a "
+           "description (Cadence's local .context/prs/PR-*.md, or a gh pr create with a body). Decisions: a "
+           "decisions or assumptions record, committed or written during the run. Gates: gate verdict lines in "
+           "the transcript. Regradable: the bundle holds refs/graded/<run> at the graded commit. ? is a "
+           "component whose blob is in a store that was not read.", "",
+           "| Run | Arm | Score | Audit | " + " | ".join(audit.LABELS[c] for c in audit.COMPONENTS) + " |",
+           "|---|---|---|---|" + "---|" * len(audit.COMPONENTS)]
+    for rec, score in rows:
+        got = audit.load(runs / rec["run_id"])
+        out.append(f"| `{rec['run_id']}` | {rec['arm']} | {score_of(score) if score else 'not scored'} | "
+                   f"{audit.score_text(got)} | " + " | ".join(audit.cell(got, c) for c in audit.COMPONENTS) + " |")
+    out.append("")
+    return out
 
 
 def _speed(rows: list[tuple[dict, dict | None]], runs: Path) -> list[str]:

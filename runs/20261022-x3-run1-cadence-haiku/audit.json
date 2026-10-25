@@ -1,0 +1,32 @@
+{
+ "components": {
+  "committed_history": {
+   "present": null,
+   "why": "bundle stored in git:jtouley/cadence@9008b0e2389021aa499aa39798a852d9f444af11, which was not read"
+  },
+  "decisions": {
+   "present": null,
+   "why": "a blob was not read"
+  },
+  "gate_evidence": {
+   "present": null,
+   "why": "transcript stored in git:jtouley/cadence@9008b0e2389021aa499aa39798a852d9f444af11, which was not read"
+  },
+  "pr_description": {
+   "present": null,
+   "why": "transcript stored in git:jtouley/cadence@9008b0e2389021aa499aa39798a852d9f444af11, which was not read"
+  },
+  "regradable": {
+   "present": null,
+   "why": "bundle stored in git:jtouley/cadence@9008b0e2389021aa499aa39798a852d9f444af11, which was not read"
+  }
+ },
+ "inputs": {
+  "transcript": "91433b06a2670d277d497f27471cda8adf07af07f9c857ef960b868708c1cfd2",
+  "tree": "076931c6a24b5eb46bf368fd6091be2d07867553e6c6fb6830ec1054c0e1f8e3"
+ },
+ "measure": 1,
+ "present": 0,
+ "run_id": "20261022-x3-run1-cadence-haiku",
+ "unread": 5
+}

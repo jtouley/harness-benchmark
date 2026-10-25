@@ -27,6 +27,24 @@ Score is round(reward x total)/total, the scoreboard's; Passed is the grader's p
 | not recorded | `20261015-P3-opus-1` | P3 | — | — | 3/7 | 3/7 | 0.4286 | true | yes |
 | not recorded | `20261015-P3-sonnet-1` | P3 | — | — | 5/7 | 5/7 | 0.7143 | true | yes |
 
+## Auditability
+
+What each run left that a reader can check, computed by code from its stored record, bundle and transcript (loop.audit, runs/<id>/audit.json; owner, 2026-10-25). It is reported beside the score and never changes it. Commits: the agent's own commits in the bundle. PR: a pull request with a description (Cadence's local .context/prs/PR-*.md, or a gh pr create with a body). Decisions: a decisions or assumptions record, committed or written during the run. Gates: gate verdict lines in the transcript. Regradable: the bundle holds refs/graded/<run> at the graded commit. ? is a component whose blob is in a store that was not read.
+
+| Run | Arm | Score | Audit | Commits | PR | Decisions | Gates | Regradable |
+|---|---|---|---|---|---|---|---|---|
+| `20261015-P1-haiku-1` | baseline | 0/7 | 0/5 | no | no | no | no | no |
+| `20261015-P1-haiku-void` | baseline | not scored | 0/5 | no | no | no | no | no |
+| `20261015-P1-opus-1` | baseline | 6/7 | 0/5 | no | no | no | no | no |
+| `20261015-P1-sonnet-1` | baseline | 3/7 | 0/5 | no | no | no | no | no |
+| `20261015-P1-sonnet-aborted` | baseline | not scored | 0/5 | no | no | no | no | no |
+| `20261015-P2-haiku-1` | baseline | 0/7 | 0/5 | no | no | no | no | no |
+| `20261015-P2-opus-1` | baseline | 5/7 | 0/5 | no | no | no | no | no |
+| `20261015-P2-sonnet-1` | baseline | 3/7 | 0/5 | no | no | no | no | no |
+| `20261015-P3-haiku-1` | baseline | 0/7 | 0/5 | no | no | no | no | no |
+| `20261015-P3-opus-1` | baseline | 3/7 | 0/5 | no | no | no | no | no |
+| `20261015-P3-sonnet-1` | baseline | 5/7 | 0/5 | no | no | no | no | no |
+
 ## Speed
 
 Each Cadence run's agent session, and its ratio to the mean one-shot session of the same task and model (loop.speed; stretch goal: at most 1.25). The one-shots are the pinned baselines (baselines.json; Basis names the runs): no later batch moves these numbers. A run above the goal is flagged, with its three slowest blocks. Cap: whether the run hit its guard cap or backstop. A run that stopped early keeps its ratio and says so.

@@ -1,0 +1,32 @@
+{
+ "components": {
+  "committed_history": {
+   "present": null,
+   "why": "bundle stored in git:jtouley/cadence@9008b0e2389021aa499aa39798a852d9f444af11, which was not read"
+  },
+  "decisions": {
+   "present": null,
+   "why": "a blob was not read"
+  },
+  "gate_evidence": {
+   "present": null,
+   "why": "transcript stored in git:jtouley/cadence@9008b0e2389021aa499aa39798a852d9f444af11, which was not read"
+  },
+  "pr_description": {
+   "present": null,
+   "why": "transcript stored in git:jtouley/cadence@9008b0e2389021aa499aa39798a852d9f444af11, which was not read"
+  },
+  "regradable": {
+   "present": null,
+   "why": "bundle stored in git:jtouley/cadence@9008b0e2389021aa499aa39798a852d9f444af11, which was not read"
+  }
+ },
+ "inputs": {
+  "transcript": "09b7b10e5eccfd7642d5e3a77e6900a9da9eeb77279e671e140b9a7c96e6ea6a",
+  "tree": "109dbb0ce3fee5457f3fbc0fefa8ed908af9bc05232cb7b718a04cb8c60479cc"
+ },
+ "measure": 1,
+ "present": 0,
+ "run_id": "20261021-k4-run1-cadence-core-sonnet",
+ "unread": 5
+}
