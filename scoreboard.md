@@ -32,7 +32,7 @@ Counted runs with a score from the harness-benchmark grader; each run's latest s
 | 2026-10-24 | cadence | cadence@085bfdc | claude-haiku-5-5 | 1 | 0/7 | 0.00 | 3/5 | 51 | — (1 stopped early) | 8a0977e |
 | 2026-10-24 | cadence | cadence@2100c6e | claude-haiku-5-5 | 6 | 0/7, 0/7, 2/7, 0/7, 0/7, 2/7 | 0.67 | 4/5, 4/5, 4/5, 4/5, 4/5, 4/5 | 82, 63, 99, 98, 124, 128 | 3.54x (1 stopped early) | 8a0977e |
 | 2026-10-24 | cadence | cadence@d3c2ffe | claude-haiku-5-5 | 2 | 0/7, 0/7 | 0.00 | 2/5, 2/5 | 14, 4 | — (2 stopped early) | 8a0977e |
-| 2026-10-25 | cadence | cadence@9fafe09 | claude-haiku-5-5 | 3 | 0/7, 0/7, 0/7 | 0.00 | 3/5, 3/5, 3/5 | 18, 22, 18 | — (3 stopped early) | 8a0977e |
+| 2026-10-25 | cadence | cadence@9fafe09 | claude-haiku-5-5 | 4 | 0/7, 0/7, 0/7, 0/7 | 0.00 | 3/5, 3/5, 3/5, 3/5 | 18, 25, 22, 18 | — (4 stopped early) | 8a0977e |
 
 ## P3
 
@@ -61,7 +61,7 @@ What each counted, scored run left that a reader can check, computed by code fro
 | P2 | baseline | — | claude-opus-5-5 | 1 | 5.00/7 | 0.00 | 0/1 | 0/1 | 0/1 | 0/1 | 0/1 | 0 |
 | P2 | baseline | — | claude-sonnet-5-5 | 1 | 3.00/7 | 0.00 | 0/1 | 0/1 | 0/1 | 0/1 | 0/1 | 0 |
 | P2 | cadence | core | claude-haiku-5-5 | 5 | 0.40/7 | 3.60 | 4/5 | 3/5 | 5/5 | 5/5 | 1/5 | 0 |
-| P2 | cadence | full | claude-haiku-5-5 | 7 | 0.29/7 | 3.14 | 3/7 | 3/7 | 7/7 | 7/7 | 2/7 | 0 |
+| P2 | cadence | full | claude-haiku-5-5 | 8 | 0.25/7 | 3.12 | 3/8 | 3/8 | 8/8 | 8/8 | 3/8 | 0 |
 | P2 | cadence-core | — | claude-haiku-5-5 | 3 | 0.00/7 | 0.00 | 0/3 | 0/3 | 0/3 | 0/3 | 0/3 | 0 |
 | P3 | baseline | — | claude-haiku-5-5 | 1 | 0.00/7 | 0.00 | 0/1 | 0/1 | 0/1 | 0/1 | 0/1 | 0 |
 | P3 | baseline | — | claude-opus-5-5 | 1 | 3.00/7 | 0.00 | 0/1 | 0/1 | 0/1 | 0/1 | 0/1 | 0 |
@@ -89,7 +89,7 @@ Cadence on Haiku per run shape, head to head (owner, 2026-10-24): the same bar (
 | P1 | core | 3 | 1.33 | MISS | 5.31x | $3.11 |
 | P1 | full | 3 | 0.67 | MISS | 7.05x | $1.50 |
 | P2 | core | 5 | 0.40 | MISS | 3.06x | $1.82 |
-| P2 | full | 7 | 0.29 | MISS | 4.25x | $1.56 |
+| P2 | full | 8 | 0.25 | MISS | 4.25x | $1.41 |
 
 ### Done, core
 
@@ -102,5 +102,5 @@ Cadence on Haiku per run shape, head to head (owner, 2026-10-24): the same bar (
 
 - 2026-10-24-shapes: P1 0 run(s), needs 3; P2 2 run(s), needs 3: FAIL
 - 2026-10-24-shapes-r2: P1 1 run(s), needs 3; P2 mean 0.67/7 MISS, time 4.25x: FAIL (below 4/7 on P2; time above 1.25x on P2)
-- 2026-10-25-shapes-r3: P1 2 run(s), needs 3; P2 2 run(s), needs 3: FAIL
+- 2026-10-25-shapes-r3: P1 2 run(s), needs 3; P2 mean 0.00/7 MISS, time —: FAIL (below 4/7 on P2; no time on P2)
 - NOT DONE: no two consecutive batches pass

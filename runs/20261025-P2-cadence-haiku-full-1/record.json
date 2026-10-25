@@ -1,0 +1,132 @@
+{
+ "api_error": null,
+ "arm": "cadence",
+ "batch": "2026-10-25-shapes-r3",
+ "cadence": {
+  "published_in": [
+   "origin/main"
+  ],
+  "repo": "https://github.com/jtouley/cadence",
+  "sha": "9fafe099aaef7e53a5cd896c3d550d1be82c9154",
+  "tree": "ff1d7462b4c793b23abc467df4d2fd6df12da1c5",
+  "tree_clean": true
+ },
+ "claude_version": "2.1.310",
+ "command": [
+  "uv",
+  "run",
+  "-q",
+  "--frozen",
+  "--project",
+  "/var/tmp/run-one/20261025-P2-cadence-haiku-full-1/hb",
+  "python",
+  "/var/tmp/run-one/20261025-P2-cadence-haiku-full-1/hb/scripts/host_trial.py",
+  "P2",
+  "--out",
+  "/var/tmp/run-one/20261025-P2-cadence-haiku-full-1/run/20261025-P2-cadence-haiku-full-1",
+  "--model",
+  "claude-haiku-5-5",
+  "--auth",
+  "proxy",
+  "--plugin-dir",
+  "/var/tmp/run-one/20261025-P2-cadence-haiku-full-1/plugin",
+  "--peer-model",
+  "haiku",
+  "--agent-cap",
+  "21600",
+  "--shape",
+  "full",
+  "--grader-root",
+  "/var/tmp/run-one/20261025-P2-cadence-haiku-full-1/grader"
+ ],
+ "cost": {
+  "list_usd": "0.203007",
+  "reported_usd": 0.3398496599999999,
+  "tokens": {
+   "cache_read": 7014161,
+   "cache_write": 333179,
+   "input": 266,
+   "output": 182383
+  }
+ },
+ "counts": {
+  "counts": true,
+  "why": "driver run on a clean published plugin tree"
+ },
+ "ended_at": "2026-10-25T07:31:03Z",
+ "exit_code": 0,
+ "graded": {
+  "commit": "3797fee29bdc0393ebeb4890ce317b827519d5d8",
+  "ref": "refs/graded/20261025-P2-cadence-haiku-full-1"
+ },
+ "isolation": {
+  "auth": "proxy",
+  "contact": [],
+  "cwd": "/var/tmp/run-one/20261025-P2-cadence-haiku-full-1/run/20261025-P2-cadence-haiku-full-1",
+  "cwd_contents": [
+   "driver.out",
+   "home/",
+   "spec/"
+  ],
+  "fresh_home": true,
+  "home": "/var/tmp/run-one/20261025-P2-cadence-haiku-full-1/run/20261025-P2-cadence-haiku-full-1/home",
+  "method": "host",
+  "other_cadence_checkouts": []
+ },
+ "kind": "benchmark",
+ "model_requested": "claude-haiku-5-5",
+ "models_served": [
+  "claude-haiku-5-5"
+ ],
+ "provenance": {
+  "evidence": [],
+  "source": "driver"
+ },
+ "request_id": "P2-spec",
+ "run_id": "20261025-P2-cadence-haiku-full-1",
+ "schema": 1,
+ "session_id": "62d599f2-022c-4d2f-917f-49c87d054b06",
+ "shape": "full",
+ "spec": {
+  "path": "/var/tmp/run-one/20261025-P2-cadence-haiku-full-1/run/20261025-P2-cadence-haiku-full-1/spec/spec.md",
+  "prompt": "/cadence /var/tmp/run-one/20261025-P2-cadence-haiku-full-1/run/20261025-P2-cadence-haiku-full-1/spec/spec.md",
+  "sha256": "a204ef29b4d721d59775aa45965702f76bc5d649caacf6b5b19d0bc44d5c9419"
+ },
+ "started_at": "2026-10-25T07:06:15Z",
+ "stop_point": {
+  "block": "P1",
+  "reason": "hard stop retries: P1 plan-create gate failed twice: the plan's Command cost section has a make stream row over 600 s. P1 budget (one run and one fix round) is used up. No plan, so no P3 onward. (FAIL  no active cadence session)"
+ },
+ "task": "P2",
+ "timing": {
+  "agent_active_seconds": 898.227,
+  "agent_wall_seconds": 1473.4,
+  "blocks": {
+   "plan-create": {
+    "calls": 3,
+    "seconds": 566.385,
+    "unfinished": 1
+   },
+   "vibe-test": {
+    "calls": 1,
+    "seconds": 180.523,
+    "unfinished": 0
+   }
+  },
+  "cap_seconds": 21600,
+  "hit_cap": false,
+  "run_wall_seconds": 1487.894
+ },
+ "transcript": {
+  "bytes": 867626,
+  "path": "blobs/33b2cf4e53f7bfcd4d1dbd09744c49bee4f0dbe49460785b5adc7a26256fb1fd.gz",
+  "sha256": "33b2cf4e53f7bfcd4d1dbd09744c49bee4f0dbe49460785b5adc7a26256fb1fd",
+  "store": "git:jtouley/harness-benchmark@runs-store"
+ },
+ "tree": {
+  "bytes": 4172365,
+  "path": "blobs/0bb97106b65aef89b132adf77536a7268cb073af67876a5076d9ec535dbb6c95.gz",
+  "sha256": "0bb97106b65aef89b132adf77536a7268cb073af67876a5076d9ec535dbb6c95",
+  "store": "git:jtouley/harness-benchmark@runs-store"
+ }
+}
