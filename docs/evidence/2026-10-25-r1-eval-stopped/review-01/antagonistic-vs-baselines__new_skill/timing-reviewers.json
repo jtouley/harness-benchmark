@@ -1,0 +1,14 @@
+{
+ "reviewer_C": {
+  "total_tokens": 196128,
+  "duration_ms": 489331
+ },
+ "reviewer_A": {
+  "total_tokens": 208913,
+  "duration_ms": 500332
+ },
+ "reviewer_B": {
+  "total_tokens": 189020,
+  "duration_ms": 493592
+ }
+}

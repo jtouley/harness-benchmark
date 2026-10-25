@@ -1,0 +1,4 @@
+schema_version: "1.1"
+name: review-02
+expected_outcome: |
+  The review of branch `review` against `base` reports each known defect listed in graders/, and makes no false must-fix claim.

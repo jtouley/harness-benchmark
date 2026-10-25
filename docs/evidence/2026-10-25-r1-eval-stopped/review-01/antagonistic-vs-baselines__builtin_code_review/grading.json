@@ -1,0 +1,101 @@
+{
+  "expectations": [
+    {
+      "text": "[control:no-stream-trap-failure] The stream consumer gets past the invalid frame and reaches the end of the replay. A review that reports, as must-fix, that the consumer loops or crashes on the invalid frame is a false finding. The final review makes no such must-fix claim.",
+      "passed": true,
+      "evidence": "The review has no must-fix findings at all. Its only consumer finding (Medium) is about a malformed HTTP status line (BadStatusLine from getresponse()) escaping the OSError catch in _read_until, not about the consumer looping or crashing on an invalid SSE frame."
+    },
+    {
+      "text": "[recall:live-endpoint-no-user-agent-silent-exit] The final review reports as must-fix, shown from the code or a local stub (an outside request is not required): The consumer sends no User-Agent header (the live endpoint that the spec names requires one), and every connect failure is swallowed: on an unreachable or refusing endpoint the consumer prints nothing and exits 0.",
+      "passed": false,
+      "evidence": "No mention of User-Agent or of connect failures being silently swallowed with exit 0. The review argues the opposite gap (an exception that is NOT swallowed). No must-fix findings exist."
+    },
+    {
+      "text": "[recall:stop-mid-flush-drops-events] The final review reports as must-fix: A stop or crash between dlt normalize and load leaves a pending package; the next run builds its seen-set and checkpoint without it and drops events it read, against the spec's stop/start rule.",
+      "passed": false,
+      "evidence": "No mention of dlt normalize/load, pending packages, seen-set, or checkpoint loss."
+    },
+    {
+      "text": "[recall:make-stream-fails-on-fresh-tree] The final review reports, at any severity: `make stream` fails on a fresh tree unless `make build` ran first (fact_edit reads lake/sitematrix_sites).",
+      "passed": false,
+      "evidence": "The review mentions fact_edit only to say the sitematrix left join cannot fan out; it does not report a make stream / make build ordering failure."
+    },
+    {
+      "text": "[recall:check-7-test-never-runs-placeholder-row] The final review reports, at any severity: The check-7 dbt test is never selected (no ref()), and when wired in it shows out/marts/late_events holds one all-NULL placeholder row when there are no late events.",
+      "passed": false,
+      "evidence": "Not mentioned. The review states the dbt build (26 tests) passed, with no note that a test is unselected or that late_events has a placeholder row."
+    },
+    {
+      "text": "[recall:dim-date-never-built] The final review reports, at any severity: The date dimension is never built by the build selection, although the spec requires a date dimension.",
+      "passed": false,
+      "evidence": "No mention of a date dimension."
+    },
+    {
+      "text": "[recall:lake-drops-source-fields] The final review reports, at any severity: The lake does not keep the source data: stream_raw drops most event fields and adds derived columns, and the batch lake retypes timestamps and adds variant columns.",
+      "passed": false,
+      "evidence": "No mention of the lake dropping or retyping source fields."
+    },
+    {
+      "text": "[recall:check-4-not-answerable-from-marts] The final review reports, at any severity: Check 4 cannot be answered from out/marts (no state or source totals), and the batch oracle tests go through the same macros as the models.",
+      "passed": false,
+      "evidence": "No mention of check 4 or of oracle tests sharing macros with the models; the review instead treats the obligations_per_person macro and the oracle macro as verified correct."
+    },
+    {
+      "text": "[recall:malformed-event-crashes-on-restart] The final review reports, at any severity: A wrong-typed event (for example a list-valued field) crashes the consumer on every restart, and wrong-typed fields land inconsistent rows.",
+      "passed": false,
+      "evidence": "No mention of wrong-typed event fields. The only crash discussed is a malformed HTTP status line."
+    },
+    {
+      "text": "[recall:territories-published-as-unknown] The final review reports, at any severity: Territories are published with state_name 'UNKNOWN', the same label as the no-state sentinel.",
+      "passed": false,
+      "evidence": "No mention of territories or state_name 'UNKNOWN'."
+    }
+  ],
+  "summary": {
+    "passed": 1,
+    "failed": 9,
+    "total": 10,
+    "pass_rate": 0.1
+  },
+  "execution_metrics": {
+    "output_chars": 2080
+  },
+  "timing": {
+    "executor_duration_seconds": 142.9,
+    "total_duration_seconds": 142.9,
+    "executor_total_tokens": 86165
+  },
+  "claims": [],
+  "claims_note": "The review labels no finding must-fix (it uses Medium and Low only), so the must-fix claims list is empty. Its non-must-fix findings were checked and are recorded under non_must_fix_findings.",
+  "non_must_fix_findings": [
+    {
+      "claim": "Medium: pipeline/stream_consumer.py _read_until catches only OSError around self._connect(); http.client.HTTPException such as BadStatusLine from getresponse() escapes run() and ends the process.",
+      "type": "factual",
+      "verified": true,
+      "evidence": "In _read_until the connect is wrapped in 'except OSError: return'. _connect calls conn.request and conn.getresponse unguarded. issubclass(http.client.BadStatusLine, OSError) is False, so it propagates. The connection is also not closed when request()/getresponse() raises, as the review says."
+    },
+    {
+      "claim": "Low: pipeline/batch_load.py _extract_usaspending takes archive.namelist()[0] as the CSV and uses next(...) with no default for the kind lookup.",
+      "type": "factual",
+      "verified": true,
+      "evidence": "Lines 29 and 31 of pipeline/batch_load.py match the review's description. These are robustness points, not defects in the given inputs."
+    }
+  ],
+  "user_notes_summary": {
+    "uncertainties": [],
+    "needs_review": [],
+    "workarounds": []
+  },
+  "eval_feedback": {
+    "suggestions": [
+      {
+        "assertion": "[control:no-stream-trap-failure]",
+        "reason": "This control passes trivially for any review with no must-fix findings, including this one, which labels no severity as must-fix. It tests for the absence of a false positive, but it cannot tell a careful review from a shallow one."
+      },
+      {
+        "reason": "The grading prompt asks for must-fix claims, but this reviewer's format (Medium/Low) has no must-fix tier. Defining how to map severities (for example, whether Medium or High counts as must-fix) would make the claims list comparable across configs."
+      }
+    ],
+    "overall": "The review found two minor, real robustness issues and missed every seeded defect. The recall assertions are specific and discriminating."
+  }
+}

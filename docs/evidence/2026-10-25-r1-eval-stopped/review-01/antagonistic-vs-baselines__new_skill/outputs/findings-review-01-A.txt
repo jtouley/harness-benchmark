@@ -1,0 +1,246 @@
+ANTAGONISTIC CODE REVIEW 01-A
+=============================
+
+Change under review : branch review (commit c176f99 "Change under review") against base (d176e80)
+Working copy        : /var/tmp/revieweval/antagonistic-vs-baselines/review-01/new_skill/run-1/repo
+Diff size           : 45 files, +2085 / -2
+Build log read      : /var/tmp/revieweval/antagonistic-vs-baselines/review-01/build.log
+                      (make build 14:39, make stream DURATION=90 14:40-14:41; all dbt nodes PASS)
+Not rerun           : make build, tests/test_rerun.py (calls make build). The lake/ and out/ trees
+                      are not present in the copy, so mart-level output was checked only through the
+                      raw inputs and the SQL, not against built files.
+
+VERDICT: CHANGES REQUESTED
+
+The batch half (checks 1 to 4) is in good shape, and its numbers hold up against the raw data.
+The stream half has a required check that no make target runs, a crash path that breaks the
+"one bad event does not stop the stream" rule, and a stream-scope problem: checks 5 to 7 cover
+everything the lake has ever landed, not the replayed hour the spec asks about.
+
+
+BLOCKING
+--------
+
+B1. Check 7 (late events count) is never executed by any make target.
+    Where : transform/tests/test_late_events_count.sql; Makefile (stream target)
+    Why   : The test reads out/marts/late_events/*.parquet and lake/stream_raw via
+            read_parquet/stream_raw_arrivals() with no ref() to a model. `dbt build --select
+            +mart_window_5min +late_events +edits_by_wiki_actor` only runs tests attached to selected
+            nodes, so this one is dropped.
+    Proof : The stream build log lists 15 of 15 nodes. The singular tests that ran are
+            test_stream_totals_per_wiki, test_top_windows_en_wikipedia and
+            test_event_time_utc_is_utc. test_late_events_count does not appear. The batch target
+            likewise never runs it. DECISIONS.md says the quality gate passes; for check 7 it
+            does not run at all.
+    Ask   : Make the test reachable from the DAG (for example, a ref() to late_events in the test,
+            or a dbt-invoked test list) and show it in the stream log. Alternatively run it in a
+            make target and fail the target on failure.
+
+B2. Checks 5 to 7 answer "all landed data", not "the replayed hour".
+    Where : DECISIONS.md "Stream models and marts", "Data step"; pipeline/stream_consumer.py
+            (read_column of checkpoint, Last-Event-ID resume, _connect); the oracle macro
+            transform/macros/stream_raw_arrivals.sql reads lake/stream_raw/*.parquet in full.
+    Why   : The consumer resumes from the checkpoint on every start (self.last_landed_id,
+            sent as Last-Event-ID). Each make stream therefore continues the replay where the
+            last run stopped, and the lake accumulates. Nothing filters the stream marts by run.
+            DECISIONS says "the replayed hour is every event that this run landed", which is only
+            true for one fresh run. The build log shows a 90 s stream run on this same tree
+            (make stream DURATION=90), and DECISIONS cites a 3600 s run on a fresh lake that is not
+            in the log. If both are in the lake, the stream marts hold the union.
+    Ask   : Either record a run id on stream rows and scope the marts and oracles to the run the
+            spec means, or have make stream start from an empty stream lake so the output is
+            reproducible, or state exactly which run the grader will see and make the lake match.
+
+B3. A malformed event crashes the consumer.
+    Where : pipeline/stream_consumer.py line 206 (`if row["type"] in EDIT_TYPES`); _field_problem
+            (lines 253-267) does not check `type`, `wiki`, `server_name` or `namespace`.
+    Proof : Probe with an event whose "type" is ["edit"]:
+              StreamConsumer._accept -> TypeError: unhashable type: 'list' at line 206.
+            _read_until (lines 157-172) catches only OSError and HTTPException around the read loop,
+            so the TypeError escapes run() and the process stops. The pending batch is not
+            landed; the replay resends it on restart, because the checkpoint is not advanced.
+            `wiki` as an object, `namespace` as a string and `server_name` as a number did not
+            crash in the probe.
+    Contradicts: the `_skip` docstring ("so one bad event does not stop the stream") and
+            DECISIONS ("One malformed event ... was skipped and logged").
+    Ask   : Validate every field the flatten and the filters touch, or wrap per-event processing
+            in try/except that calls _skip. Add a test with a non-string type.
+
+
+MEDIUM
+------
+
+M1. Malformed HTTP status line crashes run().
+    Where : _read_until connect path (lines 157-160 catch only OSError; _connect raises
+            http.client.BadStatusLine, which is an HTTPException).
+    Proof : A server answering "NOT HTTP AT ALL" makes run() raise BadStatusLine.
+    Ask   : Catch HTTPException on connect and reconnect like any other drop.
+
+M2. mart_award_fy2024 grain is not a function of the award.
+    Where : transform/models/marts/mart_award_fy2024.sql lines 9-11 (any_value of agency_code,
+            state_fips, county_fips).
+    Proof : Two awards in the FY2024 data span places:
+              ASST_NON_FEL29493424_418 : county 09009 (1 row) and 09170 (2 rows)
+              ASST_NON_21FXDWY001_485  : state 35 (1 row) and 56 (2 rows)
+            any_value returns an arbitrary member, and with threads = 4 the choice can change
+            between builds (DuckDB does not promise which member it returns; I did not reproduce
+            a change). check_rerun.py compares only mart_monthly_obligations, so a change here
+            would not be caught. The mart's own description ("one award") and DECISIONS do not disclose it.
+    Ask   : Pick a documented rule (for example the place with the largest obligation, with a
+            tie-break), or make the mart grain award-by-place. Add a test that the choice is
+            deterministic.
+
+M3. The 2021 fallback population sits under a 2024 name, and the mart does not say so.
+    Where : transform/models/staging/stg_census_counties.sql line 22
+            (`cast(POPESTIMATE2021 as integer) as population_2024`); dim_place passes it through;
+            mart_monthly_obligations.sql line 28 exposes it as county_population_2024; the mart
+            has no population_year column.
+    Proof : Six Connecticut counties (09001, 09003, 09005, 09009, 09011, 09013) carry 2021 values
+            in a column named population_2024 and in county_population_2024. The DECISIONS per-person
+            definition says "the county's July 1, 2024 population". The top ten does not include
+            them, so check 2's answer is not affected, but a reader of the mart cannot tell.
+    Ask   : Expose population_year in dim_place and in the mart, or rename the column, and say so
+            in the mart description.
+
+M4. The 5-second flush does not fire when only heartbeats arrive; the deadline can overrun.
+    Where : _batch_full is checked only after an accepted event (line 169); _lines checks the
+            deadline only between lines, and readline can block for socket_timeout (5 s default).
+    Proof : Probe: one event, then heartbeats every 0.5 s, batch_seconds 0.5. The only flush came
+            at t = 4.0 s (the deadline), with 1 pending row. A silent stream with DURATION 1.0 and
+            socket_timeout 3.0 ran for 3.24 s.
+    Impact: Pending events are held in memory until the deadline or 2000 events. Nothing is lost,
+            because the checkpoint is not advanced and the replay resends them, but the DECISIONS
+            claim ("flushed ... every 5 seconds") is false, and "stops at DURATION" is off by up to
+            one socket timeout.
+    Ask   : Check batch age on heartbeats and on the timeout path too; correct DECISIONS, or bound
+            the overrun.
+
+M5. The Python unit tests are not run by any target, and test discovery triggers a full build.
+    Where : Makefile (no test target); tests/test_rerun.py calls check_rerun.main(), which runs
+            `make build` twice.
+    Proof : `python -m unittest` over tests/ runs make build. I ran every test except test_rerun:
+            48 tests, OK, 1 skipped (test_consumer_replayAtLocalUrl, "local replay is not running").
+            The live-replay test skips silently in CI, so the DECISIONS line "against the real
+            replay when it is reachable" is not evidence unless someone sees the skip.
+    Ask   : Add a make test target that runs the unit suite without make build, and make the
+            rerun check a separate target. Report skips as skips in the log.
+
+M6. Several claims in DECISIONS cannot be checked from the tree.
+    - spec/ is absent. oracle_map.yml ("each analyst check in spec/spec.md") and DECISIONS
+      (A-, G-, N- ids) point at a spec that is not in the repository, so spec compliance cannot be
+      reviewed.
+    - Stream figures (21,502 unique events; 12,876 edits; 3,603 s event time; about 370 events/s
+      in short probes; about 3,200 backward steps in 26 s) have no run in the build log and no
+      lake in the copy. I could not check them.
+    - "7,724 awards have a state and no county, and 57 have neither" is correct for transaction
+      rows (verified: 7,724 and 57 of the 9,820 FY2024 rows). At award level the all-null count is
+      47 awards, not 57. Change "awards" to "transactions".
+    Ask   : Include the spec, or a link and the spec version; state which numbers come from which
+            run; fix the wording.
+
+M7. Test gaps where the oracle or the fake does not match the real input.
+    - tests/stream_harness.py FakeReplay resumes at the first event whose id equals
+      Last-Event-ID. DECISIONS says the real replay repeats ids across events, which the fake
+      never does, so the resume semantics are untested under the real condition.
+    - test_top_ten_counties_per_person.sql joins dim_place (a model) for the populations, so the
+      oracle is not independent of the models, contrary to DECISIONS ("compare with an oracle read
+      from the raw lake"). Only the census fallback is checked with constants. The ordering has no
+      tie-break, but the current data has no tie at rank 10 (38.0228 against 37.9291, checked).
+    - No dbt test checks is_late on a row basis; the late-count test is the only late check, and
+      it is never run (B1).
+
+
+LOW
+---
+
+L1. Territories get state_name 'UNKNOWN' although their state FIPS is known.
+    Where : dim_place.sql line 21 (coalesce(s.state_name, 'UNKNOWN')); state names come only from
+            the county file, which has no territories (FIPS 60, 66, 69, 72, 78).
+    Effect: Awards in Puerto Rico (72) show state_name 'UNKNOWN' in the mart.
+
+L2. DECISIONS undercounts the 2021 fallback.
+    The 2021 file has eight Connecticut counties missing from 2024, not six: 09007 and 09015 are
+    also there. No award uses either code, so no mart row changes, but dim_place now has two extra
+    2021-populated rows that DECISIONS does not mention. test_census_fallback only checks 09001.
+
+L3. `bot` is coerced with bool() but actor_type tests `is True`.
+    Where : stream_consumer.py line 91 (bool(event.get("bot"))) and line 94 (`is True`).
+    Probe : bot = "false" gives bot column True and actor_type "human". The oracle in
+            test_stream_totals_per_wiki uses the bot column, so the two disagree for such input.
+            Real MediaWiki sends booleans, so this is latent.
+
+L4. Sitematrix `closed` uses bool(site.get("closed", False)) in _site_fields (batch_load.py).
+    If the real API sends "closed": "" for closed wikis (its usual convention), this reads as open.
+    The fixture uses true/absent, so no effect now. Latent.
+
+L5. dim_date is built but no model or test references it.
+
+L6. .gitignore line 1 says the generated files are "never committed (the grader removes them first)".
+    A grading reference does not belong in committed code. Reword.
+
+L7. .env.example is used as a runtime default, and no code reads a .env file.
+    read_stream_url reads the environment, then .env.example. A user who copies it to .env gets
+    nothing. Document the export, or load .env.
+
+L8. Possible duplicate landing after a partial flush failure (unverified).
+    _flush does not clear the pending lists when pipeline.run raises. _read_until swallows OSError
+    from _flush, so the same batch can be appended again to stream_raw if dlt partly loaded it.
+    No test covers this. I did not reproduce it.
+
+L9. Window incremental unique key has nullable parts (unverified, latent).
+    window_5min uses unique_key [window_start, wiki, namespace, actor_type]. NULL keys do not match in
+    an incremental merge, so a NULL wiki or namespace could duplicate rows. The unique test would catch
+    it, but only after the fact. Not reproduced.
+
+L10. Paths are relative to the working directory.
+    The marts and the warehouse use out/ and lake/ relative paths. `make` runs from the root, so it
+    works, but running dbt from transform/ breaks.
+
+
+WHAT I CHECKED AND FOUND CORRECT
+--------------------------------
+- Unit tests: 48 run, all pass, 1 skipped (live replay). Ran with the repo's .venv, excluding the
+  make-build test.
+- Build log: all batch nodes PASS (26/26) and all stream nodes PASS (15/15). No ERROR or WARN.
+- USAspending inputs: 8 zips, 416 contract rows and 9,404 assistance rows (9,820 total); column
+  counts 297 and 116 as DECISIONS says; all action dates within 2023-10-01 to 2024-09-30; no null
+  amounts; no duplicate transaction keys; state FIPS 2 digits and county FIPS 5 digits, with the
+  county prefix always matching the state.
+- The 13 place codes that have no 2024 row are exactly the list in DECISIONS (6 Connecticut,
+  7 territories). Connecticut 09001 has a 2021 estimate of 959768.
+- Census: Latin-1 decoding is right (one non-ASCII byte per file, 0xF1). The 2024 file has nine
+  Connecticut planning-region rows, as DECISIONS says.
+- Sitematrix: 1,073 sites, no duplicate dbnames (so fact_edit's left join cannot fan out), and every
+  URL is https://host with no path, so the domain derivation is clean.
+- The per-person macro: integer arithmetic matches exact Decimal half-up rounding on 3,003 random and
+  edge cases with zero mismatches.
+- Top ten per person (computed independently in Python): no tie at rank 10.
+- Lateness: window and late-rule code matches the spec wording; boundary tests are present and pass.
+- Checkpoint: dlt "replace" leaves one file, and the restored high-water mark is correct after a
+  restart (probed).
+- Dedup on meta.id and the Last-Event-ID resume: covered by the fake-replay tests, which pass.
+
+
+WHAT I DID SO THE AUTHOR DOES NOT HAVE TO
+-----------------------------------------
+- Extracted all 8 USAspending zips into their own scratch directories, and loaded them into DuckDB
+  from the repo's venv to check the award-level claims above. Scratch was removed afterwards.
+- Checked every census and sitematrix claim in DECISIONS against the raw files.
+- Ran the unit suite (minus the make-build test).
+- Probed the consumer with a non-string type, a non-JSON status line, a non-boolean bot, a
+  heartbeat-only stream, a silent stream and a checkpoint restart, each in a scratch lake.
+- Confirmed from the build log which dbt tests ran.
+- I did not change the repo, did not run make build, and did not read anything outside the copy,
+  the build log and the outputs directory.
+
+
+ORDER OF FIXES (smallest first)
+-------------------------------
+1. B3 and M1: validate types and catch HTTPException on connect (one small change, two tests).
+2. B1: attach or run test_late_events_count, and show it in the stream log.
+3. M3 and L1: expose population_year; name the population columns honestly; fix state_name for
+   territories.
+4. M2: decide the rule for multi-place awards.
+5. B2: decide and enforce the stream scope; then restate checks 5 to 7 in DECISIONS.
+6. M4 and M5: flush timing, the test target, and skip reporting.
+7. M6 and L2: fix the DECISIONS wording and the missing spec.

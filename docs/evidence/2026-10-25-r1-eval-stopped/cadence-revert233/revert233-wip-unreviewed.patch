@@ -1,0 +1,1377 @@
+diff --git a/README.md b/README.md
+index 7b6e0ec..967e90f 100644
+--- a/README.md
++++ b/README.md
+@@ -56,8 +56,8 @@ gain. The tests are in [`tests/`](tests/). CI is set up to run them on each pull
+ 
+ ## Cost
+ 
+-A default run visits thirteen blocks and calls three review peers before a human sees the
+-PR: one plan review, one code review, and the test benchmark. With every pack on, a run visits 25 blocks and calls five review peers. That is heavy for
++A default run visits fourteen blocks and calls four review peers before a human sees the
++PR: one plan review, one code review, the test benchmark, and the one review update that carries them all (R4). With every pack on, a run visits 25 blocks and calls five review peers. That is heavy for
+ a one-line fix. See [ADR-0007](docs/adr/0007-five-step-core-with-opt-in-blocks.md).
+ 
+ Cadence is the wrong tool in three cases:
+@@ -151,7 +151,7 @@ host and exits 0. A hook that crashes exits 2, and the host blocks the action.
+ ## Configuration
+ 
+ `cadence.config.json` sets the tracker adapter, the gated path prefixes, and the
+-optional packs. The default has zero packs. With zero packs, a run visits the thirteen
++optional packs. The default has zero packs. With zero packs, a run visits the fourteen
+ `core` blocks of `stages.json`. Each other block belongs to a pack
+ (ADR-0007). A project enables a pack in `enabled_packs_extra` of its `.cadence.json`.
+ 
+diff --git a/SKILL.md b/SKILL.md
+index 15f1a2a..2e81745 100644
+--- a/SKILL.md
++++ b/SKILL.md
+@@ -138,7 +138,7 @@ python3 "$SKILL_ROOT/scripts/pipeline_status.py" --workspace "<worktree>"
+ ```
+ 
+ The `pipeline` field (and the `Pipeline of ...` line on stderr) gives the blocks of this run, in order. Run only those blocks.
+-The default run has thirteen blocks: A1, A5, P1, P3, P4, P9, E1, E4, R1, R2, R3, R5, R7.
++The default run has fourteen blocks: A1, A5, P1, P3, P4, P9, E1, E4, R1, R2, R3, R4, R5, R7.
+ A gate or a handoff of a block that is not in the list refuses to run: `<block> is not in this run's pipeline (pack <x> off)`.
+ On a headless host, `scripts/headless.py next --json` gives the next open block of the same list.
+ `references/pipeline-blocks.md` describes each block of the registry. It is a reference, not the walk list.
+@@ -154,10 +154,11 @@ A review whose verdict the gate cannot read fails P3. Write that review again: i
+ On an unclear point, do not stop and do not ask. Make the choice and record the assumption and the trade-off in the plan.
+ Plan update does not create or edit `reviews/plan_*.md`.
+ **The full shape** (`"profile": "full"` in the project's `.cadence.json`, ADR-0029) adds A2, A3, P6, P7 and P8.
+-P3, P6, P7 and P8 are one review round. After P1, dispatch the four at once, a new Agent call for each peer.
++P6, P7 and P8 are one review round. After P1, dispatch the three at once, a new Agent call for each peer.
+ The stop hook and `headless.py next` name each open block of the round.
+-Each review runs one time. Then one `/plan-update` answers each finding of each report (`commands/plan-update.md`), then P9.
+-Do not run P6, P7 or P8 again.
++Then run `/plan-review` one time. P3 reads every report of the round and carries each finding as one of its `MF-n` items,
++in its `## Aggregated findings` table (`commands/plan-review.md`). Then one `/plan-update` answers the P3 review, then P9.
++Each review runs one time. Do not run P6, P7 or P8 again.
+ When the gate output names a step, do that step before the `NEXT` command.
+ Post the GitHub comment only after **R5** closure and **R6**.
+ 
+@@ -222,11 +223,16 @@ adversarial inputs, and tests each design choice three ways with strict TDD.
+ 
+ The run has one code review and one round of fixes (ADR-0028).
+ 
+-1. Run **R1** `/pr-review-local` one time. Check the artifact, the provenance, and the rigor sections.
+-2. Do one round of fixes for the must-fix findings. Fix each one, or defer it with a ticket. Set each fixed row to `fixed`, then run `ledger_verify.py`.
+-3. Run **R2** `/test-benchmark --code`. Resolve each HIGH item. Record `adversarial_inputs`.
+-4. Run **R3** cognitive complexity. Split each function that the gate names. Fix each `bugs` (ruff) and `types` (mypy) finding that it names.
+-5. Do not run a second R1 review after the fix commits. The R1 gate accepts a review of HEAD or of an ancestor of HEAD.
++1. Run **R1** `/pr-review-local` one time. Check the artifact, the provenance, and the rigor sections. Do not fix yet.
++2. Then R2 and R3 are one round on the reviewed diff: dispatch **R2** `/test-benchmark --code` and run **R3**
++   `python3 scripts/cognitive_complexity_gate.py` (it writes `.context/gates/cognitive-complexity.json`) at once.
++3. When both reports are written, run **R4** `/pr-review-update` one time. It appends one `## Update` to the PR review
++   that carries R1, R2 and R3: an `### Aggregated findings` table that names each report, and an `MF-n` for each
++   item to fix (`commands/pr-review-update.md`). `headless.py next` names R4 at this point, even while R2 or R3 fails.
++4. Then do the one round of fixes: dispatch `/spec-driven` one time. Its packet carries that one PR review.
++   It fixes each open must-fix, or defers it with a ticket, sets each fixed row to `fixed`, then runs `ledger_verify.py`.
++5. Then the walk goes on. A failing R2 or R3 runs again on the fixed tree: R2 scores the fixed tests again, and R3 checks again.
++   Do not run a second R1 review after the fix commits. The R1 gate accepts a review of HEAD or of an ancestor of HEAD.
+ 6. Mark each row of the plan's `## Acceptance checks` table: `python3 scripts/acceptance_checks.py pass --item <n>`. The command runs the check of the row and writes its output under `.context/evidence/`.
+ 7. Run **R5** `closure.py`. It fails while a must-fix of the review has no ledger row, or its row is not `verified`, `deferred`, or `spec_gap`.
+    It also fails while an acceptance check is not passed. Then run **R6** (when it is in the list) and **R7** deactivate.
+@@ -291,7 +297,7 @@ Do not report status when a background task finishes. Continue to the next block
+ - [ ] A1 activate + pipeline_status (the run's block list)
+ - [ ] P1 plan → P3 one review → P4 one update → P9 entry-invariant
+ - [ ] E1 implement → E4 draft PR (same turn)
+-- [ ] R1 one review → one fix round → R2 → R3 → R5 closure → R7 deactivate
++- [ ] R1 one review → R2 + R3 → R4 one update → one /spec-driven fix round → R5 closure → R7 deactivate
+ - [ ] Each block of a pack that is on, at its place in the list
+ ```
+ 
+diff --git a/commands/plan-review.md b/commands/plan-review.md
+index 665d78f..c9a6bf5 100644
+--- a/commands/plan-review.md
++++ b/commands/plan-review.md
+@@ -35,6 +35,40 @@ Always write the `## Must-fix items` heading. Write `None.` under it when no ite
+ The P9 gate reads the open ids from that section only. An id named in a status list or a note is not open.
+ On Claude Code, write this file with the Write or Edit tool, not a shell redirect. The hook attests a peer's tool write. A gate does not accept an unattested review.
+ 
++## Aggregated findings (the other plan reports of the run)
++
++When the run has more plan blocks on (P2, P5, P6, P7, P8: `pipeline_status.py --workspace <worktree>`), they run
++before this review, and this review is the one report that P4 answers. Read each of their documents:
++
++| Block | Document |
++|---|---|
++| P2 | `.context/domain-analysis.json` (the domain packs it selected) |
++| P5 | `.context/findings.jsonl`: the rows with a `rule_ref` (architecture review of the plan) |
++| P6 | `.context/adversarial/adversarial_<slug>*.md` (`Mode: plan-gate`): each `B-n` and `C-n`, unless the verdict is `APPROVE` |
++| P7 | `.context/benchmarks/<task>_plan.json`: the `id` of each must-fix finding |
++| P8 | `.context/deferrals/<task>_deferral-register.md`: `D-n` for row `n` of `## Deferrals rejected` |
++
++Reproduce each finding against the plan. Then add one `## Aggregated findings` section to the review, with one row
++for each id of P6, P7 and P8, and one row for each finding of P2 and P5 that the plan must answer:
++
++```markdown
++## Aggregated findings
++
++| Block | Report | Id | Must-fix |
++|---|---|---|---|
++| P6 | .context/adversarial/adversarial_cd-7_scale.md | B-1 | MF-3 |
++| P6 | .context/adversarial/adversarial_cd-7_scale.md | C-1 | MF-3 |
++| P7 | .context/benchmarks/cd-7_plan.json | cd-7-F01 | MF-4 |
++| P8 | .context/deferrals/cd-7_deferral-register.md | D-1 | MF-5 |
++```
++
++Each `Must-fix` cell is an `MF-n` under your `## Must-fix items`. Two ids that name the same defect can share one `MF-n`.
++Write the item so that it names the id it carries (`MF-3 (P6 B-1, C-1): ...`). A finding that you do not reproduce still
++gets its `MF-n`: write in the item that you did not reproduce it and why, and P4 answers it.
++With an id in the table, the verdict is `READY WITH CHANGES` or `NOT READY`.
++The P3 gate fails while an id of a P6, P7 or P8 report has no row, or while its `MF-n` is not under `## Must-fix items`.
++With this table complete, P4 answers your review alone. In the default run there are no other plan reports: write no table.
++
+ ## Review for
+ 
+ - Missing or mis-ordered phases vs `stages.json`
+diff --git a/commands/pr-review-update.md b/commands/pr-review-update.md
+index d1647d2..d1a3c25 100644
+--- a/commands/pr-review-update.md
++++ b/commands/pr-review-update.md
+@@ -1,25 +1,35 @@
+ ---
+-description: Cadence R4: review the fix commits since the last reviewed commit.
++description: Cadence R4: one update of the PR review that carries R1, R2 and R3, for the one fix round.
+ argument-hint: '<PR-number>'
+ ---
+ 
+-# PR review update (Cadence R4, on request only)
++# PR review update (Cadence R4)
+ 
+ Load `$CADENCE_HOME/references/peer-contract.md` and
+ `$CADENCE_HOME/references/final-consolidate.md`.
+ 
+-A run has one code review (R1) and one round of fixes (ADR-0028). The run does not call this command:
+-no gate asks for a review of the fix commits. The handoff refuses it while the `deferrals` pack (R4) is off.
+-Use it only when a person asks for a review of the fix commits.
++A run has one code review (R1) and one round of fixes (ADR-0028). R2 and R3 report on the reviewed diff after R1.
++When each of R1, R2 and R3 has written its report, the run calls this command one time. The update you write is the
++one PR review document that the fix round reads: the orchestrator then dispatches `/spec-driven` one time, and its
++packet carries this review. Do not fix code here, and do not review again after the fixes.
+ 
+ ## Trigger
+ 
+-`/pr-review-update <PR>` after fix commits on the PR branch, when a person asks for it.
++`/pr-review-update <PR>` when `headless.py next` names R4 (R1, R2 and R3 have written their reports), or when a
++person asks for a review of the fix commits.
+ 
+ With `"adapter": "none"` the PR is local: the orchestrator sends `/pr-review-update local`. Then read
+ and append to `.context/prs/reviews/PR_REVIEW_local.md`, in place of `PR_REVIEW_#{N}.md` in the steps
+ below. Step 2 prints `"status": "unsupported"`.
+ 
++## The reports of the round
++
++| Block | Report | The ids to carry |
++|---|---|---|
++| R1 | `.context/prs/reviews/PR_REVIEW_#{N}.md` (this file) | its open `MF-n` items stay where they are |
++| R2 | `.context/benchmarks/<task>_code.json` | the `id` of each must-fix finding; `score` while the scorecard is under the R2 floor (each dimension and the mean at least 7, verdict `PASS`) |
++| R3 | `.context/gates/cognitive-complexity.json` | `record` while the record lists an offender (`findings`, `duplicated`, a `tools` record with verdict `fail`) |
++
+ ## Steps
+ 
+ 1. Read `.context/prs/reviews/PR_REVIEW_#{N}.md`, where `{N}` is the PR number and the `#` is part of the file name (`PR_REVIEW_#42.md`). Find its last `Last reviewed commit:` line.
+@@ -41,6 +51,22 @@ python3 "$CADENCE_HOME/scripts/pr_threads.py" <PR>
+ 3. Review every commit from that commit to HEAD (`git log <last>..HEAD`, `git diff <last>..HEAD`).
+    Check that each must-fix finding is fixed and that the fixes add no new defect. Reproduce each claim.
+ 4. Append to `.context/prs/reviews/PR_REVIEW_#{N}.md` a section `## Update <date>` with:
++   - `RUN_BY_COMMAND: pr-review-update` on its own line,
++   - an `### Aggregated findings` table with one row for each id of R2 and R3 (the table above). Name the report on each row:
++
++     ```markdown
++     ### Aggregated findings
++
++     | Block | Report | Id | Must-fix |
++     |---|---|---|---|
++     | R2 | .context/benchmarks/cd-7_code.json | cd-7-F02 | cd-7-F02 |
++     | R2 | .context/benchmarks/cd-7_code.json | score | MF-3 |
++     | R3 | .context/gates/cognitive-complexity.json | record | MF-4 |
++     ```
++
++     The Must-fix cell is a new `MF-n` of this update, or the ledger id of a must-fix row that R2 already filed.
++     Reproduce each item first. The R4 gate fails while an id of R2 or R3 has no row, or names no open must-fix.
++     With no R2 or R3 item, write the table with its header row only. It still names that the round was read.
+    - the `### Review threads` table, or the `Review threads: unsupported` line,
+    - the status of each earlier finding (fixed, open, or deferred with a ticket),
+    - the new findings, each as must-fix or nit. Put the new must-fix items under a `### Must-fix items` heading,
+@@ -50,7 +76,9 @@ python3 "$CADENCE_HOME/scripts/pr_threads.py" <PR>
+    - a last line `Last reviewed commit: <full HEAD sha>`.
+ 5. Append one must-fix ledger row for each new `MF-n` with `findings_io.py append`, before you return. The row
+    id is the item id (`MF-4`). `findings_io.py` makes it the row id of the run. `commands/pr-review-local.md`
+-   shows the row.
++   shows the row. The check of an R2 `score` item is `python3 "$CADENCE_HOME/scripts/test_benchmark_gate.py" --code --check`,
++   and the check of an R3 `record` item is `python3 "$CADENCE_HOME/scripts/cognitive_complexity_gate.py" --check`:
++   the row is verified only when that gate passes on the fixed tree.
+    The R1 gate fails while an `MF-n` of the review has no ledger row.
+ 6. Write each open nit as a tracker issue with the PR number, or under `## Follow-ups` in the
+    update, and do not ask for a fix commit (ADR-0009). Do not ask for another review.
+@@ -60,7 +88,8 @@ python3 "$CADENCE_HOME/scripts/pr_threads.py" <PR>
+ python3 "$CADENCE_HOME/scripts/final_consolidate.py" --check
+ ```
+ 
+-The gate fails while a must-fix is open, or while the review's last `Last reviewed commit:` line is not HEAD or an ancestor of HEAD.
++The gate fails while the update does not carry R2 and R3, while a must-fix is open, or while the review's last `Last reviewed commit:` line is not HEAD or an ancestor of HEAD.
++Right after this update, an open must-fix is expected: the one `/spec-driven` round fixes it. That is information only.
+ If the check reports `no join row`, that is information only: the join row comes after you return. Do not change the review file for it.
+ The ledger stays the SSOT for findings. Do not invent a second consolidate format.
+ 
+diff --git a/commands/spec-driven.md b/commands/spec-driven.md
+index afecff0..18d465b 100644
+--- a/commands/spec-driven.md
++++ b/commands/spec-driven.md
+@@ -73,6 +73,20 @@ Apply `core:dry-extension` in `$CADENCE_HOME/references/architecture-core-rules.
+ 3. When a file that you change contains duplicate logic, remove the duplication in the same plan phase.
+ 4. Use the extension point that the plan names under `## Reuse and extension`.
+ 
++## The fix round (after R4)
++
++When your packet has an `Input:` under `.context/prs/reviews/`, you run the one round of fixes of the run (ADR-0028).
++That file is the one PR review: R1's review and the R4 update that carries R2 and R3 (`### Aggregated findings`).
++
++1. Fix each open `MF-n` of that review, and each must-fix ledger row that its `### Aggregated findings` table names.
++   For a `score` item, improve the tests that R2 named. For a `record` item, fix each offender of the R3 record.
++2. Follow the cycle above: a failing test first where the item is a defect. One commit can settle more than one item.
++3. Set each fixed row: `python3 "$CADENCE_HOME/scripts/findings_io.py" set-status --id <row id> --status fixed --fixed-in <sha>`.
++   Defer an item only with a ticket (`--status deferred --ticket <id>`).
++4. Run `python3 "$CADENCE_HOME/scripts/ledger_verify.py"` for each fixed row whose check passes now. A row whose check
++   is the R2 or R3 gate is verified after that gate runs again on the fixed tree.
++5. Do not edit the review or the plan. Do not run a review. Return.
++
+ ## Cadence binding
+ 
+ Before gated source edits, `entry_invariant.py --phase execution` must be
+diff --git a/docs/pipeline.md b/docs/pipeline.md
+index 78b7b70..c415466 100644
+--- a/docs/pipeline.md
++++ b/docs/pipeline.md
+@@ -68,7 +68,7 @@ Unlike modeling suites that score invariant expression rates, Cadence backtracks
+ 
+ Core Cadence runs with **zero packs**. Org-specific domain rules attach via `enabled_packs` in `cadence.config.json` and `packs/<name>/pack.json`. Packs never redefine stage order.
+ 
+-Twelve blocks belong to seven stage packs (ADR-0007, ADR-0029). `"profile": "full"` turns on A2, A3, P6, P7 and P8. With zero packs, a run visits the thirteen `core` blocks. The `pack` column of the table in `references/pipeline-blocks.md` names the pack of each block. A run takes its own list from `pipeline_status.py` (ADR-0028).
++Eleven blocks belong to seven stage packs (ADR-0007, ADR-0029). `"profile": "full"` turns on A2, A3, P6, P7 and P8. With zero packs, a run visits the fourteen `core` blocks. The `pack` column of the table in `references/pipeline-blocks.md` names the pack of each block. A run takes its own list from `pipeline_status.py` (ADR-0028).
+ 
+ ## Related
+ 
+diff --git a/docs/quickstart.md b/docs/quickstart.md
+index 86ae86b..6649b6a 100644
+--- a/docs/quickstart.md
++++ b/docs/quickstart.md
+@@ -7,7 +7,7 @@ Three questions: what is Cadence, where does it run, and how do you complete one
+ - **Not a chat prompt pack alone** — it is a **fail-closed harness**: registry (`stages.json`), scripts, hooks, and an append-only findings ledger.
+ - The agent-facing contract is root [`SKILL.md`](../SKILL.md). Procedure detail loads from `references/` and `stages.json` on demand.
+ - **4 phases**: Alignment (A1–A5) → Planning (P1–P9) → Execution (E1–E4) → Review (R1–R7).
+-- **13 blocks by default, 25 with every pack on**: a default run visits the thirteen `core` blocks. `"profile": "full"` in `.cadence.json` adds A2, A3, P6, P7 and P8 (ADR-0029). When `enabled_packs_extra` turns on all seven packs, a run visits all 25 blocks. `stages.json` holds the order and the pack of each block.
++- **14 blocks by default, 25 with every pack on**: a default run visits the fourteen `core` blocks. `"profile": "full"` in `.cadence.json` adds A2, A3, P6, P7 and P8 (ADR-0029). When `enabled_packs_extra` turns on all seven packs, a run visits all 25 blocks. `stages.json` holds the order and the pack of each block.
+ 
+ ```text
+ /cadence <spec path>  →  A1 activate → … → P9 entry-invariant → E1 implement → E4 draft PR → R5 closure → R7 deactivate
+diff --git a/examples/toy-run/README.md b/examples/toy-run/README.md
+index 76d348e..5acb967 100644
+--- a/examples/toy-run/README.md
++++ b/examples/toy-run/README.md
+@@ -21,7 +21,7 @@ temporary directory with its own `HOME`, then does these steps:
+    It lets the edit to `README.md` through. The secret-read guard refuses a read of `.env`.
+ 3. `scripts/headless.py next` names each open block and the reason that its gate fails.
+    The script plays the peer of the block, and the gate passes. A default run visits the
+-   thirteen core blocks, so the walk goes A1, A5, P1, P3, P4, P9, E1.
++   fourteen core blocks, so the walk goes A1, A5, P1, P3, P4, P9, E1.
+    At P1, the ticket text has two numbered items. A plan with an acceptance row for one item
+    fails the gate. The plan with a row for each item passes (`commands/plan-create.md`).
+ 4. At P3, the orchestrator writes the plan review itself, with no peer call. The gate
+diff --git a/hooks/pipeline_stop_guard.py b/hooks/pipeline_stop_guard.py
+index 677cdb6..dbae30b 100755
+--- a/hooks/pipeline_stop_guard.py
++++ b/hooks/pipeline_stop_guard.py
+@@ -267,7 +267,14 @@ def with_round(row: dict | None, peers: list[dict]) -> dict | None:
+     calls = ", ".join(f"{p['block']} `{p['run']}`" for p in peers)
+     return {**row, "round": [p["slug"] for p in peers],
+             "continue": f"Continue paceline: dispatch the {row.get('round')} round in parallel, a new Agent call "
+-                        f"for each peer: {calls}. P4 reads every report of the round"}
++                        f"for each peer: {calls}. {_AFTER_ROUND.get(str(row.get('round')), '')}".rstrip()}
++
++
++# What comes after each review round (owner, 2026-10-25): one review carries every report of the round.
++_AFTER_ROUND = {
++    "plan-review": "Then P3 reads every report of the round and carries its findings; P4 answers the P3 review",
++    "code-review": "Then R4 /pr-review-update carries R1, R2 and R3 in one update; one /spec-driven round fixes it",
++}
+ 
+ 
+ PEER_WINDOW_SECONDS = 3600
+diff --git a/packs/README.md b/packs/README.md
+index 4d233ee..53cef0e 100644
+--- a/packs/README.md
++++ b/packs/README.md
+@@ -9,7 +9,7 @@ project's `.cadence.json`.
+ 
+ Seven packs own stage rows (ADR-0007): `preflight`, `tracker`, `spec-review`,
+ `architecture`, `test-plan`, `deferral-register` and `deferrals`. With no pack enabled, a run visits
+-the thirteen `core` rows of `stages.json`. `"profile": "full"` in the project's `.cadence.json` turns on
++the fourteen `core` rows of `stages.json`. `"profile": "full"` in the project's `.cadence.json` turns on
+ `preflight`, `spec-review`, `test-plan` and `deferral-register` (ADR-0029).
+ 
+ Two sample packs show the gate contract:
+diff --git a/packs/deferrals/pack.json b/packs/deferrals/pack.json
+index 2b4e9e3..90d53ee 100644
+--- a/packs/deferrals/pack.json
++++ b/packs/deferrals/pack.json
+@@ -1,7 +1,7 @@
+ {
+   "name": "deferrals",
+   "version": "0.1.0",
+-  "description": "Stage pack (ADR-0007): Deferral register, the implementation artifact and the final consolidate. Its rows in stages.json are E2, R4. P8 is its own pack, deferral-register (ADR-0029).",
++  "description": "Stage pack (ADR-0007): Deferral register, the implementation artifact and the final consolidate. Its row in stages.json is E2 (R4 is core since 2026-10-25). P8 is its own pack, deferral-register (ADR-0029).",
+   "triggers": [],
+   "phases": [],
+   "rules": []
+diff --git a/references/pipeline-blocks.md b/references/pipeline-blocks.md
+index 9ae0749..4a66d71 100644
+--- a/references/pipeline-blocks.md
++++ b/references/pipeline-blocks.md
+@@ -5,13 +5,13 @@ A run does not visit each row. The run's blocks are the rows of `core` and of th
+ To get the run's list, in order, run `python3 "$SKILL_ROOT/scripts/pipeline_status.py" --workspace <worktree>` and read its `pipeline` field.
+ A gate or a handoff of a row whose pack is off refuses to run: `<block> is not in this run's pipeline (pack <x> off)`.
+ 
+-The default run (`profile` core) has thirteen blocks: A1, A5, P1, P3, P4, P9, E1, E4, R1, R2, R3, R5, R7.
++The default run (`profile` core) has fourteen blocks: A1, A5, P1, P3, P4, P9, E1, E4, R1, R2, R3, R4, R5, R7.
+ The full run (`"profile": "full"` in the project's `.cadence.json`, ADR-0029) adds A2, A3, P6, P7 and P8.
+ 
+ E4 also builds and tests the committed tree from a clean checkout (`scripts/clean_checkout.py`). The entry points are
+ `.cadence.json` `"clean_checkout": ["<command>", ...]`, else the `build`, `test` and `check` targets of the Makefile,
+ else `python3 -m pytest -q`. A failure is a must-fix finding for the one fix round. R5 fails while the build of HEAD has not passed.
+-In the full run, P3, P6, P7 and P8 are one review round in parallel, and the one P4 answers each of their reports.
++In the full run, P6, P7 and P8 are one review round in parallel. P3 runs after them and carries each of their findings as its own `MF-n` (`## Aggregated findings`), and the one P4 answers the P3 review.
+ It has one plan review (P3), one plan update (P4), one code review (R1), and one round of fixes (ADR-0028).
+ 
+ | Block | Slug | Pack | Command | Intent |
+@@ -37,7 +37,7 @@ It has one plan review (P3), one plan update (P4), one code review (R1), and one
+ | R1 | pr-review-local | `core` | `/pr-review-local` | Local staff-level review of the PR branch |
+ | R2 | test-benchmark-pr | `core` | `/test-benchmark` | Score test quality and mutation kill rate on the changed code |
+ | R3 | cognitive-complexity | `core` | `python3 scripts/cognitive_complexity_gate.py` | Fail a changed function over the cognitive complexity limit that is new or got worse |
+-| R4 | final-consolidate | `deferrals` | `python3 scripts/final_consolidate.py` | Two-pass review consolidation (close pass, then delta pass) through the findings ledger |
++| R4 | final-consolidate | `core` | `/pr-review-update`, then `python3 scripts/final_consolidate.py` | Two-pass review consolidation (close pass, then delta pass) through the findings ledger |
+ | R5 | closure | `core` | `python3 scripts/closure.py` | Check that each must-fix finding is `verified`, `deferred`, or `spec_gap`, and that each acceptance check is passed with evidence |
+ | R6 | pr-comment | `tracker` | `python3 scripts/guard_gh_pr_comment.py` | Post the structured closure ledger comment on the GitHub PR |
+ | R7 | session-close | `core` | `python3 scripts/activate_session.py --deactivate` | Close the session after the PR is ready |
+diff --git a/scripts/final_consolidate.py b/scripts/final_consolidate.py
+index b104e6c..d9f7bc5 100644
+--- a/scripts/final_consolidate.py
++++ b/scripts/final_consolidate.py
+@@ -162,6 +162,95 @@ def last_reviewed_sha(text: str) -> str | None:
+     return values[-1] if values else None
+ 
+ 
++# --- the code-review round (owner, 2026-10-25): R1, then R2 and R3, then R4 carries every report ----------------
++
++R3_RECORD = "gates/cognitive-complexity.json"
++
++
++def code_round_reports(context_dir: Path, worktree: Path) -> list[tuple[str, Path, list[str]]]:
++    """(block, report, the ids the R4 update must carry) for R2 and R3, when each has written its report.
++
++    R2: the run's newest code scorecard, with each must-fix finding id, and `score` while the scorecard is under
++    the R2 floor (test_benchmark_gate.SCORE_FLOOR). R3: its record, with `record` while it lists an offender."""
++    import artifact_requirements
++    import test_benchmark_gate as r2
++
++    found: list[tuple[str, Path, list[str]]] = []
++    accept = artifact_requirements.run_scope_accept(context_dir, worktree)
++    cards = [p for g in ("benchmarks/*_code.json",) for p in context_dir.glob(g) if p.is_file() and accept(p)]
++    if cards:
++        card = max(cards, key=lambda p: p.stat().st_mtime)
++        try:
++            findings = json.loads(card.read_text(encoding="utf-8")).get("findings") or []
++        except (OSError, ValueError, AttributeError):
++            findings = []
++        ids = [str(f["id"]) for f in findings if isinstance(f, dict) and r2._is_must_fix(f) and f.get("id")]
++        found.append(("R2", card, ids + (["score"] if r2._score_problems(card) else [])))
++    record = context_dir / R3_RECORD
++    if record.is_file():
++        try:
++            data = json.loads(record.read_text(encoding="utf-8"))
++        except (OSError, ValueError):
++            data = {}
++        failing = isinstance(data, dict) and (
++            data.get("findings") or data.get("duplicated") or data.get("packs") or data.get("unparsable")
++            or any(isinstance(t, dict) and t.get("verdict") == "fail" for t in data.get("tools") or []))
++        found.append(("R3", record, ["record"] if failing else []))
++    return found
++
++
++def _round_review(context_dir: Path, worktree: Path) -> Path | None:
++    own = run_pr_review(context_dir, worktree)
++    if own is not None:
++        return own if own.is_file() else None
++    reviews = marked_reviews(context_dir)
++    return max(reviews, key=lambda p: p.stat().st_mtime) if reviews else None
++
++
++def aggregation_state(context_dir: Path, worktree: Path) -> dict:
++    """Where the code-review round is: whether R2 and R3 have written their reports, whether the R4 update of the
++    run's PR review carries them, and what it does not carry yet."""
++    import review_round
++    from findings_io import ledger_must_fix_ids
++
++    reports = code_round_reports(context_dir, worktree)
++    review = _round_review(context_dir, worktree)
++    text = review.read_text(encoding="utf-8", errors="replace") if review is not None else ""
++    table = review_round.aggregated_table(text, ledger_ids=frozenset(ledger_must_fix_ids(context_dir)))
++    has_table = bool(review_round._AGGREGATED.search(text)) and "RUN_BY_COMMAND: pr-review-update" in text
++    from artifact_requirements import review_must_fix_ids
++
++    open_ids = review_must_fix_ids(text) | ledger_must_fix_ids(context_dir)
++    missing = [f"{block} {path.name}: {ident}" for block, path, ids in reports for ident in ids
++               if table.get((block, ident)) not in open_ids]
++    return {"reports": [(b, str(p)) for b, p, _ in reports], "written": len(reports) == 2, "review": review,
++            "aggregated": has_table and not missing, "missing": missing}
++
++
++def aggregation_problems(context_dir: Path, worktree: Path) -> list[str]:
++    """R4: the run's one PR review carries R1, R2 and R3 in one `## Update` with `### Aggregated findings`."""
++    state = aggregation_state(context_dir, worktree)
++    if state["review"] is None or state["aggregated"]:
++        return []
++    rel = state["review"].relative_to(context_dir).as_posix()
++    if state["missing"] and "Aggregated findings" in state["review"].read_text(encoding="utf-8", errors="replace"):
++        return [f"final-consolidate: {rel} does not carry {', '.join(state['missing'])}. Add a row for each to "
++                "`### Aggregated findings` (| Block | Report | Id | Must-fix |), with an MF-n under its `### Must-fix items`"]
++    named = ", ".join(f"{b} {Path(p).name}" for b, p in state["reports"]) or "no R2 or R3 report yet"
++    return [f"final-consolidate: {rel} has no R4 update that carries the round ({named}). Run /pr-review-update: "
++            "it appends one `## Update` with `### Aggregated findings` (commands/pr-review-update.md)"]
++
++
++def fix_round_line(context_dir: Path, worktree: Path, open_ids: list[str]) -> str | None:
++    """The fix step when the R4 update carries the round and must-fix rows are open: the one /spec-driven round."""
++    state = aggregation_state(context_dir, worktree)
++    if not open_ids or not state["aggregated"] or state["review"] is None:
++        return None
++    rel = state["review"].relative_to(context_dir).as_posix()
++    return (f"final-consolidate: fix round: dispatch /spec-driven one time; its packet carries .context/{rel}. It fixes "
++            f"each open must-fix ({', '.join(open_ids)}), sets each row fixed with its commit, and runs ledger_verify.py")
++
++
+ def main() -> int:
+     from gate_common import ctx, ledger_gate_args
+ 
+@@ -178,8 +267,13 @@ def main() -> int:
+     print(json.dumps(result, indent=2))
+     if not args.check:
+         return 0
+-    problems = [f"final-consolidate: open must-fix {fid}" for fid in result["close_pass"]["open_must_fix"]]
+-    problems += head_review_problems(ctx(), run_worktree(ctx()))
++    worktree = run_worktree(ctx())
++    open_ids = list(result["close_pass"]["open_must_fix"])
++    problems = aggregation_problems(ctx(), worktree)
++    problems += [f"final-consolidate: open must-fix {fid}" for fid in open_ids]
++    fix = fix_round_line(ctx(), worktree, open_ids)
++    problems += [fix] if fix else []
++    problems += head_review_problems(ctx(), worktree)
+     for problem in problems:
+         print(problem, file=sys.stderr)
+     return 1 if problems else 0
+diff --git a/scripts/gate_common.py b/scripts/gate_common.py
+index 7bd1e85..0a301e3 100644
+--- a/scripts/gate_common.py
++++ b/scripts/gate_common.py
+@@ -170,9 +170,16 @@ def write_gate_breadcrumb(
+ 
+ 
+ def _p3_reopen(context_dir: Path) -> list[str]:
+-    """gh-104 D2: after /plan-update, a blocking review older than the plan opens P3 again."""
++    """gh-104 D2: after /plan-update, a blocking review older than the plan opens P3 again.
++
++    When the run has more plan reports (P6, P7, P8), P3 runs after them and its review carries each of their
++    ids as an MF-n item (review_round.aggregation_problems), so the one P4 answers the P3 review."""
++    import review_round  # here, not at the top: review_round imports artifact_requirements at its load
++    from artifact_requirements import current_session
++
+     step = plan_review_step(context_dir)
+-    return [step[1]] if step is not None and step[0] == "P3" else []
++    reopen = [step[1]] if step is not None and step[0] == "P3" else []
++    return reopen + review_round.aggregation_problems(context_dir, current_session(context_dir))
+ 
+ 
+ def _r1_review(context_dir: Path) -> tuple[Path | None, list[str]]:
+diff --git a/scripts/handoff_inputs.py b/scripts/handoff_inputs.py
+index f615129..43f7350 100644
+--- a/scripts/handoff_inputs.py
++++ b/scripts/handoff_inputs.py
+@@ -20,8 +20,9 @@ from gate_common import current_branch
+ from load_stages import load_registry
+ from phase_ledger import select_plan
+ 
+-KINDS = ("ticket", "plan", "plan-review", "pr-number")
+-OPTIONAL: frozenset[str] = frozenset()
++KINDS = ("ticket", "plan", "plan-review", "pr-number", "pr-review")
++# `pr-review`: the run's PR review once R4 carries the code-review round; before R4 the E1 packet has no such input.
++OPTIONAL: frozenset[str] = frozenset({"pr-review"})
+ 
+ # What a missing kind is, and the stages.json slug of the block that writes it.
+ _MISSING = {
+@@ -29,6 +30,7 @@ _MISSING = {
+     "plan": ("plan of the run in .cursor/plans/ or .context/plans/ with RUN_BY_COMMAND: plan-create", "plan-create"),
+     "plan-review": ("plan review of the run with a verdict in .context/reviews/plan_<slug>.md", "plan-review"),
+     "pr-number": ("draft-PR record of the run with a PR URL in .context/prs/", "draft-pr"),
++    "pr-review": ("PR review of the run with an R4 update that carries the code-review round", "final-consolidate"),
+ }
+ 
+ 
+@@ -87,8 +89,17 @@ def _pr_number(run: Run) -> Found | None:
+     return ([ref], [record]) if ref is not None else None
+ 
+ 
++def _pr_review(run: Run) -> Found | None:
++    """The run's one PR review once its R4 update carries R1, R2 and R3: the input of the one /spec-driven fix round."""
++    import final_consolidate
++
++    state = final_consolidate.aggregation_state(run.ctx, run.workspace)
++    review = state["review"]
++    return ([], [review]) if review is not None and state["aggregated"] else None
++
++
+ _RESOLVERS: dict[str, Callable[[Run], Found | None]] = {
+-    "ticket": _ticket, "plan": _plan, "plan-review": _plan_review, "pr-number": _pr_number,
++    "ticket": _ticket, "plan": _plan, "plan-review": _plan_review, "pr-number": _pr_number, "pr-review": _pr_review,
+ }
+ 
+ 
+diff --git a/scripts/headless.py b/scripts/headless.py
+index 46539f1..dbe0b63 100644
+--- a/scripts/headless.py
++++ b/scripts/headless.py
+@@ -222,6 +222,10 @@ def walk(
+             open_row = row
+             break
+     in_round = _round_rows(rows[: last + 1], open_row, results, root, workspace, timeout, readonly)
++    redirect = _aggregator_step(rows[: last + 1], open_row, workspace)
++    if redirect is not None:
++        results.append(run_gate(redirect, root, workspace, timeout, readonly))
++        open_row, in_round = redirect, [redirect]
+     return {
+         "done": open_row is None,
+         "next": describe(open_row, root, docs) if open_row else None,
+@@ -241,7 +245,7 @@ def _round_rows(rows: list[dict[str, Any]], open_row: dict[str, Any] | None, res
+     name = open_row.get("round")
+     if not name:
+         return [open_row]
+-    later = [r for r in rows[rows.index(open_row) + 1:] if r.get("round") == name]
++    later = [r for r in rows[rows.index(open_row) + 1:] if r.get("round") == name and not r.get("aggregates")]
+     found = [open_row]
+     for row in later:
+         result = run_gate(row, root, workspace, timeout, readonly)
+@@ -251,6 +255,36 @@ def _round_rows(rows: list[dict[str, Any]], open_row: dict[str, Any] | None, res
+     return found
+ 
+ 
++def _aggregator_step(rows: list[dict[str, Any]], open_row: dict[str, Any] | None,
++                     workspace: Path) -> dict[str, Any] | None:
++    """The code-review round (owner, 2026-10-25): R2 and R3 report on the reviewed diff, then R4 carries R1, R2 and
++    R3 in one PR review update, then one /spec-driven round fixes what it carries.
++
++    While a row of a round whose rows name a `report` fails, and every such report is written, the open block is
++    the round's aggregator (`aggregates` in stages.json) until its update carries the round and no must-fix row is
++    open. Then the walk goes on: a failing R2 or R3 runs again on the fixed tree. A round with no `report` rows
++    (the plan round: its aggregator P3 comes after it in the walk) is never redirected."""
++    name = open_row.get("round") if open_row else None
++    agg = next((r for r in rows if name and r.get("aggregates") == name), None)
++    members = [r for r in rows if name and r.get("round") == name]
++    if agg is None or not members or not all(r.get("report") for r in members):
++        return None
++    import final_consolidate
++    from context_root import context_path
++    from findings_io import is_open_must_fix, ledger_scope, load_findings
++
++    ctx = context_path(workspace)
++    state = final_consolidate.aggregation_state(ctx, workspace)
++    if not state["written"]:
++        return None
++    if state["aggregated"]:
++        rows_ = load_findings(ctx / "findings.jsonl")
++        scope = ledger_scope(rows_, ctx, cwd=workspace)
++        if not any(is_open_must_fix(r) for r in (scope["rows"] if scope else rows_)):
++            return None
++    return {**agg, "command": agg.get("aggregator_command") or agg["command"]}
++
++
+ def print_report(report: dict[str, Any]) -> None:
+     # E1 and R4 judge the run of this workspace only (cd-47 G-D4); say which one.
+     print(f"workspace: {report['workspace']}")
+diff --git a/scripts/review_round.py b/scripts/review_round.py
+index 47f0c75..2c7d659 100644
+--- a/scripts/review_round.py
++++ b/scripts/review_round.py
+@@ -44,13 +44,18 @@ class Report:
+ 
+ 
+ def round_slugs(session: dict) -> list[str]:
+-    """The slugs of the round's rows that are on in the run's recorded workspace; P3 alone with no workspace."""
++    """The slugs of the round's rows that are on in the run's recorded workspace; P3 alone with no workspace.
++
++    P3 is the round's aggregator (`"aggregates": "plan-review"`): it runs after the other reports of the round and
++    carries their findings, so it is listed first, as the report that P4 answers."""
+     from load_stages import load_stages
+ 
+     workspace = session.get("workspace")
+     if not isinstance(workspace, str) or not Path(workspace).is_dir():
+         return ["plan-review"]
+-    return [str(r["slug"]) for r in load_stages(None, Path(workspace)) if r.get("round") == ROUND]
++    rows = load_stages(None, Path(workspace))
++    lead = [str(r["slug"]) for r in rows if r.get("aggregates") == ROUND]
++    return lead + [str(r["slug"]) for r in rows if r.get("round") == ROUND and str(r["slug"]) not in lead]
+ 
+ 
+ def _p3(context_dir: Path, session: dict) -> Report | None:
+@@ -153,9 +158,17 @@ _FILES = {"adversarial-review": _p6_file, "test-benchmark-plan": _p7_file, "defe
+ def other_report_files(context_dir: Path, session: dict) -> list[Path]:
+     """The newest report of P6, P7 and P8 when they are in the run's round, in round order; [] in the core.
+     The P4 packet passes each one with the P3 review, so the one update answers the whole round
+-    (run 20261024-P2-cadence-haiku-full-2)."""
++    (run 20261024-P2-cadence-haiku-full-2). A report whose every id the P3 review carries is not passed:
++    the P3 review is then the one report that P4 answers."""
+     found = (_FILES[slug](Path(context_dir), session) for slug in round_slugs(session) if slug in _FILES)
+-    return [path for path in found if path is not None]
++    paths = [path for path in found if path is not None]
++    p3_found = _p3_text(Path(context_dir), session)
++    if not paths or p3_found is None:
++        return paths
++    p3, table = _p3(Path(context_dir), session), aggregated_table(p3_found[1])
++    carried = {r.path for r in round_reports(Path(context_dir), session)
++               if r.path is not None and carried_by_p3(r, p3, table)}
++    return [path for path in paths if path not in carried]
+ 
+ 
+ def round_reports(context_dir: Path, session: dict) -> list[Report]:
+@@ -164,16 +177,106 @@ def round_reports(context_dir: Path, session: dict) -> list[Report]:
+     return [r for r in reports if r is not None]
+ 
+ 
++# `## Aggregated findings` (P3) or `### Aggregated findings` in an `## Update` section (R4, commands/pr-review-update.md).
++_AGGREGATED = re.compile(r"(?ims)^#{2,3}\s*aggregated findings\b[^\n]*$(.*?)(?=^#{2,3}\s|\Z)")
++_AGGREGATED_COLUMNS = ("block", "report", "id", "must-fix")
++
++
++def aggregated_table(text: str, *, ledger_ids: frozenset[str] = frozenset()) -> dict[tuple[str, str], str]:
++    """(block, id) -> MF-n: the rows of the last `Aggregated findings` table of a review (commands/plan-review.md,
++    commands/pr-review-update.md).
++
++    The columns are `| Block | Report | Id | Must-fix |`. The Must-fix cell is an MF-n of the review, or one of
++    `ledger_ids` (a must-fix row that the report's own block already filed). Any other row maps nothing."""
++    from deferral_adjudication_check import _parse_table
++
++    found = None
++    for found in _AGGREGATED.finditer(text):
++        pass
++    if found is None:
++        return {}
++    header, rows = _parse_table(found.group(1))
++    names = [h.strip().strip("*`").lower() for h in header]
++    if not all(c in names for c in _AGGREGATED_COLUMNS):
++        return {}
++    at = {c: names.index(c) for c in _AGGREGATED_COLUMNS}
++    table: dict[tuple[str, str], str] = {}
++    for cells in rows:
++        if len(cells) <= max(at.values()):
++            continue
++        cell = cells[at["must-fix"]].strip("*` ")
++        must_fix = re.search(r"\bMF-\d+\b", cell)
++        target = cell if cell in ledger_ids else must_fix.group(0) if must_fix else None
++        block, ident = cells[at["block"]].strip("*` "), cells[at["id"]].strip("*` ")
++        if target and block and ident:
++            table[(block.upper(), ident)] = target
++    return table
++
++
++def _p3_text(context_dir: Path, session: dict) -> tuple[Path, str] | None:
++    """The newest P3 review of the run with a readable verdict, blocking or not, and its text."""
++    from dataclasses import replace
++
++    chosen = ar.select_newest_verdict(context_dir, replace(ar.P3_LOOP, blocking=frozenset()), session)
++    if chosen is None:
++        return None
++    try:
++        return chosen[0], chosen[0].read_text(encoding="utf-8", errors="replace")
++    except OSError:
++        return None
++
++
++def carried_by_p3(report: Report, p3: Report | None, table: dict[tuple[str, str], str]) -> bool:
++    """A report of the round whose every id the P3 review carries as one of its open MF-n items.
++
++    The plan then answers those ids in the P3 review's ledger: the MF-n row answers each id that it carries."""
++    if p3 is None or report.path is None or not report.ids or report.block == "P3":
++        return False
++    return all(table.get((report.block, ident)) in p3.ids for ident in report.ids)
++
++
++def aggregation_problems(context_dir: Path, session: dict) -> list[str]:
++    """P3, when it aggregates the round: its review carries each id of each other report of the round.
++
++    Empty in the core (the round is P3 alone) and when no other report of the round holds an id."""
++    found = _p3_text(Path(context_dir), session)
++    if found is None:
++        return []  # the artifact check fails first
++    path, text = found
++    reports = [r for r in round_reports(Path(context_dir), session) if r.block != "P3"]
++    errors = [r.error.replace("plan-update:", "plan-review:", 1) for r in reports if r.error]
++    if errors:
++        return errors
++    p3 = _p3(Path(context_dir), session)
++    table = aggregated_table(text)
++    lines = []
++    for report in (r for r in reports if r.path is not None and r.ids):
++        open_ids = p3.ids if p3 is not None else frozenset()
++        missing = sorted(i for i in report.ids if table.get((report.block, i)) not in open_ids)
++        if missing:
++            lines.append(f"plan-review: {path.name} does not carry {report.block} {report.path.name}: "
++                         f"{', '.join(missing)}. Add a row for each to `## Aggregated findings` "
++                         "(| Block | Report | Id | Must-fix |), with an MF-n that is under `## Must-fix items`")
++    return lines
++
++
+ def round_problems(context_dir: Path, session: dict, *, missing_ok: bool = False) -> list[str]:
+     """P4 and P9: each report of the round is readable, and the plan answers each of its ids (ADR-0029).
+ 
+     `missing_ok`: a report that does not exist yet is not a problem (the stop guard's step: the walk names the
+-    round's own open blocks). An unreadable report still is."""
++    round's own open blocks). An unreadable report still is. A report whose ids the P3 review carries as its
++    MF-n items is answered by the plan's ledger for the P3 review."""
+     reports = [r for r in round_reports(context_dir, session) if not (missing_ok and r.path is None)]
++    if missing_ok and len(round_slugs(session)) > 1 and _p3_text(Path(context_dir), session) is None:
++        return []  # P3 aggregates the round and has not run yet: the walk names the round's open blocks
+     errors = [r.error for r in reports if r.error]
+     if errors:
+         return [e for e in errors if e]
+-    to_answer = [r for r in reports if r.path is not None and (r.ids or r.blocking)]
++    p3 = next((r for r in reports if r.block == "P3"), None)
++    found = _p3_text(Path(context_dir), session)
++    table = aggregated_table(found[1]) if found else {}
++    to_answer = [r for r in reports if r.path is not None and (r.ids or r.blocking)
++                 and not carried_by_p3(r, p3, table)]
+     if not to_answer:
+         return []
+     plan = ar._run_plan(Path(context_dir), session)
+diff --git a/scripts/smoke_run.py b/scripts/smoke_run.py
+new file mode 100644
+index 0000000..394a350
+--- /dev/null
++++ b/scripts/smoke_run.py
+@@ -0,0 +1,244 @@
++#!/usr/bin/env python3
++"""The end-to-end smoke run: one real Cadence-on-Haiku run of the smallest task, in under 10 minutes.
++
++Owner (2026-10-25): "Smoke test must run in under 10 minutes, must also be paired with toy run regressions.
++Must run with every change locally as a part of precommit." The toy-run regressions (examples/toy-run, no
++model) replay the gates on fixed artifacts; they passed on #233, and the fresh runs on #233 still stopped at
++A1, P1, P4 and E1. So this run uses the model, the plugin of this checkout and the spec as the whole prompt
++(`/cadence <spec>`), as a benchmark run does (harness-benchmark scripts/host_trial.py), on the toy package.
++
++The run passes only when all of these hold:
++
++- the agent ends inside the time limit (default 600 s, CADENCE_SMOKE_SECONDS),
++- the run's session is closed at R7 (`status: completed`, which activate_session.py --deactivate allows only
++  once E1 through R6 pass) and no hard stop is recorded,
++- `headless.py next` finds no open block of the run's manifest,
++- a clean clone of the run's HEAD passes `make test`, and its subtract() gives both of the spec's results.
++
++Usage::
++
++    python3 scripts/smoke_run.py                 # exit 0 when the run passes; the record is printed
++    python3 scripts/smoke_run.py --keep DIR      # keep the sandbox (repo, HOME, transcript) in DIR
++    python3 scripts/smoke_run.py --dry-run       # set up the sandbox and print the agent command only
++
++Exit 0: pass. 1: the run failed a check (the record says which). 2: setup failed (no `claude`, an API key set).
++"""
++
++from __future__ import annotations
++
++import argparse
++import hashlib
++import json
++import os
++import shutil
++import subprocess
++import sys
++import tempfile
++import time
++from pathlib import Path
++
++ROOT = Path(__file__).resolve().parents[1]
++TOY = ROOT / "tests" / "fixtures" / "toy_repo"
++MODEL = os.environ.get("CADENCE_SMOKE_MODEL", "<model id redacted>")
++PEER_MODEL = os.environ.get("CADENCE_SMOKE_PEER_MODEL", "haiku")
++LIMIT = int(os.environ.get("CADENCE_SMOKE_SECONDS", "600"))
++
++SPEC = """---
++id: smoke-1
++---
++# Add subtract() to toy_pkg
++
++`src/toy_pkg/core.py` has `add(a, b)`. Add `subtract(a, b)`, which returns `a - b`.
++
++1. `subtract(5, 3)` returns 2.
++2. `subtract(2, 5)` returns -3.
++
++The project's tests run with `make test`. Add a test for each numbered item to `tests/test_core.py`.
++"""
++
++TEST_CORE = '"""Tests of toy_pkg.core."""\n\nfrom toy_pkg.core import add\n\n\ndef test_add():\n    assert add(2, 3) == 5\n'
++RUN_TESTS = ('"""Run every test_* function of tests/test_core.py; exit 1 on the first failure."""\n'
++             "import sys\n\nsys.path.insert(0, 'tests')\nimport test_core  # noqa: E402\n\n"
++             "for name in sorted(n for n in dir(test_core) if n.startswith('test_')):\n"
++             "    getattr(test_core, name)()\n    print('ok', name)\n")
++MAKEFILE = "test:\n\tPYTHONPATH=src python3 tests/run_tests.py\n"
++DELIVERABLE = ("import sys; sys.path.insert(0, 'src'); from toy_pkg.core import subtract; "
++               "assert subtract(5, 3) == 2 and subtract(2, 5) == -3; print('subtract ok')")
++
++
++def git(cwd: Path, *args: str, env: dict[str, str]) -> subprocess.CompletedProcess:
++    return subprocess.run(["git", *args], cwd=cwd, env=env, capture_output=True, text=True, check=False)
++
++
++def base_env(home: Path) -> dict[str, str]:
++    """The agent's environment: a fresh HOME, this checkout as CADENCE_HOME, no API key, no git hook variables."""
++    drop = set(subprocess.run(["git", "rev-parse", "--local-env-vars"], capture_output=True, text=True,
++                              check=False).stdout.split())
++    env = {k: v for k, v in os.environ.items()
++           if k not in drop and not k.startswith(("UV_", "VIRTUAL_ENV", "PYTEST_", "CLAUDECODE", "CLAUDE_CODE_"))
++           and k not in ("ANTHROPIC_API_KEY", "ANTHROPIC_AUTH_TOKEN", "PYTHONPATH")}
++    venv = os.environ.get("VIRTUAL_ENV")
++    env["PATH"] = os.pathsep.join(d for d in env.get("PATH", "").split(os.pathsep) if d and not (venv and d.startswith(venv)))
++    env.update(HOME=str(home), CADENCE_HOME=str(ROOT), DISABLE_AUTOUPDATER="1", CLAUDE_AUTO_BACKGROUND_TASKS="false",
++               CLAUDE_CODE_PRINT_BG_WAIT_CEILING_MS="0", PYTHONDONTWRITEBYTECODE="1",
++               GIT_AUTHOR_NAME="smoke", GIT_AUTHOR_EMAIL="smoke@example.com",
++               GIT_COMMITTER_NAME="smoke", GIT_COMMITTER_EMAIL="smoke@example.com", GIT_CONFIG_NOSYSTEM="1")
++    return env
++
++
++def setup(base: Path) -> tuple[Path, Path, dict[str, str]]:
++    """The toy repository (main, pushed to a local bare origin), the spec outside it, and the fresh HOME."""
++    repo, home, spec = base / "repo", base / "home", base / "spec" / "smoke-1.md"
++    shutil.copytree(TOY, repo)
++    (repo / "tests").mkdir()
++    (repo / "tests" / "test_core.py").write_text(TEST_CORE, encoding="utf-8")
++    (repo / "tests" / "run_tests.py").write_text(RUN_TESTS, encoding="utf-8")
++    (repo / "Makefile").write_text(MAKEFILE, encoding="utf-8")
++    (repo / ".cadence.json").write_text(json.dumps({"adapter": "none", "profile": "core"}, indent=1) + "\n",
++                                        encoding="utf-8")
++    spec.parent.mkdir(parents=True)
++    spec.write_text(SPEC, encoding="utf-8")
++    (home / ".config" / "cadence").mkdir(parents=True)
++    (home / ".config" / "cadence" / "config.json").write_text(json.dumps({"peer_models": {"default": PEER_MODEL}}) + "\n")
++    env = base_env(home)
++    for args in (("init", "-q", "-b", "main"), ("add", "-A"), ("commit", "-qm", "toy package")):
++        done = git(repo, *args, env=env)
++        if done.returncode != 0:
++            raise SystemExit(f"smoke: git {' '.join(args)} failed: {done.stderr}")
++    git(base, "init", "-q", "--bare", str(base / "origin.git"), env=env)
++    git(repo, "remote", "add", "origin", str(base / "origin.git"), env=env)
++    git(repo, "push", "-q", "-u", "origin", "main", env=env)
++    return repo, spec, env
++
++
++def agent_argv(spec: Path) -> list[str]:
++    return ["claude", "-p", f"/cadence {spec}", "--model", MODEL, "--permission-mode", "auto",
++            "--output-format", "stream-json", "--verbose", "--plugin-dir", str(ROOT), "--add-dir", str(spec.parent)]
++
++
++def sessions(repo: Path) -> list[dict]:
++    found = []
++    for path in sorted((repo / ".context" / "sessions" / "by-worktree").glob("*.json")):
++        try:
++            data = json.loads(path.read_text(encoding="utf-8"))
++        except (OSError, ValueError):
++            continue
++        if isinstance(data, dict) and "ref" not in data:
++            found.append(data)
++    return found
++
++
++def open_block(repo: Path, env: dict[str, str]) -> dict:
++    """headless.py next on a copy of the repository, with the copy's own worktree session (host_trial.rebind_sessions)."""
++    with tempfile.TemporaryDirectory() as tmp:
++        copy = Path(tmp) / "repo"
++        shutil.copytree(repo, copy, symlinks=True)
++        folder = copy / ".context" / "sessions" / "by-worktree"
++        key = hashlib.sha256(str(copy.resolve()).encode("utf-8")).hexdigest()[:16]
++        for data in sessions(copy):
++            folder.mkdir(parents=True, exist_ok=True)
++            (folder / f"{key}.json").write_text(json.dumps({**data, "workspace": str(copy.resolve())}) + "\n")
++            break
++        done = subprocess.run([sys.executable, str(ROOT / "scripts" / "headless.py"), "next", "--json"], cwd=copy,
++                              env=env, capture_output=True, text=True, timeout=300, check=False)
++    try:
++        report = json.loads(done.stdout)
++    except ValueError:
++        return {"block": "?", "why": f"headless.py next exited {done.returncode}: {done.stderr.strip()[-300:]}"}
++    nxt = report.get("next")
++    if not nxt:
++        return {"block": None, "why": None}
++    failing = [r for r in report.get("results", []) if not r.get("ok")]
++    why = next((line.strip() for line in str((failing[-1] if failing else {}).get("output") or "").splitlines()
++                if line.strip()), "")
++    return {"block": nxt.get("block"), "slug": nxt.get("slug"), "why": why}
++
++
++def deliverable(base: Path, repo: Path, env: dict[str, str]) -> dict:
++    """`make test` and the spec's two results in a clean clone of the run's HEAD."""
++    clone = base / "clean"
++    git(base, "clone", "-q", str(repo), str(clone), env=env)
++    make = subprocess.run(["make", "test"], cwd=clone, env=env, capture_output=True, text=True, timeout=120, check=False)
++    calc = subprocess.run([sys.executable, "-c", DELIVERABLE], cwd=clone, env=env, capture_output=True, text=True,
++                          timeout=60, check=False)
++    return {"make_test": make.returncode, "subtract": calc.returncode,
++            "output": (make.stdout + make.stderr + calc.stdout + calc.stderr)[-600:]}
++
++
++def judge(record: dict) -> list[str]:
++    problems = []
++    if record["timed_out"]:
++        problems.append(f"the run took longer than {record['limit_seconds']} s")
++    elif record["agent_exit"] != 0:
++        problems.append(f"claude exited {record['agent_exit']}")
++    if record["hard_stop"]:
++        problems.append(f"hard stop: {record['hard_stop']}")
++    if record["session_status"] != "completed":
++        problems.append(f"the session was not closed at R7 (status {record['session_status']!r})")
++    if record["open_block"].get("block"):
++        problems.append(f"open block {record['open_block']['block']}: {record['open_block'].get('why')}")
++    if record["deliverable"]["make_test"] != 0 or record["deliverable"]["subtract"] != 0:
++        problems.append(f"the deliverable fails in a clean clone: {record['deliverable']['output'][-200:]}")
++    return problems
++
++
++def run(base: Path, dry_run: bool) -> int:
++    for tool in ("claude", "git", "make"):
++        if shutil.which(tool) is None:
++            print(f"smoke: {tool} is not on PATH", file=sys.stderr)
++            return 2
++    if os.environ.get("ANTHROPIC_API_KEY"):
++        print("smoke: ANTHROPIC_API_KEY is set: the smoke run uses the subscription, never an API key", file=sys.stderr)
++        return 2
++    repo, spec, env = setup(base)
++    argv = agent_argv(spec)
++    if dry_run:
++        print(json.dumps({"cwd": str(repo), "argv": argv}, indent=1))
++        return 0
++    started = time.monotonic()
++    with open(base / "transcript.jsonl", "w") as out, open(base / "agent.stderr", "w") as err:
++        agent = subprocess.Popen(argv, cwd=repo, env=env, stdout=out, stderr=err, start_new_session=True)
++        try:
++            code, timed_out = agent.wait(timeout=LIMIT), False
++        except subprocess.TimeoutExpired:
++            code, timed_out = None, True
++        for sig in (15, 9):
++            try:
++                os.killpg(agent.pid, sig)
++            except ProcessLookupError:
++                break
++            time.sleep(1)
++    seconds = round(time.monotonic() - started, 1)
++    found = sessions(repo)
++    record = {
++        "cadence": subprocess.run(["git", "rev-parse", "HEAD"], cwd=ROOT, capture_output=True, text=True,
++                                  check=False).stdout.strip(),
++        "model": MODEL, "peer_model": PEER_MODEL, "seconds": seconds, "limit_seconds": LIMIT,
++        "timed_out": timed_out, "agent_exit": code,
++        "session_status": next((s.get("status") for s in found), None),
++        "hard_stop": next((s.get("hard_stop") for s in found if s.get("hard_stop")), None),
++        "open_block": open_block(repo, env),
++        "deliverable": deliverable(base, repo, env),
++    }
++    record["problems"] = judge(record)
++    record["ok"] = not record["problems"]
++    (base / "smoke.json").write_text(json.dumps(record, indent=1) + "\n", encoding="utf-8")
++    print(json.dumps(record, indent=1))
++    print(f"smoke: {'PASS' if record['ok'] else 'FAIL'} in {seconds} s (limit {LIMIT} s); sandbox {base}")
++    return 0 if record["ok"] else 1
++
++
++def main(argv: list[str] | None = None) -> int:
++    ap = argparse.ArgumentParser(description=__doc__.split("\n", 1)[0])
++    ap.add_argument("--keep", type=Path, help="keep the sandbox in this new directory")
++    ap.add_argument("--dry-run", action="store_true", help="set up the sandbox and print the agent command only")
++    args = ap.parse_args(argv)
++    if args.keep:
++        args.keep.mkdir(parents=True, exist_ok=False)
++        return run(args.keep.resolve(), args.dry_run)
++    with tempfile.TemporaryDirectory(prefix="cadence-smoke-") as tmp:
++        return run(Path(tmp), args.dry_run)
++
++
++if __name__ == "__main__":
++    sys.exit(main())
+diff --git a/stages.json b/stages.json
+index e7d7822..e72173e 100644
+--- a/stages.json
++++ b/stages.json
+@@ -88,24 +88,6 @@
+       "pack": "architecture",
+       "description": "Analyze domain boundaries and select relevant domain packs"
+     },
+-    {
+-      "slug": "plan-review",
+-      "block": "P3",
+-      "phase": "planning",
+-      "command": "/plan-review",
+-      "gate_script": "scripts/plan_review_gate.py",
+-      "manifest_type": "plan-review",
+-      "trigger": "always",
+-      "pack": "core",
+-      "description": "Staff-level review of plan readiness and blocking items",
+-      "writer_stages": [
+-        "plan-review"
+-      ],
+-      "inputs": [
+-        "plan"
+-      ],
+-      "round": "plan-review"
+-    },
+     {
+       "slug": "architecture-review-plan",
+       "block": "P5",
+@@ -168,6 +150,24 @@
+       "description": "Register and adjudicate approved deferred work with ticket links",
+       "round": "plan-review"
+     },
++    {
++      "slug": "plan-review",
++      "block": "P3",
++      "phase": "planning",
++      "command": "/plan-review",
++      "gate_script": "scripts/plan_review_gate.py",
++      "manifest_type": "plan-review",
++      "trigger": "always",
++      "pack": "core",
++      "description": "Staff-level review of plan readiness and blocking items; in a run with more plan reports (P2, P5, P6, P7, P8), it runs after them and carries their findings as its own must-fix items",
++      "writer_stages": [
++        "plan-review"
++      ],
++      "inputs": [
++        "plan"
++      ],
++      "aggregates": "plan-review"
++    },
+     {
+       "slug": "plan-update",
+       "block": "P4",
+@@ -205,7 +205,8 @@
+       "pack": "core",
+       "description": "TDD implementation with red-green-refactor loop",
+       "inputs": [
+-        "plan"
++        "plan",
++        "pr-review"
+       ]
+     },
+     {
+@@ -275,7 +276,9 @@
+       ],
+       "inputs": [
+         "pr-number"
+-      ]
++      ],
++      "round": "code-review",
++      "report": "benchmarks/*_code.json"
+     },
+     {
+       "slug": "cognitive-complexity",
+@@ -286,7 +289,9 @@
+       "manifest_type": "cognitive-complexity",
+       "trigger": "always",
+       "pack": "core",
+-      "description": "Fail a changed function over the cognitive complexity limit (each language with an analyzer) or the statement and branch-chain limits (Python), and a changed Python file over the duplication limit, when it is new or got worse"
++      "description": "Fail a changed function over the cognitive complexity limit (each language with an analyzer) or the statement and branch-chain limits (Python), and a changed Python file over the duplication limit, when it is new or got worse",
++      "round": "code-review",
++      "report": "gates/cognitive-complexity.json"
+     },
+     {
+       "slug": "final-consolidate",
+@@ -296,12 +301,14 @@
+       "gate_script": "scripts/final_consolidate.py --check",
+       "manifest_type": "consolidate",
+       "trigger": "always",
+-      "pack": "deferrals",
+-      "description": "Two-pass review consolidation (close pass then delta pass) via findings ledger",
++      "pack": "core",
++      "description": "After R1, R2 and R3 have written their reports: /pr-review-update carries all of them in one update of the PR review, one /spec-driven round fixes what it carries, and the gate checks that no must-fix stays open and the review covers HEAD",
+       "writer_stages": [
+         "pr-review-local",
+         "pr-review-update"
+-      ]
++      ],
++      "aggregates": "code-review",
++      "aggregator_command": "/pr-review-update"
+     },
+     {
+       "slug": "closure",
+diff --git a/tests/session/test_run_shape_full.py b/tests/session/test_run_shape_full.py
+index 0028da4..7e1e435 100644
+--- a/tests/session/test_run_shape_full.py
++++ b/tests/session/test_run_shape_full.py
+@@ -1,8 +1,9 @@
+ """ADR-0029: the two run shapes on a toy run, through the real gates, the walk and the stop guard.
+ 
+ core: A1, A5, P1, P3, P4, P9, E1, E4, R1, R2, R3, R5, R7 (no profile, or `"profile": "core"`).
+-full: core and A2, A3, P6, P7, P8. P3, P6, P7 and P8 run as one round after P1, and the one P4
+-answers each finding of each of their reports. P9 checks that the plan consumed all four.
++full: core and A2, A3, P6, P7, P8. P6, P7 and P8 run as one round after P1. P3 runs after them and carries
++each of their findings as one of its MF-n items (`## Aggregated findings`), and the one P4 answers the P3 review
++(owner, 2026-10-25). P9 checks that the plan consumed every report.
+ The toy project scales a recipe.
+ """
+ 
+@@ -25,8 +26,15 @@ from p3_loop import ledger, review_sha  # noqa: E402
+ from prompt_shape import write_delegation_record  # noqa: E402
+ 
+ CORE = ["A1", "A5", "P1", "P3", "P4", "P9", "E1", "E4", "R1", "R2", "R3", "R5", "R7"]
+-FULL = ["A1", "A2", "A3", "A5", "P1", "P3", "P6", "P7", "P8", "P4", "P9", "E1", "E4", "R1", "R2", "R3", "R5", "R7"]
+-ROUND = ["P3", "P6", "P7", "P8"]
++FULL = ["A1", "A2", "A3", "A5", "P1", "P6", "P7", "P8", "P3", "P4", "P9", "E1", "E4", "R1", "R2", "R3", "R5", "R7"]
++ROUND = ["P6", "P7", "P8"]
++# The P3 review of the full shape: its own MF-1, and one MF-n for each id of the other reports.
++AGGREGATED = ("## Aggregated findings\n\n| Block | Report | Id | Must-fix |\n|---|---|---|---|\n"
++              "| P6 | .context/adversarial/adversarial_cd-7_scale.md | B-1 | MF-2 |\n"
++              "| P7 | .context/benchmarks/cd-7_plan.json | cd-7-F01 | MF-3 |\n"
++              "| P8 | .context/deferrals/cd-7_deferral-register.md | D-1 | MF-4 |\n\n")
++CARRIED = ("- MF-2 (P6 B-1): a negative factor gives negative grams\n- MF-3 (P7 cd-7-F01): no test for a float factor\n"
++           "- MF-4 (P8 D-1): unit conversion ships in this PR\n")
+ 
+ 
+ class Toy:
+@@ -78,29 +86,41 @@ class Toy:
+                    "| 1 | `scale(100, 2)` returns 200 | `python3 -m pytest tests/test_scale.py::test_scale` |\n" + extra,
+                    "plan-create", "/plan-create cd-7")
+ 
+-    def the_round(self, p3_verdict: str = "READY WITH CHANGES") -> dict[str, Path]:
+-        """Each review of the round writes its report, with one finding each (P3 alone in the core)."""
+-        reports = {"P3": self.write("reviews/plan_cd-7_scale.md",
+-                                    f"RUN_BY_COMMAND: plan-review\nPipeline-Run: {self.run}\nTicket: cd-7\n\n"
+-                                    "## Must-fix items\n\n- MF-1: a zero factor is not tested\n\n"
+-                                    f"Verdict: {p3_verdict}\n", "plan-review", f"/plan-review {self.plan}")}
+-        if (self.repo / ".cadence.json").read_text(encoding="utf-8").find('"full"') < 0:
+-            return reports
+-        reports["P6"] = self.write("adversarial/adversarial_cd-7_scale.md",
+-                                   f"RUN_BY_SKILL: de-adversarial-reviewer\nMode: plan-gate\nPipeline-Run: {self.run}\n\n"
+-                                   "## Blocking issues\n\n### B-1. a negative factor gives negative grams\n\n"
+-                                   "Verdict: REQUEST CHANGES\n", "de-adversarial-reviewer",
+-                                   f"/de-adversarial-reviewer plan-gate {self.plan}")
+-        reports["P7"] = self.write("benchmarks/cd-7_plan.json", json.dumps({
+-            "RUN_BY_SKILL": "test-benchmark", "task_id": "cd-7", "Pipeline-Run": self.run, "scores": {},
+-            "findings": [{"id": "cd-7-F01", "severity": "must-fix", "evidence": "no test for a float factor"}]}),
+-            "test-benchmark-plan", f"/test-benchmark plan {self.plan}")
+-        reports["P8"] = self.write("deferrals/cd-7_deferral-register.md",
+-                                   "# Deferral register: cd-7\n\nTicket: cd-7\n\n## Approved deferrals\n\n"
+-                                   "No approved deferrals.\n\n## Deferrals rejected\n\n| # | Item | Why not deferred |\n"
+-                                   "|---|---|---|\n| 1 | unit conversion | it is in the ticket's scope |\n")
++    def the_round(self, p3_verdict: str = "READY WITH CHANGES", aggregate: bool = True) -> dict[str, Path]:
++        """Each review of the round writes its report, with one finding each, then P3 (P3 alone in the core).
++
++        In the full shape P3 comes last: with `aggregate`, its review carries each id of the other reports."""
++        reports: dict[str, Path] = {}
++        full = (self.repo / ".cadence.json").read_text(encoding="utf-8").find('"full"') >= 0
++        if full:
++            reports.update(self.other_reports())
++        carried = full and aggregate
++        reports["P3"] = self.write("reviews/plan_cd-7_scale.md",
++                                   f"RUN_BY_COMMAND: plan-review\nPipeline-Run: {self.run}\nTicket: cd-7\n\n"
++                                   + (AGGREGATED if carried else "")
++                                   + "## Must-fix items\n\n- MF-1: a zero factor is not tested\n"
++                                   + (CARRIED if carried else "")
++                                   + f"\nVerdict: {p3_verdict}\n", "plan-review", f"/plan-review {self.plan}")
+         return reports
+ 
++    def other_reports(self) -> dict[str, Path]:
++        """P6, P7 and P8 of the full shape, one finding each."""
++        return {
++            "P6": self.write("adversarial/adversarial_cd-7_scale.md",
++                             f"RUN_BY_SKILL: de-adversarial-reviewer\nMode: plan-gate\nPipeline-Run: {self.run}\n\n"
++                             "## Blocking issues\n\n### B-1. a negative factor gives negative grams\n\n"
++                             "Verdict: REQUEST CHANGES\n", "de-adversarial-reviewer",
++                             f"/de-adversarial-reviewer plan-gate {self.plan}"),
++            "P7": self.write("benchmarks/cd-7_plan.json", json.dumps({
++                "RUN_BY_SKILL": "test-benchmark", "task_id": "cd-7", "Pipeline-Run": self.run, "scores": {},
++                "findings": [{"id": "cd-7-F01", "severity": "must-fix", "evidence": "no test for a float factor"}]}),
++                "test-benchmark-plan", f"/test-benchmark plan {self.plan}"),
++            "P8": self.write("deferrals/cd-7_deferral-register.md",
++                             "# Deferral register: cd-7\n\nTicket: cd-7\n\n## Approved deferrals\n\n"
++                             "No approved deferrals.\n\n## Deferrals rejected\n\n| # | Item | Why not deferred |\n"
++                             "|---|---|---|\n| 1 | unit conversion | it is in the ticket's scope |\n"),
++        }
++
+     def p4(self, rows: dict[str, dict[str, str]], reports: dict[str, Path]) -> None:
+         body = "\n## Plan update 2026-10-24\n\nRUN_BY_COMMAND: plan-update\n"
+         body += "".join(ledger(rows[block], review_sha(reports[block])) for block in rows)
+@@ -165,10 +185,15 @@ def test_core_toy_run_goes_p3_then_one_p4_then_p9(tmp_path, run_hook):
+     assert "P9 (entry-invariant)" in reason and "/plan-review" not in reason
+ 
+ 
+-# --- full: the round in parallel, one P4 for all four reports -----------------------------------------
++# --- full: P6, P7, P8 in parallel, then P3 carries their findings, then one P4 for the P3 review -----
++
++
++P3_ANSWERS = {"MF-1": "Add the zero-factor test in Phase 1", "MF-2": "Reject a negative factor in Phase 1",
++              "MF-3": "trade-off: the toy takes int factors only; a float test adds nothing here",
++              "MF-4": "Unit conversion ships in Phase 2"}
+ 
+ 
+-def test_full_toy_run_dispatches_the_round_in_parallel(tmp_path, run_hook):
++def test_full_toy_run_dispatches_the_round_in_parallel_without_p3(tmp_path, run_hook):
+     toy = Toy(tmp_path, "full")
+     toy.through_p1()
+     report = toy.next()
+@@ -177,50 +202,103 @@ def test_full_toy_run_dispatches_the_round_in_parallel(tmp_path, run_hook):
+     assert "dispatch the plan-review round in parallel" in reason
+     for block in ROUND:
+         assert f"{block} `" in reason, reason
++    assert "P3 `" not in reason and "P3 reads every report of the round" in reason, reason
++
++
++def test_full_p3_runs_after_the_round_alone(tmp_path, run_hook):
++    toy = Toy(tmp_path, "full")
++    toy.through_p1()
++    toy.other_reports()
++    report = toy.next()
++    assert report["next"]["block"] == "P3" and [r["block"] for r in report["round"]] == ["P3"]
++    reason = toy.stop(run_hook)
++    assert "P3 (plan-review)" in reason and "P4" not in reason, reason
++
++
++def test_full_p3_gate_fails_until_its_review_carries_each_id_of_the_round(tmp_path):
++    toy = Toy(tmp_path, "full")
++    toy.through_p1()
++    toy.the_round(aggregate=False)
++    proc = run_py("scripts/plan_review_gate.py", "--check", cwd=toy.repo, CADENCE_GATES_READONLY="1")
++    assert proc.returncode == 1
++    for ident in ("B-1", "cd-7-F01", "D-1"):
++        assert ident in proc.stderr, proc.stderr
++    toy.the_round()
++    proc = run_py("scripts/plan_review_gate.py", "--check", cwd=toy.repo, CADENCE_GATES_READONLY="1")
++    assert proc.returncode == 0, proc.stderr
++
++
++def test_full_p3_gate_fails_when_a_carried_id_names_no_open_must_fix(tmp_path):
++    toy = Toy(tmp_path, "full")
++    toy.through_p1()
++    reports = toy.the_round()
++    text = reports["P3"].read_text(encoding="utf-8").replace("- MF-4 (P8 D-1): unit conversion ships in this PR\n", "")
++    reports["P3"].write_text(text, encoding="utf-8")
++    proc = run_py("scripts/plan_review_gate.py", "--check", cwd=toy.repo, CADENCE_GATES_READONLY="1")
++    assert proc.returncode == 1 and "D-1" in proc.stderr, proc.stderr
+ 
+ 
+-def test_full_p4_waits_for_the_round_then_reads_every_report(tmp_path, run_hook):
++def test_full_p4_answers_the_p3_review_alone(tmp_path, run_hook):
+     toy = Toy(tmp_path, "full")
+     toy.through_p1()
+     reports = toy.the_round()
+     report = toy.next()
+     assert report["next"]["block"] == "P4"
+     out = next(r["output"] for r in report["results"] if r["block"] == "P4")
+-    for ident in ("MF-1", "B-1", "cd-7-F01", "D-1"):  # the gate names each report of the round that is open
++    for ident in ("MF-1", "MF-2", "MF-3", "MF-4"):
+         assert ident in out, out
++    assert "adversarial_cd-7_scale.md" not in out, out  # P6's ids are answered through the P3 review
+     reason = toy.stop(run_hook)
+     assert "P4 (plan-update)" in reason and "/plan-review" not in reason and "/de-adversarial-reviewer" not in reason
+-    toy.p4({b: ANSWERS[b] for b in ("P3", "P6", "P7")}, reports)  # P8's rejected deferral is not answered
++    toy.p4({"P3": {k: v for k, v in P3_ANSWERS.items() if k != "MF-4"}}, reports)  # P8's id is not answered
+     reason = toy.stop(run_hook)
+-    assert "P4 (plan-update)" in reason and "D-1" in reason and "deferral-register" in reason
+-    toy.p4(ANSWERS, reports)
++    assert "P4 (plan-update)" in reason and "MF-4" in reason, reason
++    toy.p4({"P3": P3_ANSWERS}, reports)
+     reason = toy.stop(run_hook)
+     assert "P9 (entry-invariant)" in reason, reason
+ 
+ 
+-@pytest.mark.parametrize("block, rows, want", [
+-    ("P6", {"B-1": ""}, "does not answer B-1"),
+-    ("P7", {"cd-7-F01": "deferred:"}, "does not answer cd-7-F01"),
+-    ("P8", {}, "no row for D-1"),
++@pytest.mark.parametrize("rows, want", [
++    ({"MF-2": ""}, "does not answer MF-2"),
++    ({"MF-3": "deferred:"}, "does not answer MF-3"),
++    ({"MF-4": None}, "no row for MF-4"),
+ ])
+-def test_p9_fails_while_a_report_of_the_round_is_not_consumed(tmp_path, block, rows, want):
++def test_p9_fails_while_a_carried_finding_of_the_round_is_not_consumed(tmp_path, rows, want):
+     toy = Toy(tmp_path, "full")
+     toy.through_p1()
+     reports = toy.the_round()
+-    toy.p4({**ANSWERS, block: rows}, reports)
++    answers = {k: v for k, v in {**P3_ANSWERS, **rows}.items() if v is not None}
++    toy.p4({"P3": answers}, reports)
+     proc = run_py("scripts/entry_invariant.py", "--phase", "execution", cwd=toy.repo)
+     assert proc.returncode != 0
+     assert want in proc.stderr + proc.stdout
+ 
+ 
++def test_a_report_the_p3_review_does_not_carry_still_needs_its_own_ledger(tmp_path):
++    """Fail closed: with no `## Aggregated findings` row for an id, the plan answers that report itself (ADR-0029)."""
++    toy = Toy(tmp_path, "full")
++    toy.through_p1()
++    reports = toy.the_round(aggregate=False)
++    toy.p4({"P3": ANSWERS["P3"]}, reports)
++    proc = run_py("scripts/plan_update_gate.py", "--check", cwd=toy.repo, CADENCE_GATES_READONLY="1")
++    assert proc.returncode == 1
++    for ident in ("B-1", "cd-7-F01", "D-1"):
++        assert ident in proc.stderr, proc.stderr
++    toy.p4(ANSWERS, reports)
++    proc = run_py("scripts/plan_update_gate.py", "--check", cwd=toy.repo, CADENCE_GATES_READONLY="1")
++    assert proc.returncode == 0, proc.stderr
++
++
+ def test_an_unreadable_report_of_the_round_fails_closed(tmp_path):
+     toy = Toy(tmp_path, "full")
+     toy.through_p1()
+     reports = toy.the_round()
+     reports["P7"].write_text("{not json", encoding="utf-8")
+-    toy.p4(ANSWERS, reports)
++    toy.p4({"P3": P3_ANSWERS}, reports)
+     proc = run_py("scripts/plan_update_gate.py", "--check", cwd=toy.repo, CADENCE_GATES_READONLY="1")
+     assert proc.returncode == 1 and "cannot read cd-7_plan.json" in proc.stderr
++    proc = run_py("scripts/plan_review_gate.py", "--check", cwd=toy.repo, CADENCE_GATES_READONLY="1")
++    assert proc.returncode == 1 and "cannot read cd-7_plan.json" in proc.stderr
+ 
+ 
+ def test_before_the_round_the_stop_guard_names_the_open_block_not_p4(tmp_path, run_hook):
+@@ -231,19 +309,31 @@ def test_before_the_round_the_stop_guard_names_the_open_block_not_p4(tmp_path, r
+     assert "A5 (validate)" in reason and "P4" not in reason and "plan-update" not in reason, reason
+ 
+ 
+-# --- the P4 handoff names every report of the round (run 20261024-P2-cadence-haiku-full-2) ------------
++def test_after_the_round_before_p3_the_stop_guard_names_p3_not_p4(tmp_path, run_hook):
++    toy = Toy(tmp_path, "full")
++    toy.through_p1()
++    toy.other_reports()
++    reason = toy.stop(run_hook)
++    assert "P3 (plan-review)" in reason and "plan-update" not in reason, reason
+ 
+ 
+-@pytest.mark.parametrize("shape, blocks", [("core", ["P3"]), ("full", ROUND)])
+-def test_the_p4_packet_names_each_report_of_the_round(tmp_path, shape, blocks):
+-    """The hook rewrote each /plan-update to the packet command. With the P3 review alone in the packet, the
+-    one P4 update could not answer P6, P7 and P8, and the P4 gate could not pass."""
++# --- the P4 handoff (run 20261024-P2-cadence-haiku-full-2) --------------------------------------------
++
++
++@pytest.mark.parametrize("shape, aggregate, blocks", [
++    ("core", True, ["P3"]),
++    ("full", True, ["P3"]),  # the P3 review carries every id of the round: P4 answers it alone
++    ("full", False, ["P3", *ROUND]),  # it does not: the packet names each report of the round
++])
++def test_the_p4_packet_names_each_report_that_p4_answers(tmp_path, shape, aggregate, blocks):
++    """The hook rewrote each /plan-update to the packet command. With the P3 review alone in the packet and no
++    aggregated findings in it, the one P4 update could not answer P6, P7 and P8, and the P4 gate could not pass."""
+     import handoff_inputs  # noqa: PLC0415
+     import prompt_shape  # noqa: PLC0415
+ 
+     toy = Toy(tmp_path, shape)
+     toy.through_p1()
+-    reports = toy.the_round()
++    reports = toy.the_round(aggregate=aggregate)
+     session = json.loads(next((toy.ctx / "sessions" / "by-worktree").glob("*.json")).read_text(encoding="utf-8"))
+     run = handoff_inputs.Run(root=ROOT, ctx=toy.ctx, workspace=toy.repo, session=session)
+     packet, missing = handoff_inputs.packet_for("P4", run)
