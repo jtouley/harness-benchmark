@@ -1,0 +1,11 @@
+plan_create_gate exit=1
+FAIL  plan-create-gate
+  - plan-create: .context/plans/open-data-pipeline.plan.md: Command cost: `make stream DURATION=3600` runs 3600 s, over 600 s. Name a shorter command that reads the input to its end, or write `deferred: <spec line>`
+  - plan-create: .context/plans/open-data-pipeline.plan.md: Command cost: `make stream DURATION=3600` waits 3600 s, over 600 s. A span of data that the spec names is not a wall-clock time when the input can run faster than real time
+  - plan-create: .context/plans/open-data-pipeline.plan.md: Deliverables: the spec names `oracle_map.yml` as an output (spec line 41), and the first phase (Phase 0: Test runner and test layout) does not write it. Write a first version of each output file that the spec names in the first phase, and update it in the phase that cha
+  - plan-create: .context/plans/open-data-pipeline.plan.md: Deliverables: the spec names `DECISIONS.md` as an output (spec line 43), and the first phase (Phase 0: Test runner and test layout) does not write it. Write a first version of each output file that the spec names in the first phase, and update it in the phase that chang
+plan_update_gate exit=1
+FAIL  plan-update-gate
+  - plan-update: the round has no P6 plan-gate report. Run /de-adversarial-reviewer plan-gate on the plan
+  - plan-update: the round has no P7 plan scorecard. Run /test-benchmark plan
+  - plan-update: the round has no P8 deferral register (.context/deferrals/<task>_deferral-register.md)

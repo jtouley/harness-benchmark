@@ -1,0 +1,8 @@
+plan_create_gate exit=0
+OK  plan-create-gate
+plan_update_gate exit=1
+FAIL  plan-update-gate
+  - plan-create: .cursor/plans/spec_d0a5876e.plan.md: row '1a' has no item number
+  - plan-create: .cursor/plans/spec_d0a5876e.plan.md: row 5 does not quote item 5 ('edits and net bytes per wiki and per actor type (human, bot) for the replayed hour')
+  - plan-update: .cursor/plans/spec_d0a5876e.plan.md: Deliverables: the spec names `oracle_map.yml` as an output (spec line 41), and the first phase (Phase 1: Scaffold and unit layer) does not write it. Write a first version of each output file that the spec names in the first phase, and update it in the phase that changes it: a
+  - plan-update: .cursor/plans/spec_d0a5876e.plan.md: Deliverables: the spec names `DECISIONS.md` as an output (spec line 43), and the first phase (Phase 1: Scaffold and unit layer) does not write it. Write a first version of each output file that the spec names in the first phase, and update it in the phase that changes it: a r

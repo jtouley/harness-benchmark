@@ -1,0 +1,47 @@
+{
+ "head": "998515aa1ef2256989537d7c548138b687d7592e",
+ "commands": [
+  "make build"
+ ],
+ "ok": false,
+ "failed": {
+  "command": "make stream DURATION=400",
+  "code": 2,
+  "output": "`make stream DURATION=400` (in a fresh clone, run first): it exited 2; `make stream DURATION=400` (in a fresh clone, run first): the output out/marts is missing or holds no file with data"
+ },
+ "entries": [
+  {
+   "command": "make stream DURATION=400",
+   "code": 2,
+   "seconds": 412.2,
+   "input": "sse http://localhost:8099/v2/stream/recentchange",
+   "observed": {
+    "connections": 2,
+    "frames": 21520,
+    "most_resumes_from_one_id": 1,
+    "drained": true
+   },
+   "problems": [
+    "`make stream DURATION=400` (in a fresh clone, run first): it exited 2",
+    "`make stream DURATION=400` (in a fresh clone, run first): the output out/marts is missing or holds no file with data"
+   ],
+   "output": "9:00:48  14 of 15 SKIP test test_top_windows_en_wikipedia ............................... [\u001b[33mSKIP\u001b[0m]\n\u001b[0m09:00:48  15 of 15 SKIP test unique_combination_of_columns_mart_window_5min_window_start__wiki__namespace__actor_type  [\u001b[33mSKIP\u001b[0m]\n\u001b[0m09:00:48  \n\u001b[0m09:00:48  Finished running 3 external models, 2 incremental models, 10 data tests in 0 hours 0 minutes and 0.33 seconds (0.33s).\n\u001b[0m09:00:48  \n\u001b[0m09:00:48  \u001b[31mCompleted with 1 error, 0 partial successes, and 0 warnings:\u001b[0m\n\u001b[0m09:00:48  \n\u001b[0m09:00:48  \u001b[31mFailure in model fact_edit (models/star/fact_edit.sql)\u001b[0m\n\u001b[0m09:00:48    Runtime Error in model fact_edit (models/star/fact_edit.sql)\n  IO Error: No files found that match the pattern \"lake/sitematrix_sites/*.parquet\"\n  \n  LINE 17:     from read_parquet('lake/sitematrix_sites/*.parquet')\n                    ^\n\u001b[0m09:00:48  \n\u001b[0m09:00:48    compiled code at target/compiled/open_data_pipeline/models/star/fact_edit.sql\n\u001b[0m09:00:48  \n\u001b[0m09:00:48  Done. PASS=0 WARN=0 ERROR=1 SKIP=14 NO-OP=0 TOTAL=15\n\u001b[0m09:00:48  [\u001b[33mWARNING\u001b[0m][DeprecationsSummary]: Deprecated functionality\nSummary of encountered deprecations:\n- MissingArgumentsPropertyInGenericTestDeprecation: 3 occurrences\nTo see all deprecation instances instead of just the first occurrence of each,\nrun command again with the `--show-all-deprecations` flag. You may also need to\nrun with `--no-partial-parse` as some deprecations are only encountered during\nparsing.\nmake: *** [Makefile:14: stream] Error 1\n",
+   "fresh": true
+  },
+  {
+   "command": "make stream DURATION=400",
+   "code": 0,
+   "seconds": 410.1,
+   "input": "sse http://localhost:8099/v2/stream/recentchange",
+   "observed": {
+    "connections": 1,
+    "frames": 21503,
+    "most_resumes_from_one_id": 0,
+    "drained": true
+   },
+   "problems": [],
+   "output": ""
+  }
+ ],
+ "wall_seconds": 841.2
+}

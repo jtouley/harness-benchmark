@@ -1,0 +1,5 @@
+plan_create_gate exit=1
+FAIL  plan-create-gate
+  - plan-create: .context/plans/spec.plan.md: row 5 has no executable check: check 'tests/real/test_stream_checks.py::test_edits_and_bytes_per_wiki (source `fct_edit`, `is_late` ignored)' names no test runner or script path (pytest, python, make, tox, nox, uv run, npm/pnpm/yarn/bun test or run, npx, cargo, go test or vet, ruff, 
+plan_update_gate exit=0
+OK  plan-update-gate

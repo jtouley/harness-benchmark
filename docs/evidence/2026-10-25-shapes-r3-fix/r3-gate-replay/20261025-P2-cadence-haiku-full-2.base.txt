@@ -1,0 +1,11 @@
+plan_create_gate exit=1
+FAIL  plan-create-gate
+  - plan-create: .context/plans/spec.plan.md: row 2 does not quote item 2 ('The ten counties with the highest FY2024 obligations per person. Rank by the per-person value, highest first. A null value ranks last and is not in the top ten. A tie at tenth place keeps the county with the lower key (state FIPS, then county FIPS).')
+  - plan-create: .context/plans/spec.plan.md: row 2 has no executable check: check 'tests/real/test_check2_counties.py::test_top_ten_counties_per_person`, `tests/real/test_check2_counties.py::test_null_per_person_not_ranked` and `tests/real/test_check2_counties.py::test_tie_at_tenth_by_county_key' names no test runner or script 
+  - plan-create: .context/plans/spec.plan.md: row 4 has no executable check: check 'tests/real/test_check4_totals.py::test_county_state_source_sums` and `tests/real/test_check4_totals.py::test_check4_fails_when_rows_missing`. Month: 2024-03. Source total: the row count and the exact money sum of every row of the raw CSV files fo
+  - plan-create: .context/plans/spec.plan.md: row 5 has no executable check: check 'tests/real/test_replay_capture.py::test_edits_and_bytes_match_capture` (replayed hour, `make stream DURATION=<s>`), and `tests/fixtures/test_check5_stream.py::test_edits_and_bytes_per_wiki` (fixture)' names no test runner or script path (pytest, 
+  - plan-create: spec.plan.md lists A-21, A-22, A-23 under `## Assumptions`, but no delegated or blocking gap of spec_2026-10-25.md gives it. Each item is an A-<n> of the report; write other assumptions as plain text, or add the gap to the report
+plan_update_gate exit=1
+FAIL  plan-update-gate
+  - plan-update: plan_spec.md verdict is READY WITH CHANGES; spec.plan.md has no `## Revision ledger (review 53fb407b1c73)` for MF-1, MF-2, MF-3, MF-4, MF-5, MF-6, MF-7, MF-8, MF-9 of plan_spec.md. Run /plan-update spec.plan.md --from-review plan_spec.md. End the update with `## Revision ledger (review 53fb407b1c73)` and one row
+  - plan-update: P6 adversarial_spec.md verdict is REQUEST CHANGES; spec.plan.md has no `## Revision ledger (review 9a278c364dea)` for B-1, B-2, B-3, B-4, B-5, B-6, C-1, C-2, C-3, C-4, C-5, C-6, C-7, C-8, C-9 of adversarial_spec.md. Run /plan-update spec.plan.md --from-review adversarial_spec.md. End the update with `## Revision

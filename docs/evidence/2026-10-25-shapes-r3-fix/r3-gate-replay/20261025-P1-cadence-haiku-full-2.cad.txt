@@ -1,0 +1,9 @@
+plan_create_gate exit=0
+OK  plan-create-gate
+plan_update_gate exit=1
+FAIL  plan-update-gate
+  - plan-create: .context/plans/spec-open-data-pipeline.plan.md: Entry points row 1 (make build): the seconds are a whole number from 1 to 1800, not '1200 (estimate, timed in Phase 3)'
+  - plan-create: .context/plans/spec-open-data-pipeline.plan.md: Entry points row 2 (make stream DURATION=600): the seconds are a whole number from 1 to 1800, not '600 (consumer bound; the dbt stream build after it is added in Phase 4)'
+  - plan-create: .context/plans/spec-open-data-pipeline.plan.md: Entry points: the ticket names `make build`, and the table has no row for it
+  - plan-create: .context/plans/spec-open-data-pipeline.plan.md: Entry points: the ticket names `make stream`, and the table has no row for it
+  - plan-update: .context/plans/spec-open-data-pipeline.plan.md: Deliverables: the spec names `oracle_map.yml` as an output (spec line 41), and the first phase (Phase 1: Spike the pinned stack and the source fields) does not write it. Write a first version of each output file that the spec names in the first phase, and update it

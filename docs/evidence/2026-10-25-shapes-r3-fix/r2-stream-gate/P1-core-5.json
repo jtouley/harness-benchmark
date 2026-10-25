@@ -1,0 +1,50 @@
+{
+ "head": "6074d89548235473471f0976144b7fcdf1b5024b",
+ "commands": [
+  "make build"
+ ],
+ "ok": false,
+ "failed": {
+  "command": "make stream DURATION=400",
+  "code": 0,
+  "output": "`make stream DURATION=400` (in a fresh clone, run first): it connected 14 times with one Last-Event-ID and did not get past that position (16 connections, 16126 event frames). Each record that it cannot use is a counted skip or a dead-letter, and the position moves past it; `make stream DURATION=400` (in a fresh clone, run first): it did not read to the end of its input: no connection got only comments for 10 s after its last event frame (16 connections, 16126 event frames). Give the run enough time to drain the input, or fix the reader; `make stream DURATION=400`: it connected 15 times with one Last-Event-ID and did not get past that position (16 connections, 16143 event frames). Each record that it cannot use is a counted skip or a dead-letter, and the position moves past it; `make stream DURATION=400`: it did not read to the end of its input: no connection got only comments for 10 s after its last event frame (16 connections, 16143 event frames). Give the run enough time to drain the input, or fix the reader"
+ },
+ "entries": [
+  {
+   "command": "make stream DURATION=400",
+   "code": 0,
+   "seconds": 415.8,
+   "input": "sse http://localhost:8099/v2/stream/recentchange",
+   "observed": {
+    "connections": 16,
+    "frames": 16126,
+    "most_resumes_from_one_id": 14,
+    "drained": false
+   },
+   "problems": [
+    "`make stream DURATION=400` (in a fresh clone, run first): it connected 14 times with one Last-Event-ID and did not get past that position (16 connections, 16126 event frames). Each record that it cannot use is a counted skip or a dead-letter, and the position moves past it",
+    "`make stream DURATION=400` (in a fresh clone, run first): it did not read to the end of its input: no connection got only comments for 10 s after its last event frame (16 connections, 16126 event frames). Give the run enough time to drain the input, or fix the reader"
+   ],
+   "output": "s_5min_server_name ................ [RUN]\n\u001b[0m09:00:51  24 of 31 PASS not_null_mart_edit_windows_5min_actor_type ....................... [\u001b[32mPASS\u001b[0m in 0.08s]\n\u001b[0m09:00:51  29 of 31 START test not_null_mart_edit_windows_5min_wiki ....................... [RUN]\n\u001b[0m09:00:51  27 of 31 PASS not_null_mart_edit_windows_5min_net_bytes ........................ [\u001b[32mPASS\u001b[0m in 0.08s]\n\u001b[0m09:00:51  30 of 31 START test not_null_mart_edit_windows_5min_window_start_epoch ......... [RUN]\n\u001b[0m09:00:51  26 of 31 PASS not_null_mart_edit_windows_5min_edit_count ....................... [\u001b[32mPASS\u001b[0m in 0.12s]\n\u001b[0m09:00:51  31 of 31 START test not_null_mart_edit_windows_5min_window_start_utc ........... [RUN]\n\u001b[0m09:00:51  28 of 31 PASS not_null_mart_edit_windows_5min_server_name ...................... [\u001b[32mPASS\u001b[0m in 0.09s]\n\u001b[0m09:00:51  29 of 31 PASS not_null_mart_edit_windows_5min_wiki ............................. [\u001b[32mPASS\u001b[0m in 0.08s]\n\u001b[0m09:00:51  30 of 31 PASS not_null_mart_edit_windows_5min_window_start_epoch ............... [\u001b[32mPASS\u001b[0m in 0.10s]\n\u001b[0m09:00:51  31 of 31 PASS not_null_mart_edit_windows_5min_window_start_utc ................. [\u001b[32mPASS\u001b[0m in 0.05s]\n\u001b[0m09:00:51  \n\u001b[0m09:00:51  Finished running 2 incremental models, 1 table model, 22 data tests, 5 unit tests, 1 view model in 0 hours 0 minutes and 1.84 seconds (1.84s).\n\u001b[0m09:00:51  \n\u001b[0m09:00:51  \u001b[32mCompleted successfully\u001b[0m\n\u001b[0m09:00:51  \n\u001b[0m09:00:51  Done. PASS=31 WARN=0 ERROR=0 SKIP=0 NO-OP=0 TOTAL=31\n",
+   "fresh": true
+  },
+  {
+   "command": "make stream DURATION=400",
+   "code": 0,
+   "seconds": 409.6,
+   "input": "sse http://localhost:8099/v2/stream/recentchange",
+   "observed": {
+    "connections": 16,
+    "frames": 16143,
+    "most_resumes_from_one_id": 15,
+    "drained": false
+   },
+   "problems": [
+    "`make stream DURATION=400`: it connected 15 times with one Last-Event-ID and did not get past that position (16 connections, 16143 event frames). Each record that it cannot use is a counted skip or a dead-letter, and the position moves past it",
+    "`make stream DURATION=400`: it did not read to the end of its input: no connection got only comments for 10 s after its last event frame (16 connections, 16143 event frames). Give the run enough time to drain the input, or fix the reader"
+   ],
+   "output": "_built_through_seq ................ [\u001b[32mPASS\u001b[0m in 0.08s]\n\u001b[0m09:08:07  24 of 31 PASS not_null_mart_edit_windows_5min_actor_type ....................... [\u001b[32mPASS\u001b[0m in 0.09s]\n\u001b[0m09:08:07  27 of 31 PASS not_null_mart_edit_windows_5min_net_bytes ........................ [\u001b[32mPASS\u001b[0m in 0.08s]\n\u001b[0m09:08:07  28 of 31 START test not_null_mart_edit_windows_5min_server_name ................ [RUN]\n\u001b[0m09:08:07  29 of 31 START test not_null_mart_edit_windows_5min_wiki ....................... [RUN]\n\u001b[0m09:08:07  30 of 31 START test not_null_mart_edit_windows_5min_window_start_epoch ......... [RUN]\n\u001b[0m09:08:07  31 of 31 START test not_null_mart_edit_windows_5min_window_start_utc ........... [RUN]\n\u001b[0m09:08:07  28 of 31 PASS not_null_mart_edit_windows_5min_server_name ...................... [\u001b[32mPASS\u001b[0m in 0.07s]\n\u001b[0m09:08:07  29 of 31 PASS not_null_mart_edit_windows_5min_wiki ............................. [\u001b[32mPASS\u001b[0m in 0.07s]\n\u001b[0m09:08:07  30 of 31 PASS not_null_mart_edit_windows_5min_window_start_epoch ............... [\u001b[32mPASS\u001b[0m in 0.07s]\n\u001b[0m09:08:07  31 of 31 PASS not_null_mart_edit_windows_5min_window_start_utc ................. [\u001b[32mPASS\u001b[0m in 0.07s]\n\u001b[0m09:08:07  \n\u001b[0m09:08:07  Finished running 2 incremental models, 1 table model, 22 data tests, 5 unit tests, 1 view model in 0 hours 0 minutes and 1.70 seconds (1.70s).\n\u001b[0m09:08:07  \n\u001b[0m09:08:07  \u001b[32mCompleted successfully\u001b[0m\n\u001b[0m09:08:07  \n\u001b[0m09:08:07  Done. PASS=31 WARN=0 ERROR=0 SKIP=0 NO-OP=0 TOTAL=31\n"
+  }
+ ],
+ "wall_seconds": 852.8
+}

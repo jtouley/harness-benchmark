@@ -1,0 +1,8 @@
+plan_create_gate exit=1
+FAIL  plan-create-gate
+  - plan-create: .context/plans/spec-open-data-pipeline.plan.md: Entry points row 1 (make build): the seconds are a whole number from 1 to 1800, not '1200 (estimate, timed in Phase 3)'
+  - plan-create: .context/plans/spec-open-data-pipeline.plan.md: Entry points row 2 (make stream DURATION=600): the seconds are a whole number from 1 to 1800, not '600 (consumer bound; the dbt stream build after it is added in Phase 4)'
+  - plan-create: .context/plans/spec-open-data-pipeline.plan.md: Entry points: the ticket names `make build`, and the table has no row for it
+  - plan-create: .context/plans/spec-open-data-pipeline.plan.md: Entry points: the ticket names `make stream`, and the table has no row for it
+plan_update_gate exit=0
+OK  plan-update-gate

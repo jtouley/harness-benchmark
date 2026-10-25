@@ -1,0 +1,53 @@
+{
+ "head": "aa9a497ffcc924cb6549d8110a2d65a3b53189ee",
+ "commands": [
+  "make build"
+ ],
+ "ok": false,
+ "failed": {
+  "command": "make stream DURATION=400",
+  "code": 2,
+  "output": "`make stream DURATION=400` (in a fresh clone, run first): it exited 2; `make stream DURATION=400` (in a fresh clone, run first): it printed a Python traceback; `make stream DURATION=400` (in a fresh clone, run first): it did not read to the end of its input: no connection got only comments for 10 s after its last event frame (1 connections, 15841 event frames). Give the run enough time to drain the input, or fix the reader; `make stream DURATION=400` (in a fresh clone, run first): the output out/marts is missing or holds no file with data; `make stream DURATION=400`: it exited 2; `make stream DURATION=400`: it printed a Python traceback; `make stream DURATION=400`: it did not read to the end of its input: no connection got only comments for 10 s after its last event frame (1 connections, 15841 event frames). Give the run enough time to drain the input, or fix the reader"
+ },
+ "entries": [
+  {
+   "command": "make stream DURATION=400",
+   "code": 2,
+   "seconds": 48.7,
+   "input": "sse http://localhost:8099/v2/stream/recentchange",
+   "observed": {
+    "connections": 1,
+    "frames": 15841,
+    "most_resumes_from_one_id": 0,
+    "drained": false
+   },
+   "problems": [
+    "`make stream DURATION=400` (in a fresh clone, run first): it exited 2",
+    "`make stream DURATION=400` (in a fresh clone, run first): it printed a Python traceback",
+    "`make stream DURATION=400` (in a fresh clone, run first): it did not read to the end of its input: no connection got only comments for 10 s after its last event frame (1 connections, 15841 event frames). Give the run enough time to drain the input, or fix the reader",
+    "`make stream DURATION=400` (in a fresh clone, run first): the output out/marts is missing or holds no file with data"
+   ],
+   "output": "h(pipeline), **handlers)\n  File \"/tmp/claude-0/-home-user/fd6221f8-f79d-5dc4-b0f6-aa7efcbaf9ac/scratchpad/tmp1/cadence-fresh-nlannpui/tree/engine/run.py\", line 114, in run_pipeline\n    _run_steps(path, spec.get(\"sinks\", []), sinks or {}, \"kind\", tables, keep=False)\n  File \"/tmp/claude-0/-home-user/fd6221f8-f79d-5dc4-b0f6-aa7efcbaf9ac/scratchpad/tmp1/cadence-fresh-nlannpui/tree/engine/run.py\", line 97, in _run_steps\n    result = handler(step, tables)\n             ^^^^^^^^^^^^^^^^^^^^^\n  File \"/tmp/claude-0/-home-user/fd6221f8-f79d-5dc4-b0f6-aa7efcbaf9ac/scratchpad/tmp1/cadence-fresh-nlannpui/tree/engine/stream.py\", line 164, in write\n    for item in source.events(position.last_event_id):\n  File \"/tmp/claude-0/-home-user/fd6221f8-f79d-5dc4-b0f6-aa7efcbaf9ac/scratchpad/tmp1/cadence-fresh-nlannpui/tree/engine/stream.py\", line 63, in events\n    event = json.loads(data)\n            ^^^^^^^^^^^^^^^^\n  File \"/usr/lib/python3.12/json/__init__.py\", line 346, in loads\n    return _default_decoder.decode(s)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/usr/lib/python3.12/json/decoder.py\", line 337, in decode\n    obj, end = self.raw_decode(s, idx=_w(s, 0).end())\n               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/usr/lib/python3.12/json/decoder.py\", line 353, in raw_decode\n    obj, end = self.scan_once(s, idx)\n               ^^^^^^^^^^^^^^^^^^^^^^\njson.decoder.JSONDecodeError: Unterminated string starting at: line 1 column 444 (char 443)\nmake: *** [Makefile:17: stream] Error 1\n",
+   "fresh": true
+  },
+  {
+   "command": "make stream DURATION=400",
+   "code": 2,
+   "seconds": 43.3,
+   "input": "sse http://localhost:8099/v2/stream/recentchange",
+   "observed": {
+    "connections": 1,
+    "frames": 15841,
+    "most_resumes_from_one_id": 0,
+    "drained": false
+   },
+   "problems": [
+    "`make stream DURATION=400`: it exited 2",
+    "`make stream DURATION=400`: it printed a Python traceback",
+    "`make stream DURATION=400`: it did not read to the end of its input: no connection got only comments for 10 s after its last event frame (1 connections, 15841 event frames). Give the run enough time to drain the input, or fix the reader"
+   ],
+   "output": "h(pipeline), **handlers)\n  File \"/tmp/claude-0/-home-user/fd6221f8-f79d-5dc4-b0f6-aa7efcbaf9ac/scratchpad/tmp1/cadence-clean-kb5v3uy6/tree/engine/run.py\", line 114, in run_pipeline\n    _run_steps(path, spec.get(\"sinks\", []), sinks or {}, \"kind\", tables, keep=False)\n  File \"/tmp/claude-0/-home-user/fd6221f8-f79d-5dc4-b0f6-aa7efcbaf9ac/scratchpad/tmp1/cadence-clean-kb5v3uy6/tree/engine/run.py\", line 97, in _run_steps\n    result = handler(step, tables)\n             ^^^^^^^^^^^^^^^^^^^^^\n  File \"/tmp/claude-0/-home-user/fd6221f8-f79d-5dc4-b0f6-aa7efcbaf9ac/scratchpad/tmp1/cadence-clean-kb5v3uy6/tree/engine/stream.py\", line 164, in write\n    for item in source.events(position.last_event_id):\n  File \"/tmp/claude-0/-home-user/fd6221f8-f79d-5dc4-b0f6-aa7efcbaf9ac/scratchpad/tmp1/cadence-clean-kb5v3uy6/tree/engine/stream.py\", line 63, in events\n    event = json.loads(data)\n            ^^^^^^^^^^^^^^^^\n  File \"/usr/lib/python3.12/json/__init__.py\", line 346, in loads\n    return _default_decoder.decode(s)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/usr/lib/python3.12/json/decoder.py\", line 337, in decode\n    obj, end = self.raw_decode(s, idx=_w(s, 0).end())\n               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/usr/lib/python3.12/json/decoder.py\", line 353, in raw_decode\n    obj, end = self.scan_once(s, idx)\n               ^^^^^^^^^^^^^^^^^^^^^^\njson.decoder.JSONDecodeError: Unterminated string starting at: line 1 column 444 (char 443)\nmake: *** [Makefile:17: stream] Error 1\n"
+  }
+ ],
+ "wall_seconds": 107.8
+}

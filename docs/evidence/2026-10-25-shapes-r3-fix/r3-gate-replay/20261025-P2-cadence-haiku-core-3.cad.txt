@@ -1,0 +1,7 @@
+plan_create_gate exit=0
+OK  plan-create-gate
+plan_update_gate exit=1
+FAIL  plan-update-gate
+  - plan-create: .context/plans/spec.plan.md: row 5 has no executable check: check 'tests/real/test_stream_checks.py::test_edits_and_bytes_per_wiki (source `fct_edit`, `is_late` ignored)' names no test runner or script path (pytest, python, make, tox, nox, uv run, npm/pnpm/yarn/bun test or run, npx, cargo, go test or vet, ruff, 
+  - plan-update: .context/plans/spec.plan.md: Deliverables: the spec names `oracle_map.yml` as an output (spec line 41), and the first phase (Phase 1: Engine core and YAML schema) does not write it. Write a first version of each output file that the spec names in the first phase, and update it in the phase that changes it: a run
+  - plan-update: .context/plans/spec.plan.md: Deliverables: the spec names `DECISIONS.md` as an output (spec line 43), and the first phase (Phase 1: Engine core and YAML schema) does not write it. Write a first version of each output file that the spec names in the first phase, and update it in the phase that changes it: a run t
