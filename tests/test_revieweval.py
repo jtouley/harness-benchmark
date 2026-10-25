@@ -88,7 +88,6 @@ def test_compare_reads_a_workspace(tmp_path: Path) -> None:
     assert set(got["verdicts"]["new_skill"]) == {"old_skill"}
 
 
-
 def _layout(work: Path, iteration: str, *cases: str) -> list[str]:
     compare.layout(argparse.Namespace(work=work, iteration=iteration, cadence=work, config=["builtin=code-review"],
                                       baseline=["builtin"], runs=1, cases=list(cases)))
@@ -127,3 +126,17 @@ def test_layout_never_rewrites_an_iteration_and_runs_clone_a_tree_with_base(tmp_
     with pytest.raises(SystemExit, match="no `base` branch"):
         compare.setup(old)
     assert not (old / "repo").exists()
+    subprocess.run(["git", "clone", "-q", "-b", "review", str(built / "repo"), str(old / "repo")], check=True)
+    with pytest.raises(SystemExit, match="clone .* has no `base` branch"):  # what #130's failed setup left behind
+        compare.setup(old)
+    missing = tmp_path / "it" / names[0] / "builtin" / "run-missing"
+    missing.mkdir()
+    (missing / "source").write_text(f"{tmp_path / 'nowhere'}\n")
+    with pytest.raises(SystemExit, match="is not a git clone"):
+        compare.setup(missing)
+    (tmp_path / "it" / "dispatch.jsonl").unlink()  # a half-written iteration is not rewritten either
+    with pytest.raises(SystemExit, match="exists"):
+        _layout(tmp_path, "it")
+    compare.layout(argparse.Namespace(work=tmp_path, iteration="it3", cadence=tmp_path, config=["b=code-review"],
+                                      baseline=[], runs=1, cases=None))
+    assert len((tmp_path / "it3" / "dispatch.jsonl").read_text().splitlines()) == 2 * len(names)

@@ -140,12 +140,13 @@ def layout(args) -> None:
     root = args.work / args.iteration
     configs = dict(c.split("=", 1) for c in args.config)
     every = cases()
-    unknown = sorted(set(args.cases) - {c["name"] for c in every})
+    wanted = args.cases or []
+    unknown = sorted(set(wanted) - {c["name"] for c in every})
     if unknown:
         raise SystemExit(f"unknown cases: {', '.join(unknown)}")
-    if (root / "dispatch.jsonl").exists():  # never rewrite an iteration's run list, prompts or run folders
-        raise SystemExit(f"{root / 'dispatch.jsonl'} exists: lay out under a new --iteration")
-    picked = [c for c in every if not args.cases or c["name"] in args.cases]
+    if root.exists():  # never rewrite an iteration's run list, prompts or run folders, even a half-written one
+        raise SystemExit(f"{root} exists: lay out under a new --iteration")
+    picked = [c for c in every if not wanted or c["name"] in wanted]
     dispatch = []
     for case in picked:
         cdir = root / case["name"]
@@ -185,17 +186,25 @@ def layout(args) -> None:
           f"{root / 'dispatch.jsonl'}")
 
 
-def has_base(repo: Path) -> bool:
-    return subprocess.run(["git", "--git-dir", str(repo / ".git"), "rev-parse", "-q", "--verify", "refs/heads/base"],
-                          capture_output=True).returncode == 0
+def require_base(repo: Path, what: str) -> None:
+    """Stop unless `repo` is a git clone with a local `base` branch (#130 laid runs out from built/repo, which has none)."""
+    if not (repo / ".git").exists():
+        raise SystemExit(f"{what} {repo} is not a git clone")
+    r = subprocess.run(["git", "--git-dir", str(repo / ".git"), "rev-parse", "-q", "--verify", "refs/heads/base"],
+                       capture_output=True, text=True)
+    if r.returncode == 1 and not r.stderr.strip():
+        raise SystemExit(f"{what} {repo} has no `base` branch: lay this run out again under a new --iteration")
+    if r.returncode:
+        raise SystemExit(f"git could not read {what} {repo}: {r.stderr.strip()}")
 
 
 def setup(run: Path) -> None:
     """The run's own clone of its case's tree (operator step, before the run's first dispatch)."""
-    if not (run / "repo").exists():
+    if (run / "repo").exists():
+        require_base(run / "repo", "the run's clone")
+    else:
         src = (run / "source").read_text().strip()
-        if not has_base(Path(src)):  # #130 laid runs out from built/repo, a clone with no `base`
-            raise SystemExit(f"{src} has no `base` branch: lay this run out again under a new --iteration")
+        require_base(Path(src), "the source")
         subprocess.run(["git", "clone", "-q", "-b", "review", src, str(run / "repo")], check=True)
         subprocess.run(["git", "-C", str(run / "repo"), "branch", "-q", "base", "origin/base"], check=True)
 
