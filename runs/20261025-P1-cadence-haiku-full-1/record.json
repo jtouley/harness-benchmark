@@ -1,0 +1,157 @@
+{
+ "api_error": null,
+ "arm": "cadence",
+ "batch": "2026-10-25-shapes-r3",
+ "cadence": {
+  "published_in": [
+   "origin/main"
+  ],
+  "repo": "https://github.com/jtouley/cadence",
+  "sha": "9fafe099aaef7e53a5cd896c3d550d1be82c9154",
+  "tree": "ff1d7462b4c793b23abc467df4d2fd6df12da1c5",
+  "tree_clean": true
+ },
+ "claude_version": "2.1.310",
+ "command": [
+  "uv",
+  "run",
+  "-q",
+  "--frozen",
+  "--project",
+  "/var/tmp/run-one/20261025-P1-cadence-haiku-full-1/hb",
+  "python",
+  "/var/tmp/run-one/20261025-P1-cadence-haiku-full-1/hb/scripts/host_trial.py",
+  "P1",
+  "--out",
+  "/var/tmp/run-one/20261025-P1-cadence-haiku-full-1/run/20261025-P1-cadence-haiku-full-1",
+  "--model",
+  "claude-haiku-5-5",
+  "--auth",
+  "proxy",
+  "--plugin-dir",
+  "/var/tmp/run-one/20261025-P1-cadence-haiku-full-1/plugin",
+  "--peer-model",
+  "haiku",
+  "--agent-cap",
+  "21600",
+  "--shape",
+  "full",
+  "--grader-root",
+  "/var/tmp/run-one/20261025-P1-cadence-haiku-full-1/grader"
+ ],
+ "cost": {
+  "list_usd": "1.236012",
+  "reported_usd": 4.510713289999997,
+  "tokens": {
+   "cache_read": 77482702,
+   "cache_write": 1378729,
+   "input": 1254,
+   "output": 577437
+  }
+ },
+ "counts": {
+  "counts": true,
+  "why": "driver run on a clean published plugin tree"
+ },
+ "ended_at": "2026-10-25T08:31:56Z",
+ "exit_code": 0,
+ "graded": {
+  "commit": "4a7c1d478b899757d07c9927c4e4a444fe32377e",
+  "ref": "refs/graded/20261025-P1-cadence-haiku-full-1"
+ },
+ "isolation": {
+  "auth": "proxy",
+  "contact": [],
+  "cwd": "/var/tmp/run-one/20261025-P1-cadence-haiku-full-1/run/20261025-P1-cadence-haiku-full-1",
+  "cwd_contents": [
+   "driver.out",
+   "home/",
+   "spec/"
+  ],
+  "fresh_home": true,
+  "home": "/var/tmp/run-one/20261025-P1-cadence-haiku-full-1/run/20261025-P1-cadence-haiku-full-1/home",
+  "method": "host",
+  "other_cadence_checkouts": []
+ },
+ "kind": "benchmark",
+ "model_requested": "claude-haiku-5-5",
+ "models_served": [
+  "claude-haiku-5-5"
+ ],
+ "provenance": {
+  "evidence": [],
+  "source": "driver"
+ },
+ "request_id": "P1-spec",
+ "run_id": "20261025-P1-cadence-haiku-full-1",
+ "schema": 1,
+ "session_id": "3bf43993-0662-4b17-905a-5e9dbcc791ab",
+ "shape": "full",
+ "spec": {
+  "path": "/var/tmp/run-one/20261025-P1-cadence-haiku-full-1/run/20261025-P1-cadence-haiku-full-1/spec/spec.md",
+  "prompt": "/cadence /var/tmp/run-one/20261025-P1-cadence-haiku-full-1/run/20261025-P1-cadence-haiku-full-1/spec/spec.md",
+  "sha256": "b37e957aa5ab754aaa3c4527985e0b44a237ae2357ee2d37a5d8da28041969e9"
+ },
+ "started_at": "2026-10-25T07:06:04Z",
+ "stop_point": {
+  "block": "A1",
+  "reason": "hard stop context: orchestrator context 94790 tokens over max_tokens 90000; P9 and E4 onward not run; P1 gate fails on acceptance rows (issue .context/issues/p1-acceptance-rows.md) (FAIL  no active cadence session)"
+ },
+ "task": "P1",
+ "timing": {
+  "agent_active_seconds": 4965.156,
+  "agent_wall_seconds": 4966.7,
+  "blocks": {
+   "de-adversarial-reviewer": {
+    "calls": 1,
+    "seconds": 91.532,
+    "unfinished": 0
+   },
+   "plan-create": {
+    "calls": 1,
+    "seconds": 307.055,
+    "unfinished": 0
+   },
+   "plan-review": {
+    "calls": 1,
+    "seconds": 79.72,
+    "unfinished": 0
+   },
+   "plan-update": {
+    "calls": 1,
+    "seconds": 160.353,
+    "unfinished": 0
+   },
+   "spec-driven": {
+    "calls": 2,
+    "seconds": 3799.559,
+    "unfinished": 0
+   },
+   "test-benchmark-plan": {
+    "calls": 1,
+    "seconds": 73.588,
+    "unfinished": 0
+   },
+   "vibe-test": {
+    "calls": 1,
+    "seconds": 201.747,
+    "unfinished": 0
+   }
+  },
+  "cap_seconds": 21600,
+  "hit_cap": false,
+  "run_wall_seconds": 5152.044
+ },
+ "transcript": {
+  "bytes": 5770522,
+  "path": "blobs/8be2b6ba54ff18422dc9e2cad39046199c0216bb8beaed1355da16125037acf5.gz",
+  "sha256": "8be2b6ba54ff18422dc9e2cad39046199c0216bb8beaed1355da16125037acf5",
+  "store": "git:jtouley/harness-benchmark@runs-store"
+ },
+ "tree": {
+  "bytes": 4277165,
+  "path": "blobs/e90ca0b65a03ddb1df07c194ed9a2eaa5a0b22125858a76ee03160593e31ca25.gz",
+  "sha256": "e90ca0b65a03ddb1df07c194ed9a2eaa5a0b22125858a76ee03160593e31ca25",
+  "store": "git:jtouley/harness-benchmark@runs-store"
+ }
+}
