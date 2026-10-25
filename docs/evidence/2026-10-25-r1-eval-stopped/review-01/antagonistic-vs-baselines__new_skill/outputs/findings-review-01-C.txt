@@ -1,0 +1,194 @@
+ANTAGONISTIC CODE REVIEW, REVIEWER C
+====================================
+
+Change under review: branch `review` against `base`
+Tree: /var/tmp/revieweval/antagonistic-vs-baselines/review-01/new_skill/run-1/repo (own copy, clean at end)
+Build evidence: /var/tmp/revieweval/antagonistic-vs-baselines/review-01/build.log (make build and make stream, both exit 0)
+
+Scope of what I ran
+- Did not run make build again. Read build.log (head and tail).
+- Ran the offline unit tests with .venv/bin/python -m unittest, excluding tests.test_rerun (that test runs make build).
+  Result: 48 tests OK, 1 skipped (test_consumer_replayAtLocalUrl, live replay not running).
+- Recomputed the USAspending and Census inputs directly from data/raw in memory (no writes).
+- Fuzzed the obligations_per_person macro (DuckDB, from .venv) against a Decimal reference.
+- Ran small probes of the stream consumer against a local fake SSE server and direct calls. Probe files were removed.
+- No out/ or lake/ exists in my copy, so the published marts were not inspected. Their pass/fail status comes from build.log only.
+
+Verdict
+The batch half (USAspending, Census, sitematrix, the monthly and award marts) is numerically sound on the data I checked.
+The stream consumer is not ready. A single malformed event can kill the run, and a malformed HTTP status line can too.
+Several published-contract issues need a decision or a fix before this is accepted.
+
+Severity key: HIGH = crash or wrong output on plausible input. MEDIUM = wrong or misleading published data, or a
+documented behavior that does not hold. LOW = latent, cosmetic, or test hygiene.
+
+
+HIGH
+----
+
+F1  One malformed event kills the stream run (crash, not skip)
+    Where: pipeline/stream_consumer.py line 200 (event_id in self.seen), line 206 (row["type"] in EDIT_TYPES),
+           and the docstring at line 271 that says one bad event does not stop the stream.
+    What: _field_problem (lines 253-267) only checks timestamp, length and meta type. Fields used as set or dict keys
+          or sent to the pipeline are not checked.
+    Verified:
+      - type = ["edit"] -> TypeError: unhashable type: 'list', propagates out of run(). Run aborts.
+      - meta.id = ["x"] -> TypeError in _accept (direct call). Run aborts.
+      - namespace = 10**30 -> dlt raises PipelineStepFailed at step=extract when the batch is flushed. Run aborts.
+    Tests: test_stream_consumer.py lines 69-81 cover only length and timestamp.
+    Author fix: validate every field the consumer uses (type and meta.id str; namespace in bigint range; wiki and
+    server_name str or null; bot coerced consistently) and add one test per field.
+
+F2  Malformed HTTP status line escapes and kills the run
+    Where: pipeline/stream_consumer.py lines 157-160. Only OSError is caught around _connect(). The HTTPException
+           catch at line 171 is inside the read loop, not around the connect.
+    Verified: a server answering "HTTP/1.1 ??? broken" raises http.client.BadStatusLine out of run().
+    Author fix: catch (OSError, http.client.HTTPException) at line 159 and add a test with a raw socket server.
+
+
+MEDIUM
+------
+
+F3  Time-based batch flush does not run during heartbeat-only stretches
+    Where: pipeline/stream_consumer.py lines 169-170 and 214-217. _batch_full() is only evaluated after an accepted
+           event. Heartbeat lines produce no (id, data) tuple, so the check is never reached in a quiet stretch.
+    Verified: one event, batch_seconds=0.2, then heartbeats only. The flush happened at 1.56 s (the deadline),
+              not near 0.2 s.
+    Spec/doc conflict: DECISIONS.md line 73 says a batch is flushed "every 5 seconds".
+    Consequence: events sit in memory until the next event or the deadline. A kill in that window loses them from the
+                 lake until a replay resends them. Recovery depends on the replay, which is not guaranteed.
+    Test gap: test_consumer_heartbeatsOnly_stopsAtDuration (test_stream_consumer.py lines 83-91) checks only that the
+              run stops, not flush latency.
+    Author fix: evaluate the time check inside _lines or the read loop on every line, and add a flush-latency test.
+
+F4  DURATION is overrun by up to SOCKET_TIMEOUT on a silent stream
+    Where: pipeline/stream_consumer.py line 25 (SOCKET_TIMEOUT = 5.0) and line 278 (readline blocks).
+    Verified: silent stream, duration=1.0, socket_timeout=5.0 -> run took 5.00 s.
+    Build log is consistent: make stream DURATION=90 exited after 99.4 s, which includes dbt, so the consumer ran about
+    95 s.
+    DECISIONS.md says the consumer stops when DURATION elapses. It does not, by up to 5 s.
+    Author fix: set the socket timeout to min(SOCKET_TIMEOUT, time remaining), or document the overrun.
+
+F5  The stream checks answer for whatever is in the lake, not for "the replayed hour"
+    Where: DECISIONS.md lines 80-86 (data step and "The stream tests and marts read the lake as it stands"), and the
+           marts that read lake/stream_* (fact_edit.sql, macros/stream_raw_arrivals.sql).
+    What: checks 5 to 7 are computed over every event in the lake. The one build in build.log ran make stream
+          DURATION=90, not a 3600 s hour. The DECISIONS figures (21,502 events, 3,603 s event span) come from a run that
+          is not in this build log.
+    Consequence: the answers depend on run history, not on the hour that A-18 names.
+    Needs a decision by the author. The spec is not in the repo, so I cannot check which scope A-18 requires.
+    Author fix: either bound the marts to an explicit run window recorded in the lake, or state in DECISIONS that the
+                marts cover all landed events and that the graded hour is the only run.
+
+F6  Published county and state population columns hold 2021 values for six Connecticut counties, with no year column
+    Where: transform/models/marts/mart_monthly_obligations.sql line 16 (county_population_2024) and line 28
+           (p.population_2024 from the 2021 fallback in stg_census_counties.sql line 22). Contract in
+           transform/models/schema.yml lines 59-61.
+    Verified: awards use 09001 (959768), 09003 (896854), 09005 (185000), 09009 (863700), 09011 (268805), 09013 (150293).
+              These are 2021 values in a column named *_2024. The mart has no population_year column.
+    Effect now: check 2 is unaffected (verified: no Connecticut county is in the top ten).
+    Author fix: add county_population_year (and state population year) to the mart and its contract. Keep the existing
+                column names, because oracle_map.yml check 2 names them.
+
+F7  Territory states are labelled UNKNOWN
+    Where: transform/models/star/dim_place.sql line 21, coalesce(s.state_name, 'UNKNOWN').
+    Verified: the Census files have no rows for states 60, 66, 69, 72, 78. Awards have 138 transactions there (72: 75,
+              66: 25, 78: 15, 69: 12, 60: 11). Their state_name becomes UNKNOWN, the same label as a missing state
+              (A-12). Their county_name is NULL, not UNKNOWN, so the rows are also inconsistent.
+    Author fix: give territories a fixed name table, or state explicitly in DECISIONS that the name is not in the
+                Census files and use a distinct label.
+
+F8  mart_award_fy2024 publishes an arbitrary place for awards whose transactions differ in place
+    Where: transform/models/marts/mart_award_fy2024.sql lines 10-11 (any_value of state and county).
+    Verified: two awards have transactions in different places:
+              ASST_NON_FEL29493424_418 (09009 and 09170)
+              ASST_NON_21FXDWY001_485 (state 56 and state 35)
+    any_value has no defined order. The rerun check (tests/check_rerun.py line 15) compares only
+    mart_monthly_obligations, so a changed value would not be caught.
+    Author fix: pick a deterministic rule (for example the place of the latest action date) and document it, or drop
+                the place columns from this mart.
+
+
+LOW
+---
+
+F9   dim_agency uses first(agency_name) without an order
+    Where: transform/models/star/dim_agency.sql line 2. Verified: one name per code in this data, so no effect now.
+    Fix: max(agency_name), or order the aggregate.
+
+F10  Two definitions of "bot" disagree for non-boolean values
+    Where: pipeline/stream_consumer.py line 91 (bool(event.get("bot"))) and line 94 (event.get("bot") is True).
+    Verified: bot = "false" gives bot column True and actor_type "human". The oracle test
+              (transform/tests/test_stream_totals_per_wiki.sql line 6) keys on the bot column.
+    MediaWiki sends booleans, so this is latent. Fix: derive both from one value.
+
+F11  Tests that cannot fail on a formula bug, and a weak fallback test
+    Where: transform/tests/test_top_ten_counties_per_person.sql lines 16 and 27 use the same macro as the model, so a
+           macro error passes the test.
+           transform/tests/test_census_fallback_uses_earlier_estimate.sql line 6 checks only 09001 of the six
+           Connecticut codes that awards use.
+    Verified: the macro is correct (see below) and the top ten is correct (see below). The risk is future regressions.
+    Fix: compute expected values independently (fixed fixture or Decimal in Python), and check all six codes with
+         population_year = 2021.
+
+F12  Deprecated test arguments (build warning, three occurrences)
+    Where: transform/models/schema.yml lines 83-84, 107-108, 155-156. The build log warns
+           MissingArgumentsPropertyInGenericTestDeprecation. The arguments must be nested under `arguments:`.
+    Fix: nest them. Trivial.
+
+F13  DECISIONS figures are transaction counts, labelled as awards
+    Where: DECISIONS.md line 41 ("In the data, 7,724 awards have a state and no county, and 57 have neither").
+    Verified: 7,724 and 57 are transaction rows (9,820 rows). At award level (7,918 awards, any-row rule) the figures
+              are 6,007 and 47.
+    Fix: correct the wording.
+
+F14  Test-suite hygiene
+    - tests/test_rerun.py runs make build inside the unit suite, so a plain unittest discover performs two full builds.
+    - tests/test_stream_consumer.py test_consumer_replayAtLocalUrl silently skips when the replay is down. The real-replay
+      test therefore never runs in a grader that lacks the replay.
+    - pipeline/batch_load.py and stream_consumer.py import pyarrow directly. It is not declared in pyproject.toml; it
+      comes only transitively from dlt[parquet].
+
+
+VERIFIED CORRECT (what I checked myself and did not find a fault in)
+-------------------------------------------------------------------
+- make build and make stream: exit 0; dbt PASS=26 and PASS=15 in build.log.
+- Offline unit tests: 48 OK, 1 skipped (live replay not running). test_rerun excluded.
+- obligations_per_person macro: 23,606 cases (random and half-way) vs Decimal ROUND_HALF_UP, 0 mismatches.
+- Top ten counties per person, computed independently in Decimal from raw files:
+  11001 129.0682, 46065 76.8547, 31181 75.1654, 19011 70.0886, 02110 63.9713, 21073 56.3973, 02198 46.6702,
+  29051 39.9498, 28149 38.1401, 02164 38.0228 (10th); 11th is 32510 at 37.9291, no tie at the cut.
+  Connecticut counties are not in the top ten.
+- USAspending raw: 9,820 rows across eight zips, one CSV per zip; transaction keys unique; all action dates inside
+  2023-10-01 to 2024-09-30; all amounts with two decimals; county codes are 5-digit state+county; one agency name per code;
+  no award key shared between Contracts and Assistance.
+- Census: Latin-1 is correct (each file has a single high byte, a valid "n-tilde"; UTF-8 decoding fails). The 13 unmatched
+  codes are exactly the ones DECISIONS lists. The 2021-only fallback set is exactly the eight Connecticut counties. The 2024
+  file has nine Connecticut planning-region rows, so the state population sums 2024 rows only, as documented.
+- Sitematrix: closed is a boolean (173 True, 900 absent); dbname unique across 1,073 sites; no URL has a trailing slash.
+  The earlier worry about presence-flag "closed" values does not apply to this data.
+- window_5min incremental selection: touched windows are a superset under monotonic loads, so no window with a new
+  on-time edit is missed. Recomputing extra windows is idempotent.
+- Stream consumer dedup, Last-Event-ID resume, high-water restore and the late rule agree with the oracle macro by reading,
+  and are covered by the offline tests.
+
+
+NOT VERIFIED (and why)
+----------------------
+- Spec conformance (A-*, G-*, N-*): spec/spec.md is referenced in oracle_map.yml but is not in the repo. Conformance is only
+  checked against the DECISIONS paraphrase.
+- Mart values themselves: out/ and lake/ are not in my copy and I did not rebuild. Pass status is taken from build.log.
+- Replay figures in DECISIONS (about 370 and 6 events per second, about 3,200 backward steps, 21,502 landed events): need a
+  live replay, which is not available here.
+- Atomicity under a crash mid-load (stream_raw written but stream_events not): this relies on dlt re-running a pending load
+  package. Not tested.
+- Real-replay test (test_consumer_replayAtLocalUrl): skipped here, so unverified.
+
+
+AUTHOR ACTIONS, IN PRIORITY ORDER
+---------------------------------
+1. F1 and F2: validate all consumed fields, catch HTTPException on connect, add one test per field.
+2. F3 and F4: flush and stop on the deadline, not only after an event; add latency and overrun tests.
+3. F5: decide and document the scope of checks 5 to 7.
+4. F6, F7, F8: fix the published population year, the territory labels and the award place rule.
+5. F9 to F14: cheap fixes, including nesting the test arguments (F12) and correcting the DECISIONS counts (F13).
