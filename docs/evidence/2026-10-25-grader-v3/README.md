@@ -99,3 +99,10 @@ left them ([build_fixtures.py](tools/build_fixtures.py)), with `expected.json` (
 the graded snapshot commit, the pinned result per check, v3's result and resolution per check,
 [add_v3_expected.py](tools/add_v3_expected.py)). The pinned grader on the fixtures gives each tree's trial
 result exactly. The tools in [tools/](tools/) are the scripts used, with this session's scratch paths in them.
+
+## ci_local
+
+[ci_local-7821c02.txt](ci_local-7821c02.txt): `scripts/ci_local.sh` at 7821c02 (the grader, fixtures and
+this regrade), its own TMPDIR, `UV_OFFLINE=1` and every proxy pointed at a closed local port, so no external
+request left the machine: OK, with the steps that need github.com or Claude Code 2.1.294 skipped as the script
+reports. The pull request gives the run at its head.
