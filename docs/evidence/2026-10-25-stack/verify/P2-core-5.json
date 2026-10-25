@@ -1,0 +1,50 @@
+{
+ "head": "1009b9a42790085fb1dac49d3e969dee19493865",
+ "commands": [
+  "make build"
+ ],
+ "ok": false,
+ "failed": {
+  "command": "make stream DURATION=400",
+  "code": 2,
+  "output": "`make stream DURATION=400` (in a fresh clone, run first): it exited 2; `make stream DURATION=400` (in a fresh clone, run first): it read no event frame from its input localhost:8099 (0 connections); `make stream DURATION=400`: it connected 16 times with one Last-Event-ID and did not get past that position (17 connections, 16161 event frames). Each record that it cannot use is a counted skip or a dead-letter, and the position moves past it; `make stream DURATION=400`: it did not read to the end of its input: no connection got only comments for 10 s after its last event frame (17 connections, 16161 event frames). Give the run enough time to drain the input, or fix the reader"
+ },
+ "entries": [
+  {
+   "command": "make stream DURATION=400",
+   "code": 2,
+   "seconds": 413.0,
+   "input": "sse http://localhost:8099/v2/stream/recentchange",
+   "observed": {
+    "connections": 0,
+    "frames": 0,
+    "most_resumes_from_one_id": 0,
+    "drained": false
+   },
+   "problems": [
+    "`make stream DURATION=400` (in a fresh clone, run first): it exited 2",
+    "`make stream DURATION=400` (in a fresh clone, run first): it read no event frame from its input localhost:8099 (0 connections)"
+   ],
+   "output": "_null_mart_replay_hour_replay_key ............................. [\u001b[32mPASS\u001b[0m in 0.07s]\n\u001b[0m05:48:57  51 of 51 PASS unique_mart_replay_hour_replay_key ............................... [\u001b[32mPASS\u001b[0m in 0.06s]\n\u001b[0m05:48:57  \n\u001b[0m05:48:57  Finished running 2 incremental models, 8 table models, 39 data tests, 2 view models in 0 hours 0 minutes and 1.27 seconds (1.27s).\n\u001b[0m05:48:57  \n\u001b[0m05:48:57  \u001b[31mCompleted with 2 errors, 0 partial successes, and 0 warnings:\u001b[0m\n\u001b[0m05:48:57  \n\u001b[0m05:48:57  \u001b[31mFailure in model stg_census_population (models/staging/stg_census_population.sql)\u001b[0m\n\u001b[0m05:48:57    Runtime Error in model stg_census_population (models/staging/stg_census_population.sql)\n  IO Error: No files found that match the pattern \"lake/census_population/*.parquet\"\n\u001b[0m05:48:57  \n\u001b[0m05:48:57    compiled code at target/compiled/open_data_pipeline/models/staging/stg_census_population.sql\n\u001b[0m05:48:57  \n\u001b[0m05:48:57  \u001b[31mFailure in model stg_usaspending_transactions (models/staging/stg_usaspending_transactions.sql)\u001b[0m\n\u001b[0m05:48:57    Runtime Error in model stg_usaspending_transactions (models/staging/stg_usaspending_transactions.sql)\n  IO Error: No files found that match the pattern \"lake/usaspending_transactions/*.parquet\"\n\u001b[0m05:48:57  \n\u001b[0m05:48:57    compiled code at target/compiled/open_data_pipeline/models/staging/stg_usaspending_transactions.sql\n\u001b[0m05:48:57  \n\u001b[0m05:48:57  Done. PASS=23 WARN=0 ERROR=2 SKIP=26 NO-OP=0 TOTAL=51\nmake: *** [Makefile:16: stream] Error 1\n",
+   "fresh": true
+  },
+  {
+   "command": "make stream DURATION=400",
+   "code": 0,
+   "seconds": 410.7,
+   "input": "sse http://localhost:8099/v2/stream/recentchange",
+   "observed": {
+    "connections": 17,
+    "frames": 16161,
+    "most_resumes_from_one_id": 16,
+    "drained": false
+   },
+   "problems": [
+    "`make stream DURATION=400`: it connected 16 times with one Last-Event-ID and did not get past that position (17 connections, 16161 event frames). Each record that it cannot use is a counted skip or a dead-letter, and the position moves past it",
+    "`make stream DURATION=400`: it did not read to the end of its input: no connection got only comments for 10 s after its last event frame (17 connections, 16161 event frames). Give the run enough time to drain the input, or fix the reader"
+   ],
+   "output": "_monthly_obligations_month .................... [RUN]\n\u001b[0m05:55:59  45 of 51 PASS not_null_mart_monthly_obligations_agency_code .................... [\u001b[32mPASS\u001b[0m in 0.10s]\n\u001b[0m05:55:59  46 of 51 PASS not_null_mart_monthly_obligations_county_fips .................... [\u001b[32mPASS\u001b[0m in 0.10s]\n\u001b[0m05:55:59  47 of 51 PASS not_null_mart_monthly_obligations_mart_key ....................... [\u001b[32mPASS\u001b[0m in 0.10s]\n\u001b[0m05:55:59  49 of 51 START test not_null_mart_monthly_obligations_net_obligations .......... [RUN]\n\u001b[0m05:55:59  50 of 51 START test not_null_mart_monthly_obligations_state_fips ............... [RUN]\n\u001b[0m05:55:59  51 of 51 START test unique_mart_monthly_obligations_mart_key ................... [RUN]\n\u001b[0m05:55:59  48 of 51 PASS not_null_mart_monthly_obligations_month .......................... [\u001b[32mPASS\u001b[0m in 0.11s]\n\u001b[0m05:55:59  50 of 51 PASS not_null_mart_monthly_obligations_state_fips ..................... [\u001b[32mPASS\u001b[0m in 0.06s]\n\u001b[0m05:55:59  49 of 51 PASS not_null_mart_monthly_obligations_net_obligations ................ [\u001b[32mPASS\u001b[0m in 0.07s]\n\u001b[0m05:55:59  51 of 51 PASS unique_mart_monthly_obligations_mart_key ......................... [\u001b[32mPASS\u001b[0m in 0.07s]\n\u001b[0m05:55:59  \n\u001b[0m05:55:59  Finished running 2 incremental models, 8 table models, 39 data tests, 2 view models in 0 hours 0 minutes and 2.35 seconds (2.35s).\n\u001b[0m05:55:59  \n\u001b[0m05:55:59  \u001b[32mCompleted successfully\u001b[0m\n\u001b[0m05:55:59  \n\u001b[0m05:55:59  Done. PASS=51 WARN=0 ERROR=0 SKIP=0 NO-OP=0 TOTAL=51\n"
+  }
+ ],
+ "wall_seconds": 835.9
+}

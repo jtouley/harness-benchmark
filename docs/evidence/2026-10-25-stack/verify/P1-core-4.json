@@ -1,0 +1,50 @@
+{
+ "head": "02b11a068ccda547cebf065296137d01df74f079",
+ "commands": [
+  "make build"
+ ],
+ "ok": false,
+ "failed": {
+  "command": "make stream DURATION=400",
+  "code": 0,
+  "output": "`make stream DURATION=400` (in a fresh clone, run first): it connected 69 times with one Last-Event-ID and did not get past that position (71 connections, 17296 event frames). Each record that it cannot use is a counted skip or a dead-letter, and the position moves past it; `make stream DURATION=400` (in a fresh clone, run first): it did not read to the end of its input: no connection got only comments for 10 s after its last event frame (71 connections, 17296 event frames). Give the run enough time to drain the input, or fix the reader; `make stream DURATION=400`: it connected 70 times with one Last-Event-ID and did not get past that position (71 connections, 17313 event frames). Each record that it cannot use is a counted skip or a dead-letter, and the position moves past it; `make stream DURATION=400`: it did not read to the end of its input: no connection got only comments for 10 s after its last event frame (71 connections, 17313 event frames). Give the run enough time to drain the input, or fix the reader"
+ },
+ "entries": [
+  {
+   "command": "make stream DURATION=400",
+   "code": 0,
+   "seconds": 409.9,
+   "input": "sse http://localhost:8099/v2/stream/recentchange",
+   "observed": {
+    "connections": 71,
+    "frames": 17296,
+    "most_resumes_from_one_id": 69,
+    "drained": false
+   },
+   "problems": [
+    "`make stream DURATION=400` (in a fresh clone, run first): it connected 69 times with one Last-Event-ID and did not get past that position (71 connections, 17296 event frames). Each record that it cannot use is a counted skip or a dead-letter, and the position moves past it",
+    "`make stream DURATION=400` (in a fresh clone, run first): it did not read to the end of its input: no connection got only comments for 10 s after its last event frame (71 connections, 17296 event frames). Give the run enough time to drain the input, or fix the reader"
+   ],
+   "output": "unts_match_fact ......................................... [\u001b[32mPASS\u001b[0m in 0.08s]\n\u001b[0m05:33:06  20 of 21 START test not_null_mart_edits_all_by_wiki_actor_type ................. [RUN]\n\u001b[0m05:33:06  18 of 21 PASS window_start_is_multiple_of_300 .................................. [\u001b[32mPASS\u001b[0m in 0.06s]\n\u001b[0m05:33:06  21 of 21 START test not_null_mart_edits_all_by_wiki_wiki ....................... [RUN]\n\u001b[0m05:33:06  19 of 21 PASS grain_unique_mart_edits_all_by_wiki_wiki__actor_type ............. [\u001b[32mPASS\u001b[0m in 0.06s]\n\u001b[0m05:33:07  21 of 21 PASS not_null_mart_edits_all_by_wiki_wiki ............................. [\u001b[32mPASS\u001b[0m in 0.05s]\n\u001b[0m05:33:07  20 of 21 PASS not_null_mart_edits_all_by_wiki_actor_type ....................... [\u001b[32mPASS\u001b[0m in 0.05s]\n\u001b[0m05:33:07  \n\u001b[0m05:33:07  Finished running 1 external model, 3 incremental models, 15 data tests, 2 view models in 0 hours 0 minutes and 1.17 seconds (1.17s).\n\u001b[0m05:33:07  \n\u001b[0m05:33:07  \u001b[32mCompleted successfully\u001b[0m\n\u001b[0m05:33:07  \n\u001b[0m05:33:07  Done. PASS=21 WARN=0 ERROR=0 SKIP=0 NO-OP=0 TOTAL=21\n\u001b[0m05:33:07  [\u001b[33mWARNING\u001b[0m][DeprecationsSummary]: Deprecated functionality\nSummary of encountered deprecations:\n- MissingArgumentsPropertyInGenericTestDeprecation: 3 occurrences\nTo see all deprecation instances instead of just the first occurrence of each,\nrun command again with the `--show-all-deprecations` flag. You may also need to\nrun with `--no-partial-parse` as some deprecations are only encountered during\nparsing.\n",
+   "fresh": true
+  },
+  {
+   "command": "make stream DURATION=400",
+   "code": 0,
+   "seconds": 404.8,
+   "input": "sse http://localhost:8099/v2/stream/recentchange",
+   "observed": {
+    "connections": 71,
+    "frames": 17313,
+    "most_resumes_from_one_id": 70,
+    "drained": false
+   },
+   "problems": [
+    "`make stream DURATION=400`: it connected 70 times with one Last-Event-ID and did not get past that position (71 connections, 17313 event frames). Each record that it cannot use is a counted skip or a dead-letter, and the position moves past it",
+    "`make stream DURATION=400`: it did not read to the end of its input: no connection got only comments for 10 s after its last event frame (71 connections, 17313 event frames). Give the run enough time to drain the input, or fix the reader"
+   ],
+   "output": "_multiple_of_300 ............................ [RUN]\n\u001b[0m05:40:04  15 of 21 PASS not_null_mart_edit_window_5min_window_start ...................... [\u001b[32mPASS\u001b[0m in 0.07s]\n\u001b[0m05:40:04  19 of 21 START test grain_unique_mart_edits_all_by_wiki_wiki__actor_type ....... [RUN]\n\u001b[0m05:40:04  17 of 21 PASS window_grain_unique .............................................. [\u001b[32mPASS\u001b[0m in 0.07s]\n\u001b[0m05:40:04  16 of 21 PASS window_counts_match_fact ......................................... [\u001b[32mPASS\u001b[0m in 0.08s]\n\u001b[0m05:40:04  18 of 21 PASS window_start_is_multiple_of_300 .................................. [\u001b[32mPASS\u001b[0m in 0.08s]\n\u001b[0m05:40:04  20 of 21 START test not_null_mart_edits_all_by_wiki_actor_type ................. [RUN]\n\u001b[0m05:40:04  21 of 21 START test not_null_mart_edits_all_by_wiki_wiki ....................... [RUN]\n\u001b[0m05:40:04  19 of 21 PASS grain_unique_mart_edits_all_by_wiki_wiki__actor_type ............. [\u001b[32mPASS\u001b[0m in 0.07s]\n\u001b[0m05:40:04  20 of 21 PASS not_null_mart_edits_all_by_wiki_actor_type ....................... [\u001b[32mPASS\u001b[0m in 0.05s]\n\u001b[0m05:40:04  21 of 21 PASS not_null_mart_edits_all_by_wiki_wiki ............................. [\u001b[32mPASS\u001b[0m in 0.05s]\n\u001b[0m05:40:04  \n\u001b[0m05:40:04  Finished running 1 external model, 3 incremental models, 15 data tests, 2 view models in 0 hours 0 minutes and 1.09 seconds (1.09s).\n\u001b[0m05:40:04  \n\u001b[0m05:40:04  \u001b[32mCompleted successfully\u001b[0m\n\u001b[0m05:40:04  \n\u001b[0m05:40:04  Done. PASS=21 WARN=0 ERROR=0 SKIP=0 NO-OP=0 TOTAL=21\n"
+  }
+ ],
+ "wall_seconds": 828.9
+}

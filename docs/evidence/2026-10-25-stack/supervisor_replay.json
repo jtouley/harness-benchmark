@@ -1,0 +1,268 @@
+{
+ "P1-core-4": {
+  "P_before": 8.8,
+  "P_after": 8.8,
+  "R_before": 28.5,
+  "R_after": 27.3,
+  "events": [],
+  "removed": 1.3,
+  "moved_out_of_orchestrator": 21.0,
+  "freeform_fix_agents": 0,
+  "before": 71.3,
+  "after": 70.0,
+  "slo": 39.2
+ },
+ "P1-core-5": {
+  "P_before": 4.8,
+  "P_after": 4.7,
+  "R_before": 23.8,
+  "R_after": 23.8,
+  "events": [
+   {
+    "rule": "bound",
+    "at": 33.0,
+    "minutes": 46.3,
+    "detail": "6 calls: for i in $(seq 1 19); do kill -0 4582 2>/dev/null || break; sleep 30; done; date "
+   }
+  ],
+  "removed": 46.3,
+  "moved_out_of_orchestrator": 21.4,
+  "freeform_fix_agents": 0,
+  "before": 119.9,
+  "after": 73.5,
+  "slo": 39.2
+ },
+ "P1-core-6": {
+  "P_before": 5.0,
+  "P_after": 4.9,
+  "R_before": 28.6,
+  "R_after": 28.5,
+  "events": [
+   {
+    "rule": "bound",
+    "at": 36.6,
+    "minutes": 44.6,
+    "detail": "7 calls: for i in $(seq 1 54); do grep -q \"^exit=\" /tmp/stream3600b.log && break; sleep 10"
+   },
+   {
+    "rule": "bound",
+    "at": 94.2,
+    "minutes": 49.9,
+    "detail": "7 calls: for i in $(seq 1 58); do grep -q \"^exit=\" /tmp/stream3600c.log && break; sleep 10"
+   },
+   {
+    "rule": "wait",
+    "at": 3.2,
+    "minutes": 0.0,
+    "detail": "ScheduleWakeup"
+   },
+   {
+    "rule": "wait",
+    "at": 200.1,
+    "minutes": 61.5,
+    "detail": "ScheduleWakeup"
+   },
+   {
+    "rule": "wait",
+    "at": 230.6,
+    "minutes": 31.0,
+    "detail": "ScheduleWakeup"
+   },
+   {
+    "rule": "wait",
+    "at": 261.7,
+    "minutes": 0.1,
+    "detail": "ScheduleWakeup"
+   }
+  ],
+  "removed": 156.5,
+  "moved_out_of_orchestrator": 7.6,
+  "freeform_fix_agents": 1,
+  "before": 261.8,
+  "after": 105.4,
+  "slo": 39.2
+ },
+ "P1-full-4": {
+  "P_before": 7.4,
+  "P_after": 5.3,
+  "R_before": 61.0,
+  "R_after": 59.9,
+  "events": [
+   {
+    "rule": "dispatches",
+    "at": 119.4,
+    "minutes": 21.7,
+    "detail": "R2 dispatch 3: hard stop, the run ends"
+   }
+  ],
+  "removed": 24.8,
+  "moved_out_of_orchestrator": 50.4,
+  "freeform_fix_agents": 0,
+  "before": 141.0,
+  "after": 116.2,
+  "slo": 39.2
+ },
+ "P1-full-6": {
+  "P_before": 5.9,
+  "P_after": 5.3,
+  "R_before": 148.0,
+  "R_after": 25.4,
+  "events": [
+   {
+    "rule": "wait",
+    "at": 158.9,
+    "minutes": 0.0,
+    "detail": "ScheduleWakeup"
+   },
+   {
+    "rule": "wait",
+    "at": 180.0,
+    "minutes": 20.1,
+    "detail": "ScheduleWakeup"
+   },
+   {
+    "rule": "wait",
+    "at": 206.0,
+    "minutes": 15.1,
+    "detail": "ScheduleWakeup"
+   },
+   {
+    "rule": "dispatches",
+    "at": 84.9,
+    "minutes": 136.2,
+    "detail": "R2 dispatch 3: hard stop, the run ends"
+   },
+   {
+    "rule": "idle",
+    "at": 159.9,
+    "minutes": 0,
+    "detail": "R2: Read"
+   }
+  ],
+  "removed": 142.6,
+  "moved_out_of_orchestrator": 37.4,
+  "freeform_fix_agents": 0,
+  "before": 221.1,
+  "after": 78.5,
+  "slo": 39.2
+ },
+ "P2-core-4": {
+  "P_before": 6.7,
+  "P_after": 6.7,
+  "R_before": 25.3,
+  "R_after": 25.2,
+  "events": [
+   {
+    "rule": "bound",
+    "at": 38.3,
+    "minutes": 0.0,
+    "detail": "1 calls: cat > DECISIONS.md <<'EOF' # Decisions  Each entry names a choice that the spec l"
+   }
+  ],
+  "removed": 0.2,
+  "moved_out_of_orchestrator": 0.6,
+  "freeform_fix_agents": 1,
+  "before": 81.9,
+  "after": 81.7,
+  "slo": 33.3
+ },
+ "P2-core-5": {
+  "P_before": 4.8,
+  "P_after": 4.8,
+  "R_before": 20.0,
+  "R_after": 15.4,
+  "events": [
+   {
+    "rule": "dispatches",
+    "at": 58.9,
+    "minutes": 4.4,
+    "detail": "R2 dispatch 3: hard stop, the run ends"
+   }
+  ],
+  "removed": 4.9,
+  "moved_out_of_orchestrator": 1.7,
+  "freeform_fix_agents": 0,
+  "before": 63.3,
+  "after": 58.4,
+  "slo": 33.3
+ },
+ "P2-core-6": {
+  "P_before": 4.5,
+  "P_after": 4.5,
+  "R_before": 28.8,
+  "R_after": 26.7,
+  "events": [],
+  "removed": 2.1,
+  "moved_out_of_orchestrator": 29.5,
+  "freeform_fix_agents": 0,
+  "before": 99.4,
+  "after": 97.3,
+  "slo": 33.3
+ },
+ "P2-full-4": {
+  "P_before": 13.0,
+  "P_after": 8.1,
+  "R_before": 48.5,
+  "R_after": 30.6,
+  "events": [
+   {
+    "rule": "dispatches",
+    "at": 82.2,
+    "minutes": 16.1,
+    "detail": "R2 dispatch 3: hard stop, the run ends"
+   }
+  ],
+  "removed": 23.0,
+  "moved_out_of_orchestrator": 37.5,
+  "freeform_fix_agents": 1,
+  "before": 98.3,
+  "after": 75.3,
+  "slo": 33.3
+ },
+ "P2-full-5": {
+  "P_before": 6.4,
+  "P_after": 5.9,
+  "R_before": 43.0,
+  "R_after": 18.4,
+  "events": [
+   {
+    "rule": "dispatches",
+    "at": 90.8,
+    "minutes": 32.7,
+    "detail": "E1 dispatch 3: hard stop, the run ends"
+   }
+  ],
+  "removed": 34.2,
+  "moved_out_of_orchestrator": 0.7,
+  "freeform_fix_agents": 3,
+  "before": 123.5,
+  "after": 89.3,
+  "slo": 33.3
+ },
+ "P2-full-6": {
+  "P_before": 6.2,
+  "P_after": 5.9,
+  "R_before": 68.4,
+  "R_after": 52.4,
+  "events": [
+   {
+    "rule": "dispatches",
+    "at": 112.2,
+    "minutes": 16.0,
+    "detail": "E1 dispatch 3: hard stop, the run ends"
+   },
+   {
+    "rule": "minutes",
+    "at": 59.5,
+    "minutes": 10.9,
+    "detail": "R1 26 min > 15"
+   }
+  ],
+  "removed": 16.6,
+  "moved_out_of_orchestrator": 4.7,
+  "freeform_fix_agents": 2,
+  "before": 128.2,
+  "after": 111.6,
+  "slo": 33.3
+ }
+}
