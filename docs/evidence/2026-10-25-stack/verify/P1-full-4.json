@@ -1,0 +1,50 @@
+{
+ "head": "c63c13f93c1e0b81e7e780f962ee76df4a48510e",
+ "commands": [
+  "make build"
+ ],
+ "ok": false,
+ "failed": {
+  "command": "make stream DURATION=400",
+  "code": 0,
+  "output": "`make stream DURATION=400` (in a fresh clone, run first): it connected 355 times with one Last-Event-ID and did not get past that position (356 connections, 23211 event frames). Each record that it cannot use is a counted skip or a dead-letter, and the position moves past it; `make stream DURATION=400` (in a fresh clone, run first): it did not read to the end of its input: no connection got only comments for 10 s after its last event frame (356 connections, 23211 event frames). Give the run enough time to drain the input, or fix the reader; `make stream DURATION=400`: it connected 355 times with one Last-Event-ID and did not get past that position (356 connections, 23199 event frames). Each record that it cannot use is a counted skip or a dead-letter, and the position moves past it; `make stream DURATION=400`: it did not read to the end of its input: no connection got only comments for 10 s after its last event frame (356 connections, 23199 event frames). Give the run enough time to drain the input, or fix the reader"
+ },
+ "entries": [
+  {
+   "command": "make stream DURATION=400",
+   "code": 0,
+   "seconds": 411.5,
+   "input": "sse http://localhost:8099/v2/stream/recentchange",
+   "observed": {
+    "connections": 356,
+    "frames": 23211,
+    "most_resumes_from_one_id": 355,
+    "drained": false
+   },
+   "problems": [
+    "`make stream DURATION=400` (in a fresh clone, run first): it connected 355 times with one Last-Event-ID and did not get past that position (356 connections, 23211 event frames). Each record that it cannot use is a counted skip or a dead-letter, and the position moves past it",
+    "`make stream DURATION=400` (in a fresh clone, run first): it did not read to the end of its input: no connection got only comments for 10 s after its last event frame (356 connections, 23211 event frames). Give the run enough time to drain the input, or fix the reader"
+   ],
+   "output": "SS unique_fct_edit_meta_id .......................................... [\u001b[32mPASS\u001b[0m in 0.05s]\n\u001b[0m05:46:57  14 of 18 START sql incremental model main.mart_edit_windows_5min ............... [RUN]\n\u001b[0m05:46:57  15 of 18 START sql external model main.publish_fct_edit ........................ [RUN]\n\u001b[0m05:46:57  14 of 18 OK created sql incremental model main.mart_edit_windows_5min .......... [\u001b[32mOK\u001b[0m in 0.07s]\n\u001b[0m05:46:57  16 of 18 START test assert_window_keys_unique .................................. [RUN]\n\u001b[0m05:46:57  17 of 18 START test not_null_mart_edit_windows_5min_window_start ............... [RUN]\n\u001b[0m05:46:57  17 of 18 PASS not_null_mart_edit_windows_5min_window_start ..................... [\u001b[32mPASS\u001b[0m in 0.06s]\n\u001b[0m05:46:57  16 of 18 PASS assert_window_keys_unique ........................................ [\u001b[32mPASS\u001b[0m in 0.06s]\n\u001b[0m05:46:57  18 of 18 START sql external model main.publish_mart_edit_windows_5min .......... [RUN]\n\u001b[0m05:46:57  18 of 18 OK created sql external model main.publish_mart_edit_windows_5min ..... [\u001b[32mOK\u001b[0m in 0.09s]\n\u001b[0m05:46:57  15 of 18 OK created sql external model main.publish_fct_edit ................... [\u001b[32mOK\u001b[0m in 0.29s]\n\u001b[0m05:46:57  \n\u001b[0m05:46:57  Finished running 3 external models, 2 incremental models, 11 data tests, 2 view models in 0 hours 0 minutes and 1.24 seconds (1.24s).\n\u001b[0m05:46:57  \n\u001b[0m05:46:57  \u001b[32mCompleted successfully\u001b[0m\n\u001b[0m05:46:57  \n\u001b[0m05:46:57  Done. PASS=18 WARN=0 ERROR=0 SKIP=0 NO-OP=0 TOTAL=18\n",
+   "fresh": true
+  },
+  {
+   "command": "make stream DURATION=400",
+   "code": 0,
+   "seconds": 408.6,
+   "input": "sse http://localhost:8099/v2/stream/recentchange",
+   "observed": {
+    "connections": 356,
+    "frames": 23199,
+    "most_resumes_from_one_id": 355,
+    "drained": false
+   },
+   "problems": [
+    "`make stream DURATION=400`: it connected 355 times with one Last-Event-ID and did not get past that position (356 connections, 23199 event frames). Each record that it cannot use is a counted skip or a dead-letter, and the position moves past it",
+    "`make stream DURATION=400`: it did not read to the end of its input: no connection got only comments for 10 s after its last event frame (356 connections, 23199 event frames). Give the run enough time to drain the input, or fix the reader"
+   ],
+   "output": "SS unique_fct_edit_meta_id .......................................... [\u001b[32mPASS\u001b[0m in 0.06s]\n\u001b[0m05:54:04  14 of 18 START sql incremental model main.mart_edit_windows_5min ............... [RUN]\n\u001b[0m05:54:04  15 of 18 START sql external model main.publish_fct_edit ........................ [RUN]\n\u001b[0m05:54:04  14 of 18 OK created sql incremental model main.mart_edit_windows_5min .......... [\u001b[32mOK\u001b[0m in 0.07s]\n\u001b[0m05:54:04  16 of 18 START test assert_window_keys_unique .................................. [RUN]\n\u001b[0m05:54:04  17 of 18 START test not_null_mart_edit_windows_5min_window_start ............... [RUN]\n\u001b[0m05:54:04  17 of 18 PASS not_null_mart_edit_windows_5min_window_start ..................... [\u001b[32mPASS\u001b[0m in 0.08s]\n\u001b[0m05:54:04  16 of 18 PASS assert_window_keys_unique ........................................ [\u001b[32mPASS\u001b[0m in 0.08s]\n\u001b[0m05:54:04  18 of 18 START sql external model main.publish_mart_edit_windows_5min .......... [RUN]\n\u001b[0m05:54:04  18 of 18 OK created sql external model main.publish_mart_edit_windows_5min ..... [\u001b[32mOK\u001b[0m in 0.06s]\n\u001b[0m05:54:04  15 of 18 OK created sql external model main.publish_fct_edit ................... [\u001b[32mOK\u001b[0m in 0.30s]\n\u001b[0m05:54:04  \n\u001b[0m05:54:04  Finished running 3 external models, 2 incremental models, 11 data tests, 2 view models in 0 hours 0 minutes and 1.40 seconds (1.40s).\n\u001b[0m05:54:04  \n\u001b[0m05:54:04  \u001b[32mCompleted successfully\u001b[0m\n\u001b[0m05:54:04  \n\u001b[0m05:54:04  Done. PASS=18 WARN=0 ERROR=0 SKIP=0 NO-OP=0 TOTAL=18\n"
+  }
+ ],
+ "wall_seconds": 839.5
+}

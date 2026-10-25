@@ -1,0 +1,46 @@
+{
+ "head": "85fa612b8dc7fd6c7d37849c17cacdefd0923f0f",
+ "commands": [
+  "make build"
+ ],
+ "ok": false,
+ "failed": {
+  "command": "make stream DURATION=400",
+  "code": 2,
+  "output": "`make stream DURATION=400` (in a fresh clone, run first): it exited 2"
+ },
+ "entries": [
+  {
+   "command": "make stream DURATION=400",
+   "code": 2,
+   "seconds": 412.6,
+   "input": "sse http://localhost:8099/v2/stream/recentchange",
+   "observed": {
+    "connections": 1,
+    "frames": 21503,
+    "most_resumes_from_one_id": 0,
+    "drained": true
+   },
+   "problems": [
+    "`make stream DURATION=400` (in a fresh clone, run first): it exited 2"
+   ],
+   "output": " START test unique_fct_edit_meta_id ..................................... [RUN]\n\u001b[0m06:00:58  8 of 12 PASS not_null_fct_edit_meta_id ......................................... [\u001b[32mPASS\u001b[0m in 0.08s]\n\u001b[0m06:00:58  9 of 12 PASS unique_fct_edit_meta_id ........................................... [\u001b[32mPASS\u001b[0m in 0.08s]\n\u001b[0m06:00:58  10 of 12 SKIP relation main.mart_window_5min ................................... [\u001b[33mSKIP\u001b[0m]\n\u001b[0m06:00:58  11 of 12 SKIP test not_null_mart_window_5min_window_key ........................ [\u001b[33mSKIP\u001b[0m]\n\u001b[0m06:00:58  12 of 12 SKIP test unique_mart_window_5min_window_key .......................... [\u001b[33mSKIP\u001b[0m]\n\u001b[0m06:00:58  \n\u001b[0m06:00:58  Finished running 2 incremental models, 1 table model, 8 data tests, 1 view model in 0 hours 0 minutes and 0.54 seconds (0.54s).\n\u001b[0m06:00:58  \n\u001b[0m06:00:58  \u001b[31mCompleted with 1 error, 0 partial successes, and 0 warnings:\u001b[0m\n\u001b[0m06:00:58  \n\u001b[0m06:00:58  \u001b[31mFailure in model stg_sitematrix (models/staging/stg_sitematrix.sql)\u001b[0m\n\u001b[0m06:00:58    Runtime Error in model stg_sitematrix (models/staging/stg_sitematrix.sql)\n  IO Error: No files found that match the pattern \"lake/sitematrix/*.parquet\"\n  \n  LINE 15: from read_parquet('lake/sitematrix/*.parquet')\n                ^\n\u001b[0m06:00:58  \n\u001b[0m06:00:58    compiled code at target/compiled/open_data_pipeline/models/staging/stg_sitematrix.sql\n\u001b[0m06:00:58  \n\u001b[0m06:00:58  Done. PASS=3 WARN=0 ERROR=1 SKIP=8 NO-OP=0 TOTAL=12\nmake: *** [Makefile:20: stream] Error 1\n",
+   "fresh": true
+  },
+  {
+   "command": "make stream DURATION=400",
+   "code": 0,
+   "seconds": 408.5,
+   "input": "sse http://localhost:8099/v2/stream/recentchange",
+   "observed": {
+    "connections": 1,
+    "frames": 21503,
+    "most_resumes_from_one_id": 0,
+    "drained": true
+   },
+   "problems": [],
+   "output": ""
+  }
+ ],
+ "wall_seconds": 832.0
+}

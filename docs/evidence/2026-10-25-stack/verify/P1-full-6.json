@@ -1,0 +1,40 @@
+{
+ "head": "869bb81ce0b38d372cac55511d4c7a49b1c06d05",
+ "commands": [
+  "make build"
+ ],
+ "ok": true,
+ "failed": null,
+ "entries": [
+  {
+   "command": "make stream DURATION=400",
+   "code": 0,
+   "seconds": 411.4,
+   "input": "sse http://localhost:8099/v2/stream/recentchange",
+   "observed": {
+    "connections": 2,
+    "frames": 21505,
+    "most_resumes_from_one_id": 1,
+    "drained": true
+   },
+   "problems": [],
+   "output": "",
+   "fresh": true
+  },
+  {
+   "command": "make stream DURATION=400",
+   "code": 0,
+   "seconds": 406.5,
+   "input": "sse http://localhost:8099/v2/stream/recentchange",
+   "observed": {
+    "connections": 2,
+    "frames": 21505,
+    "most_resumes_from_one_id": 1,
+    "drained": true
+   },
+   "problems": [],
+   "output": ""
+  }
+ ],
+ "wall_seconds": 837.8
+}

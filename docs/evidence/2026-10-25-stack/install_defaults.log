@@ -1,0 +1,7 @@
+context_budget {'mode': 'enforce', 'warn_tokens': 60000, 'work_tokens': 60000, 'max_tokens': 90000}
+supervisor {'mode': 'enforce', 'command_max_seconds': 600, 'idle_minutes': 15, 'repeat_limit': 2, 'kills_before_stop': 2}
+PreToolUse Write|Edit|MultiEdit|NotebookEdit|Bash guard_context_budget.py" --host claude
+PreToolUse * guard_supervisor.py" --host claude
+PostToolUse * guard_supervisor.py" --host claude
+SubagentStart None guard_supervisor.py" --host claude
+============================= 106 passed in 14.27s =============================

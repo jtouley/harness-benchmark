@@ -1,0 +1,11 @@
+P1-core-4  before   71.3 after   70.0 slo 39.2  removed 1.3  P 8.8->8.8  R 28.5->27.3  orch-cmds 21.0 freeform 0
+P1-core-5  before  119.9 after   73.5 slo 39.2  removed 46.3  P 4.8->4.7  R 23.8->23.8  orch-cmds 21.4 freeform 0
+P1-core-6  before  261.8 after  105.4 slo 39.2  removed 156.5  P 5.0->4.9  R 28.6->28.5  orch-cmds 7.6 freeform 1
+P1-full-4  before  141.0 after  116.2 slo 39.2  removed 24.8  P 7.4->5.3  R 61.0->59.9  orch-cmds 50.4 freeform 0
+P1-full-6  before  221.1 after   78.5 slo 39.2  removed 142.6  P 5.9->5.3  R 148.0->25.4  orch-cmds 37.4 freeform 0
+P2-core-4  before   81.9 after   81.7 slo 33.3  removed 0.2  P 6.7->6.7  R 25.3->25.2  orch-cmds 0.6 freeform 1
+P2-core-5  before   63.3 after   58.4 slo 33.3  removed 4.9  P 4.8->4.8  R 20.0->15.4  orch-cmds 1.7 freeform 0
+P2-core-6  before   99.4 after   97.3 slo 33.3  removed 2.1  P 4.5->4.5  R 28.8->26.7  orch-cmds 29.5 freeform 0
+P2-full-4  before   98.3 after   75.3 slo 33.3  removed 23.0  P 13.0->8.1  R 48.5->30.6  orch-cmds 37.5 freeform 1
+P2-full-5  before  123.5 after   89.3 slo 33.3  removed 34.2  P 6.4->5.9  R 43.0->18.4  orch-cmds 0.7 freeform 3
+P2-full-6  before  128.2 after  111.6 slo 33.3  removed 16.6  P 6.2->5.9  R 68.4->52.4  orch-cmds 4.7 freeform 2
