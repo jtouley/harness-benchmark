@@ -1,8 +1,8 @@
 {
  "configs": {
-  "new_skill": "antagonistic-review@c49d1ff#full",
-  "part_three_reviewers": "antagonistic-review@c49d1ff#three",
-  "part_single_reviewer": "antagonistic-review@c49d1ff#single",
+  "new_skill": "antagonistic-review@7683e55#full",
+  "part_three_reviewers": "antagonistic-review@7683e55#three",
+  "part_single_reviewer": "antagonistic-review@7683e55#single",
   "old_skill": "pr-review-local@2100c6e",
   "builtin_code_review": "code-review"
  },

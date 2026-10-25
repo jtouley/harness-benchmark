@@ -38,12 +38,25 @@ of the original runs are not a metric. The set has no one-shot trees yet.
 
 | Iteration | Configurations | Baselines | Runs | Dispatches |
 |---|---|---|---|---|
-| `antagonistic-vs-baselines` | `new_skill` = antagonistic-review@c49d1ff `#full`; parts `#three` (three reviewers, no consolidation) and `#single` (one reviewer); `old_skill` = pr-review-local@2100c6e; `builtin_code_review` = `/code-review <path>` as it ships | `old_skill`, `builtin_code_review` | 3 | 528 |
+| `antagonistic-vs-baselines` | `new_skill` = antagonistic-review@7683e55 `#full`; parts `#three` (three reviewers, no consolidation) and `#single` (one reviewer); `old_skill` = pr-review-local@2100c6e; `builtin_code_review` = `/code-review <path>` as it ships | `old_skill`, `builtin_code_review` | 3 | 528 |
 | `r1-current-vs-pr228` | `new_skill` = pr-review-local@9314a61 (#228); `old_skill` = pr-review-local@2100c6e | `old_skill` | 3 | 132 |
 
 cadence#229 does not change the R1 review text (`commands/pr-review-local.md`, `references/review-rigor.md`). It
 adds a budget to the R1 row of `stages.json` and runs R2 and R3 in parallel. So the R1 comparison uses #228,
 which changes both files.
+
+## Versions of the candidate
+
+| Commit | Change | Source |
+|---|---|---|
+| 3c5420b | The owner's procedure and prompts | Front matter, survivability line |
+| cc367f5 | The consolidation standard: the parts of `/pr-review-local` that worked, and the run learnings | Log Oct 25 02:30, the pilot on P1 core-6 |
+| c49d1ff | One must-fix per class, severity apart from reproduction, collection proof, stage-boundary kills, local stubs | The weakness review (`survive/postmortem-weaknesses.md`) |
+| 7683e55 | Spec breaks are must-fix, reading is not a pass, independent oracles, the full input classes, the spec trace | The R1 skill review (`survive/skill-review-R1.md`) |
+
+The run lists use 7683e55. The R1 skill review reports that the #228 and #229 R1 text closes none of the
+pilot's findings on P1 core-6 (inferred from reading, not measured). The `r1-current-vs-pr228` iteration
+measures it.
 
 ## The rule
 
@@ -62,3 +75,10 @@ tokens, not dollars.
 - The build step (`build.py`) did not run: port 8099 was taken by another process. Without it, the reviewers
   get no build log.
 - 660 dispatches at 3 repeats is a large batch. Run `antagonistic-vs-baselines` first.
+
+## Sources kept here
+
+`sources/` holds copies of the files that the candidate and the known answers cite, written by other agents of
+the same session (the survivability pilot and the postmortem agent), unchanged, with `SHA256SUMS`:
+`final-review-t1.md` and `findings-t1-{A,B,C}.txt` (the pilot on P1 core-6), `postmortem-weaknesses.md` and
+`skill-review-R1.md`.
