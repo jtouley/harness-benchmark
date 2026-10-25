@@ -1,0 +1,13 @@
+{
+ "batch": "2026-10-25-smoke-r3fix",
+ "grader_commit": "10172ce8e7564d61b9ff17a3fe2b625269b0e37c",
+ "grader_tree": "8a0977e42fa02981802090d1f9517efe537994c4",
+ "note": "a smoke run of the unmerged cadence fix for shapes-r3 (owner, Oct 25: \"Do the smoke run with haiku\"): one Cadence-on-Haiku P1 core run, peers on Haiku (run id 20261025-P1-cadence-haiku-core-smoke1), one run per host (BATCH=2026-10-25-smoke-r3fix scripts/run_one.sh), host method, auth proxy, adapter none, the agent in its jail (#112). The cadence commit is fdfb554, the head of cadence PR #234 (branch fix/shapes-r3, not merged). The grader and the cap are 2026-10-25-shapes-r3's: batch F's tree, pinned as 2026-10-24-shapes-r2 (no grader v3).",
+ "cadence_commit": {
+  "core": "fdfb554c001c2ac2a05aea51476898b55748617d"
+ },
+ "agent_caps": {
+  "cadence": 21600,
+  "why": "as batch F: 3 x the one-shot cap (batches/2026-10-23-batch-f.json)"
+ }
+}

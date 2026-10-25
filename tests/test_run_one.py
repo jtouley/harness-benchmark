@@ -211,3 +211,18 @@ def test_correct_record_text_replaces_only_the_score_line(tmp_path):
                               "20261024-P1-cadence-haiku-core-4: score 0/7; passed 2/7")
     source = (ROOT / "scripts" / "correct_record_text.py").read_text(encoding="utf-8")
     assert "--force" not in source.replace('"worktree", "remove", "--force"', "") and "+HEAD" not in source
+
+
+def test_the_smoke_batch_pins_the_unmerged_fix_for_core_only(tmp_path):
+    """batches/2026-10-25-smoke-r3fix.json: one P1 core run on cadence #234's head (fix/shapes-r3, unmerged), with
+    shapes-r3's grader. A full run has no pin; a pin whose branch is gone is fetched from the pull request heads."""
+    work = tmp_path / "work"
+    proc = _run_one(tmp_path, "20261025-P1-cadence-haiku-core-smoke1", "--dry-run", RUN_ONE_WORK=str(work),
+                    CADENCE_SHA="9fafe099aaef7e53a5cd896c3d550d1be82c9154", BATCH="2026-10-25-smoke-r3fix")
+    assert proc.returncode == 2 and "fdfb554c001c2ac2a05aea51476898b55748617d" in proc.stderr
+    proc = _run_one(tmp_path, "20261025-P1-cadence-haiku-full-smoke1", "--dry-run", RUN_ONE_WORK=str(work),
+                    BATCH="2026-10-25-smoke-r3fix")
+    assert proc.returncode == 2 and "pins no cadence commit for shape full" in proc.stderr
+    assert not work.exists()
+    text = (ROOT / "scripts" / "run_one.sh").read_text(encoding="utf-8")
+    assert "'+refs/pull/*/head:refs/remotes/origin/pull/*'" in text
