@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# One benchmark Cadence run ($BATCH: batch F iteration 1, then the 2026-10-24-shapes head to head and its round 2, 2026-10-24-shapes-r2), from a fresh cloud container of this environment (host method, the
+# One benchmark Cadence run ($BATCH: batch F iteration 1, then the 2026-10-24-shapes head to head, its round 2, 2026-10-24-shapes-r2, and round 3, 2026-10-25-shapes-r3), from a fresh cloud container of this environment (host method, the
 # subscription through the session's HTTPS proxy). One run per container: the dev replay owns localhost:8099,
 # which the spec itself names (golden/pipeline/P1/prompt.md:17), so two runs never share a host.
 #
@@ -35,7 +35,7 @@ CADENCE_REPO=https://github.com/jtouley/cadence
 # The driver: by default the commit of this script's own checkout, so the run uses the code that runs it.
 # Override with HB_SHA=<commit>. The grader is not HB_SHA but the batch's pinned grader_commit (GRADER_SHA below).
 HB_SHA=${HB_SHA:-$(git -C "$(dirname "$0")" rev-parse HEAD)}
-BATCH=${BATCH:-2026-10-24-shapes-r2}
+BATCH=${BATCH:-2026-10-25-shapes-r3}
 CADENCE_CAP=21600   # batches/2026-10-23-batch-f.json agent_caps.cadence: 3 x the one-shot cap
 PORT=8099
 
